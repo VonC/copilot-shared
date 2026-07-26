@@ -63,6 +63,8 @@ HOST_PREFIXES = {HOST_CLAUDE: "/", HOST_CODEX: "$"}
 DEFAULT_HOST = HOST_CLAUDE
 # Markdown suffix dropped from an instruction file name to form the skill name.
 MD_SUFFIX = ".md"
+# Installed Codex skills contributed by this plugin use this namespace.
+CODEX_SKILL_NAMESPACE = "llm-shared:"
 
 
 def detect_host(env: Mapping[str, str]) -> str:
@@ -116,6 +118,8 @@ def render_command(prefix: str, instruction: str, document: str) -> str:
         as a command rather than as quoted text.
     """
     name = instruction.removesuffix(MD_SUFFIX)
+    if prefix == HOST_PREFIXES[HOST_CODEX] and ":" not in name:
+        name = f"{CODEX_SKILL_NAMESPACE}{name}"
     return f"{prefix}{name} on {document}"
 
 
@@ -360,6 +364,8 @@ def run_skill(
         memory.read_memory(root),
         branch,
     )
+    if topic is None:
+        topic = docs.branch_requirement_topic(root, branch)
     if topic is None:
         return _emit(None, "pw skill: no topic resolved on this branch.\n")
     if skill_name is not None:

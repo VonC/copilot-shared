@@ -344,6 +344,38 @@ def test_skill_advances_on_a_settled_requirement(
     assert out == "/write-design on docs/design.v0.9.0.handoff_automation.md"
 
 
+def test_skill_resolves_a_branch_requirement_from_an_umbrella_draft(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A split requirement branch advances without renaming its umbrella draft."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "draft.v10.0.0.sentinel.md").write_text(
+        "# Sentinel\n\n- Issue: Remove old routes [route-cleanup]\n",
+        encoding="utf-8",
+    )
+    (docs_dir / "issue.v10.0.0.route-cleanup.md").write_text(
+        "# Remove old routes\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(git, "current_branch", lambda _cwd: "route_cleanup")
+    monkeypatch.setattr(git, "working_tree_changed_files", lambda _cwd: [])
+    monkeypatch.setattr(git, "fork_point", lambda _cwd: None)
+    monkeypatch.setenv("CODEX_THREAD_ID", "thread")
+    monkeypatch.delenv("CLAUDECODE", raising=False)
+
+    assert prompt_workflow.main(["skill", "--root", str(tmp_path)]) == 0
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out.strip() == (
+        "$llm-shared:review-ask-questions on "
+        "docs/issue.v10.0.0.route-cleanup.md"
+    )
+
+
 def test_skill_forced_skill_is_not_applicable_then_emits(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -374,7 +406,10 @@ def test_skill_host_override_sets_the_prefix(
     _setup_skill_tree(monkeypatch, tmp_path, "main")
     assert prompt_workflow.main(["skill", "--host", "codex", "--root", str(tmp_path)]) == 0
     out = capsys.readouterr().out.strip()
-    assert out == "$process-draft on docs/draft.v0.9.0.handoff_automation.md"
+    assert out == (
+        "$llm-shared:process-draft on "
+        "docs/draft.v0.9.0.handoff_automation.md"
+    )
 
 
 # eof

@@ -73,7 +73,9 @@ def test_render_command_drops_the_md_suffix() -> None:
 
 def test_render_command_keeps_a_name_without_the_md_suffix() -> None:
     """An instruction name without a ``.md`` suffix is rendered unchanged."""
-    assert skill.render_command("$", "write-plans", "docs/x.md") == "$write-plans on docs/x.md"
+    assert skill.render_command("$", "write-plans", "docs/x.md") == (
+        "$llm-shared:write-plans on docs/x.md"
+    )
 
 
 def test_render_command_property_invariants() -> None:
@@ -305,7 +307,9 @@ def test_next_command_uses_the_codex_prefix(tmp_path: Path) -> None:
     """The host prefix follows the environment, here Codex."""
     topic = _topic(tmp_path)
     command = skill.next_command(tmp_path, topic, "main", {"CODEX_THREAD_ID": "x"})
-    assert command == "$process-draft on docs/draft.v0.9.0.handoff_automation.md"
+    assert command == (
+        "$llm-shared:process-draft on docs/draft.v0.9.0.handoff_automation.md"
+    )
 
 
 def test_forced_command_unknown_skill_returns_none(tmp_path: Path) -> None:

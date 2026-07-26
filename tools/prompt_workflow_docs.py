@@ -114,6 +114,82 @@ def relevant_drafts(root: Path, cwd: Path, branch: str | None = None) -> list[To
     return topics
 
 
+def branch_requirement_topic(root: Path, branch: str) -> Topic | None:
+    """Resolve one branch-matched requirement through its direct or umbrella draft.
+
+    This fallback covers a development branch created for one item split from a
+    collection draft. The requirement slug must exactly match the branch leaf
+    after folding hyphens and underscores. The matching version must also have
+    exactly one related draft: either a direct same-slug draft or an umbrella
+    draft whose content mentions the requirement slug.
+    """
+    branch_key = _slug_key(branch.rsplit("/", maxsplit=1)[-1])
+    requirements: set[tuple[str, str]] = set()
+    for directory in docs_dirs(root):
+        for entry in sorted(directory.iterdir()):
+            parsed = _parse_requirement_name(entry.name)
+            if entry.is_file() and parsed is not None:
+                version, slug = parsed
+                if _slug_key(slug) == branch_key:
+                    requirements.add((version, slug))
+    if len(requirements) != 1:
+        return None
+    version, slug = next(iter(requirements))
+    draft = _related_draft(root, version, slug)
+    if draft is None:
+        return None
+    return Topic(version=version, slug=slug, draft_path=draft.resolve())
+
+
+def _parse_requirement_name(name: str) -> tuple[str, str] | None:
+    """Return the version and slug from a feature-request or issue file name."""
+    for doc_type in ROLE_DOC_TYPES["requirement"]:
+        prefix = f"{doc_type}."
+        if not name.startswith(prefix) or not name.endswith(MD_SUFFIX):
+            continue
+        core = name[len(prefix) : -len(MD_SUFFIX)]
+        match = VERSION_RE.match(core)
+        if match is None:
+            continue
+        version = match.group(0)
+        rest = core[len(version) :]
+        if rest.startswith(".") and rest[1:]:
+            return version, rest[1:]
+    return None
+
+
+def _related_draft(root: Path, version: str, slug: str) -> Path | None:
+    """Return one direct draft or one umbrella draft mentioning the topic."""
+    candidates = _drafts_for_version(root, version)
+    slug_key = _slug_key(slug)
+    direct = [path for path, draft_slug in candidates if _slug_key(draft_slug) == slug_key]
+    if len(direct) == 1:
+        return direct[0]
+    if direct:
+        return None
+    umbrella = [path for path, _draft_slug in candidates if _mentions_slug(path, slug_key)]
+    return umbrella[0] if len(umbrella) == 1 else None
+
+
+def _drafts_for_version(root: Path, version: str) -> list[tuple[Path, str]]:
+    """Return draft paths and slugs for one version."""
+    candidates: list[tuple[Path, str]] = []
+    for directory in docs_dirs(root):
+        for entry in sorted(directory.iterdir()):
+            parsed = parse_draft_name(entry.name)
+            if not entry.is_file() or parsed is None or parsed[0] != version:
+                continue
+            candidates.append((entry, parsed[1]))
+    return candidates
+
+
+def _mentions_slug(path: Path, slug_key: str) -> bool:
+    """Return whether a draft mentions a normalized slug as a complete token."""
+    normalized = path.read_text(encoding="utf-8").replace("-", "_")
+    pattern = rf"(?<![a-z0-9_]){re.escape(slug_key)}(?![a-z0-9_])"
+    return re.search(pattern, normalized, flags=re.IGNORECASE) is not None
+
+
 def _fork_point(cwd: Path, branch: str | None) -> str | None:
     """Call the real two-arg fork-point path while tolerating old test doubles."""
     if branch is None or len(signature(git.fork_point).parameters) == _FORK_POINT_LEGACY_ARITY:

@@ -106,6 +106,44 @@ def test_relevant_drafts_without_fork_point(
     assert [(topic.version, topic.slug) for topic in topics] == [("v9.8.0", "iso")]
 
 
+def test_branch_requirement_topic_resolves_through_an_umbrella_draft(
+    tmp_path: Path,
+) -> None:
+    """A branch item split from a collection uses the unchanged umbrella draft."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    umbrella = docs_dir / "draft.v10.0.0.sentinel.md"
+    umbrella.write_text(
+        "# Sentinel\n\n- Issue: Remove old routes [route-cleanup]\n",
+        encoding="utf-8",
+    )
+    (docs_dir / "issue.v10.0.0.route-cleanup.md").write_text(
+        "# Remove old routes\n",
+        encoding="utf-8",
+    )
+
+    topic = docs.branch_requirement_topic(tmp_path, "route_cleanup")
+
+    assert topic is not None
+    assert (topic.version, topic.slug) == ("v10.0.0", "route-cleanup")
+    assert topic.draft_path == umbrella.resolve()
+
+
+def test_branch_requirement_topic_rejects_an_unrelated_same_version_draft(
+    tmp_path: Path,
+) -> None:
+    """A branch-matched requirement does not borrow unrelated draft context."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "draft.v10.0.0.other.md").write_text("# Other\n", encoding="utf-8")
+    (docs_dir / "issue.v10.0.0.route-cleanup.md").write_text(
+        "# Remove old routes\n",
+        encoding="utf-8",
+    )
+
+    assert docs.branch_requirement_topic(tmp_path, "route_cleanup") is None
+
+
 def test_docs_dirs_empty_and_with_version_subdir(tmp_path: Path) -> None:
     """Docs discovery returns nothing without docs, then docs and version dirs."""
     assert docs.docs_dirs(tmp_path) == []
