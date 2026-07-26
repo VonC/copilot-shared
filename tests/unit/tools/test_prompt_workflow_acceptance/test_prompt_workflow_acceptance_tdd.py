@@ -376,6 +376,60 @@ def test_skill_resolves_a_branch_requirement_from_an_umbrella_draft(
     )
 
 
+def test_skill_after_write_design_forces_review_of_a_settled_looking_design(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A design writer cannot skip review because its new text looks settled."""
+    monkeypatch.setenv("CLAUDECODE", "1")
+    monkeypatch.delenv("CODEX_THREAD_ID", raising=False)
+    _setup_skill_tree(monkeypatch, tmp_path, "handoff_automation")
+    docs_dir = tmp_path / "docs"
+    (docs_dir / "feature-request.v0.9.0.handoff_automation.md").write_text(
+        "# x\n\n## Requirement clarifications\n\n| Q01 | consolidated |\n",
+        encoding="utf-8",
+    )
+    (docs_dir / "design.v0.9.0.handoff_automation.md").write_text(
+        "# x\n\n## Design decisions\n\n"
+        "| Topic | Decision |\n| --- | --- |\n"
+        "| Review | No open questions |\n",
+        encoding="utf-8",
+    )
+
+    assert prompt_workflow.main(["skill", "--root", str(tmp_path)]) == 0
+    assert capsys.readouterr().out.strip() == (
+        "/write-plans on docs/plan.v0.9.0.handoff_automation.md"
+    )
+
+    assert prompt_workflow.main(
+        ["skill", "--after-write", "design", "--root", str(tmp_path)],
+    ) == 0
+    assert capsys.readouterr().out.strip() == (
+        "/review-ask-questions on docs/design.v0.9.0.handoff_automation.md"
+    )
+
+
+def test_skill_after_write_requires_the_written_document(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The explicit handoff emits no command when its artifact is absent."""
+    monkeypatch.setenv("CLAUDECODE", "1")
+    monkeypatch.delenv("CODEX_THREAD_ID", raising=False)
+    _setup_skill_tree(monkeypatch, tmp_path, "handoff_automation")
+
+    code = prompt_workflow.main(
+        ["skill", "--after-write", "design", "--root", str(tmp_path)],
+    )
+
+    captured = capsys.readouterr()
+    assert code == skill.EXIT_NOT_APPLICABLE
+    assert captured.out == ""
+    assert "no design document to review" in captured.err
+
+
 def test_skill_forced_skill_is_not_applicable_then_emits(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

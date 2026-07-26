@@ -1,6 +1,6 @@
 # Running a pw command from a non-interactive shell
 
-The workflow handoffs call `pw` commands: `pw skill`, `pw skill --after-commit <x>`, and `pw handoff <mode> <x>`. This note gives the one reliable way to run them, so each instruction can point here instead of repeating the call.
+The workflow handoffs call `pw` commands: `pw skill`, `pw skill --after-write <role>`, `pw skill --after-commit <x>`, and `pw handoff <mode> <x>`. This note gives the one reliable way to run them, so each instruction can point here instead of repeating the call.
 
 ## Why the bare pw alias fails in a tool shell
 
@@ -27,6 +27,7 @@ Replace `skill` with the actual sub-command and its arguments. With `<LLM_SHARED
 | pw command | PowerShell call |
 | --- | --- |
 | `pw skill` | `& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill` |
+| `pw skill --after-write <role>` | `& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-write <role>` |
 | `pw skill --after-commit <x>` | `& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-commit <x>` |
 | `pw handoff check <x>` | `& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" handoff check <x>` |
 | `pw handoff after-check <x>` | `& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" handoff after-check <x>` |

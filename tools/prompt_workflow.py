@@ -490,6 +490,13 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Print the post-commit next action for the named just-committed plan step.",
     )
+    skill_parser.add_argument(
+        "--after-write",
+        dest="after_write",
+        default=None,
+        choices=skill.AFTER_WRITE_ROLES,
+        help="Review the named artifact role that was just written.",
+    )
     return parser
 
 
@@ -511,6 +518,7 @@ def main(argv: list[str] | None = None) -> int:
             args.skill_name,
             args.host_override,
             args.after_commit,
+            args.after_write,
         )
     return run(root, pick=args.pick)
 

@@ -409,9 +409,9 @@ def test_main_dispatches_the_skill_subcommand(
         root: Path,
         skill_name: str | None,
         host_override: str | None,
-        after_commit: str | None,
+        after_commit: str | None, after_write: str | None,
     ) -> int:
-        captured["call"] = (root, skill_name, host_override, after_commit)
+        captured["call"] = (root, skill_name, host_override, after_commit, after_write)
         return 0
 
     monkeypatch.setattr(prompt_workflow.skill, "run_skill", fake_run_skill)
@@ -419,7 +419,7 @@ def test_main_dispatches_the_skill_subcommand(
         ["skill", "write-design", "--host", "codex", "--root", str(tmp_path)],
     )
     assert code == 0
-    assert captured["call"] == (tmp_path.resolve(), "write-design", "codex", None)
+    assert captured["call"] == (tmp_path.resolve(), "write-design", "codex", None, None)
 
 
 _VALIDATION_TWO_STEPS = (
@@ -485,15 +485,15 @@ def test_main_dispatches_the_skill_after_commit(
         root: Path,
         skill_name: str | None,
         host_override: str | None,
-        after_commit: str | None,
+        after_commit: str | None, after_write: str | None,
     ) -> int:
-        captured["call"] = (root, skill_name, host_override, after_commit)
+        captured["call"] = (root, skill_name, host_override, after_commit, after_write)
         return 0
 
     monkeypatch.setattr(prompt_workflow.skill, "run_skill", fake_run_skill)
     code = prompt_workflow.main(["skill", "--after-commit", "2", "--root", str(tmp_path)])
     assert code == 0
-    assert captured["call"] == (tmp_path.resolve(), None, None, "2")
+    assert captured["call"] == (tmp_path.resolve(), None, None, "2", None)
 
 
 def test_post_commit_command_implements_the_next_step(

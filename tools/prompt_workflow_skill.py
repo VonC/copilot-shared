@@ -29,6 +29,11 @@ always meets its review round. The resolved step maps to an instruction and a
 target document, then renders. For the implementation cycle, an available
 validation plan also contributes the plan step id so ``implement-step`` receives
 the argument it needs; a terminal validation plan renders ``prepare-release``.
+
+Post-write routing: ``pw skill --after-write <role>`` bypasses disk-derived
+advancement and reviews the artifact that was just written. This keeps a writer
+from skipping review when its new document already contains text that resembles
+a settled decisions marker.
 """
 
 from __future__ import annotations
@@ -325,21 +330,27 @@ FORCED_ROLE = {
     "implement-step": "plan",
 }
 
+# Artifact roles accepted by the explicit post-write review handoff.
+AFTER_WRITE_ROLES = ("requirement", "design", "plan")
+
 
 def run_skill(
     root: Path,
     skill_name: str | None,
     host_override: str | None,
     after_commit: str | None = None,
+    after_write: str | None = None,
 ) -> int:
     """Print the bare next-step command for the current topic, or a forced skill.
 
     With ``after_commit`` set, prints the post-commit next action for that
-    just-committed plan step instead (Step 7). Otherwise resolves the topic
-    without a menu (the single draft, or the branch-locked one), then prints the
-    disk-derived next command, or - with a skill name - that skill's command when
-    its document exists. When nothing applies (no resolvable topic, a forced skill
-    whose document is absent, or no next step after the commit) it writes a
+    just-committed plan step instead (Step 7). With ``after_write`` set, reviews
+    that just-written artifact regardless of settled-looking content. Otherwise
+    resolves the topic without a menu (the single draft, or the branch-locked
+    one), then prints the disk-derived next command, or - with a skill name -
+    that skill's command when its document exists. When nothing applies (no
+    resolvable topic, a forced skill whose document is absent, no written
+    artifact, or no next step after the commit) it writes a
     one-line note to stderr, leaves stdout empty, and returns
     ``EXIT_NOT_APPLICABLE`` so the caller never reads the signal as a command (Q03).
 
@@ -349,6 +360,8 @@ def run_skill(
         host_override: A host token forcing the prefix, or None to detect it.
         after_commit: A just-committed plan step to derive the post-commit action
             for, or None for the normal next-step or forced-skill behavior.
+        after_write: The artifact role just written, or None for disk-derived
+            routing.
 
     Returns:
         0 when a command is printed, ``EXIT_NOT_APPLICABLE`` otherwise.
@@ -368,6 +381,11 @@ def run_skill(
         topic = docs.branch_requirement_topic(root, branch)
     if topic is None:
         return _emit(None, "pw skill: no topic resolved on this branch.\n")
+    if after_write is not None:
+        return _emit(
+            post_write_command(root, topic, after_write, os.environ, host_override),
+            f"pw skill: no {after_write} document to review.\n",
+        )
     if skill_name is not None:
         return _emit(
             forced_command(root, topic, skill_name, os.environ, host_override),
@@ -430,6 +448,44 @@ def forced_command(
         return None
     instruction = f"{skill_name}{MD_SUFFIX}"
     return render_command(host_prefix(env, override), instruction, _relpath(root, doc))
+
+
+def post_write_command(
+    root: Path,
+    topic: Topic,
+    written_role: str,
+    env: Mapping[str, str],
+    override: str | None = None,
+) -> str | None:
+    """Return the review command for the artifact that was just written.
+
+    This explicit handoff intentionally ignores decisions-table markers. A
+    writer knows which artifact it produced, while bare ``pw skill`` remains the
+    state-based router used after review and consolidation.
+
+    Args:
+        root: The project root.
+        topic: The resolved topic.
+        written_role: One of ``AFTER_WRITE_ROLES``.
+        env: The process environment, read for the host prefix.
+        override: A host token forcing the prefix, or None to detect it.
+
+    Returns:
+        A review command for the written artifact, or None when it is absent.
+    """
+    state = steps.compute_state(root, topic, None)
+    document = {
+        "requirement": state.requirement,
+        "design": state.design,
+        "plan": state.plan,
+    }[written_role]
+    if document is None:
+        return None
+    return render_command(
+        host_prefix(env, override),
+        "review-ask-questions.md",
+        _relpath(root, document),
+    )
 
 
 def post_commit_command(

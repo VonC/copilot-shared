@@ -41,10 +41,10 @@ Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
-When the `feature-request.vX.Y.Z.<slug>.md` or `issue.vX.Y.Z.<slug>.md` is written, hand the cycle on to its review, with no menu and no go-ahead. From the project root, in a PowerShell shell, run `pw skill` through its launcher (see [`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw` alias does not resolve in a tool shell):
+When the `feature-request.vX.Y.Z.<slug>.md` or `issue.vX.Y.Z.<slug>.md` is written, hand the cycle on to its review, with no menu and no go-ahead. From the project root, in a PowerShell shell, run the explicit post-write form through the `pw skill` launcher (see [`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw` alias does not resolve in a tool shell):
 
-- `pw skill`
+- `pw skill --after-write requirement`
 
-`pw skill` prints one bare next-step command, derived from the documents on disk — here `<command-prefix>review-ask-questions on docs/feature-request.vX.Y.Z.<slug>.md` (with the prefix selected by `command_prefix_char.md`). Read that line and run it straight away: a handoff is the go-ahead to perform the next step now, so do not stop to ask whether to proceed, and do not compose the next prompt yourself.
+The explicit post-write form prints `<command-prefix>review-ask-questions on docs/feature-request.vX.Y.Z.<slug>.md` (with the prefix selected by `command_prefix_char.md`) regardless of settled-looking content in the new requirement. Read that line and run it straight away: a handoff is the go-ahead to perform the next step now, so do not stop to ask whether to proceed, and do not compose the next prompt yourself.
 
 To hold the chain here instead — to read the requirement before the review runs — pass the literal phrase `stop here` in this skill's argument when you invoke it. With `stop here` in the argument, write the requirement and skip this handoff.
