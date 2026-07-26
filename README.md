@@ -7,16 +7,18 @@ A shared development workflow that takes a draft note from "raw idea" to
 acceptance-test phases. The repository ships the prompts, skills,
 instructions, templates, and helper scripts that drive that workflow.
 
-The skills are tested with GitHub Copilot in VS Code and with Claude Code
-in both the VS Code extension and the CLI. They are designed to work with
-any LLM that can read files in the workspace and write files back: every
-slash command resolves to a plain markdown body in [`instructions/`](instructions/)
-that another model can be handed directly as context.
+The framework and its skills are tested with GitHub Copilot in VS Code,
+Claude Code in both the VS Code extension and the CLI, OpenAI Codex, and
+Google Antigravity. This README includes
+[installation instructions for all four](#-how-to-use-llm-shared-from-another-project).
+They are also designed to work with any LLM that can read files in the
+workspace and write files back: every slash command resolves to a plain
+markdown body in [`instructions/`](instructions/) that another model can
+be handed directly as context.
 
 > **Origin note.** These skills were extracted from a project-specific
 > repository and generalized for reuse across projects. Their content is
-> fairly stable by now; a few instructions may still carry a reference to
-> their origin project.
+> fairly stable by now.
 
 ---
 
@@ -117,6 +119,62 @@ plan) chain the same way through `pw skill`: each writer runs its explicit
 trigger the author types is the first one, and the only human-in-the-loop stop
 is `/review-ask-questions`  --  see
 [Automated document phase with pw skill](#-automated-document-phase-with-pw-skill).
+
+---
+
+## 🧪 Groundhog: the pytest reset loop
+
+Groundhog (`ghog`) is the test gate between implementation and review.
+Any code change produced by `/implement-step` or
+`/implement-missing-step` must finish with the `ghog day` loop; those
+skills do not allow a direct `check.bat` or `pytest` call as a
+substitute. One walk starts at the top, stops at the first non-green
+result, names the next fix, and starts from the top again after that fix:
+
+```txt
+                  pass                       pass
+ +------------+ --------> +-----------------+ --------> +----------------------+
+ | check.bat  |           | affected tests  |           | full test suite      |
+ | code gates |           | testmon, no cov |           | coverage + durations |
+ +-----+------+           +-------+---------+           +----------+-----------+
+       | non-green                | non-green                      | non-green
+       +--------------------------+--------------------------------+
+                                  |
+                                  v
+                         fix the named cause
+                                  |
+                                  +----> ghog day
+                                        (restart at check.bat)
+
+ all three green -> /implementation-check -> /group-commits-msg -> commit
+```
+
+The spirit is the never-ending day from the film: the loop accepts no
+partial victory, and only the best outcome breaks it. `check.bat` must
+pass; the testmon-selected affected tests must pass; then the complete
+suite must pass with a fresh coverage measurement at the project gate.
+Operational guards stop and report a loop that makes no progress, but
+they never turn a lesser result into success.
+
+The full run also keeps the suite short enough to run often. It records
+the call time of every test and returns exit 8 when an otherwise-green
+run contains a statistical duration outlier at or above the configured
+execution-time floor. The default floor is `1.0` second, stored in
+`a.ghog.outliers`; lower it to police a faster suite, or explicitly
+exclude a test that is irreducibly slow at its measured baseline.
+Otherwise, shorten the named call and restart `ghog day`. A green source
+snapshot makes a repeated day with no relevant changes a no-op, so every
+implementation instruction can require the same gate without paying for
+the same successful walk twice.
+
+Once `ghog day` reaches exit 0, the workflow immediately runs
+`/implementation-check`. A `Yes` verdict hands the staged work to
+`/group-commits-msg` and then to the commit gate; a `No` verdict returns
+to `/implement-missing-step` and another Groundhog day. LLM-driven runs
+write bounded output to `a.ghog.log`, while `ghog status` tracks a
+detached run without mistaking a growing log for completion. See the
+complete command, exit-code, duration-floor, and troubleshooting
+reference in [GROUNDHOG.md](GROUNDHOG.md).
 
 ---
 
@@ -569,16 +627,14 @@ project-local rules. See the
 
 ---
 
-## 🧪 Groundhog: the pytest reset loop
-
-The test side of the workflow is driven by groundhog (`ghog`), one tool replacing the old `ptr`/`pta`/`pts` aliases: `ghog day` walks compile check, affected tests, then the full suite with a fresh coverage measure, stopping at the first non-green step with the exact fix to apply; `ghog init` registers the fixing loop in a project for both Claude Code (`/groundhog`) and ChatGPT Codex (AGENTS.md section plus a `/groundhog` custom prompt). LLM-driven runs go through a project-root `a.ghog.log` (overwritten per run, never deleted): the model branches on exit codes and reads only the log tail, while the user follows the run live from a second console; direct console runs keep the usual stdout. The full run also times every test call: an otherwise-green walk still stops (exit 8) on a call far outside the norm, so the suite stays under the project's one-second-per-test target — see [GROUNDHOG.md — The duration gate](GROUNDHOG.md#-the-duration-gate-how-tests-stay-under-a-second). The full manual is [GROUNDHOG.md](GROUNDHOG.md).
-
 ## 🗂️ Contents
 
 ### Agent entry points
 
-Two folders, one per agent  --  same skills, same instruction bodies, two
-discovery mechanisms. Pick the one your agent reads.
+Four host layouts expose the same skill bodies through the discovery
+mechanism each agent reads. The
+[installation section](#-how-to-use-llm-shared-from-another-project)
+shows how to connect each one to a consuming project.
 
 ```txt
 .github/                                  GitHub Copilot picks up prompts, skills, and agents from here
@@ -606,15 +662,23 @@ discovery mechanisms. Pick the one your agent reads.
 └─ skills/
    ├─ <skill>/SKILL.md                   frontmatter + reference to instructions/<skill>.md
    └─ ...                                mirrors .github/skills/ with one extra: write-release-notes-summary
+.agents/llm-shared/                       OpenAI Codex plugin package
+├─ .codex-plugin/plugin.json             plugin manifest
+├─ skills/<skill>/SKILL.md               Codex skill wrappers
+└─ instructions/                         bundled copies of the shared bodies
+.agent/workflows/                         Google Antigravity workflow wrappers
+├─ <skill>.md                             slash-command wrapper for one shared body
+└─ ...                                    same hyphenated skill names
 ```
 
-### Shared bodies referenced by both agents
+### Shared bodies used by all four agents
 
 Both `.github/skills/<skill>/SKILL.md` and `.claude/skills/<skill>/SKILL.md`
-delegate to the same markdown body under `instructions/`. A third LLM
-that does not read either folder can still run the same skill by being
-handed the matching `instructions/<skill>.md` file as part of its
-context.
+delegate to the same markdown body under `instructions/`. Antigravity's
+workflow wrappers point there too, while the Codex plugin bundles the
+same bodies in its package. Another LLM that does not read any of these
+folders can still run a skill by being handed the matching
+`instructions/<skill>.md` file as part of its context.
 
 ```txt
 instructions/                             shared skill bodies (one file per skill)
@@ -794,7 +858,7 @@ links for both a sibling `..\llm-shared` and a `llm-shared` submodule —
 but the sibling clone is the intended default.)
 
 The five subsections below cover the five common entry points: VS Code
-(Copilot Chat or Claude Code extension), Claude Code CLI, ChatGPT Codex
+(Copilot Chat or Claude Code extension), Claude Code CLI, OpenAI Codex
 (as a local plugin), Google Antigravity (as workflows), and any other
 LLM that reads files in a workspace.
 
@@ -859,7 +923,7 @@ ln -s "$(pwd)/.claude/skills" ~/.claude/skills
 
 After that, the same slash commands resolve in any directory.
 
-### From ChatGPT Codex (as a local plugin)
+### From OpenAI Codex (as a local plugin)
 
 The repository ships a self-contained Codex plugin package under
 [`.agents/llm-shared/`](.agents/llm-shared/): a `.codex-plugin/plugin.json`
@@ -913,14 +977,14 @@ command name and the instruction file name are always the same.
 
 | Area | Status | Tested with | Notes |
 | --- | --- | --- | --- |
-| Shared writing rules | draft | Copilot (VS Code), Claude Code (VS Code + CLI) | Includes blacklist, markdown rules, and full-file rewrite rules. |
-| Commit message workflow | draft | Copilot (VS Code), Claude Code (VS Code + CLI) | Main focus, with `a.commit` planning and replay support. |
-| Analysis and review prompts | draft | Copilot (VS Code), Claude Code (VS Code + CLI) | Covers API review, plan checks, discussions, and issue work. |
-| Step-based skills and agent | draft | Copilot (VS Code), Claude Code (VS Code + CLI) | Includes step implementation, implementation checks, and file splitting. |
+| Shared writing rules | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | Includes blacklist, markdown rules, and full-file rewrite rules. |
+| Commit message workflow | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | Main focus, with `a.commit` planning and replay support. |
+| Analysis and review prompts | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | Covers API review, plan checks, discussions, and issue work. |
+| Step-based skills and agent | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | Includes step implementation, implementation checks, and file splitting. |
 | Local helper scripts | draft | Windows (`cmd.exe` with Doskey) | Includes `senv.bat`, `git_batch_commit.py`, and `git_command.py`. |
-| Groundhog pytest loop | draft | Claude Code (VS Code + CLI), ChatGPT Codex | `ghog day` walk, `ghog init` registration, LLM fixing loop; see `GROUNDHOG.md`. |
-| Prompt-workflow handoff | draft | Claude Code (VS Code + CLI) | `pw handoff` chains implement-step, check, implement-missing, and the `a.commit` group-commit step with no menu. |
-| Prompt-workflow skill | draft | Claude Code (VS Code + CLI), ChatGPT Codex | `pw skill` chains the document phase (write -> review -> consolidate -> next phase) and feeds the commit-gate multi-choice via `--after-commit`. |
+| Groundhog pytest loop | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | `ghog day` walk, `ghog init` registration, LLM fixing loop; see `GROUNDHOG.md`. |
+| Prompt-workflow handoff | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | `pw handoff` chains implement-step, check, implement-missing, and the `a.commit` group-commit step with no menu. |
+| Prompt-workflow skill | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | `pw skill` chains the document phase (write -> review -> consolidate -> next phase) and feeds the commit-gate multi-choice via `--after-commit`. |
 
 ---
 
