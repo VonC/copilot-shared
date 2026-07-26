@@ -450,6 +450,45 @@ def test_question_skills_use_the_oqm_wrapper() -> None:
         assert "python <LLM_SHARED_DIR>\\tools\\open_questions_md.py" not in content
 
 
+def test_writer_handoffs_review_the_artifact_that_was_just_written() -> None:
+    """Each writer uses explicit post-write routing instead of disk inference."""
+    writers = (
+        ("write-requirement.md", "requirement"),
+        ("write-design.md", "design"),
+        ("write-plans.md", "plan"),
+    )
+    for name, role in writers:
+        assert f"pw skill --after-write {role}" in _read(name)
+
+
+def test_wiki_covers_umbrella_topics_and_explicit_post_write_review() -> None:
+    """Every Diataxis purpose reflects both prompt-workflow routing fixes."""
+    root = steps.llm_shared_dir() / "wiki"
+    pages = {
+        "explanation": root / "explanation" / "one-launcher-three-modes.md",
+        "tutorial": root / "tutorials" / "02-from-draft-to-settled-requirement.md",
+        "how_to": root / "how-to" / "split-a-mixed-draft.md",
+        "reference": root / "reference" / "pw-launcher.md",
+    }
+    content = {
+        role: path.read_text(encoding="utf-8")
+        for role, path in pages.items()
+    }
+
+    for text in content.values():
+        assert "umbrella" in text
+        assert "after-write" in text
+
+    tutorial = content["tutorial"]
+    assert "draft.v10.0.0.sentinel.md" in tutorial
+    assert "issue.v10.0.0.route-cleanup.md" in tutorial
+    assert "branch: route_cleanup" in tutorial
+
+    reference = content["reference"]
+    assert "$llm-shared:skill" in reference
+    assert "Missing and ambiguous relationships return no topic" in reference
+
+
 def test_oqm_wrapper_clears_the_project_senv_guard() -> None:
     """oqm.bat clears the project guard before calling senv.bat."""
     content = (steps.llm_shared_dir() / "bin" / "oqm.bat").read_text(

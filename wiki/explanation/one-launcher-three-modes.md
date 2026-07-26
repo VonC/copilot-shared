@@ -6,9 +6,10 @@
 
 ## Invocation model
 
-Workflow skills normally call `pw skill` and `pw handoff` themselves. Use the
-interactive `pw` menu directly to choose a next step by hand, or call a mode
-directly when diagnosing or resuming a known routing state.
+Workflow skills normally call `pw skill`, `pw skill --after-write <role>`, and
+`pw handoff` themselves. Use the interactive `pw` menu directly to choose a
+next step by hand, or call a mode directly when diagnosing or resuming a known
+routing state.
 
 🔁 `pw` answers a single question — what is the next step of this effort?
 — three different ways, because three different callers need the answer:
@@ -24,6 +25,14 @@ questions or a settled decision table, which plan steps are done. The
 state is the filesystem — there is no hidden database, only
 `a.prompt_memory` remembering the branch's locked topic and current step.
 
+Topic identity is not always the draft filename. A collection draft can remain
+`draft.v10.0.0.sentinel.md` while an item uses
+`issue.v10.0.0.route-cleanup.md` on branch `route_cleanup`. If ordinary memory
+and changed-draft resolution have no answer, skill mode can connect those three
+facts only when the normalized branch matches one requirement and one direct or
+umbrella draft is related. Refusing missing or ambiguous relationships keeps a
+convenient fallback from becoming a guess.
+
 ## 🗣️ Why pw handoff is verbose
 
 The implement cycle's next prompt cannot be a bare command: it needs the
@@ -38,12 +47,20 @@ check just wrote and routes — so the caller cannot pick the wrong step.
 
 ## 🤫 Why pw skill is terse
 
-The document phase's next step is always a standard slash skill that
-loads its own full instructions when it runs. So `pw skill` prints only
-the bare command — `/review-ask-questions on docs\design.vX.Y.Z.<slug>.md`
-— on stdout. The verbosity is not lost, only deferred to the skill it
-names. Terse output also suits its callers: a `## Handoff` section that
-just needs the one line to run next.
+The document phase's next step is always a standard skill that loads its own
+full instructions when it runs. Skill mode therefore prints only the bare
+command on stdout; the verbosity is deferred to the skill it names.
+
+There are two distinct questions behind that terse answer:
+
+- Bare `pw skill` asks **what follows the state now on disk?** Review and
+  consolidation use it because their decision markers are evidence.
+- `pw skill --after-write design` says **a design was just written; review that
+  artifact now**. Writers use this event-aware form because their prose can
+  legitimately contain words that resemble an old settled marker.
+
+Keeping event and state separate prevents a writer from skipping review while
+preserving automatic advancement after review actually settles the document.
 
 ## 🎛️ Why the interactive mode still exists
 
@@ -53,12 +70,13 @@ on disk is ambiguous. The forced form `pw skill <skill-name>` serves the
 same purpose inside scripts — print a specific earlier phase's command
 and re-run it by hand.
 
-## 🔤 The host prefix, decided at print time
+## 🔤 The host command, decided at print time
 
-The same workflow drives Claude Code and Codex, whose commands differ
-only by prefix: `/` versus `$`. `pw skill` reads `CLAUDECODE` or
-`CODEX_THREAD_ID` and prints the right one, so the instruction bodies
-never hard-code a host.
+The same workflow drives Claude Code and Codex, but an installed Codex plugin
+needs both its `$` prefix and its namespace. `pw skill` reads `CLAUDECODE` or
+`CODEX_THREAD_ID` and prints `/write-design` for Claude or
+`$llm-shared:write-design` for Codex. Instruction bodies can therefore use a
+neutral command placeholder instead of hard-coding either host form.
 
 ## 👉 Where the modes are specified
 

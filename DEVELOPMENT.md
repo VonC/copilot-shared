@@ -566,10 +566,12 @@ ahead") and `[STOP]` is the human-in-the-loop review pause.
 
 The review loop, the design step, and the planning step no longer need a
 separate trigger each: `pw skill` chains them the way `pw handoff` chains the
-implement cycle. `pw skill` is the read-only mode of the prompt-workflow launcher
-(`bin\prompt_workflow.bat skill`). It reads the effort's documents under `docs\`,
-works out which phase is done, and prints one bare next-step command; the writing
-and consolidate skills end by running it and following that command, so the
+implement cycle. `pw skill` is the read-only mode of the prompt-workflow
+launcher (`bin\prompt_workflow.bat skill`). Bare `pw skill` reads the effort's
+documents under `docs\` and derives which phase comes next after review or
+consolidation. Writers use `pw skill --after-write requirement|design|plan` so
+the artifact they just created is reviewed even when its contents already look
+settled. Both forms print one bare next-step command; the caller follows it, so the
 document phase advances with no menu and no "go ahead".
 
 ### What pw skill derives from disk
@@ -598,9 +600,10 @@ Like the implement cycle, the chain is wired by the `## Handoff` section of each
 skill body:
 
 - `/write-requirement`, `/write-design`, and `/write-plans` each end on a
-  `## Handoff` that runs `pw skill` and runs the `/review-ask-questions` it
-  prints. The argument phrase `stop here` holds the chain at the writing step, so
-  the author can read the document before the review fires.
+  `## Handoff` that runs `pw skill --after-write requirement|design|plan`,
+  respectively, and runs the `/review-ask-questions` it prints. The argument
+  phrase `stop here` holds the chain at the writing step, so the author can read
+  the document before the review fires.
 - `/consolidate-then-review-ask-questions` ends on a `## Handoff` that, once the
   document is settled, runs `pw skill` to reach the next phase. When the round
   still raises questions, it appends them and stops for another review round

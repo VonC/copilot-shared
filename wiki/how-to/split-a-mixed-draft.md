@@ -48,11 +48,41 @@ call `/write-requirement` directly with the type, version and topic.
    `/write-requirement on docs/feature-request.vX.Y.Z.<slugN>.md` (or
    `issue.`) entry per slug. Pick the first item; repeat for each slug.
 
+5. Keep the processed draft under its collection slug. When an item is developed
+   on its own branch, name the branch from the item slug; underscores and hyphens
+   are equivalent for workflow matching:
+
+   ```txt
+   docs\draft.v10.0.0.sentinel.md
+   docs\issue.v10.0.0.route-cleanup.md
+   branch: route_cleanup
+   ```
+
+   Do not rename the umbrella draft to `route-cleanup`. `pw skill` first uses
+   ordinary branch memory and changed-draft resolution. If those find no topic,
+   it can resolve the item through the requirement and unchanged umbrella:
+
+   - exactly one requirement filename must match the normalized branch leaf,
+   - a direct same-version, same-slug draft wins when exactly one exists,
+   - otherwise exactly one same-version umbrella draft must mention the complete
+     normalized item slug,
+   - missing or ambiguous matches leave the topic unresolved.
+
+6. Let each requirement writer run its explicit review handoff:
+
+   ```txt
+   pw skill --after-write requirement
+   ```
+
+   This reviews the requirement just written. It does not use settled-looking
+   content to decide whether review already happened.
+
 ## ✅ Check after the split
 
 The draft now ends with the list section, and each
 `/write-requirement` run creates one `docs\<type>.vX.Y.Z.<topic>.md` that
-enters its own review loop.
+enters its own review loop. An item branch can continue through `pw skill`
+without a same-slug draft, while the umbrella collection remains intact.
 
 Related: [From draft note to settled requirement](../tutorials/02-from-draft-to-settled-requirement.md),
 [skills catalog](../reference/skills-catalog.md).

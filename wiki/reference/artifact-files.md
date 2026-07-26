@@ -16,8 +16,9 @@ manual tool invocation needs an exact path or naming contract.
 
 ## 📚 Versioned documents under docs
 
-One effort, one version slug `vX.Y.Z`, one topic slug — every phase adds
-its file:
+A single-topic effort normally keeps one version slug `vX.Y.Z` and one topic
+slug through every phase. A collection can keep one umbrella draft while its
+independently developed requirements use their own item slugs:
 
 | Pattern | Written by | Holds |
 | --- | --- | --- |
@@ -28,6 +29,29 @@ its file:
 | `docs\design.vX.Y.Z.<topic>.md` | `/write-design` | scope, constraints, acceptance cases |
 | `docs\plan.vX.Y.Z.<topic>.md` | `/write-plans` | numbered implementation steps |
 | `docs\plan.vX.Y.Z.<topic>.validation.md` | `/write-plans`, then `/implementation-check` | per-step verdicts and checks |
+
+### Direct and umbrella draft relationships
+
+For a single topic, the draft and requirement usually share a slug:
+
+```txt
+docs\draft.v10.0.0.route-cleanup.md
+docs\issue.v10.0.0.route-cleanup.md
+```
+
+For a collection, the umbrella draft deliberately keeps the collection slug:
+
+```txt
+docs\draft.v10.0.0.sentinel.md
+docs\issue.v10.0.0.route-cleanup.md
+branch: route_cleanup
+```
+
+The requirement filename, not the umbrella draft filename, identifies the
+current item. Skill-mode fallback resolution accepts this layout only when the
+normalized branch leaf matches exactly one requirement and that requirement has
+exactly one related direct or umbrella draft. The umbrella must mention the
+complete item slug; same-version proximity alone is not a relationship.
 
 ## 🧾 Transient a-dot files at the project root
 

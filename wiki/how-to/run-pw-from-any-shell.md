@@ -28,6 +28,7 @@ From PowerShell:
 
 ```powershell
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill
+& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-write design
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-commit 3
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" handoff check 3
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" handoff after-check 3
@@ -42,6 +43,7 @@ switches and the call becomes a silent no-op.
 | Form | Emits | Where |
 | --- | --- | --- |
 | `pw skill` | the bare next-step command | stdout |
+| `pw skill --after-write requirement\|design\|plan` | review of the artifact just written | stdout |
 | `pw skill --after-commit <x>` | the contextual after-commit action | stdout |
 | `pw handoff check <x>` | the full implementation-check prompt | `a.prompt.txt` + clipboard |
 | `pw handoff after-check <x>` | the routed next cycle prompt | `a.prompt.txt` + clipboard |
@@ -52,10 +54,33 @@ in `a.prompt_memory`.
 
 ## 🔤 Forcing the host prefix
 
-`pw skill` prints `/` when `CLAUDECODE` is set and `$` when
-`CODEX_THREAD_ID` is set; `pw skill --host claude` or `--host codex`
-forces it. The forced form `pw skill <skill-name>` prints a specific
-earlier phase's command, to re-run that phase by hand.
+`pw skill` prints `/write-design`-style commands when `CLAUDECODE` is set
+and `$llm-shared:write-design`-style commands when `CODEX_THREAD_ID` is set;
+`pw skill --host claude` or `--host codex` forces the host form. The forced
+form `pw skill <skill-name>` prints a specific earlier phase's command, to
+re-run that phase by hand.
+
+## 📝 Pick the right skill form
+
+Use bare `pw skill` when asking what follows the current state on disk, such
+as after review or consolidation. Use `--after-write` inside a writer handoff:
+
+```powershell
+& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-write requirement
+& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-write design
+& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-write plan
+```
+
+The explicit form deliberately ignores settled-looking decision markers and
+reviews the named artifact. It exits without printing a command if that
+artifact does not exist.
+
+On an item branch split from a collection draft, you do not need to rename the
+umbrella draft. If ordinary resolution has no topic, bare and post-write skill
+forms can match the normalized branch leaf (`route_cleanup`) to one requirement
+slug (`route-cleanup`) and then to its direct draft or one same-version umbrella
+draft that mentions the complete slug. More than one matching requirement or
+related draft is an ambiguity and produces no command.
 
 ## ✅ Check the launcher works
 

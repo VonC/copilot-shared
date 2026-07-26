@@ -19,7 +19,9 @@ decisions**.
 - After generating a requirement, design, or plan, the AI challenges it with
   a fixed question template: options, pros and cons, a recommended answer with
   rationale, and a place for the human answer. The decisions are consolidated
-  and reviewed again until no material question remains.
+  and reviewed again until no material question remains. Each writer identifies
+  the artifact it just created explicitly, so a phrase that resembles an old
+  decision cannot make the workflow mistake writing for completed review.
 - After generating code, the AI checks that implementation against the exact
   requirement, design, and numbered plan step. It also applies the project's
   standing directives for architecture, performance, line budget, security,

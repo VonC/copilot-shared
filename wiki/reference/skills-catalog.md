@@ -54,10 +54,13 @@ prerequisites already satisfied.
 ## 🔗 Chaining behavior of the writing skills
 
 `/write-requirement`, `/write-design` and `/write-plans` each end by
-running `pw skill` and running the `/review-ask-questions` it prints —
-pass `stop here` in the argument to hold the chain and read the document
-first. `/consolidate-then-review-ask-questions` runs `pw skill` when the
-document settles. `/implement-step`, `/implementation-check` and
+running `pw skill --after-write requirement`, `--after-write design`, or
+`--after-write plan`, respectively, then running the
+`/review-ask-questions` it prints. This explicit writer event prevents
+settled-looking text from skipping review; pass `stop here` in the argument to
+hold the chain and read the document first.
+`/consolidate-then-review-ask-questions` runs bare `pw skill` when the document
+settles. `/implement-step`, `/implementation-check` and
 `/implement-missing-step` chain through `pw handoff` instead, and
 `/group-commits-msg` closes the chain at the commit gate with
 `pw skill --after-commit <x>`.

@@ -21,7 +21,23 @@ All modes resolve the topic from the branch and the `docs\` tree (locked
 per branch in `a.prompt_memory`), read the same workflow state (which of
 draft, requirement, design, plan, validation exist; open questions or
 settled decision table; which plan steps are done), and know the host:
-`CLAUDECODE` means a `/` prefix, `CODEX_THREAD_ID` means `$`.
+`CLAUDECODE` emits `/skill`, while `CODEX_THREAD_ID` emits the installed
+plugin form `$llm-shared:skill`.
+
+Normal topic resolution uses relevant changed drafts and branch memory. If it
+finds no topic, skill mode has a safe fallback for a requirement split from an
+unchanged collection draft:
+
+1. normalize only the branch leaf, treating `-` and `_` as equivalent,
+2. require exactly one feature-request or issue filename with that version and
+   normalized slug,
+3. use exactly one direct same-version, same-slug draft when present,
+4. otherwise require exactly one same-version umbrella draft that mentions the
+   complete normalized slug as a token.
+
+Missing and ambiguous relationships return no topic. A same-version draft that
+does not mention the item is never borrowed as context, and the umbrella draft
+is not renamed to the item slug.
 
 ## 🎛️ The three modes side by side
 
@@ -29,7 +45,7 @@ settled decision table; which plan steps are done), and know the host:
 | --- | --- | --- | --- |
 | `pw` | a human, from a menu | a full next-step prompt | `a.prompt.txt` + clipboard + `a.prompt_memory` |
 | `pw handoff <task> <x>` | the caller (the step is given) | a full, assembled cycle prompt | `a.prompt.txt` + clipboard + `a.prompt_memory` |
-| `pw skill [name]` | derived from the docs on disk | one bare command line | stdout |
+| `pw skill [name] [--after-write role]` | disk state, forced name, or explicit writer event | one bare command line | stdout |
 
 ## 🤝 pw handoff tasks
 
@@ -57,8 +73,12 @@ status line the check wrote, so the caller cannot pick the wrong branch.
 decisions section (`Requirement clarifications`, `Design decisions`, or
 `Implementation decisions`) holding at least one row opening with a question id
 (`| Qxx`) or the "No open questions" row a no-question review writes. A
-decisions heading seeded by the document writer does not count, so a freshly
-written plan always routes to its review round before any `/implement-step`.
+decisions heading alone does not count.
+
+Bare `pw skill` treats a complete settled marker as state and advances. Writers
+therefore do not use bare inference: `pw skill --after-write
+requirement|design|plan` names the artifact just created and always prints its
+`/review-ask-questions`, even if its text already resembles a settled document.
 The `<x>` of `/implement-step` comes from the validation plan's own step list:
 the last verified step, or the plan's first step when none is verified, which
 is not always `1` (a plan may open on a step 0). Whether the settled-plan
@@ -70,6 +90,7 @@ skill instructions, not by `pw`.
 
 | Form | Effect |
 | --- | --- |
+| `pw skill --after-write requirement\|design\|plan` | reviews the named artifact just written, ignoring settled-looking markers; prints nothing and exits not-applicable when it is absent |
 | `pw skill --after-commit <x>` | told the plan step the pending commit completes, prints the contextual next action (next `/implement-step`, `/prepare-release`, or nothing) — read-only, used to build the commit-gate labels |
 | `pw skill --host claude\|codex` | forces the command prefix |
 | `pw skill <skill-name>` | prints a specific earlier phase's command, to re-run it by hand |
@@ -78,8 +99,10 @@ skill instructions, not by `pw`.
 
 ## 🚦 Exit and error behavior
 
-The tool exits `2` on fatal errors (`EXIT_FATAL`). A launcher error naming
-`No python_3* directory found in "\venvs"` means a stale copy of
+Skill mode exits `3` with empty stdout when no topic or requested artifact is
+applicable, so a caller cannot mistake an error note for a command. The tool
+exits `2` on fatal errors (`EXIT_FATAL`). A launcher error naming `No python_3*
+directory found in "\venvs"` means a stale copy of
 `prompt_workflow.bat` outside the real checkout.
 
 Related: [Run pw from any shell](../how-to/run-pw-from-any-shell.md),

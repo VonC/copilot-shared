@@ -19,7 +19,7 @@ human validation gates the normal AI-orchestrated workflow would provide.
 
 | Workflow | Normal invocation | What the AI calls | Human role |
 | --- | --- | --- | --- |
-| Document pipeline | Ask for `process-draft` or the required writing skill | writing, review, consolidation, and `pw skill` handoffs | answer structured questions and validate settled documents |
+| Document pipeline | Ask for `process-draft` or the required writing skill | writing, explicit `pw skill --after-write` review handoffs, consolidation, then state-based bare `pw skill` | answer structured questions and validate settled documents |
 | Implementation step | Ask for `implement-step N` | Groundhog, implementation check, missing-work repair, and grouped-commit preparation | validate decisions and approve commit replay |
 | Release preparation | Ask for `prepare-release` with release intent | planner, conflict previews, synchronization, merges, notes, version updates, and preparation commit | approve topology and notes; run `brel` later |
 | History sanitization | Ask for `sanitize-git-history` | contextual scan, rule validation, fresh-clone rewrite, and re-audit | approve replacement rules and destructive phase; push later if desired |
@@ -36,7 +36,7 @@ evidence.
 | `prepare_release_plan.bat` | `prepare-release` | developing the planner or diagnosing one topology without preparing a release |
 | `sensitive_history_scan.bat` / `shscan` | `sanitize-git-history` | performing an ad hoc read-only audit or developing replacement rules |
 | `ghog day` and subcommands | implementation and fix skills | learning the loop, diagnosing locally, or running the same quality gate without an AI session |
-| `pw handoff` / `pw skill` | workflow skills | debugging routing, resuming a known handoff, or using the interactive menu |
+| `pw handoff` / `pw skill` | workflow skills | debugging state routing, reproducing an explicit `--after-write` handoff, resuming a known phase, or using the interactive menu |
 | `gcba.bat` | grouped-commit approval flow | replaying a reviewed `a.commit` plan from a console |
 | release-note scripts and changelog tools | `prepare-release` | developing or diagnosing the release-note half independently |
 

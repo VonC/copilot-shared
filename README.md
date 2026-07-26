@@ -111,8 +111,9 @@ the end of each step writes the next prompt and the chain runs itself  --
 see [Automated implement cycle with pw handoff](#-automated-implement-cycle-with-pw-handoff).
 
 The document rows above (define  --  review  --  consolidate  --  design  --
-plan) chain the same way through `pw skill`: each writing and consolidate skill
-ends by running `pw skill` and following the command it prints, so the only
+plan) chain the same way through `pw skill`: each writer runs its explicit
+`pw skill --after-write <role>` handoff, while consolidation runs bare
+`pw skill`, and both follow the command printed, so the only
 trigger the author types is the first one, and the only human-in-the-loop stop
 is `/review-ask-questions`  --  see
 [Automated document phase with pw skill](#-automated-document-phase-with-pw-skill).
@@ -169,9 +170,10 @@ shows the main phases and which skill triggers each transition. See
 ```txt
 Legend for the transitions:
   -- /skill -->     the model runs that skill and writes the artifact
-  == pw skill ==>   an automated handoff: the writing or consolidate skill
-                    ends by running pw skill, reads the bare next-step command
-                    it prints (a "/" prefix for Claude, "$" for Codex), and
+  == pw skill ==>   an automated handoff: a writer runs pw skill --after-write
+                    for its artifact; consolidation runs bare pw skill. The
+                    caller reads the bare next-step command printed (a "/"
+                    prefix for Claude, "$" for Codex), and
                     runs it with no "go ahead"
   [STOP ...]        the only human-in-the-loop pauses in the whole flow
 
@@ -294,10 +296,11 @@ for how each transition fires.
 
 The document phase before that box now chains the same way, driven by
 `pw skill` rather than `pw handoff`. Each writing skill (`/write-requirement`,
-`/write-design`, `/write-plans`) ends by running `pw skill`, which reads the
-documents on disk and prints the next command  --  the matching
-`/review-ask-questions`  --  which the model then runs with no go-ahead. The
-review is the one stop: a human answers the `Q0x | Title | Recommended Answer`
+`/write-design`, `/write-plans`) ends by running `pw skill --after-write
+<role>`, which prints the matching `/review-ask-questions` for the artifact
+just written without inferring completion from its content. The model runs that
+review with no go-ahead. The review is the one stop: a human answers the
+`Q0x | Title | Recommended Answer`
 table, then `/consolidate-then-review-ask-questions` folds the answers and,
 once the document is settled, runs `pw skill` again to hand off to the next
 phase (design, plan, or the implement chain). See
@@ -410,10 +413,12 @@ instruction (`implement-step.md`, `implement-missing-step.md`, and
 
 Before the implement chain, the document phase  --  requirement, design, and
 plan  --  chains the same way, driven by `pw skill` instead of `pw handoff`.
-`pw skill` is the prompt-workflow launcher's read-only router: it reads the
-effort's documents on disk, works out which phase is done and which comes next,
-and prints one bare next-step command. The writing and consolidation skills end
-by running it and following that command, so the document phase advances with no
+`pw skill` is the prompt-workflow launcher's read-only router with two document
+handoffs. Bare `pw skill` reads the effort's documents on disk and derives what
+comes next after review or consolidation. A writer uses `pw skill --after-write
+requirement|design|plan`, which reviews the named artifact it just created
+without treating settled-looking text as proof that review already happened.
+Both forms print one bare next-step command, which the caller follows with no
 menu and no "go ahead".
 
 ### What pw skill prints
@@ -439,9 +444,10 @@ when its document exists, to re-run a phase by hand.
 The `## Handoff` section of each document skill wires the chain:
 
 - `/write-requirement`, `/write-design`, and `/write-plans` each end by running
-  `pw skill`, which prints the matching `/review-ask-questions`; the model runs
-  it straight away. Passing `stop here` to the writing skill holds the chain so
-  the author can read the document before the review.
+  `pw skill --after-write requirement|design|plan`, respectively. That explicit
+  form prints the matching `/review-ask-questions`; the model runs it straight
+  away. Passing `stop here` to the writing skill holds the chain so the author
+  can read the document before the review.
 - `/consolidate-then-review-ask-questions`, once it has folded every answer and
   the document reads as settled, runs `pw skill` to hand off to the next phase
   (`/write-design`, `/write-plans`, or `/implement-step`).
@@ -946,6 +952,7 @@ the shared skill bodies. The Doskey aliases are documented in detail in
 | `pw` | Doskey alias to `bin\prompt_workflow.bat` (`tools\prompt_workflow.py`); builds the next cycle prompt, interactively or via `pw handoff <task> <x>` and `pw skill`. |
 | `pw handoff` | The non-interactive `pw handoff <task> <x>` subcommand; writes the next step prompt with no menu, the engine of the automated implement chain. |
 | `pw skill` | The read-only `pw skill` subcommand; reads the docs on disk and prints the bare next-step command (host-prefixed `/` for Claude or `$` for Codex), the engine of the automated document phase. |
+| `pw skill --after-write` | The writer handoff form; told which artifact role was just created, prints its `/review-ask-questions` command without inferring review completion from document content. |
 | `pw skill --after-commit` | The commit-gate form; told the just-committed plan step, prints the contextual next action (the next `/implement-step`, `/prepare-release`, or nothing). |
 | `Qxx` block | An open-question block appended by the review skills (options + recommended choice). |
 | `ruffc` | Doskey alias to `ruff check`. |

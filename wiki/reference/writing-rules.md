@@ -57,8 +57,11 @@ tokens twice, call and output:
 
 Which prefix to print before a workflow command: `$` when
 `CODEX_THREAD_ID` is set, `/` when `CLAUDECODE` is set, `$` when both
-are, and the `<command-prefix>` placeholder (or the prefix `pw skill`
-prints) when neither is.
+are, and the `<command-prefix>` placeholder when neither is. Prefix selection
+and skill naming are separate: `pw skill` renders `/write-design` for Claude
+and the installed-plugin name `$llm-shared:write-design` for Codex. Trust the
+complete command it prints rather than adding or removing the namespace by
+hand.
 
 ## 🎛️ interactive_menu.md
 

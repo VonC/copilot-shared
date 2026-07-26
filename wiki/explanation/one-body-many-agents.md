@@ -66,8 +66,10 @@ body either says it or it does not, whatever the host.
 
 What actually differs between hosts is kept out of the bodies:
 
-- the command prefix (`/` versus `$`) is decided at print time by
-  `pw skill` and `rules/command_prefix_char.md`,
+- the complete command token is decided at print time: Claude uses
+  `/write-design`, while the installed Codex plugin uses
+  `$llm-shared:write-design`; `pw skill` and
+  `rules/command_prefix_char.md` keep that host detail at the edge,
 - menus go through `rules/interactive_menu.md`, which picks the host's
   native choice mechanism and never assumes a TTY,
 - shell mechanics go through `rules/run_commands.md`, and the `bin\*.bat`

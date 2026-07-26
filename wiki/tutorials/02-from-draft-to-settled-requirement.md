@@ -54,8 +54,30 @@ its three inputs (type, version, topic label), then writes
 [requirement template](../reference/templates.md).
 
 No "go ahead" is needed here: the writing skill ends by running
-`pw skill`, which prints the next command, and the model runs it straight
-away.
+`pw skill --after-write requirement`. That explicit handoff prints the
+review command for the requirement just created, even if its prose already
+contains words that resemble a settled decision. The model runs the printed
+command straight away.
+
+### Collection variation: keep the umbrella draft
+
+If `/process-draft` classified the note as a collection, `/split-and-define`
+adds item slugs such as `[route-cleanup]` to the umbrella draft. Keep that file
+under its collection name:
+
+```txt
+docs\draft.v10.0.0.sentinel.md
+docs\issue.v10.0.0.route-cleanup.md
+branch: route_cleanup
+```
+
+The item branch does not require a renamed
+`draft.v10.0.0.route-cleanup.md`. When ordinary branch memory and changed-draft
+resolution find no topic, `pw skill` matches the branch leaf to exactly one
+requirement slug, treating `-` and `_` as equivalent. It then uses a direct
+same-slug draft when one exists, or the one same-version umbrella draft that
+mentions the complete item slug. Missing or ambiguous relationships stop
+resolution instead of borrowing an unrelated draft.
 
 ## 4. Stop at the review table
 
@@ -76,8 +98,10 @@ Run (or accept) `/consolidate-then-review-ask-questions on docs\...`. The
 skill folds each answer into the document body, records them in a decision
 table, strips the open-questions section, and either asks a new round or
 declares the document settled. When it settles, `pw skill` hands off to
-`/write-design` — the same write, review, consolidate loop then repeats
-for the design and for the plan.
+`/write-design`. The design writer then uses `pw skill --after-write design`
+to force design review, and the plan writer uses `pw skill --after-write plan`
+to force plan review. Bare `pw skill` remains the state-based handoff after a
+review or consolidation has actually settled a document.
 
 ## 6. Look at what landed on disk
 

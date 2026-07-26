@@ -62,6 +62,11 @@ This is a deliberate stop: nothing runs until a human answers.
      chain on the plan's first step, whose id comes from the validation
      plan and is not always `1`) with no "go ahead".
 
+Bare `pw skill` is correct here because the review or consolidation has just
+established the document's state. The writing skills use the complementary
+`pw skill --after-write requirement|design|plan` form before this point so a
+new artifact cannot skip its first review.
+
 ## ✋ Holding the chain at the implementation gate
 
 The settled-plan handoff starts the implementation by default. To settle
