@@ -19,6 +19,8 @@ This skill calls other skills and tools:
   green gate needed fixes that must be committed.
 - `update-merge-commit-msg` after it merges an integration, feature, or
   promotion branch into main.
+- `review-and-update-project-docs` against `<last_tag>..HEAD` when `wiki/`
+  or `docs/wiki/` exists, before release notes are generated.
 - `prepare_release_notes` for the `version.txt` summary and the
   `CHANGELOG.md`.
 - the `ghog day` groundhog loop (the `groundhog` skill) to prove the suite
@@ -502,7 +504,7 @@ Cross-check the derived `X.Y.Z` against the first word of `version.txt`:
   snapshot as a target-version choice; otherwise stop and explain that no new
   release version can be derived.
 - `version.txt` still holds the previous release number (no `-SNAPSHOT`),
-  or a matching `X.Y.Z-SNAPSHOT`: that is expected, Step 8 sets it.
+  or a matching `X.Y.Z-SNAPSHOT`: that is expected, Step 9 sets it.
 - `version.txt` holds a different `-SNAPSHOT` version: stop and present a
   version choice with the effort-document version and the `version.txt`
   version.
@@ -717,7 +719,7 @@ In feature mode, use the boundary and commit list confirmed in Step 3.
   Stop when range-diff shows a dropped or added commit outside deliberate
   conflict-resolution changes. Otherwise run the green-gate routine on the
   promotion branch, set it as `<source_branch>`, and continue to Step 6. Keep
-  the promotion branch through the user's final review; report it at Step 13
+  the promotion branch through the user's final review; report it at Step 14
   so the user can delete it after `brel`.
 
 There is no feature-mode "merge stale anyway" path: it would widen the release
@@ -806,14 +808,63 @@ through the skill (a free-form amend, or a skipped step). Do not continue to
 Step 8: run `update-merge-commit-msg` again so the merge message gets the
 required structure.
 
-### Step 8 — Set the snapshot version in version.txt
+### Step 8 — Audit and update existing Diataxis wiki roots
+
+Check for these documentation roots:
+
+- `<PRJ_DIR>/wiki`
+- `<PRJ_DIR>/docs/wiki`
+
+Do not create either root. When neither exists, record that the wiki audit was
+not applicable and continue to Step 9. When one or both exist, audit every
+existing root.
+
+The review scope is the complete release range `<last_tag>..HEAD` at this
+point. This is deliberately not the feature-only or integration-only planning
+range: after Step 6, `HEAD` is the exact main history being prepared, and the
+wiki must account for every commit that will be released. Read the commit
+subjects, changed-file list, relevant per-topic diffs, and final state. A later
+commit that reverted or replaced an earlier change determines what the wiki
+should describe.
+
+Create the flag file if it is not already present, then invoke
+`review-and-update-project-docs` with:
+
+- every existing wiki root as the only documentation target;
+- `<last_tag>..HEAD` as the review scope;
+- an explicit request to map every release topic to suitable wiki coverage,
+  update gaps, validate links and Diataxis purpose, and report uncovered
+  topics.
+
+```bash
+touch "<PRJ_DIR>/a.prepare-release.active"
+```
+
+The wiki review must preserve one purpose per page and category order:
+explanation, tutorials, how-to guides, then reference. It need not force every
+release topic into all four categories.
+
+When the review reports an uncovered topic or an unresolved question, stop
+and resolve it before continuing. When it changes no file, continue to Step 9.
+When it changes wiki files:
+
+1. Review the skill's validation results.
+2. Stage only the changed files under the selected wiki roots.
+3. Create or keep the flag file, invoke `group-commits-msg`, and wait for the
+   user's commit review choice.
+4. On a go-ahead selection, commit the wiki changes and return here.
+
+The wiki commit must land before Step 10 prepares release notes, so its
+conventional subject is part of the release history and changelog input.
+
+### Step 9 — Set the snapshot version in version.txt
 
 Read the first line of `<PRJ_DIR>/version.txt`. When its first word is not
 the target `X.Y.Z-SNAPSHOT`, rewrite that first word to `X.Y.Z-SNAPSHOT`,
 keeping the ` -- ` separator and the rest of the line. This is the form
 `prepare_release_notes` and `brel` both expect.
 
-### Step 9 — Prepare the release notes and the changelog
+### Step 10 — Prepare the release notes and the changelog
 
 Create the flag file if it is not already present, then invoke the
 `prepare_release_notes` skill:
@@ -831,16 +882,16 @@ Do not run `update-changelog.bat` again yourself: `prepare_release_notes`
 already updates `CHANGELOG.md`, and `brel` regenerates it at release time.
 Running it a third time here would be duplicate work.
 
-### Step 10 — Review pause for version.txt and the changelog
+### Step 11 — Review pause for version.txt and the changelog
 
-Step 9 has written `version.txt` and `CHANGELOG.md`. Stop here, before Step
-11, so the user can refine the release notes. This pause is for the
+Step 10 has written `version.txt` and `CHANGELOG.md`. Stop here, before Step
+12, so the user can refine the release notes. This pause is for the
 release-notes content only: the `version.txt` summary and the
 `.changelog.fixes` rules that shape how `CHANGELOG.md` reads. It is not for
 coding a project fix; the code was already taken to green by the `ghog day`
 gate earlier.
 
-1. Stage the two files Step 9 changed, as a baseline that makes any later
+1. Stage the two files Step 10 changed, as a baseline that makes any later
    edit trivial to detect with a `git diff`, and note the current HEAD, since
    the changelog is built from the git history and a commit landing during
    the pause makes it stale:
@@ -888,11 +939,11 @@ gate earlier.
      toolchain script (see [`../rules/run_commands.md`](../rules/run_commands.md)).
 
    - When nothing changed (a go-ahead selection that follows no further edit),
-     continue to Step 11.
+     continue to Step 12.
 
 This loop ends on a go-ahead selection with nothing left to regenerate.
 
-### Step 11 — Update pyproject.toml and uv
+### Step 12 — Update pyproject.toml and uv
 
 Only when a `pyproject.toml` exists at `<PRJ_DIR>`:
 
@@ -904,9 +955,9 @@ Only when a `pyproject.toml` exists at `<PRJ_DIR>`:
 `pyproject.toml` deliberately sits at the release `X.Y.Z` while
 `version.txt` stays at `X.Y.Z-SNAPSHOT` until `brel`; that gap is intended.
 
-### Step 12 — Make the single prepare commit
+### Step 13 — Make the single prepare commit
 
-Stage `version.txt`, `CHANGELOG.md`, `.changelog.fixes` when Step 10 changed
+Stage `version.txt`, `CHANGELOG.md`, `.changelog.fixes` when Step 11 changed
 it, and, when present, `pyproject.toml` and `uv.lock`, then commit them
 together:
 
@@ -915,11 +966,11 @@ git -C "<PRJ_DIR>" add version.txt CHANGELOG.md
 git -C "<PRJ_DIR>" commit -m "chore(release): prepare for vX.Y.Z release"
 ```
 
-Add `.changelog.fixes` to the `add` when Step 10 changed it, and
-`pyproject.toml` and `uv.lock` when Step 11 ran. Keep it to this one commit,
+Add `.changelog.fixes` to the `add` when Step 11 changed it, and
+`pyproject.toml` and `uv.lock` when Step 12 ran. Keep it to this one commit,
 so the human review and the later `brel` see one clean prepare step.
 
-### Step 13 — Final clean-tree gate, report and stop
+### Step 14 — Final clean-tree gate, report and stop
 
 Check the tree one last time before reporting:
 
@@ -929,7 +980,7 @@ git -C "<PRJ_DIR>" status --porcelain
 
 The Step 4 gate ran before any mutation, but the later pauses can
 dirty the tree again (an editor or spell-checker tweak during the
-Step 10 review, a tool-written file), and the Step 12 prepare commit
+Step 11 review, a tool-written file), and the Step 13 prepare commit
 stages only the named release files, so anything else stays behind.
 When the status is not empty, never present "run `brel`" as the next
 step on a dirty tree: list the pending files, signal that `brel` must
@@ -977,7 +1028,7 @@ Run the skill twice and the second run does nothing harmful:
 - The Step 5 base check is a no-op once integration contains the latest main,
   stops an already-integrated feature, or is a no-op once a feature's
   confirmed range already sits safely on latest main.
-- The Step 8 version write is a no-op when `version.txt` already holds the
+- The Step 9 version write is a no-op when `version.txt` already holds the
   target `X.Y.Z-SNAPSHOT`.
 - `prepare_release_notes` stops on its own when the last tag already
   matches the snapshot version.

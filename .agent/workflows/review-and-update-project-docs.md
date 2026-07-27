@@ -1,5 +1,5 @@
 ---
-description: Review code and update project markdown documentation files (README.md, ARCHITECTURE.md, docs/architecture/**). If no specific markdown target is mentioned in the prompt, all documentation files are updated.
+description: Review code or a Git range and update project Markdown documentation, including existing Diataxis roots under wiki/** or docs/wiki/**.
 ---
 
 1. Locate the shared instruction body `instructions/review-and-update-project-docs.md`: in this

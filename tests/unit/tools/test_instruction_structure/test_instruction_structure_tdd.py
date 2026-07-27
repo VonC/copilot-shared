@@ -71,6 +71,52 @@ def test_prepare_release_distinguishes_branch_roles() -> None:
     assert 'merge --no-ff "<source_branch>"' in content
 
 
+def test_prepare_release_audits_existing_diataxis_wikis_before_notes() -> None:
+    """Release prep covers every release commit before generating its notes."""
+    root = steps.llm_shared_dir()
+    instruction = _read("prepare-release.md")
+    content = " ".join(instruction.split())
+
+    assert "### Step 8 — Audit and update existing Diataxis wiki roots" in instruction
+    assert "`<PRJ_DIR>/wiki`" in instruction
+    assert "`<PRJ_DIR>/docs/wiki`" in instruction
+    assert "complete release range `<last_tag>..HEAD`" in content
+    assert "`review-and-update-project-docs`" in instruction
+    assert "`group-commits-msg`" in instruction
+    assert instruction.index("### Step 8") < instruction.index(
+        "### Step 10 — Prepare the release notes",
+    )
+
+    review = _read("review-and-update-project-docs.md")
+    review_content = " ".join(review.split())
+    assert "`wiki/` or `docs/wiki/`" in review_content
+    assert "If a Git range was provided" in review
+    assert (
+        "explanation, tutorials, how-to guides, then reference"
+        in review_content
+    )
+    assert "a.prepare-release.active" in review
+
+    pages = (
+        root / "wiki" / "explanation" / "why-documents-before-code.md",
+        root / "wiki" / "tutorials" / "05-prepare-a-release-from-develop.md",
+        root / "wiki" / "how-to" / "prepare-a-release.md",
+        root / "wiki" / "reference" / "skills-catalog.md",
+    )
+    assert all("wiki" in path.read_text(encoding="utf-8").lower() for path in pages)
+
+    entry_points = (
+        root / ".github" / "skills" / "prepare-release" / "SKILL.md",
+        root / ".claude" / "skills" / "prepare-release" / "SKILL.md",
+        root / ".agents" / "llm-shared" / "skills" / "prepare-release" / "SKILL.md",
+        root / ".agent" / "workflows" / "prepare-release.md",
+    )
+    assert all(
+        "wiki" in path.read_text(encoding="utf-8").lower()
+        for path in entry_points
+    )
+
+
 def test_prepare_release_stops_features_already_contained_by_main() -> None:
     """prepare-release does not attempt an empty replay of an integrated feature."""
     content = " ".join(_read("prepare-release.md").split())

@@ -1,5 +1,5 @@
 ---
-description: Apply gitworkflow topic graduation, automatically plan and preview conflicts, prepare supported main/integration/feature releases, and give evidence-backed manual runbooks with verification and re-entry instructions for unsupported selections; stop before brel.
+description: Prepare supported releases, audit existing Diataxis wiki roots against every release commit, and stop unsupported selections with an evidence-backed runbook; stop before brel.
 ---
 
 1. Locate the shared instruction body `instructions/prepare-release.md`: in this
