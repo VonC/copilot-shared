@@ -104,6 +104,12 @@ into `main` when it graduates. The second merge is not a duplicate accident;
 it records a different decision at a different stability level. Crucially,
 `develop` itself is not the source of that selective release.
 
+Those two decisions need separate merge messages. Git's default message records
+the branch names but not why the topic was accepted at that target. Rewording
+the current merge before push records integration acceptance on `develop` and
+release acceptance on `main`; rewording only the later merge leaves the first
+shared-history boundary unexplained.
+
 A feature branch created from develop often contains earlier develop commits
 as ancestry. Plain `git rebase main` does not know which commits express the
 feature: it can replay every commit reachable from the feature branch but not

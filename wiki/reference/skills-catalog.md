@@ -33,9 +33,15 @@ prerequisites already satisfied.
 | `/implementation-check N` | the plan, the diff | verdict in `docs\plan...validation.md` |
 | `/implement-missing-step N` | the `Missing work` list | code and tests filling the gaps |
 | `/group-commits-msg` | the staged diff | `a.commit`, one message per group |
-| `/update-merge-commit-msg` | the merge commit | `a.docs`, `a.commit`, reworded merge |
+| `/update-merge-commit-msg` | the current no-fast-forward merge | `a.docs`, `a.commit`, current merge reworded before push |
 | `/prepare_release_notes` | `version.txt`, git history | `a.md`, `version.txt` summary, `CHANGELOG.md` |
 | `/prepare-release` | `main`, integration, or an isolated effort branch | one `chore(release): prepare` commit on `main`, or an evidence-backed manual runbook when the requested selection is unsupported |
+
+`/update-merge-commit-msg` runs immediately after a feature merge into
+`develop` or any no-fast-forward merge into `main`. The merge must still be the
+current commit, and the target branch must not be pushed or used for later
+integration work first. Rewording a historical merge requires a separate
+history-repair plan.
 
 ## 🛠️ Support skills
 

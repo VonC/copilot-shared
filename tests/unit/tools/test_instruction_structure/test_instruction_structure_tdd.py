@@ -443,6 +443,24 @@ def test_merge_reword_skill_covers_all_llms_and_shared_targets() -> None:
     assert "Do not push the target branch" in instruction
 
 
+def test_wiki_explains_and_specifies_shared_target_rewording() -> None:
+    """The wiki gives the rationale and exact contract for merge rewording."""
+    wiki = steps.llm_shared_dir() / "wiki"
+    explanation = (
+        wiki / "explanation" / "why-release-branch-roles-matter.md"
+    ).read_text(encoding="utf-8")
+    reference = (wiki / "reference" / "skills-catalog.md").read_text(
+        encoding="utf-8",
+    )
+    reference_words = " ".join(reference.split())
+
+    assert "Those two decisions need separate merge messages" in explanation
+    assert "feature merge into `develop`" in reference_words
+    assert "any no-fast-forward merge into `main`" in reference_words
+    assert "current commit" in reference_words
+    assert "history-repair plan" in reference_words
+
+
 def test_pw_running_instructions_link_to_the_run_pw_note() -> None:
     """Each instruction that runs a pw command points at run-pw.md."""
     for name in (
