@@ -419,6 +419,30 @@ def test_codex_plugin_packages_every_instruction() -> None:
         assert packaged.read_bytes() == (_INSTRUCTIONS / instruction_name).read_bytes()
 
 
+def test_merge_reword_skill_covers_all_llms_and_shared_targets() -> None:
+    """All four hosts discover the reword rule for develop and main merges."""
+    root = steps.llm_shared_dir()
+    trigger = "feature merge into develop or any merge into main"
+    entry_points = (
+        root / ".github" / "skills" / "update-merge-commit-msg" / "SKILL.md",
+        root / ".claude" / "skills" / "update-merge-commit-msg" / "SKILL.md",
+        root
+        / ".agents"
+        / "llm-shared"
+        / "skills"
+        / "update-merge-commit-msg"
+        / "SKILL.md",
+        root / ".agent" / "workflows" / "update-merge-commit-msg.md",
+    )
+
+    assert all(trigger in path.read_text(encoding="utf-8") for path in entry_points)
+
+    instruction = _read("update-merge-commit-msg.md")
+    assert "merging a feature branch into `develop` for integration" in instruction
+    assert "promotion branch into `main`" in instruction
+    assert "Do not push the target branch" in instruction
+
+
 def test_pw_running_instructions_link_to_the_run_pw_note() -> None:
     """Each instruction that runs a pw command points at run-pw.md."""
     for name in (

@@ -1,6 +1,17 @@
 # Update merge commit message
 
-When you merge a branch, the default commit message is not very informative. You can use this skill to update the merge commit message with a conventional commit message based on docs found in the merged branch.
+When you merge a branch, the default commit message is not very informative. Use this skill to update the merge commit message with a conventional commit message based on docs found in the merged branch.
+
+Run this skill immediately after every no-fast-forward merge into a shared
+target branch. The required cases include:
+
+- merging a feature branch into `develop` for integration;
+- merging a feature, integration, or promotion branch into `main`.
+
+Do not push the target branch or continue with later integration or release
+work while its current merge still has Git's default message. The reworded
+merge must be the current commit before this skill applies it; a historical
+merge needs a separate history-repair plan.
 
 Your goal is to write an `a.commit` with a conventional commit message explaining what is merged (why and what).
 
