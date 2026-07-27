@@ -104,7 +104,7 @@ after the trigger completes.
 | Group commits | `pw handoff after-check` routes a `Yes` step to `/group-commits-msg`; `gcba` replays | `a.commit` with one conventional commit per group, replayed by `gcba` |
 | Merge and reword | Merge a feature into `develop`, or work into `main`, with `--no-ff`; then run `/update-merge-commit-msg` and `grmc` | Merge commit with a conventional message tied to the merged docs |
 | Prepare release notes | `/prepare_release_notes` | `a.md`, a release-notes summary in `version.txt`, an updated `CHANGELOG.md` |
-| Prepare release (automated) | `/prepare-release` | Rebases the branch onto the latest main when behind (with a `ghog day` gate), does the merge and reword, the `version.txt` snapshot, `/prepare_release_notes`, and the pyproject and uv steps, then one `chore(release): prepare for vX.Y.Z release` commit; stops before `brel` |
+| Prepare release (automated) | `/prepare-release` | Rebases the branch onto the latest main when behind (with a `ghog day` gate), does the merge and reword, audits existing Diataxis wiki roots against the release range, prepares notes and version files, then one `chore(release): prepare for vX.Y.Z release` commit; stops before `brel` |
 | Release | `brel` | Version tag `vX.Y.Z` on `main`, marked `[valid]` after a green build |
 
 From `/implement-step N` down to the `a.commit` group-commit-message step,
@@ -569,11 +569,12 @@ build tooling.
 ## 🚀 Make a release with the prepare-release skill
 
 A release is more than the tag: the effort branch is merged into `main`,
-`version.txt` is set to `X.Y.Z-SNAPSHOT` with its release notes,
-`CHANGELOG.md` is updated, and only then is `main` tagged `vX.Y.Z` by
-`brel`. The `/prepare-release` skill drives every step except the tag, from
-any branch, and stops at one `chore(release): prepare for vX.Y.Z release`
-commit for the author to review.
+each existing `wiki/` or `docs/wiki/` Diataxis set is checked against every
+commit since the last tag, `version.txt` is set to `X.Y.Z-SNAPSHOT` with its
+release notes, `CHANGELOG.md` is updated, and only then is `main` tagged
+`vX.Y.Z` by `brel`. The `/prepare-release` skill drives every step except the
+tag, from any branch, and stops at one
+`chore(release): prepare for vX.Y.Z release` commit for the author to review.
 
 It calls the smaller skills rather than repeating them, signalling each
 through a git-ignored `a.prepare-release.active` flag file so the callee

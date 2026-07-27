@@ -1177,10 +1177,11 @@ Publish only after the merge commit message has been rewritten.
 
 A release on `main` is one command plus the tag. `/prepare-release` runs the
 whole preparation from any branch: it switches to `main` and merges the
-effort branch, rewords the merge, sets `version.txt` to `X.Y.Z-SNAPSHOT`,
-runs `/prepare_release_notes` (the steps shown below), updates
-`pyproject.toml` / `uv`, and makes one `chore(release): prepare` commit, then
-stops. The author reviews and runs `brel`, which creates the tag.
+effort branch, rewords the merge, audits existing Diataxis wiki roots against
+the release range, sets `version.txt` to `X.Y.Z-SNAPSHOT`, runs
+`/prepare_release_notes` (the steps shown below), updates `pyproject.toml` /
+`uv`, and makes one `chore(release): prepare` commit, then stops. The author
+reviews and runs `brel`, which creates the tag.
 `/prepare_release_notes` can also be run on its own, as the diagram details;
 neither skill ever tags. The pause-by-pause behaviour of the umbrella skill
 is in [Automate the prep with /prepare-release](#automate-the-prep-with-prepare-release).
@@ -1189,9 +1190,10 @@ is in [Automate the prep with /prepare-release](#automate-the-prep-with-prepare-
    ============================================================
     /prepare-release runs the whole prep below in ONE command,
     any branch: switch to main + merge --no-ff, reword the
-    merge, version.txt -> X.Y.Z-SNAPSHOT, the prepare_release_
-    notes steps shown, pyproject.toml + uv sync, then one
-    chore(release): prepare commit -- then it STOPS.
+    merge, audit existing Diataxis wiki roots, version.txt ->
+    X.Y.Z-SNAPSHOT, the prepare_release_notes steps shown,
+    pyproject.toml + uv sync, then one chore(release): prepare
+    commit -- then it STOPS.
    ============================================================
 
    +---------------------------------+
@@ -1316,6 +1318,7 @@ workflow needs both repositories wired into its `tools\` directory.
 
 `/prepare_release_notes` and `brel` are the two release moves, but a release
 also needs the effort branch merged into `main`, the merge commit reworded,
+existing `wiki/` or `docs/wiki/` content checked against every release commit,
 `version.txt` bumped to the snapshot, and `pyproject.toml` / `uv` updated.
 `/prepare-release` is the umbrella skill that drives all of that from any
 branch and stops at one `chore(release): prepare for vX.Y.Z release` commit,
@@ -1330,6 +1333,9 @@ control instead of ending on its own:
   `ghog day` gate needed.
 - `update-merge-commit-msg`  --  to give the merge commit the `Why:` /
   `What:` structure (a free-form merge message is refused).
+- `review-and-update-project-docs`  --  to audit every existing Diataxis wiki
+  root against `<last_tag>..HEAD` and commit reviewed corrections before
+  release notes.
 - `prepare_release_notes`  --  for the `version.txt` summary and the
   `CHANGELOG.md` (the six steps above).
 - the `ghog day` groundhog loop  --  the green gate, run on a rebased branch
@@ -1347,9 +1353,10 @@ a decision or an action, and several resume only on an explicit "go ahead":
 | Local main diverged from origin/main (Step 5) | Decide how to reconcile; the skill will not reset and drop local commits on its own |
 | `ghog day` not green (Step 5 or 6) | Review the fixes the skill grouped through group-commits-msg, then say "go ahead" to commit them |
 | Merge message (Step 7) | Review, and edit if wanted, the `Why:` / `What:` merge message before it is applied |
-| Title choice (Step 9) | Pick one of the three witty title / subtitle pairs for the release notes |
-| Notes review (Step 10) | Edit the `version.txt` summary, or ask for `.changelog.fixes` rules, then say "go ahead"; the skill regenerates `CHANGELOG.md` and pauses again until a "go ahead" follows no further edit |
-| End of the run (Step 13) | Review everything, then run `brel` to build and tag |
+| Diataxis wiki audit (Step 8) | Review grouped wiki corrections before they are committed into the release history |
+| Title choice (Step 10) | Pick one of the three witty title / subtitle pairs for the release notes |
+| Notes review (Step 11) | Edit the `version.txt` summary, or ask for `.changelog.fixes` rules, then say "go ahead"; the skill regenerates `CHANGELOG.md` and pauses again until a "go ahead" follows no further edit |
+| End of the run (Step 14) | Review everything, then run `brel` to build and tag |
 
 The skill never creates the tag and never pushes. The tag stays the
 author's call through `brel`, exactly as with `/prepare_release_notes` on

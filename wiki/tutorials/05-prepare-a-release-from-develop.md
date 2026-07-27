@@ -81,7 +81,19 @@ If develop does not contain the latest main, the skill does not rebase it. It
 offers to merge main into develop, runs the `ghog day` gate there, and only
 then returns to the promotion.
 
-## 4. Review the release notes
+## 4. Let the wiki catch up
+
+When `wiki/` or `docs/wiki/` exists, the skill reviews every commit in
+`<last_tag>..HEAD` against every existing Diataxis root. It updates missing or
+stale coverage while keeping explanation, tutorials, how-to guides, and
+reference pages focused on their own purposes.
+
+If pages change, review the grouped documentation commit and choose
+`Go ahead`. The commit lands before release notes, so its conventional subject
+is included in the release history. When neither wiki root exists, this step
+is skipped.
+
+## 5. Review the release notes
 
 The skill sets `version.txt` to `X.Y.Z-SNAPSHOT`, prepares `CHANGELOG.md`, and
 pauses. Refine the summary or ask for `.changelog.fixes` changes. Choose
@@ -93,7 +105,7 @@ The skill then updates `pyproject.toml` and `uv.lock` when present and creates:
 chore(release): prepare for vX.Y.Z release
 ```
 
-## 5. Finish outside the skill
+## 6. Finish outside the skill
 
 Review the merge and prepare commits on main. Then run `brel` yourself to
 build, finalize the version, and create the tag. The skill never pushes and
@@ -124,5 +136,6 @@ develop before its integration `--no-ff` merge and, when selected, replaying
 that logical feature onto main for a second `--no-ff` merge. Develop is also a
 long-lived default branch rather than a throw-away `next` branch.
 
+Background: [Why documents come before code](../explanation/why-documents-before-code.md).
 Next: [Prepare a release in every supported scenario](../how-to/prepare-a-release.md)
 and [Prepare-release scenarios](../reference/prepare-release-scenarios.md).

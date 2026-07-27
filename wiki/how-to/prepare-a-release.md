@@ -57,7 +57,8 @@ $llm-shared:prepare-release - prepare v9.13.5 from develop; later-version docume
 The skill detects the branch mode and effort documents since the last tag,
 checks the working tree, automatically invokes `prepare_release_plan.bat`,
 synchronizes with the latest `origin/main`, confirms the selected scope,
-merges `--no-ff` into `main` when needed, rewords the merge commit, sets
+merges `--no-ff` into `main` when needed, rewords the merge commit, audits
+every existing `wiki/` or `docs/wiki/` root against `<last_tag>..HEAD`, sets
 `version.txt` to `X.Y.Z-SNAPSHOT`, runs the release-notes steps, updates
 `pyproject.toml` and `uv.lock`, and lands one prepare commit. You do not run
 the planner or set `LLM_SHARED_DIR` yourself. It never tags and never pushes.
@@ -261,6 +262,7 @@ the groundhog loop), signalling each through the flag file
 | Local main diverged | decide how to reconcile; the skill never resets local commits |
 | `ghog day` not green | review the grouped fixes, then "go ahead" |
 | Merge message | review or edit the `Why:` / `What:` message |
+| Diataxis wiki audit | review grouped wiki corrections before release notes |
 | Title choice | pick one of three witty title and subtitle pairs |
 | Notes review | edit the `version.txt` summary, or ask for `.changelog.fixes` rules |
 | End of the run | review everything, then run `brel` |
@@ -285,11 +287,13 @@ tag, so `main` is never left half-tagged.
 
 ## ✅ Check before running brel
 
-`git log` on `main` ends with the merge commit (reworded) followed by one
-`chore(release): prepare for vX.Y.Z release` commit; `version.txt` carries
-the chosen title; `CHANGELOG.md` has the new section.
+`git log` on `main` contains any reviewed wiki-correction commit before the
+release-notes work and ends with one
+`chore(release): prepare for vX.Y.Z release` commit; `version.txt` carries the
+chosen title; `CHANGELOG.md` has the new section.
 
-Related: [Reword a merge commit from the branch docs](reword-a-merge-commit.md),
-[Prepare-release scenarios](../reference/prepare-release-scenarios.md),
-[Why release branch roles matter](../explanation/why-release-branch-roles-matter.md),
-and [Where the human stays in the loop](../explanation/where-the-human-stays-in-the-loop.md).
+Related: [Why release branch roles matter](../explanation/why-release-branch-roles-matter.md),
+[Where the human stays in the loop](../explanation/where-the-human-stays-in-the-loop.md),
+[Prepare your first release from develop](../tutorials/05-prepare-a-release-from-develop.md),
+[Reword a merge commit from the branch docs](reword-a-merge-commit.md), and
+[Prepare-release scenarios](../reference/prepare-release-scenarios.md).

@@ -4,8 +4,9 @@
 
 <!-- markdownlint-disable MD013 -->
 
-🤖 Goal: bring `README.md`, `ARCHITECTURE.md` and the files under
-`docs/architecture/` back in line with what the code actually does.
+🤖 Goal: bring `README.md`, `ARCHITECTURE.md`, `docs/architecture/`, and any
+existing `wiki/` or `docs/wiki/` Diataxis set back in line with the
+implementation or a selected Git range.
 
 ## Invocation model
 
@@ -22,9 +23,10 @@ when reviewing the AI's evidence file by file.
    /review-and-update-project-docs
    ```
 
-   Name specific markdown targets to restrict the update; name specific
-   code to restrict the review. With no scope, all documentation files are
-   checked after a global code review.
+   Name specific Markdown targets or wiki roots to restrict the update. Name
+   specific code or a Git range such as `v1.2.3..HEAD` to restrict the review.
+   With no scope, all existing target docs are checked after a global code
+   review.
 
 2. The skill reviews the code first, then cross-references each target
    document, flagging what is outdated, missing, inaccurate, or still
@@ -35,10 +37,18 @@ when reviewing the AI's evidence file by file.
    - `README.md` — usage: what a user runs and sees,
    - `ARCHITECTURE.md` — boundaries and layer responsibilities,
    - `docs/architecture/*.md` — one concern per file; a new concern gets a
-     new file.
+     new file,
+   - `wiki/` or `docs/wiki/` — one Diataxis purpose per page, with categories
+     presented as explanation, tutorials, how-to guides, then reference.
 
-4. It reports what was updated, what was left unchanged, what was created,
-   and any open questions it could not settle from the code alone.
+4. For a Git range, it maps every release topic to wiki coverage and checks the
+   final tree so reverted or replaced behavior is not documented.
+
+5. It validates changed links, page purpose, category order, and any focused
+   documentation tests supplied by the project.
+
+6. It reports what was updated, what was left unchanged, what was created,
+   and any open questions it could not settle from the reviewed scope.
 
 ## ✅ Check the update
 
@@ -46,5 +56,5 @@ The diff touches only sections that were stale, and every statement added
 can be traced to code the review saw — the skill does not write wishes,
 it writes what is there.
 
-Related: [skills catalog](../reference/skills-catalog.md),
-[Why documents come before code](../explanation/why-documents-before-code.md).
+Related: [Why documents come before code](../explanation/why-documents-before-code.md)
+and the [skills catalog](../reference/skills-catalog.md).

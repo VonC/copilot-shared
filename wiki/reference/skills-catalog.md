@@ -35,7 +35,7 @@ prerequisites already satisfied.
 | `/group-commits-msg` | the staged diff | `a.commit`, one message per group |
 | `/update-merge-commit-msg` | the current no-fast-forward merge | `a.docs`, `a.commit`, current merge reworded before push |
 | `/prepare_release_notes` | `version.txt`, git history | `a.md`, `version.txt` summary, `CHANGELOG.md` |
-| `/prepare-release` | `main`, integration, or an isolated effort branch | one `chore(release): prepare` commit on `main`, or an evidence-backed manual runbook when the requested selection is unsupported |
+| `/prepare-release` | `main`, integration, or an isolated effort branch | release-range Diataxis wiki audit, one `chore(release): prepare` commit on `main`, or an evidence-backed manual runbook for unsupported selections |
 
 `/update-merge-commit-msg` runs immediately after a feature merge into
 `develop` or any no-fast-forward merge into `main`. The merge must still be the
@@ -49,7 +49,7 @@ history-repair plan.
 | --- | --- |
 | `/groundhog` | the ghog fixing loop: walk, fix what the report names, walk again |
 | `/split-large-file` | split an over-budget file into single-responsibility files |
-| `/review-and-update-project-docs` | re-align README, ARCHITECTURE and docs/architecture with the code |
+| `/review-and-update-project-docs` | re-align README, architecture docs, and existing `wiki/` or `docs/wiki/` Diataxis roots with code or a Git range |
 | `/write-release-notes-summary` | draft release notes from conventional commit subjects |
 | `git-history-report` | build the standalone commit-history dashboard |
 | `activity-report` | French activity report from commit messages and md diffs |

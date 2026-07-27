@@ -48,6 +48,19 @@ extend, debug or explain that code in a future session gets the context
 it needs from the repository itself: the history carries the reasoning,
 not just the result.
 
+## 📚 Why the wiki gets a release-range review
+
+Documentation written one feature at a time can still leave a release-level
+gap: one commit changes a command, another changes its workflow, and a later
+fix replaces part of the first behavior. Reviewing only the final commit misses
+that combined story.
+
+Release preparation therefore compares every commit from the last tag through
+the prepared `HEAD` with each existing `wiki/` or `docs/wiki/` Diataxis set.
+The final tree decides what is true, while the commit sequence reveals which
+topics need coverage. Any wiki correction is committed before release notes,
+so the release history and its documentation agree.
+
 ## 🏷️ Why versions live in every filename
 
 Every artifact carries the `vX.Y.Z` slug of its effort:
@@ -58,7 +71,11 @@ what the merge reword reads.
 
 ## 👉 Where to look next
 
-- [From draft note to settled requirement](../tutorials/02-from-draft-to-settled-requirement.md)
-  to walk the first phase.
 - [Why the LLM reviews its own work](why-the-llm-reviews-its-own-work.md)
   for the loop that keeps each phase honest.
+- [From draft note to settled requirement](../tutorials/02-from-draft-to-settled-requirement.md)
+  to walk the first phase.
+- [Keep project docs in sync with the code](../how-to/update-project-docs-from-code.md)
+  to audit a Git range or selected files.
+- [Skills catalog](../reference/skills-catalog.md) for the exact documentation
+  and release-skill contracts.
