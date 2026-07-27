@@ -102,7 +102,7 @@ after the trigger completes.
 | Plan review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` on the plan | Plan open questions folded into a decision table; plan approved (the validation plan is left untouched) |
 | Implement and check | `/implement-step N`, then `pw handoff` chains `/implementation-check N` | Code, tests, and updates to the validation document |
 | Group commits | `pw handoff after-check` routes a `Yes` step to `/group-commits-msg`; `gcba` replays | `a.commit` with one conventional commit per group, replayed by `gcba` |
-| Merge and reword | `git merge --no-ff` then `/update-merge-commit-msg` then `grmc` | Merge commit with a conventional message tied to the merged docs |
+| Merge and reword | Merge a feature into `develop`, or work into `main`, with `--no-ff`; then run `/update-merge-commit-msg` and `grmc` | Merge commit with a conventional message tied to the merged docs |
 | Prepare release notes | `/prepare_release_notes` | `a.md`, a release-notes summary in `version.txt`, an updated `CHANGELOG.md` |
 | Prepare release (automated) | `/prepare-release` | Rebases the branch onto the latest main when behind (with a `ghog day` gate), does the merge and reword, the `version.txt` snapshot, `/prepare_release_notes`, and the pyproject and uv steps, then one `chore(release): prepare for vX.Y.Z release` commit; stops before `brel` |
 | Release | `brel` | Version tag `vX.Y.Z` on `main`, marked `[valid]` after a green build |

@@ -10,17 +10,19 @@ branch carried.
 
 ## Invocation model
 
-The release workflow normally asks the AI to update the merge message after a
-successful no-fast-forward merge. Use this procedure directly only to repair the
-current merge commit or to review the exact mechanics before approving the
-automated step.
+The integration and release workflows ask the AI to update the merge message
+after a successful no-fast-forward merge. This applies when a feature enters
+`develop` and when a feature, integration, or promotion branch enters `main`.
+Use this procedure directly only to repair the current merge commit or to
+review the exact mechanics before approving the automated step.
 
 ## 📋 Steps from merge to reworded message
 
-1. Create the merge as usual, from an up-to-date `main`:
+1. Create the merge from an up-to-date target branch. Use `develop` when
+   integrating a feature, or `main` when accepting work for release:
 
    ```cmd
-   git switch main
+   git switch <develop-or-main>
    git pull
    git merge --no-ff <your-branch>
    ```
@@ -44,7 +46,8 @@ automated step.
    object with `git commit-tree <tree> -p P1 -p P2 -F a.commit`, moves the
    branch ref, and empties `a.commit`.
 
-6. Push with `gp` (or `git push`).
+6. Push with `gp` (or `git push`). Never push `develop` or `main` between
+   the merge and the reword.
 
 ## 🚀 Inside a release preparation
 
@@ -54,8 +57,8 @@ control back to the release run instead of closing on its own.
 
 ## ✅ Check after the reword
 
-`git log -1` on `main` shows a `type(scope): subject` title tied to the
-merged effort, with the `Why:` / `What:` body — the message changelog
+`git log -1` on the target branch shows a `type(scope): subject` title tied
+to the merged effort, with the `Why:` / `What:` body — the message changelog
 generators and future readers will see.
 
 Related: [Commit message format](../reference/commit-message-format.md),

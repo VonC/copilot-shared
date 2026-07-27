@@ -1065,6 +1065,11 @@ but nothing triggers it.
 
 Repeat this sequence until every planned step is committed in your branch.
 
+The merge diagram below shows a direct merge to `main`. When a feature first
+enters `develop`, use `develop` as the target in the same sequence. Reword the
+feature-to-`develop` merge before pushing or doing more integration work; the
+later merge to `main` needs its own reworded message as well.
+
 ## 🔀 Merge your development branch
 
 ```txt
