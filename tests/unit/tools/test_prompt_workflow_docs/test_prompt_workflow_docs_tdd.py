@@ -41,6 +41,124 @@ def test_parse_draft_name_variants() -> None:
     assert docs.parse_draft_name("draft.v9.8.0..md") is None
 
 
+def test_collection_items_read_only_the_authoritative_ordered_split(
+    tmp_path: Path,
+) -> None:
+    """Inventory examples before the settled split do not become backlog items."""
+    draft = tmp_path / "draft.v10.0.0.sentinel.md"
+    draft.write_text(
+        '# Sentinel\n\n- Issue: "Example [not-an-item]": ignored.\n\n'
+        "## List of feature-requests and issues to create\n\n"
+        '- Issue: "Remove old routes [route-cleanup]": first.\n'
+        '- Feature-request: "Serve the root [root-routing]": second.\n\n'
+        "## Later notes\n\n"
+        '- Issue: "Too late [also-ignored]": ignored.\n',
+        encoding="utf-8",
+    )
+
+    items = docs.collection_items(draft)
+
+    assert [(item.kind, item.title, item.slug) for item in items] == [
+        ("issue", "Remove old routes", "route-cleanup"),
+        ("feature-request", "Serve the root", "root-routing"),
+    ]
+
+
+def test_collection_items_parse_canonical_umbrella_status_table(
+    tmp_path: Path,
+) -> None:
+    """The explicit umbrella table carries ordered status and evidence paths."""
+    draft = tmp_path / "draft.v10.0.0.sentinel.md"
+    draft.write_text(
+        "# Sentinel\n\n"
+        "- Draft role: umbrella\n\n"
+        "## List of feature-requests and issues to create\n\n"
+        "| Order | Type | Key title | Slug | Status | Requirement | Validation plan |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n"
+        "| 1 | Issue | Remove old routes | `route-cleanup` | completed | "
+        "`docs/issue.v10.0.0.route-cleanup.md` | "
+        "`docs/plan.v10.0.0.route-cleanup.validation.md` |\n"
+        "| 2 | Feature-request | Serve the root | `root-routing` | pending | - | - |\n",
+        encoding="utf-8",
+    )
+
+    items = docs.collection_items(draft)
+
+    assert items[0].status == "completed"
+    assert items[0].requirement_path == "docs/issue.v10.0.0.route-cleanup.md"
+    assert (
+        items[0].validation_plan_path
+        == "docs/plan.v10.0.0.route-cleanup.validation.md"
+    )
+    assert items[1].status == "pending"
+    assert items[1].requirement_path is None
+    assert items[1].validation_plan_path is None
+
+
+def test_collection_items_reject_malformed_canonical_order(tmp_path: Path) -> None:
+    """An umbrella marker makes malformed table order fail closed."""
+    draft = tmp_path / "draft.v10.0.0.sentinel.md"
+    draft.write_text(
+        "# Sentinel\n\n"
+        "- Draft role: umbrella\n\n"
+        "## List of feature-requests and issues to create\n\n"
+        "| Order | Type | Key title | Slug | Status | Requirement | Validation plan |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n"
+        "| 2 | Issue | Remove old routes | `route-cleanup` | pending | - | - |\n",
+        encoding="utf-8",
+    )
+
+    assert docs.collection_items(draft) == ()
+
+
+def test_collection_items_require_the_canonical_table_header(tmp_path: Path) -> None:
+    """An explicit umbrella without the exact schema fails closed."""
+    draft = tmp_path / "draft.v10.0.0.sentinel.md"
+    draft.write_text(
+        "# Sentinel\n\n"
+        "- Draft role: umbrella\n\n"
+        "## List of feature-requests and issues to create\n\n"
+        "| Order | Type | Slug |\n"
+        "| --- | --- | --- |\n",
+        encoding="utf-8",
+    )
+
+    assert docs.collection_items(draft) == ()
+
+
+def test_collection_items_require_the_canonical_table_separator(
+    tmp_path: Path,
+) -> None:
+    """A non-compact separator invalidates the machine-readable table."""
+    draft = tmp_path / "draft.v10.0.0.sentinel.md"
+    draft.write_text(
+        "# Sentinel\n\n"
+        "- Draft role: umbrella\n\n"
+        "## List of feature-requests and issues to create\n\n"
+        "| Order | Type | Key title | Slug | Status | Requirement | Validation plan |\n"
+        "| ---- | --- | --- | --- | --- | --- | --- |\n",
+        encoding="utf-8",
+    )
+
+    assert docs.collection_items(draft) == ()
+
+
+def test_collection_items_reject_wrong_canonical_row_width(tmp_path: Path) -> None:
+    """Every canonical row must have every evidence column."""
+    draft = tmp_path / "draft.v10.0.0.sentinel.md"
+    draft.write_text(
+        "# Sentinel\n\n"
+        "- Draft role: umbrella\n\n"
+        "## List of feature-requests and issues to create\n\n"
+        "| Order | Type | Key title | Slug | Status | Requirement | Validation plan |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n"
+        "| 1 | Issue | Remove routes | `route-cleanup` | pending | - |\n",
+        encoding="utf-8",
+    )
+
+    assert docs.collection_items(draft) == ()
+
+
 def test_draft_relpath_topic_requires_docs_folder() -> None:
     """A draft path only counts when it lives under the docs folder."""
     assert docs._draft_relpath_topic(Path("src/draft.v1.0.0.x.md")) is None

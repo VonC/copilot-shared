@@ -405,13 +405,22 @@ def test_main_dispatches_the_skill_subcommand(
     """The hub parses the skill subcommand with its name and host, then dispatches."""
     captured: dict[str, object] = {}
 
-    def fake_run_skill(
+    def fake_run_skill(  # noqa: PLR0913
         root: Path,
         skill_name: str | None,
         host_override: str | None,
-        after_commit: str | None, after_write: str | None,
+        after_commit: str | None,
+        after_write: str | None,
+        after_merge: str | None,
     ) -> int:
-        captured["call"] = (root, skill_name, host_override, after_commit, after_write)
+        captured["call"] = (
+            root,
+            skill_name,
+            host_override,
+            after_commit,
+            after_write,
+            after_merge,
+        )
         return 0
 
     monkeypatch.setattr(prompt_workflow.skill, "run_skill", fake_run_skill)
@@ -419,7 +428,14 @@ def test_main_dispatches_the_skill_subcommand(
         ["skill", "write-design", "--host", "codex", "--root", str(tmp_path)],
     )
     assert code == 0
-    assert captured["call"] == (tmp_path.resolve(), "write-design", "codex", None, None)
+    assert captured["call"] == (
+        tmp_path.resolve(),
+        "write-design",
+        "codex",
+        None,
+        None,
+        None,
+    )
 
 
 _VALIDATION_TWO_STEPS = (
@@ -481,19 +497,28 @@ def test_main_dispatches_the_skill_after_commit(
     """The hub parses --after-commit and dispatches it to run_skill."""
     captured: dict[str, object] = {}
 
-    def fake_run_skill(
+    def fake_run_skill(  # noqa: PLR0913
         root: Path,
         skill_name: str | None,
         host_override: str | None,
-        after_commit: str | None, after_write: str | None,
+        after_commit: str | None,
+        after_write: str | None,
+        after_merge: str | None,
     ) -> int:
-        captured["call"] = (root, skill_name, host_override, after_commit, after_write)
+        captured["call"] = (
+            root,
+            skill_name,
+            host_override,
+            after_commit,
+            after_write,
+            after_merge,
+        )
         return 0
 
     monkeypatch.setattr(prompt_workflow.skill, "run_skill", fake_run_skill)
     code = prompt_workflow.main(["skill", "--after-commit", "2", "--root", str(tmp_path)])
     assert code == 0
-    assert captured["call"] == (tmp_path.resolve(), None, None, "2", None)
+    assert captured["call"] == (tmp_path.resolve(), None, None, "2", None, None)
 
 
 def test_post_commit_command_implements_the_next_step(

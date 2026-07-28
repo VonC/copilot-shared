@@ -34,6 +34,12 @@ Post-write routing: ``pw skill --after-write <role>`` bypasses disk-derived
 advancement and reviews the artifact that was just written. This keeps a writer
 from skipping review when its new document already contains text that resembles
 a settled decisions marker.
+
+Post-merge collection routing: ``pw skill --after-merge <umbrella-draft>``
+walks the authoritative split in order. Completed validation plans are skipped;
+the first item without a requirement is handed to ``process-draft`` with its
+slug, while an already-started item resumes its normal disk-derived workflow.
+Only when every item is complete does it return ``prepare-release``.
 """
 
 from __future__ import annotations
@@ -49,7 +55,13 @@ from tools import prompt_workflow_handoff as handoff
 from tools import prompt_workflow_memory as memory
 from tools import prompt_workflow_plan as plan
 from tools import prompt_workflow_steps as steps
-from tools.prompt_workflow_models import VALIDATION_SUFFIX, MemoryRecord, Topic
+from tools.prompt_workflow_models import (
+    VALIDATION_SUFFIX,
+    CollectionItem,
+    MemoryRecord,
+    PromptWorkflowError,
+    Topic,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -334,12 +346,13 @@ FORCED_ROLE = {
 AFTER_WRITE_ROLES = ("requirement", "design", "plan")
 
 
-def run_skill(
+def run_skill(  # noqa: PLR0913
     root: Path,
     skill_name: str | None,
     host_override: str | None,
     after_commit: str | None = None,
     after_write: str | None = None,
+    after_merge: str | None = None,
 ) -> int:
     """Print the bare next-step command for the current topic, or a forced skill.
 
@@ -362,10 +375,17 @@ def run_skill(
             for, or None for the normal next-step or forced-skill behavior.
         after_write: The artifact role just written, or None for disk-derived
             routing.
+        after_merge: The repository-relative umbrella draft just merged into
+            its destination, or None outside the collection checkpoint.
 
     Returns:
         0 when a command is printed, ``EXIT_NOT_APPLICABLE`` otherwise.
     """
+    if after_merge is not None:
+        return _emit(
+            post_merge_command(root, after_merge, os.environ, host_override),
+            f"pw skill: no collection backlog resolved from {after_merge}.\n",
+        )
     if after_commit is not None:
         return _emit(
             post_commit_command(root, after_commit, os.environ, host_override),
@@ -390,6 +410,118 @@ def run_skill(
             f"pw skill: {skill_name} is not applicable here.\n",
         )
     return _emit(next_command(root, topic, branch, os.environ, host_override), "")
+
+
+def post_merge_command(
+    root: Path,
+    umbrella_document: str,
+    env: Mapping[str, str],
+    override: str | None = None,
+) -> str | None:
+    """Return the next collection action after one feature was merged.
+
+    The settled split is read in its declared dependency order. An item is
+    complete only when its validation plan's document-level status is the exact
+    ``Yes, it is implemented.`` sentence. A missing requirement starts the next
+    item through ``process-draft``; an existing but incomplete item resumes the
+    ordinary workflow; an exhausted collection returns ``prepare-release``.
+    """
+    path = (root / umbrella_document).resolve()
+    try:
+        path.relative_to(root.resolve())
+    except ValueError:
+        return None
+    parsed = docs.parse_draft_name(path.name)
+    if not path.is_file() or parsed is None:
+        return None
+    version, _umbrella_slug = parsed
+    items = docs.collection_items(path)
+    if not items:
+        return None
+    prefix = host_prefix(env, override)
+    for item in items:
+        topic = Topic(version=version, slug=item.slug, draft_path=path)
+        state = steps.compute_state(root, topic, None)
+        if item.status == "completed":
+            _validate_completed_collection_item(root, item)
+            continue
+        if item.status == "pending" and (
+            item.requirement_path is not None
+            or item.validation_plan_path is not None
+        ):
+            message = (
+                f"Pending umbrella item {item.slug!r} must use '-' for its "
+                "requirement and validation plan."
+            )
+            raise PromptWorkflowError(message)
+        if item.status == "pending" and _validation_plan_complete(
+            state.validation_plan,
+        ):
+            message = (
+                f"Umbrella item {item.slug!r} is pending, but "
+                f"{state.validation_plan} says it is implemented. Run "
+                "implementation-check for the final plan step so it can update "
+                "the umbrella row."
+            )
+            raise PromptWorkflowError(message)
+        if _validation_plan_complete(state.validation_plan):
+            continue
+        if state.requirement is None:
+            base = render_command(
+                prefix,
+                PROCESS_DRAFT,
+                _relpath(root, path),
+            )
+            return f"{base} based on {item.slug}"
+        return next_command(root, topic, item.slug, env, override)
+    return f"{prefix}prepare-release"
+
+
+def _validate_completed_collection_item(root: Path, item: CollectionItem) -> None:
+    """Require canonical completed rows to point at complete evidence."""
+    if item.requirement_path is None or item.validation_plan_path is None:
+        message = (
+            f"Completed umbrella item {item.slug!r} must name its requirement "
+            "and validation plan."
+        )
+        raise PromptWorkflowError(message)
+    requirement = _collection_document(root, item.requirement_path)
+    validation = _collection_document(root, item.validation_plan_path)
+    if not requirement.is_file():
+        message = (
+            f"Completed umbrella item {item.slug!r} names a missing requirement: "
+            f"{item.requirement_path}."
+        )
+        raise PromptWorkflowError(message)
+    if not _validation_plan_complete(validation):
+        message = (
+            f"Completed umbrella item {item.slug!r} does not have complete "
+            f"validation evidence at {item.validation_plan_path}."
+        )
+        raise PromptWorkflowError(message)
+
+
+def _collection_document(root: Path, document: str) -> Path:
+    """Resolve one declared collection document without leaving the project."""
+    path = (root / document).resolve()
+    try:
+        path.relative_to(root.resolve())
+    except ValueError as err:
+        message = f"Umbrella document path leaves the project root: {document}."
+        raise PromptWorkflowError(message) from err
+    return path
+
+
+def _validation_plan_complete(path: Path | None) -> bool:
+    """Return whether a validation plan carries the completed effort status."""
+    if path is None:
+        return False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        return stripped == "Yes, it is implemented."
+    return False
 
 
 def _emit(command: str | None, not_applicable_note: str) -> int:

@@ -496,6 +496,12 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         choices=skill.AFTER_WRITE_ROLES,
         help="Review the named artifact role that was just written.",
     )
+    skill_parser.add_argument(
+        "--after-merge",
+        dest="after_merge",
+        default=None,
+        help="Print the next ordered item from the named umbrella draft.",
+    )
     return parser
 
 
@@ -518,6 +524,7 @@ def main(argv: list[str] | None = None) -> int:
             args.host_override,
             args.after_commit,
             args.after_write,
+            args.after_merge,
         )
     return run(root, pick=args.pick)
 

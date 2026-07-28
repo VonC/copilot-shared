@@ -78,6 +78,22 @@ class Topic:
 
 
 @dataclass(frozen=True)
+class CollectionItem:
+    """One ordered requirement named by an umbrella draft's settled split.
+
+    ``status`` and the document paths are absent for the legacy bullet-only
+    format. Canonical umbrella tables always populate them.
+    """
+
+    kind: str
+    title: str
+    slug: str
+    status: str | None = None
+    requirement_path: str | None = None
+    validation_plan_path: str | None = None
+
+
+@dataclass(frozen=True)
 class WorkflowState:
     """The document and memory state used to evaluate step preconditions.
 

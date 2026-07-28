@@ -22,6 +22,7 @@ from tools import prompt_workflow_git as git
 from tools.prompt_workflow_models import (
     ROLE_DOC_TYPES,
     VALIDATION_SUFFIX,
+    CollectionItem,
     Topic,
 )
 
@@ -44,6 +45,24 @@ NO_OPEN_QUESTIONS_MARK = "No open questions"
 DOCS_DIR_NAME = "docs"
 DRAFT_PREFIX = "draft."
 MD_SUFFIX = ".md"
+# The split-and-define section is the authoritative ordered collection backlog.
+COLLECTION_HEADING = "## List of feature-requests and issues to create"
+UMBRELLA_MARKER = "- Draft role: umbrella"
+COLLECTION_TABLE_HEADER = (
+    "order",
+    "type",
+    "key title",
+    "slug",
+    "status",
+    "requirement",
+    "validation plan",
+)
+COLLECTION_STATUSES = frozenset({"pending", "completed"})
+COLLECTION_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+COLLECTION_ITEM_RE = re.compile(
+    r'^-\s+(Feature-request|Issue):\s+"(.+)\s+\[([a-z0-9][a-z0-9_-]*)\]":',
+    flags=re.IGNORECASE,
+)
 # Compatibility arity for tests that monkeypatch git.fork_point with the old
 # cwd-only callable.
 _FORK_POINT_LEGACY_ARITY = 1
@@ -70,6 +89,117 @@ def parse_draft_name(name: str) -> tuple[str, str] | None:
     if not rest.startswith(".") or not rest[1:]:
         return None
     return version, rest[1:]
+
+
+def collection_items(path: Path) -> tuple[CollectionItem, ...]:
+    """Return the ordered settled split from one umbrella draft.
+
+    Canonical umbrella drafts carry an explicit marker and a compact ordered
+    status table. Legacy top-level list entries below the same heading remain
+    readable for compatibility. Earlier examples and inventory bullets are
+    deliberately ignored.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+    try:
+        heading_index = lines.index(COLLECTION_HEADING)
+    except ValueError:
+        return ()
+    section = _collection_section(lines, heading_index + 1)
+    if UMBRELLA_MARKER in lines:
+        return _collection_table_items(section)
+    return _legacy_collection_items(section)
+
+
+def _collection_section(lines: list[str], start: int) -> list[str]:
+    """Return lines below the collection heading up to the next H2 heading."""
+    section: list[str] = []
+    for line in lines[start:]:
+        if line.startswith("## "):
+            break
+        section.append(line)
+    return section
+
+
+def _table_cells(line: str) -> tuple[str, ...]:
+    """Return normalized cells from one Markdown table row."""
+    if not line.startswith("|") or not line.endswith("|"):
+        return ()
+    return tuple(cell.strip() for cell in line[1:-1].split("|"))
+
+
+def _document_cell(cell: str) -> str | None:
+    """Return a document path from one canonical table cell."""
+    value = cell.strip().strip("`")
+    return None if value in {"", "-"} else value
+
+
+def _collection_table_items(section: list[str]) -> tuple[CollectionItem, ...]:
+    """Parse the canonical ordered umbrella status table."""
+    header_index = next(
+        (
+            index
+            for index, line in enumerate(section)
+            if tuple(cell.lower() for cell in _table_cells(line))
+            == COLLECTION_TABLE_HEADER
+        ),
+        None,
+    )
+    if header_index is None or header_index + 1 >= len(section):
+        return ()
+    separator = _table_cells(section[header_index + 1])
+    if len(separator) != len(COLLECTION_TABLE_HEADER) or any(
+        cell != "---" for cell in separator
+    ):
+        return ()
+
+    items: list[CollectionItem] = []
+    for line in section[header_index + 2 :]:
+        cells = _table_cells(line)
+        if not cells:
+            break
+        if len(cells) != len(COLLECTION_TABLE_HEADER):
+            return ()
+        order, kind, title, slug, status, requirement, validation = cells
+        kind = kind.lower()
+        slug = slug.strip("`")
+        status = status.lower()
+        if (
+            not order.isdigit()
+            or int(order) != len(items) + 1
+            or kind not in {"feature-request", "issue"}
+            or not title
+            or COLLECTION_SLUG_RE.fullmatch(slug) is None
+            or status not in COLLECTION_STATUSES
+        ):
+            return ()
+        items.append(
+            CollectionItem(
+                kind=kind,
+                title=title,
+                slug=slug,
+                status=status,
+                requirement_path=_document_cell(requirement),
+                validation_plan_path=_document_cell(validation),
+            ),
+        )
+    return tuple(items)
+
+
+def _legacy_collection_items(section: list[str]) -> tuple[CollectionItem, ...]:
+    """Parse the former bullet-only split format."""
+    items: list[CollectionItem] = []
+    for line in section:
+        match = COLLECTION_ITEM_RE.match(line)
+        if match is None:
+            continue
+        items.append(
+            CollectionItem(
+                kind=match.group(1).lower(),
+                title=match.group(2),
+                slug=match.group(3),
+            ),
+        )
+    return tuple(items)
 
 
 def _draft_relpath_topic(relpath: Path) -> tuple[str, str] | None:
