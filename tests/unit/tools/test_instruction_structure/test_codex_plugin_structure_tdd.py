@@ -52,3 +52,30 @@ def test_codex_plugin_packages_every_instruction(
     for instruction_name, skill, packaged, source in rows:
         assert f"[Instruction](../../instructions/{instruction_name})" in skill
         assert packaged == source
+
+
+def test_llmup_alias_refreshes_the_personal_codex_plugin() -> None:
+    """The console shortcut keeps the documented plugin update loop together."""
+    root = steps.llm_shared_dir()
+    doskeys = (root / "senv.doskey").read_text(encoding="utf-8")
+    launcher = (root / "bin" / "update_llm_shared_plugin.bat").read_text(
+        encoding="utf-8",
+    )
+    wiki = root / "wiki"
+    pages = (
+        wiki / "how-to" / "pick-up-skill-edits-without-restarting.md",
+        wiki / "how-to" / "register-skills-as-a-codex-plugin.md",
+        wiki / "reference" / "aliases-and-launchers.md",
+    )
+    layout = (wiki / "reference" / "repository-layout.md").read_text(
+        encoding="utf-8",
+    )
+
+    assert 'llmup="%LLM_SHARED_DIR%\\bin\\update_llm_shared_plugin.bat"' in doskeys
+    assert "--isolated --no-project --with PyYAML" in launcher
+    assert "validate_plugin.py" in launcher
+    assert "update_plugin_cachebuster.py" in launcher
+    assert "plugin add llm-shared@personal" in launcher
+    assert 'findstr /I /C:"llm-shared@personal"' in launcher
+    assert all("llmup" in path.read_text(encoding="utf-8") for path in pages)
+    assert "update_llm_shared_plugin" in layout

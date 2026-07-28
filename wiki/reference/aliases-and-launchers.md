@@ -27,6 +27,18 @@ the corresponding launcher.
 | `gp` | `git push` | push shortcut |
 | `brel` | `tools\dev_workflow\t_build.bat rel` | release build: drop `-SNAPSHOT`, commit, tag `vX.Y.Z` |
 
+## Codex plugin maintenance
+
+| Alias | Runs | Purpose |
+| --- | --- | --- |
+| `llmup` | `bin\update_llm_shared_plugin.bat` | validate `.agents\llm-shared`, replace its manifest cachebuster, reinstall `llm-shared@personal`, and print its installed row |
+
+`llmup` requires an interactive `cmd` initialized by `senv.bat`. The launcher
+uses `uv run --isolated --no-project --with PyYAML` for plugin validation, so
+the active project's environment is not changed. It locates the standalone
+Codex executable first and falls back to `codex.exe` on `PATH`. A successful
+run still needs a new Codex thread before the refreshed skill registry appears.
+
 ## 🧪 Test aliases (all backed by ghog)
 
 | Alias | Runs | Purpose |

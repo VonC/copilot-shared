@@ -102,15 +102,25 @@ The junction keeps the marketplace source synchronized with the clone, but
 Codex still caches the installed plugin by manifest version. After changing an
 instruction, wrapper, or bundled body:
 
-1. Validate the complete package.
-2. Replace the manifest cachebuster with the plugin-creator helper.
-3. Reinstall from the existing personal marketplace.
-4. Start a new thread.
+1. Initialize an interactive `cmd` with `senv.bat`.
+2. Run the repository shortcut:
 
 ```cmd
-python "<plugin-creator-skill>\scripts\validate_plugin.py" "<clone>\.agents\llm-shared"
-python "<plugin-creator-skill>\scripts\update_plugin_cachebuster.py" "<clone>\.agents\llm-shared"
-codex plugin add llm-shared@personal
+llmup
+```
+
+The shortcut validates the complete package with an isolated `PyYAML`
+dependency, replaces the manifest cachebuster with the plugin-creator helper,
+reinstalls from the existing personal marketplace, and filters the
+installed-plugin check to `llm-shared@personal`.
+
+3. Start a new thread.
+
+For a shell where the Doskey macro is unavailable, run the underlying launcher
+by full path:
+
+```cmd
+"<clone>\bin\update_llm_shared_plugin.bat"
 ```
 
 Keep the semantic version prefix and replace only its `+codex.<cachebuster>`

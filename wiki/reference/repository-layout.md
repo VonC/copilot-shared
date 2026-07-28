@@ -52,7 +52,8 @@ the matching body file directly.
 ```txt
 bin/                         self-locating .bat launchers: prompt_workflow (pw),
                              ghog, gcba, gcmp, wac, oqm, covg, ghd, new_draft,
-                             python_check, plus the bundled venvs/
+                             python_check, update_llm_shared_plugin, plus the
+                             bundled venvs/
 tools/                       the Python behind the launchers:
 ├─ prompt_workflow*.py       pw: menu, handoff, skill modes
 ├─ git_batch_commit*.py      validate and replay a.commit

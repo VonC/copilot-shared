@@ -13,6 +13,7 @@ grmc=bash -c "%LLM_SHARED_DIR_UNIX%/scripts/update-merge-commit-msg/git-reword-m
 
 uv="%PRGS%\uvs\latest\uv.exe" $*
 claude=claude.exe --add-dir=..\llm-shared $*
+llmup="%LLM_SHARED_DIR%\bin\update_llm_shared_plugin.bat"
 
 covg="%LLM_SHARED_DIR%\bin\covg.bat" $*$tif not errorlevel 1 echo %PRJ_DIR_NAME%: coverage_gap_functions done
 

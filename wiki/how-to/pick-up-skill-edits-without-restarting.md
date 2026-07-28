@@ -39,9 +39,16 @@ Codex injects the available-skills registry when a thread is created,
 and never retroactively: a resumed thread does not gain new or fixed
 skills. After editing the plugin package under `.agents/llm-shared/`:
 
-1. bump the `version` in `.codex-plugin/plugin.json`,
-2. reinstall: `codex plugin add llm-shared@personal`,
-3. start a **new** thread — resuming the old one is not enough.
+1. From an interactive `cmd` initialized by `senv.bat`, run:
+
+   ```cmd
+   llmup
+   ```
+
+   The alias validates the complete plugin in an isolated Python environment,
+   replaces the manifest cachebuster, reinstalls `llm-shared@personal`, and
+   prints only that plugin's installed row.
+2. Start a **new** thread — resuming the old one is not enough.
 
 `codex debug prompt-input` shows, outside any session, exactly which
 skills the next thread will receive.
