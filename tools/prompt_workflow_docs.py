@@ -135,21 +135,10 @@ def _document_cell(cell: str) -> str | None:
 
 def _collection_table_items(section: list[str]) -> tuple[CollectionItem, ...]:
     """Parse the canonical ordered umbrella status table."""
-    header_index = next(
-        (
-            index
-            for index, line in enumerate(section)
-            if tuple(cell.lower() for cell in _table_cells(line))
-            == COLLECTION_TABLE_HEADER
-        ),
-        None,
-    )
+    header_index = _collection_header_index(section)
     if header_index is None or header_index + 1 >= len(section):
         return ()
-    separator = _table_cells(section[header_index + 1])
-    if len(separator) != len(COLLECTION_TABLE_HEADER) or any(
-        cell != "---" for cell in separator
-    ):
+    if not _collection_separator_valid(section[header_index + 1]):
         return ()
 
     items: list[CollectionItem] = []
@@ -159,30 +148,61 @@ def _collection_table_items(section: list[str]) -> tuple[CollectionItem, ...]:
             break
         if len(cells) != len(COLLECTION_TABLE_HEADER):
             return ()
-        order, kind, title, slug, status, requirement, validation = cells
-        kind = kind.lower()
-        slug = slug.strip("`")
-        status = status.lower()
-        if (
-            not order.isdigit()
-            or int(order) != len(items) + 1
-            or kind not in {"feature-request", "issue"}
-            or not title
-            or COLLECTION_SLUG_RE.fullmatch(slug) is None
-            or status not in COLLECTION_STATUSES
-        ):
+        item = _collection_item(cells, len(items) + 1)
+        if item is None:
             return ()
-        items.append(
-            CollectionItem(
-                kind=kind,
-                title=title,
-                slug=slug,
-                status=status,
-                requirement_path=_document_cell(requirement),
-                validation_plan_path=_document_cell(validation),
-            ),
-        )
+        items.append(item)
     return tuple(items)
+
+
+def _collection_header_index(section: list[str]) -> int | None:
+    """Return the canonical status-table header offset."""
+    return next(
+        (
+            index
+            for index, line in enumerate(section)
+            if tuple(cell.lower() for cell in _table_cells(line))
+            == COLLECTION_TABLE_HEADER
+        ),
+        None,
+    )
+
+
+def _collection_separator_valid(line: str) -> bool:
+    """Return whether a table separator matches the canonical width."""
+    cells = _table_cells(line)
+    return len(cells) == len(COLLECTION_TABLE_HEADER) and all(
+        cell == "---" for cell in cells
+    )
+
+
+def _collection_item(
+    cells: tuple[str, ...],
+    expected_order: int,
+) -> CollectionItem | None:
+    """Parse and validate one canonical umbrella status row."""
+    order, kind, title, slug, status, requirement, validation = cells
+    kind = kind.lower()
+    slug = slug.strip("`")
+    status = status.lower()
+    valid = (
+        order.isdigit()
+        and int(order) == expected_order
+        and kind in {"feature-request", "issue"}
+        and bool(title)
+        and COLLECTION_SLUG_RE.fullmatch(slug) is not None
+        and status in COLLECTION_STATUSES
+    )
+    if not valid:
+        return None
+    return CollectionItem(
+        kind=kind,
+        title=title,
+        slug=slug,
+        status=status,
+        requirement_path=_document_cell(requirement),
+        validation_plan_path=_document_cell(validation),
+    )
 
 
 def _legacy_collection_items(section: list[str]) -> tuple[CollectionItem, ...]:

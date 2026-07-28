@@ -560,14 +560,9 @@ def test_wiki_covers_umbrella_topics_and_explicit_post_write_review() -> None:
         "how_to": root / "how-to" / "split-a-mixed-draft.md",
         "reference": root / "reference" / "pw-launcher.md",
     }
-    content = {
-        role: path.read_text(encoding="utf-8")
-        for role, path in pages.items()
-    }
-
-    for text in content.values():
-        assert "umbrella" in text
-        assert "after-write" in text
+    content = {role: path.read_text(encoding="utf-8") for role, path in pages.items()}
+    assert all("umbrella" in text for text in content.values())
+    assert all("after-write" in text for text in content.values())
 
     tutorial = content["tutorial"]
     assert "draft.v10.0.0.sentinel.md" in tutorial

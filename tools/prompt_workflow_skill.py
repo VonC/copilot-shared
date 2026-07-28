@@ -1,45 +1,9 @@
-"""prompt_workflow_skill.py Skill-mode rendering for prompt_workflow (pw skill).
+"""Skill-mode command rendering and disk-derived routing for ``pw skill``.
 
-The ``pw skill`` subcommand prints the bare next-step command the LLM runs,
-instead of the three-part prompt the interactive flow writes. This module holds
-the pieces that mode is built on: the host-prefix detection and the command
-rendering (Step 1), and the disk-derived next-step routing (Step 2) of
-``docs/plan.v0.9.0.handoff_automation.md``.
-
-Host prefix (Q04): a command is prefixed with ``/`` in a Claude session and
-``$`` in a Codex session. The host is read from the process environment - Claude
-Code sets ``CLAUDECODE``, a Codex session sets ``CODEX_THREAD_ID`` - and an
-explicit override short-circuits that read, so the caller can force the prefix
-even where detection cannot decide. When neither marker is present and no
-override is given, the prefix falls back to the Claude default, so a command
-always carries a usable prefix.
-
-Command rendering: ``render_command`` turns an instruction file name and a target
-document into a bare ``<prefix><name> on <document>`` line, dropping the ``.md``
-suffix and using no backticks, so the LLM reads it as a command rather than as
-quoted text.
-
-Next-step routing (Q02, Q03): ``next_command`` reads the workflow state from disk
-only (never ``a.prompt_memory``), reuses ``steps.next_step_numbers`` for the base
-step, and advances past a review step only when the document it reads carries a
-consolidated decisions table: a decisions heading plus a question-referenced row
-(``| Qxx``) or the no-open-questions settled row. A decisions section merely
-seeded by the document writer never skips the review, so a freshly written plan
-always meets its review round. The resolved step maps to an instruction and a
-target document, then renders. For the implementation cycle, an available
-validation plan also contributes the plan step id so ``implement-step`` receives
-the argument it needs; a terminal validation plan renders ``prepare-release``.
-
-Post-write routing: ``pw skill --after-write <role>`` bypasses disk-derived
-advancement and reviews the artifact that was just written. This keeps a writer
-from skipping review when its new document already contains text that resembles
-a settled decisions marker.
-
-Post-merge collection routing: ``pw skill --after-merge <umbrella-draft>``
-walks the authoritative split in order. Completed validation plans are skipped;
-the first item without a requirement is handed to ``process-draft`` with its
-slug, while an already-started item resumes its normal disk-derived workflow.
-Only when every item is complete does it return ``prepare-release``.
+Commands use the detected Claude or Codex prefix and point at the next document
+workflow action. Post-write routing reviews the new artifact explicitly,
+post-commit routing advances implementation steps, and post-merge routing walks
+an umbrella collection in its declared order before allowing release work.
 """
 
 from __future__ import annotations
@@ -49,6 +13,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from tools import prompt_workflow_collection as collection
 from tools import prompt_workflow_docs as docs
 from tools import prompt_workflow_git as git
 from tools import prompt_workflow_handoff as handoff
@@ -57,9 +22,7 @@ from tools import prompt_workflow_plan as plan
 from tools import prompt_workflow_steps as steps
 from tools.prompt_workflow_models import (
     VALIDATION_SUFFIX,
-    CollectionItem,
     MemoryRecord,
-    PromptWorkflowError,
     Topic,
 )
 
@@ -418,110 +381,27 @@ def post_merge_command(
     env: Mapping[str, str],
     override: str | None = None,
 ) -> str | None:
-    """Return the next collection action after one feature was merged.
-
-    The settled split is read in its declared dependency order. An item is
-    complete only when its validation plan's document-level status is the exact
-    ``Yes, it is implemented.`` sentence. A missing requirement starts the next
-    item through ``process-draft``; an existing but incomplete item resumes the
-    ordinary workflow; an exhausted collection returns ``prepare-release``.
-    """
-    path = (root / umbrella_document).resolve()
-    try:
-        path.relative_to(root.resolve())
-    except ValueError:
-        return None
-    parsed = docs.parse_draft_name(path.name)
-    if not path.is_file() or parsed is None:
-        return None
-    version, _umbrella_slug = parsed
-    items = docs.collection_items(path)
-    if not items:
-        return None
-    prefix = host_prefix(env, override)
-    for item in items:
-        topic = Topic(version=version, slug=item.slug, draft_path=path)
-        state = steps.compute_state(root, topic, None)
-        if item.status == "completed":
-            _validate_completed_collection_item(root, item)
-            continue
-        if item.status == "pending" and (
-            item.requirement_path is not None
-            or item.validation_plan_path is not None
-        ):
-            message = (
-                f"Pending umbrella item {item.slug!r} must use '-' for its "
-                "requirement and validation plan."
-            )
-            raise PromptWorkflowError(message)
-        if item.status == "pending" and _validation_plan_complete(
-            state.validation_plan,
-        ):
-            message = (
-                f"Umbrella item {item.slug!r} is pending, but "
-                f"{state.validation_plan} says it is implemented. Run "
-                "implementation-check for the final plan step so it can update "
-                "the umbrella row."
-            )
-            raise PromptWorkflowError(message)
-        if _validation_plan_complete(state.validation_plan):
-            continue
-        if state.requirement is None:
-            base = render_command(
-                prefix,
-                PROCESS_DRAFT,
-                _relpath(root, path),
-            )
-            return f"{base} based on {item.slug}"
-        return next_command(root, topic, item.slug, env, override)
-    return f"{prefix}prepare-release"
-
-
-def _validate_completed_collection_item(root: Path, item: CollectionItem) -> None:
-    """Require canonical completed rows to point at complete evidence."""
-    if item.requirement_path is None or item.validation_plan_path is None:
-        message = (
-            f"Completed umbrella item {item.slug!r} must name its requirement "
-            "and validation plan."
-        )
-        raise PromptWorkflowError(message)
-    requirement = _collection_document(root, item.requirement_path)
-    validation = _collection_document(root, item.validation_plan_path)
-    if not requirement.is_file():
-        message = (
-            f"Completed umbrella item {item.slug!r} names a missing requirement: "
-            f"{item.requirement_path}."
-        )
-        raise PromptWorkflowError(message)
-    if not _validation_plan_complete(validation):
-        message = (
-            f"Completed umbrella item {item.slug!r} does not have complete "
-            f"validation evidence at {item.validation_plan_path}."
-        )
-        raise PromptWorkflowError(message)
-
-
-def _collection_document(root: Path, document: str) -> Path:
-    """Resolve one declared collection document without leaving the project."""
-    path = (root / document).resolve()
-    try:
-        path.relative_to(root.resolve())
-    except ValueError as err:
-        message = f"Umbrella document path leaves the project root: {document}."
-        raise PromptWorkflowError(message) from err
-    return path
-
-
-def _validation_plan_complete(path: Path | None) -> bool:
-    """Return whether a validation plan carries the completed effort status."""
-    if path is None:
-        return False
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        return stripped == "Yes, it is implemented."
-    return False
+    """Return the next ordered collection action after a feature merge."""
+    return collection.post_merge_command(
+        root,
+        umbrella_document,
+        env,
+        override,
+        collection.CollectionCommands(
+            prefix_for=host_prefix,
+            process_draft_for=lambda prefix, path, slug: (
+                f"{render_command(prefix, PROCESS_DRAFT, _relpath(root, path))} "
+                f"based on {slug}"
+            ),
+            resume_for=lambda topic, branch: next_command(
+                root,
+                topic,
+                branch,
+                env,
+                override,
+            ),
+        ),
+    )
 
 
 def _emit(command: str | None, not_applicable_note: str) -> int:
