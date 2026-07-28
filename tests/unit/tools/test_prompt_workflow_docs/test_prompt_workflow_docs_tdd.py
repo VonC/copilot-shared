@@ -129,6 +129,57 @@ def test_branch_requirement_topic_resolves_through_an_umbrella_draft(
     assert topic.draft_path == umbrella.resolve()
 
 
+def test_branch_requirement_topic_prefers_one_direct_draft(
+    tmp_path: Path,
+) -> None:
+    """A same-slug draft takes precedence over umbrella discovery."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    direct = docs_dir / "draft.v10.0.0.route-cleanup.md"
+    direct.write_text("# Route cleanup\n", encoding="utf-8")
+    (docs_dir / "issue.v10.0.0.route-cleanup.md").write_text(
+        "# Remove old routes\n",
+        encoding="utf-8",
+    )
+
+    topic = docs.branch_requirement_topic(tmp_path, "route_cleanup")
+
+    assert topic is not None
+    assert topic.draft_path == direct.resolve()
+
+
+def test_branch_requirement_topic_rejects_ambiguous_direct_drafts(
+    tmp_path: Path,
+) -> None:
+    """Duplicate direct drafts do not select an arbitrary path."""
+    docs_dir = tmp_path / "docs"
+    version_dir = docs_dir / "v10.0.0"
+    version_dir.mkdir(parents=True)
+    name = "draft.v10.0.0.route-cleanup.md"
+    (docs_dir / name).write_text("# Root draft\n", encoding="utf-8")
+    (version_dir / name).write_text("# Version draft\n", encoding="utf-8")
+    (docs_dir / "issue.v10.0.0.route-cleanup.md").write_text(
+        "# Remove old routes\n",
+        encoding="utf-8",
+    )
+
+    assert docs.branch_requirement_topic(tmp_path, "route_cleanup") is None
+
+
+def test_branch_requirement_topic_ignores_malformed_requirement_versions(
+    tmp_path: Path,
+) -> None:
+    """A requirement-shaped file still needs a valid version token."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "issue.not-a-version.route-cleanup.md").write_text(
+        "# Remove old routes\n",
+        encoding="utf-8",
+    )
+
+    assert docs.branch_requirement_topic(tmp_path, "route_cleanup") is None
+
+
 def test_branch_requirement_topic_rejects_an_unrelated_same_version_draft(
     tmp_path: Path,
 ) -> None:
