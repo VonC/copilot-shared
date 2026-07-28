@@ -38,6 +38,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--feature-base", help="Confirmed feature boundary commit.")
     parser.add_argument("--feature-parent", help="Confirmed feature parent branch.")
     parser.add_argument(
+        "--feature-target",
+        choices=("main", "integration"),
+        default="main",
+        help="Land feature mode on main, or on the resolved integration branch first.",
+    )
+    parser.add_argument(
         "--no-conflict-preview",
         action="store_true",
         help="Detect topology without invoking git merge-tree.",
@@ -147,6 +153,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             branch=args.branch,
             feature_base=args.feature_base,
             feature_parent=args.feature_parent,
+            feature_target=args.feature_target,
             preview_conflicts=not args.no_conflict_preview,
         )
     except ReleasePlanError as error:

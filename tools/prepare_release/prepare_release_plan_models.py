@@ -22,6 +22,7 @@ class ReleaseAction(StrEnum):
     MERGE_NO_FF = "merge-no-ff"
     SYNC_INTEGRATION_THEN_MERGE = "sync-integration-then-merge"
     REBASE_ONTO_MAIN_THEN_MERGE = "rebase-onto-main-then-merge"
+    REBASE_ONTO_INTEGRATION_THEN_MERGE = "rebase-onto-integration-then-merge"
     ALREADY_RELEASED = "already-released"
     ALREADY_INTEGRATED = "already-integrated"
     NEEDS_FEATURE_BOUNDARY = "needs-feature-boundary"
@@ -85,6 +86,7 @@ class ReleasePlan:
     branch_oid: str
     main_branch: str
     integration_branch: str | None
+    feature_target_branch: str | None
     mode: ReleaseMode
     action: ReleaseAction
     scope: str

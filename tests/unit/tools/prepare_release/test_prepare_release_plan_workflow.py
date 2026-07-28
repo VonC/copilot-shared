@@ -123,6 +123,93 @@ def test_plan_nested_feature_uses_exact_onto_replay(tmp_path: Path) -> None:
     assert plan.operations[1].startswith(f"git rebase --onto main {develop_tip}")
 
 
+def test_plan_feature_can_land_on_current_integration(tmp_path: Path) -> None:
+    """Feature completion targets integration before release preparation."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "develop")
+    develop_tip = commit_file(repo, "parent.txt", "develop\n", "feat: parent work")
+    git(repo, "switch", "-c", "feature")
+    commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
+
+    plan = build_release_plan(
+        repo,
+        branch="feature",
+        integration_branch="develop",
+        feature_base=develop_tip,
+        feature_target="integration",
+        preview_conflicts=False,
+    )
+
+    assert plan.action is ReleaseAction.MERGE_NO_FF
+    assert plan.feature_target_branch == "develop"
+    assert plan.operations == (
+        "git switch --ignore-other-worktrees develop",
+        "git merge --no-ff feature",
+    )
+
+
+def test_plan_stale_feature_replays_only_its_range_onto_integration(
+    tmp_path: Path,
+) -> None:
+    """An advanced integration branch gets an isolated feature replay."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "develop")
+    develop_tip = commit_file(repo, "parent.txt", "develop\n", "feat: parent work")
+    git(repo, "switch", "-c", "feature")
+    feature_tip = commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
+    git(repo, "switch", "develop")
+    commit_file(repo, "later.txt", "later\n", "feat: later integration work")
+
+    plan = build_release_plan(
+        repo,
+        branch="feature",
+        integration_branch="develop",
+        feature_base=develop_tip,
+        feature_target="integration",
+        preview_conflicts=False,
+    )
+
+    assert plan.action is ReleaseAction.REBASE_ONTO_INTEGRATION_THEN_MERGE
+    assert [commit.oid for commit in plan.commits] == [feature_tip]
+    assert plan.operations[1].startswith(f"git rebase --onto develop {develop_tip}")
+    assert plan.operations[-2:] == (
+        "git switch --ignore-other-worktrees develop",
+        "git merge --no-ff prepare-release/feature-onto-develop",
+    )
+
+
+def test_plan_integration_target_requires_a_resolved_branch(tmp_path: Path) -> None:
+    """The planner cannot silently substitute main for a requested integration."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "feature")
+    commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
+
+    with pytest.raises(ReleasePlanError, match="requires a resolved integration"):
+        build_release_plan(
+            repo,
+            feature_target="integration",
+            preview_conflicts=False,
+        )
+
+
+def test_plan_rejects_an_unknown_feature_target(tmp_path: Path) -> None:
+    """Direct API callers receive an actionable target validation error."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "feature")
+    commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
+
+    with pytest.raises(ReleasePlanError, match="Unknown feature target"):
+        build_release_plan(
+            repo,
+            feature_target="qa",
+            preview_conflicts=False,
+        )
+
+
 def test_plan_auto_detects_branch_creation_boundary(tmp_path: Path) -> None:
     """The latest branch-positioning reflog entry can prove the feature fork."""
     repo = tmp_path / "repo"

@@ -43,6 +43,7 @@ def build_release_plan(  # noqa: PLR0913
     branch: str | None = None,
     feature_base: str | None = None,
     feature_parent: str | None = None,
+    feature_target: str = "main",
     preview_conflicts: bool = True,
 ) -> ReleasePlan:
     """Build a deterministic release plan from local repository evidence."""
@@ -79,6 +80,7 @@ def build_release_plan(  # noqa: PLR0913
         resolved_integration,
         feature_base=feature_base,
         feature_parent=feature_parent,
+        feature_target=feature_target,
         preview_conflicts=preview_conflicts,
     )
 
@@ -120,6 +122,7 @@ def _plan_on_main(
         branch_oid=repository.resolve(branch),
         main_branch=main_branch,
         integration_branch=integration_branch,
+        feature_target_branch=None,
         mode=ReleaseMode.ON_MAIN,
         action=ReleaseAction.PREPARE_IN_PLACE,
         scope=scope,
@@ -178,6 +181,7 @@ def _plan_integration(  # noqa: PLR0913
         branch_oid=branch_oid,
         main_branch=main_branch,
         integration_branch=integration_branch,
+        feature_target_branch=None,
         mode=ReleaseMode.INTEGRATION,
         action=action,
         scope=scope,
@@ -198,17 +202,31 @@ def _plan_feature(  # noqa: PLR0913
     *,
     feature_base: str | None,
     feature_parent: str | None,
+    feature_target: str,
     preview_conflicts: bool,
 ) -> ReleasePlan:
-    if repository.is_ancestor(branch, main_branch):
-        tags = repository.tags_containing(branch)
+    if feature_target not in {"main", "integration"}:
+        raise ReleasePlanError(
+            f"Unknown feature target {feature_target!r}; use 'main' or 'integration'.",
+        )
+    if feature_target == "integration":
+        if integration_branch is None:
+            message = (
+                "Feature target 'integration' requires a resolved integration branch."
+            )
+            raise ReleasePlanError(message)
+        target_branch = integration_branch
+    else:
+        target_branch = main_branch
+    if repository.is_ancestor(branch, target_branch):
+        tags = repository.tags_containing(branch) if target_branch == main_branch else ()
         action = (
             ReleaseAction.ALREADY_RELEASED if tags else ReleaseAction.ALREADY_INTEGRATED
         )
         note = (
             f"Branch tip is already contained by release tag {tags[0]}."
             if tags
-            else "Branch tip is already in main; invoke from main only to release all main changes."
+            else f"Branch tip is already integrated into {target_branch}."
         )
         return ReleasePlan(
             repository=str(repository.root),
@@ -217,9 +235,10 @@ def _plan_feature(  # noqa: PLR0913
             branch_oid=branch_oid,
             main_branch=main_branch,
             integration_branch=integration_branch,
+            feature_target_branch=target_branch,
             mode=ReleaseMode.FEATURE,
             action=action,
-            scope=f"{branch}..{main_branch}",
+            scope=f"{branch}..{target_branch}",
             commits=(),
             operations=(),
             containing_release_tags=tags,
@@ -240,6 +259,7 @@ def _plan_feature(  # noqa: PLR0913
             branch_oid=branch_oid,
             main_branch=main_branch,
             integration_branch=integration_branch,
+            feature_target_branch=target_branch,
             mode=ReleaseMode.FEATURE,
             action=ReleaseAction.NEEDS_FEATURE_BOUNDARY,
             scope=f"<feature-base>..{branch}",
@@ -260,6 +280,7 @@ def _plan_feature(  # noqa: PLR0913
             branch_oid=branch_oid,
             main_branch=main_branch,
             integration_branch=integration_branch,
+            feature_target_branch=target_branch,
             mode=ReleaseMode.FEATURE,
             action=ReleaseAction.NEEDS_FEATURE_BOUNDARY,
             scope=scope,
@@ -273,14 +294,14 @@ def _plan_feature(  # noqa: PLR0913
         )
 
     commits = repository.commits(scope)
-    direct_merge = repository.is_ancestor(boundary.base, main_branch) and repository.is_ancestor(
-        main_branch, branch,
+    direct_merge = repository.is_ancestor(boundary.base, target_branch) and repository.is_ancestor(
+        target_branch, branch,
     )
     if direct_merge:
         merge_preview = None
         if preview_conflicts:
             with repository.isolated_object_environment() as env:
-                merge_preview = repository.preview_merge(main_branch, branch, env=env)
+                merge_preview = repository.preview_merge(target_branch, branch, env=env)
         return ReleasePlan(
             repository=str(repository.root),
             git_version=git_version,
@@ -288,12 +309,13 @@ def _plan_feature(  # noqa: PLR0913
             branch_oid=branch_oid,
             main_branch=main_branch,
             integration_branch=integration_branch,
+            feature_target_branch=target_branch,
             mode=ReleaseMode.FEATURE,
             action=ReleaseAction.MERGE_NO_FF,
             scope=scope,
             commits=commits,
             operations=(
-                f"git switch --ignore-other-worktrees {main_branch}",
+                f"git switch --ignore-other-worktrees {target_branch}",
                 f"git merge --no-ff {branch}",
             ),
             feature_base=boundary.base,
@@ -304,11 +326,16 @@ def _plan_feature(  # noqa: PLR0913
             notes=("Original feature branch can be merged without replay.",),
         )
 
-    promotion = _promotion_branch_name(branch)
+    promotion = _promotion_branch_name(branch, target_branch)
     rebase_preview = (
-        repository.preview_rebase(boundary.base, branch, main_branch)
+        repository.preview_rebase(boundary.base, branch, target_branch)
         if preview_conflicts
         else None
+    )
+    rebase_action = (
+        ReleaseAction.REBASE_ONTO_MAIN_THEN_MERGE
+        if target_branch == main_branch
+        else ReleaseAction.REBASE_ONTO_INTEGRATION_THEN_MERGE
     )
     return ReleasePlan(
         repository=str(repository.root),
@@ -317,15 +344,16 @@ def _plan_feature(  # noqa: PLR0913
         branch_oid=branch_oid,
         main_branch=main_branch,
         integration_branch=integration_branch,
+        feature_target_branch=target_branch,
         mode=ReleaseMode.FEATURE,
-        action=ReleaseAction.REBASE_ONTO_MAIN_THEN_MERGE,
+        action=rebase_action,
         scope=scope,
         commits=commits,
         operations=(
             f"git branch {promotion} {branch}",
-            f"git rebase --onto {main_branch} {boundary.base} {promotion}",
+            f"git rebase --onto {target_branch} {boundary.base} {promotion}",
             "run git range-diff and ghog day",
-            f"git switch --ignore-other-worktrees {main_branch}",
+            f"git switch --ignore-other-worktrees {target_branch}",
             f"git merge --no-ff {promotion}",
         ),
         feature_base=boundary.base,
@@ -566,10 +594,11 @@ def _unique_nearest_candidate(
     return nearest[0] if len(nearest) == 1 else None
 
 
-def _promotion_branch_name(branch: str) -> str:
-    """Return a valid suggested promotion branch name without creating it."""
+def _promotion_branch_name(branch: str, target: str) -> str:
+    """Return a valid suggested landing-branch name without creating it."""
     sanitized = re.sub(r"[^A-Za-z0-9._/-]+", "-", branch).strip("-./")
-    return f"prepare-release/{sanitized}-onto-main"
+    target_sanitized = re.sub(r"[^A-Za-z0-9._/-]+", "-", target).strip("-./")
+    return f"prepare-release/{sanitized}-onto-{target_sanitized}"
 
 
 # eof

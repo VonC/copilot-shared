@@ -48,6 +48,7 @@ _TEMPLATE = ReleasePlan(
     branch_oid="a" * 40,
     main_branch="main",
     integration_branch=None,
+    feature_target_branch="main",
     mode=ReleaseMode.FEATURE,
     action=ReleaseAction.MERGE_NO_FF,
     scope="base..feature",
