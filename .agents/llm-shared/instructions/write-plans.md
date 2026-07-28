@@ -32,9 +32,15 @@ Do review the plan against the current test tree, but also against the current c
 
 Focus on massive gain tending to avoid writing and reading too many files in your proposed changes.
 
-Run your second pass focused only on implementation risk gaps, but also check the current number of lines for each file involved: anything above 550 risks getting, after code updates and additions, to exceed the 650 line limit qualifying for "big file": in case of over 550-line files, check if you can delegate/isolate the evolutions you need to a separate file (especially for test). This is not always possible for non-test files where existing functions need to be amended: do not force a resolution then: a future split phase will be needed once the plan is implemented.
+Run your second pass focused only on implementation risk gaps, and count the current physical lines of every file involved, including blank lines, with the same metric used by the repository big-file gate. Classify each Python file by the following policy:
 
-Add to the plan a compact "line budget checkpoint" checklist to each step so it is ready for execution tracking, but also leave clear guidance/instruction regarding that line budget on each step: when I will tell you to implement the step 'x', said step will have everything it needs, including line budget constraint and split guidance.
+- below 550 lines: safe to extend. Record the baseline and the repository ceiling of 650 lines. An expected post-step count may be written as an advisory estimate, but do not invent a tighter mandatory target and do not require a split merely because the estimate is exceeded.
+- from 550 through 650 lines: at risk. Avoid growth where practical and give concrete split guidance, especially for tests, but an in-place change that remains at or below 650 is not by itself incomplete and does not require a split.
+- above 650 lines: over the repository limit. The plan must include a responsibility split; do not plan further growth in place.
+
+A tighter numeric target is mandatory only when shrinking or extracting that file is an explicit goal of the step. State that reason next to the target. Otherwise the only enforceable line-budget checkpoint is the 650-line repository ceiling. If implementation exceeds an advisory estimate but remains at or below 650, record the variance as evidence without marking the step incomplete or adding mandatory split work. When an existing non-test function must be amended and a clean extraction is not yet possible, do not force an artificial split: document the risk and split only if the repository limit is exceeded or a later responsibility-focused step calls for it.
+
+Add to the plan a compact "line budget checkpoint" checklist to each step so it is ready for execution tracking. Each checkpoint must state the baseline, policy band, 650-line ceiling, and any advisory estimate or justified mandatory shrink target. Also leave clear split guidance for files at risk or over the limit, so an implementation request for step 'x' has the applicable constraint without turning ordinary estimation variance into missing work.
 
 Add in each step a reference to a new section which describes how to do the "execution command checklist" per step (count lines before/after, run targeted tests, run grep check). That way, you can detail that process, while mutualizing it for all steps, and reference it in each step.
 

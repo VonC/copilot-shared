@@ -71,15 +71,18 @@ No vX.Y.Z code path should introduce `O(n^2)` or `O(n log n)` cost on the respon
 
 These facts should be drawn from direct code inspection of the current repository tree.
 
-**Files at or approaching the 550-line risk threshold** (must not grow in place):
+**Files over the 650-line repository limit** (must be split by responsibility):
 
-- `{path/to/file.py}`: **{line_count} lines** -- {Line-budget rule or split guidance}.
-- `{path/to/file.py}`: **{line_count} lines** -- {Line-budget rule or split guidance}.
+- `{path/to/file.py}`: **{line_count} lines** -- {Mandatory split guidance}.
 
-**Files safe to extend** (current lines, expected additions):
+**Files in the 550-through-650 risk band** (avoid growth where practical):
 
-- `{path/to/file.py}`: {current lines} -- {Expected additions and why this file is still safe}.
-- `{path/to/file.py}`: {current lines} -- {Expected additions and why this file is still safe}.
+- `{path/to/file.py}`: **{line_count} lines** -- {Expected change and split guidance if the repository ceiling would be exceeded}.
+
+**Files below 550 and safe to extend** (current lines, expected additions):
+
+- `{path/to/file.py}`: {current lines} -- {Expected additions; any projected count is advisory}.
+- `{path/to/file.py}`: {current lines} -- {Expected additions; any projected count is advisory}.
 
 **What does not exist yet (all new for vX.Y.Z)**:
 
@@ -126,7 +129,8 @@ Apply this checklist for every numbered step, filling in the step-specific paths
 4. Run the step grep checks.
 5. Run the shared gate loop until both the focused tests and the repo gate pass in the same cycle.
 6. Count lines after edits and compare them with the step line-budget checkpoint.
-7. If any Python file exceeds the repo line-limit rule after edits, stop and apply the split guidance before committing.
+7. If any Python file exceeds 650 lines after edits, stop and apply the mandatory split guidance before committing.
+8. If a file exceeds only an advisory estimate while remaining at or below 650, record the variance without failing the step or requiring a split.
 
 ---
 
@@ -210,12 +214,12 @@ Step framing:
 
 Line-budget checkpoint:
 
-- `{path/to/file}`: before {x} -> target <= {y}.
-- `{path/to/test_file}`: before {x} -> target <= {y}.
+- `{path/to/file}`: before {x}; {below-550 safe|550-through-650 risk|over-650 split-required}; repository ceiling <= 650; expected {delta or final count} (advisory).
+- `{path/to/test_file}`: before {x}; repository ceiling <= 650; target <= {y} (mandatory only because {shrinking or extraction is an explicit step goal}).
 
 Split guidance:
 
-- {What to extract if a main file grows too far}.
+- {What to extract if a file would exceed 650, or to satisfy an explicitly justified shrink goal}.
 
 Full workflow timing run readiness:
 
