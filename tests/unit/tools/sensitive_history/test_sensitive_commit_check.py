@@ -155,11 +155,20 @@ def test_configuration_and_git_errors_fail_closed(
     missing = tmp_path / "missing-message"
     with pytest.raises(HistoryScanError, match="cannot read commit message"):
         check_message(missing, _patterns(pending_repo))
-    with pytest.raises(HistoryScanError, match="failed"):
-        _git(pending_repo, "not-a-command")
+
+    def failed_git(*_args: object, **_kwargs: object) -> NoReturn:
+        raise subprocess.CalledProcessError(
+            1,
+            ["git", "status"],
+            stderr=b"simulated failure",
+        )
 
     def missing_git(*_args: object, **_kwargs: object) -> NoReturn:
         raise FileNotFoundError
+
+    monkeypatch.setattr(subprocess, "run", failed_git)
+    with pytest.raises(HistoryScanError, match="failed: simulated failure"):
+        _git(pending_repo, "status")
 
     monkeypatch.setattr(subprocess, "run", missing_git)
     with pytest.raises(HistoryScanError, match="git status failed"):
