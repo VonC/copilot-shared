@@ -58,9 +58,11 @@ call `/write-requirement` directly with the type, version and topic.
    branch: route_cleanup
    ```
 
-   Do not rename the umbrella draft to `route-cleanup`. `pw skill` first uses
-   ordinary branch memory and changed-draft resolution. If those find no topic,
-   it can resolve the item through the requirement and unchanged umbrella:
+   Do not rename the umbrella draft to `route-cleanup` or create a temporary
+   same-slug draft alias. The menu-less `pw skill` and `pw handoff` commands
+   first use ordinary branch memory and changed-draft resolution. If those find
+   no topic, their shared resolver can connect the item to the requirement and
+   unchanged umbrella:
 
    - exactly one requirement filename must match the normalized branch leaf,
    - a direct same-version, same-slug draft wins when exactly one exists,
@@ -81,8 +83,9 @@ call `/write-requirement` directly with the type, version and topic.
 
 The draft now ends with the list section, and each
 `/write-requirement` run creates one `docs\<type>.vX.Y.Z.<topic>.md` that
-enters its own review loop. An item branch can continue through `pw skill`
-without a same-slug draft, while the umbrella collection remains intact.
+enters its own review loop. An item branch can continue through `pw skill` and
+the later `pw handoff` implementation chain without a same-slug draft, while
+the umbrella collection remains intact.
 
 Related: [From draft note to settled requirement](../tutorials/02-from-draft-to-settled-requirement.md),
 [skills catalog](../reference/skills-catalog.md).

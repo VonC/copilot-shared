@@ -39,6 +39,13 @@ Once the walk is green, the model runs `pw handoff check 1`, which writes
 the next prompt to `a.prompt.txt` and copies it to the clipboard. From
 here the chain runs with no menu and no "go ahead":
 
+On an item branch split from a collection draft, the handoff resolves the
+normalized branch leaf through its requirement and the related direct or
+umbrella draft. For example, branch `route_cleanup` can use
+`issue.v10.0.0.route-cleanup.md` with `draft.v10.0.0.sentinel.md` when that
+umbrella mentions `route-cleanup`. Do not rename the umbrella or create a
+temporary `draft.v10.0.0.route-cleanup.md` alias.
+
 1. `/implementation-check 1` — reads the diff and the plan, writes its
    verdict into `docs\plan.vX.Y.Z.<topic>.validation.md`, first sentence
    exactly `Yes. Step 1 has been fully implemented.` or `No. ...`,

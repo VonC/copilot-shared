@@ -28,10 +28,13 @@ state is the filesystem — there is no hidden database, only
 Topic identity is not always the draft filename. A collection draft can remain
 `draft.v10.0.0.sentinel.md` while an item uses
 `issue.v10.0.0.route-cleanup.md` on branch `route_cleanup`. If ordinary memory
-and changed-draft resolution have no answer, skill mode can connect those three
-facts only when the normalized branch matches one requirement and one direct or
-umbrella draft is related. Refusing missing or ambiguous relationships keeps a
-convenient fallback from becoming a guess.
+and changed-draft resolution have no answer, the menu-less `pw skill` and
+`pw handoff` modes use the same fallback. They connect those three facts only
+when the normalized branch matches one requirement and one direct or umbrella
+draft is related. Sharing the resolver prevents the document chain from
+recognizing an item that the implementation chain cannot hand off. Refusing
+missing or ambiguous relationships keeps a convenient fallback from becoming a
+guess.
 
 ## 🗣️ Why pw handoff is verbose
 

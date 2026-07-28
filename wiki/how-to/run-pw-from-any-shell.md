@@ -76,11 +76,13 @@ reviews the named artifact. It exits without printing a command if that
 artifact does not exist.
 
 On an item branch split from a collection draft, you do not need to rename the
-umbrella draft. If ordinary resolution has no topic, bare and post-write skill
-forms can match the normalized branch leaf (`route_cleanup`) to one requirement
-slug (`route-cleanup`) and then to its direct draft or one same-version umbrella
-draft that mentions the complete slug. More than one matching requirement or
-related draft is an ambiguity and produces no command.
+umbrella draft. All menu-less forms — bare, post-write, and post-commit
+`pw skill`, plus `pw handoff` — use the same topic resolver. If ordinary
+resolution has no topic, they match the normalized branch leaf
+(`route_cleanup`) to one requirement slug (`route-cleanup`) and then to its
+direct draft or one same-version umbrella draft that mentions the complete
+slug. More than one matching requirement or related draft is an ambiguity and
+the launcher refuses to route. Do not add a temporary same-slug draft alias.
 
 ## ✅ Check the launcher works
 

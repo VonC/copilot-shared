@@ -48,10 +48,11 @@ branch: route_cleanup
 ```
 
 The requirement filename, not the umbrella draft filename, identifies the
-current item. Skill-mode fallback resolution accepts this layout only when the
-normalized branch leaf matches exactly one requirement and that requirement has
-exactly one related direct or umbrella draft. The umbrella must mention the
-complete item slug; same-version proximity alone is not a relationship.
+current item. The shared menu-less resolver used by `pw skill` and `pw handoff`
+accepts this layout only when the normalized branch leaf matches exactly one
+requirement and that requirement has exactly one related direct or umbrella
+draft. The umbrella must mention the complete item slug; same-version proximity
+alone is not a relationship.
 
 ## 🧾 Transient a-dot files at the project root
 

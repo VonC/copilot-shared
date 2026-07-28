@@ -577,6 +577,28 @@ def test_wiki_covers_umbrella_topics_and_explicit_post_write_review() -> None:
     assert "Missing and ambiguous relationships return no topic" in reference
 
 
+def test_wiki_covers_shared_menu_less_umbrella_resolution() -> None:
+    """Diataxis pages state that skill and handoff share topic resolution."""
+    root = steps.llm_shared_dir() / "wiki"
+    pages = (
+        root / "explanation" / "one-launcher-three-modes.md",
+        root / "tutorials" / "04-run-the-implement-chain.md",
+        root / "how-to" / "run-pw-from-any-shell.md",
+        root / "how-to" / "split-a-mixed-draft.md",
+        root / "reference" / "artifact-files.md",
+        root / "reference" / "pw-launcher.md",
+    )
+
+    for path in pages:
+        content = path.read_text(encoding="utf-8")
+        assert "pw skill" in content
+        assert "pw handoff" in content
+        assert "umbrella" in content
+
+    for path in pages[1:4]:
+        assert "temporary" in path.read_text(encoding="utf-8")
+
+
 def test_oqm_wrapper_clears_the_project_senv_guard() -> None:
     """oqm.bat clears the project guard before calling senv.bat."""
     content = (steps.llm_shared_dir() / "bin" / "oqm.bat").read_text(

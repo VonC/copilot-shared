@@ -24,9 +24,10 @@ settled decision table; which plan steps are done), and know the host:
 `CLAUDECODE` emits `/skill`, while `CODEX_THREAD_ID` emits the installed
 plugin form `$llm-shared:skill`.
 
-Normal topic resolution uses relevant changed drafts and branch memory. If it
-finds no topic, skill mode has a safe fallback for a requirement split from an
-unchanged collection draft:
+The menu-less `pw skill` and `pw handoff` modes call one shared topic resolver.
+Normal resolution uses relevant changed drafts and branch memory. If it finds
+no topic, the shared resolver has a safe fallback for a requirement split from
+an unchanged collection draft:
 
 1. normalize only the branch leaf, treating `-` and `_` as equivalent,
 2. require exactly one feature-request or issue filename with that version and
