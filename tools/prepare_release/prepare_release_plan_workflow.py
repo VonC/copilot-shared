@@ -18,6 +18,7 @@ from tools.prepare_release.prepare_release_plan_models import (
     ReleasePlan,
     ReleasePlanError,
 )
+from tools.prepare_release.prepare_release_plan_naming import promotion_branch_name
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -33,6 +34,16 @@ _MIN_MERGE_PARENTS = 2
 class _RankedBoundary:
     candidate: BoundaryCandidate
     priority: int
+
+
+@dataclass(frozen=True)
+class _FeaturePlanContext:
+    repository: GitRepository
+    git_version: str
+    branch: str
+    branch_oid: str
+    main_branch: str
+    integration_branch: str | None
 
 
 def build_release_plan(  # noqa: PLR0913
@@ -60,7 +71,13 @@ def build_release_plan(  # noqa: PLR0913
     )
 
     if selected_branch == main_branch:
-        return _plan_on_main(repository, git_version, selected_branch, main_branch, resolved_integration)
+        return _plan_on_main(
+            repository,
+            git_version,
+            selected_oid,
+            main_branch,
+            resolved_integration,
+        )
     if resolved_integration is not None and selected_branch == resolved_integration:
         return _plan_integration(
             repository,
@@ -109,7 +126,7 @@ def _resolve_integration_branch(
 def _plan_on_main(
     repository: GitRepository,
     git_version: str,
-    branch: str,
+    branch_oid: str,
     main_branch: str,
     integration_branch: str | None,
 ) -> ReleasePlan:
@@ -118,8 +135,8 @@ def _plan_on_main(
     return ReleasePlan(
         repository=str(repository.root),
         git_version=git_version,
-        branch=branch,
-        branch_oid=repository.resolve(branch),
+        branch=main_branch,
+        branch_oid=branch_oid,
         main_branch=main_branch,
         integration_branch=integration_branch,
         feature_target_branch=None,
@@ -205,45 +222,22 @@ def _plan_feature(  # noqa: PLR0913
     feature_target: str,
     preview_conflicts: bool,
 ) -> ReleasePlan:
-    if feature_target not in {"main", "integration"}:
-        raise ReleasePlanError(
-            f"Unknown feature target {feature_target!r}; use 'main' or 'integration'.",
-        )
-    if feature_target == "integration":
-        if integration_branch is None:
-            message = (
-                "Feature target 'integration' requires a resolved integration branch."
-            )
-            raise ReleasePlanError(message)
-        target_branch = integration_branch
-    else:
-        target_branch = main_branch
-    if repository.is_ancestor(branch, target_branch):
-        tags = repository.tags_containing(branch) if target_branch == main_branch else ()
-        action = (
-            ReleaseAction.ALREADY_RELEASED if tags else ReleaseAction.ALREADY_INTEGRATED
-        )
-        note = (
-            f"Branch tip is already contained by release tag {tags[0]}."
-            if tags
-            else f"Branch tip is already integrated into {target_branch}."
-        )
-        return ReleasePlan(
-            repository=str(repository.root),
-            git_version=git_version,
-            branch=branch,
-            branch_oid=branch_oid,
-            main_branch=main_branch,
-            integration_branch=integration_branch,
-            feature_target_branch=target_branch,
-            mode=ReleaseMode.FEATURE,
-            action=action,
-            scope=f"{branch}..{target_branch}",
-            commits=(),
-            operations=(),
-            containing_release_tags=tags,
-            notes=(note,),
-        )
+    target_branch = _feature_target(
+        main_branch,
+        integration_branch,
+        feature_target,
+    )
+    context = _FeaturePlanContext(
+        repository,
+        git_version,
+        branch,
+        branch_oid,
+        main_branch,
+        integration_branch,
+    )
+    integrated = _already_integrated_feature(context, target_branch)
+    if integrated is not None:
+        return integrated
 
     boundary, candidates = _resolve_feature_boundary(
         repository,
@@ -294,9 +288,10 @@ def _plan_feature(  # noqa: PLR0913
         )
 
     commits = repository.commits(scope)
-    direct_merge = repository.is_ancestor(boundary.base, target_branch) and repository.is_ancestor(
-        target_branch, branch,
-    )
+    direct_merge = repository.is_ancestor(
+        boundary.base,
+        target_branch,
+    ) and repository.is_ancestor(target_branch, branch)
     if direct_merge:
         merge_preview = None
         if preview_conflicts:
@@ -326,7 +321,7 @@ def _plan_feature(  # noqa: PLR0913
             notes=("Original feature branch can be merged without replay.",),
         )
 
-    promotion = _promotion_branch_name(branch, target_branch)
+    promotion = promotion_branch_name(branch, target_branch)
     rebase_preview = (
         repository.preview_rebase(boundary.base, branch, target_branch)
         if preview_conflicts
@@ -365,6 +360,62 @@ def _plan_feature(  # noqa: PLR0913
             "Rebase preview stops at the first conflicting commit; later conflicts depend on its resolution.",
             "The original feature branch remains unchanged.",
         ),
+    )
+
+
+def _feature_target(
+    main_branch: str,
+    integration_branch: str | None,
+    feature_target: str,
+) -> str:
+    """Resolve and validate the branch receiving a feature."""
+    if feature_target not in {"main", "integration"}:
+        raise ReleasePlanError(
+            f"Unknown feature target {feature_target!r}; use 'main' or 'integration'.",
+        )
+    if feature_target == "integration":
+        if integration_branch is None:
+            message = (
+                "Feature target 'integration' requires a resolved integration branch."
+            )
+            raise ReleasePlanError(message)
+        return integration_branch
+    return main_branch
+
+
+def _already_integrated_feature(
+    context: _FeaturePlanContext,
+    target_branch: str,
+) -> ReleasePlan | None:
+    """Return the terminal plan when the feature is already integrated."""
+    if not context.repository.is_ancestor(context.branch, target_branch):
+        return None
+    tags = (
+        context.repository.tags_containing(context.branch)
+        if target_branch == context.main_branch
+        else ()
+    )
+    action = ReleaseAction.ALREADY_RELEASED if tags else ReleaseAction.ALREADY_INTEGRATED
+    note = (
+        f"Branch tip is already contained by release tag {tags[0]}."
+        if tags
+        else f"Branch tip is already integrated into {target_branch}."
+    )
+    return ReleasePlan(
+        repository=str(context.repository.root),
+        git_version=context.git_version,
+        branch=context.branch,
+        branch_oid=context.branch_oid,
+        main_branch=context.main_branch,
+        integration_branch=context.integration_branch,
+        feature_target_branch=target_branch,
+        mode=ReleaseMode.FEATURE,
+        action=action,
+        scope=f"{context.branch}..{target_branch}",
+        commits=(),
+        operations=(),
+        containing_release_tags=tags,
+        notes=(note,),
     )
 
 
@@ -592,13 +643,6 @@ def _unique_nearest_candidate(
         )
     ]
     return nearest[0] if len(nearest) == 1 else None
-
-
-def _promotion_branch_name(branch: str, target: str) -> str:
-    """Return a valid suggested landing-branch name without creating it."""
-    sanitized = re.sub(r"[^A-Za-z0-9._/-]+", "-", branch).strip("-./")
-    target_sanitized = re.sub(r"[^A-Za-z0-9._/-]+", "-", target).strip("-./")
-    return f"prepare-release/{sanitized}-onto-{target_sanitized}"
 
 
 # eof
