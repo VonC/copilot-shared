@@ -21,8 +21,10 @@ variant (Q60), so the cached-versus-non-cached split the menu uses does not appl
 
 from __future__ import annotations
 
+from inspect import signature
 from typing import TYPE_CHECKING
 
+from tools import prompt_workflow_docs as docs
 from tools import prompt_workflow_git as git
 from tools import prompt_workflow_plan as plan
 from tools.prompt_workflow_models import PromptWorkflowError
@@ -41,6 +43,9 @@ AFTER_CHECK = "after-check"
 IMPLEMENT_MISSING = "implement-missing"
 COMMIT = "commit"
 TASK_TOKENS: tuple[str, ...] = (CHECK, AFTER_CHECK, IMPLEMENT_MISSING, COMMIT)
+# Compatibility arity for tests and consumers that still replace
+# ``relevant_drafts`` with its former root/cwd-only callable.
+_RELEVANT_DRAFTS_LEGACY_ARITY = 2
 
 
 def find_plan_step(state: WorkflowState, step: str) -> PlanStep:
@@ -209,6 +214,37 @@ def resolve_topic(
         if _topic_matches(record, topic, branch):
             return topic
     return None
+
+
+def resolve_current_topic(
+    root: Path,
+    branch: str,
+    record: MemoryRecord | None,
+) -> Topic | None:
+    """Resolve one topic for every menu-less prompt-workflow command.
+
+    The direct draft and memory-lock rules run first. When neither identifies a
+    topic, the branch requirement fallback resolves a split item through either
+    its same-slug draft or the one umbrella draft that mentions it. Keeping both
+    rules here prevents ``pw skill`` and ``pw handoff`` from disagreeing for the
+    same branch and files.
+
+    Args:
+        root: The project root and Git working directory.
+        branch: The already-read current branch.
+        record: The persisted workflow memory, or None.
+
+    Returns:
+        The resolved topic, or None when menu-less resolution is ambiguous.
+    """
+    if len(signature(docs.relevant_drafts).parameters) == _RELEVANT_DRAFTS_LEGACY_ARITY:
+        topics = docs.relevant_drafts(root, root)
+    else:
+        topics = docs.relevant_drafts(root, root, branch)
+    topic = resolve_topic(topics, record, branch)
+    if topic is not None:
+        return topic
+    return docs.branch_requirement_topic(root, branch)
 
 
 # eof

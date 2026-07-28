@@ -372,13 +372,11 @@ def run_skill(
             f"pw skill: no next step after committing {after_commit}.\n",
         )
     branch = git.current_branch(root)
-    topic = handoff.resolve_topic(
-        docs.relevant_drafts(root, root),
-        memory.read_memory(root),
+    topic = handoff.resolve_current_topic(
+        root,
         branch,
+        memory.read_memory(root),
     )
-    if topic is None:
-        topic = docs.branch_requirement_topic(root, branch)
     if topic is None:
         return _emit(None, "pw skill: no topic resolved on this branch.\n")
     if after_write is not None:
@@ -513,7 +511,7 @@ def post_commit_command(
     """
     branch = git.current_branch(root)
     record = memory.read_memory(root)
-    topic = handoff.resolve_topic(docs.relevant_drafts(root, root), record, branch)
+    topic = handoff.resolve_current_topic(root, branch, record)
     if topic is None:
         topic = _resolve_post_commit_topic(root, record, branch)
     if topic is None:

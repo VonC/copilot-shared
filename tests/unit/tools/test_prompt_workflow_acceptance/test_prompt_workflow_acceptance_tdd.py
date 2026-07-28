@@ -239,6 +239,52 @@ def test_handoff_check_delivers_check_prompt(
     )
 
 
+def test_handoff_check_resolves_branch_requirement_from_umbrella_draft(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The handoff uses the same umbrella-draft fallback as ``pw skill``."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "draft.v10.0.0.sentinel.md").write_text(
+        "# Sentinel\n\n- Issue: Remove old routes [route-cleanup]\n",
+        encoding="utf-8",
+    )
+    (docs_dir / "issue.v10.0.0.route-cleanup.md").write_text(
+        "# Remove old routes\n",
+        encoding="utf-8",
+    )
+    (docs_dir / "plan.v10.0.0.route-cleanup.md").write_text(
+        "## Numbered steps\n\n### Step 1. Remove retired routes\n",
+        encoding="utf-8",
+    )
+    (docs_dir / "plan.v10.0.0.route-cleanup.validation.md").write_text(
+        "### Analysis of Step 1 implementation state\n\nNot started yet.\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(git, "current_branch", lambda _cwd: "route_cleanup")
+    monkeypatch.setattr(git, "working_tree_changed_files", lambda _cwd: [])
+    monkeypatch.setattr(git, "fork_point", lambda _cwd: None)
+    monkeypatch.setattr(git, "has_step_commit", lambda _cwd, _step, _base: False)
+    monkeypatch.setattr(prompt_workflow, "set_clipboard_text", lambda _text: None)
+
+    assert (
+        prompt_workflow.main(["handoff", "check", "1", "--root", str(tmp_path)])
+        == 0
+    )
+
+    prompt = _delivered_prompt(tmp_path)
+    assert 'Check step 1 "Remove retired routes" implementation' in prompt
+    assert memory.read_memory(tmp_path) == MemoryRecord(
+        branch="route_cleanup",
+        version="v10.0.0",
+        topic="route-cleanup",
+        step=11,
+        instruction="implementation-check.md",
+        plan_step="1",
+    )
+
+
 def test_handoff_after_check_no_delivers_implement_missing(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

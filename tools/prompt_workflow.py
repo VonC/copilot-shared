@@ -368,9 +368,8 @@ def run_handoff(root: Path, task: str, step: str) -> int:
             status -- turned into ``EXIT_FATAL`` (2) by ``__main__`` (Q03).
     """
     branch = git.current_branch(root)
-    topics = docs.relevant_drafts(root, root)
     record = memory.read_memory(root)
-    topic = handoff.resolve_topic(topics, record, branch)
+    topic = handoff.resolve_current_topic(root, branch, record)
     if topic is None:
         msg = (
             "Cannot resolve a topic for the handoff without a menu "
