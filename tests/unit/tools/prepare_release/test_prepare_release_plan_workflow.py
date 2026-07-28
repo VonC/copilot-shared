@@ -16,7 +16,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tools.prepare_release import prepare_release_plan_workflow as workflow
 from tools.prepare_release.prepare_release_plan_models import (
+    CommitSummary,
     ReleaseAction,
     ReleaseMode,
     ReleasePlanError,
@@ -29,6 +31,93 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _EXPECTED_CANDIDATES = 2
+
+
+class _FeatureRepositoryStub:
+    """In-memory topology for feature-target selection tests."""
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        integration_exists: bool,
+        integration_contains_feature: bool = False,
+    ) -> None:
+        self.root = root
+        self.integration_exists = integration_exists
+        self.integration_contains_feature = integration_contains_feature
+
+    def verify_repository(self) -> None:
+        """Accept the synthetic repository."""
+
+    def assert_supported_version(self) -> str:
+        """Return a supported version without launching Git."""
+        return "2.50.0"
+
+    def current_branch(self) -> str:
+        """Return the feature branch used by these tests."""
+        return "feature"
+
+    def resolve(self, ref: str) -> str:
+        """Resolve the small synthetic ref set."""
+        return {
+            "main": "main-tip",
+            "develop": "develop-current",
+            "feature": "feature-tip",
+        }.get(ref, ref)
+
+    def config_value(self, _key: str) -> None:
+        """Return no configured integration branch."""
+
+    def branch_exists(self, branch: str) -> bool:
+        """Expose develop only in integration-target scenarios."""
+        return branch == "develop" and self.integration_exists
+
+    def remote_default_branch(self) -> None:
+        """Return no remote default branch."""
+
+    def is_ancestor(self, ancestor: str, descendant: str) -> bool:
+        """Answer only the topology relationships the planner asks about."""
+        pair = self.resolve(ancestor), self.resolve(descendant)
+        ancestors = {
+            ("develop-tip", "feature-tip"),
+            ("develop-tip", "develop-current"),
+        }
+        if self.integration_contains_feature:
+            ancestors.add(("develop-current", "feature-tip"))
+        return pair in ancestors
+
+    def commit_count(self, _revision_range: str) -> int:
+        """Return the single selected feature commit."""
+        return 1
+
+    def contains_merge(self, _revision_range: str) -> bool:
+        """The synthetic feature range is linear."""
+        return False
+
+    def commits(self, _revision_range: str) -> tuple[CommitSummary, ...]:
+        """Return the selected feature commit."""
+        return (CommitSummary(oid="feature-tip", subject="feat: selected work"),)
+
+
+def _stub_feature_repository(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    *,
+    integration_exists: bool,
+    integration_contains_feature: bool = False,
+) -> None:
+    """Install one in-memory repository behind the public planner entry point."""
+    repository = _FeatureRepositoryStub(
+        tmp_path,
+        integration_exists=integration_exists,
+        integration_contains_feature=integration_contains_feature,
+    )
+
+    def repository_factory(_root: Path) -> _FeatureRepositoryStub:
+        return repository
+
+    monkeypatch.setattr(workflow, "GitRepository", repository_factory)
 
 
 def test_plan_on_main_prepares_in_place(tmp_path: Path) -> None:
@@ -123,20 +212,23 @@ def test_plan_nested_feature_uses_exact_onto_replay(tmp_path: Path) -> None:
     assert plan.operations[1].startswith(f"git rebase --onto main {develop_tip}")
 
 
-def test_plan_feature_can_land_on_current_integration(tmp_path: Path) -> None:
+def test_plan_feature_can_land_on_current_integration(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Feature completion targets integration before release preparation."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "develop")
-    develop_tip = commit_file(repo, "parent.txt", "develop\n", "feat: parent work")
-    git(repo, "switch", "-c", "feature")
-    commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
+    _stub_feature_repository(
+        monkeypatch,
+        tmp_path,
+        integration_exists=True,
+        integration_contains_feature=True,
+    )
 
     plan = build_release_plan(
-        repo,
+        tmp_path,
         branch="feature",
         integration_branch="develop",
-        feature_base=develop_tip,
+        feature_base="develop-tip",
         feature_target="integration",
         preview_conflicts=False,
     )
@@ -150,61 +242,59 @@ def test_plan_feature_can_land_on_current_integration(tmp_path: Path) -> None:
 
 
 def test_plan_stale_feature_replays_only_its_range_onto_integration(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     """An advanced integration branch gets an isolated feature replay."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "develop")
-    develop_tip = commit_file(repo, "parent.txt", "develop\n", "feat: parent work")
-    git(repo, "switch", "-c", "feature")
-    feature_tip = commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
-    git(repo, "switch", "develop")
-    commit_file(repo, "later.txt", "later\n", "feat: later integration work")
+    _stub_feature_repository(
+        monkeypatch,
+        tmp_path,
+        integration_exists=True,
+    )
 
     plan = build_release_plan(
-        repo,
+        tmp_path,
         branch="feature",
         integration_branch="develop",
-        feature_base=develop_tip,
+        feature_base="develop-tip",
         feature_target="integration",
         preview_conflicts=False,
     )
 
     assert plan.action is ReleaseAction.REBASE_ONTO_INTEGRATION_THEN_MERGE
-    assert [commit.oid for commit in plan.commits] == [feature_tip]
-    assert plan.operations[1].startswith(f"git rebase --onto develop {develop_tip}")
+    assert [commit.oid for commit in plan.commits] == ["feature-tip"]
+    assert plan.operations[1].startswith("git rebase --onto develop develop-tip")
     assert plan.operations[-2:] == (
         "git switch --ignore-other-worktrees develop",
         "git merge --no-ff prepare-release/feature-onto-develop",
     )
 
 
-def test_plan_integration_target_requires_a_resolved_branch(tmp_path: Path) -> None:
+def test_plan_integration_target_requires_a_resolved_branch(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """The planner cannot silently substitute main for a requested integration."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "feature")
-    commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
+    _stub_feature_repository(monkeypatch, tmp_path, integration_exists=False)
 
     with pytest.raises(ReleasePlanError, match="requires a resolved integration"):
         build_release_plan(
-            repo,
+            tmp_path,
             feature_target="integration",
             preview_conflicts=False,
         )
 
 
-def test_plan_rejects_an_unknown_feature_target(tmp_path: Path) -> None:
+def test_plan_rejects_an_unknown_feature_target(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Direct API callers receive an actionable target validation error."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "feature")
-    commit_file(repo, "feature.txt", "feature\n", "feat: selected work")
+    _stub_feature_repository(monkeypatch, tmp_path, integration_exists=False)
 
     with pytest.raises(ReleasePlanError, match="Unknown feature target"):
         build_release_plan(
-            repo,
+            tmp_path,
             feature_target="qa",
             preview_conflicts=False,
         )

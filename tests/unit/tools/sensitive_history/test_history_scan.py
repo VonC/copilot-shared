@@ -3,6 +3,9 @@
 Fix: the ``subprocess.run`` stand-ins are fully typed (``object`` parameters
 and an explicit return), so the strict pyright gate no longer flags unknown
 parameter or argument types on the monkeypatched doubles.
+
+The missing-validation branch uses an empty in-memory repository so the
+long-line integration test scans its real Git history only once.
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ from typing import TYPE_CHECKING, NoReturn
 
 import pytest
 
+from tools.sensitive_history import history_scan
 from tools.sensitive_history.history_scan import (
     GitRepository,
     HistoryScanError,
@@ -246,7 +250,7 @@ def test_scan_reports_exact_context(history_report: ScanReport) -> None:
 
 
 def test_scan_truncates_long_lines_and_validates_known_content(history_repo: Path) -> None:
-    """Long lines become centered excerpts and a bad validation term fails."""
+    """Long lines become centered excerpts while known content validates."""
     long_file = history_repo / "long.txt"
     long_file.write_text(f"{'a' * 80}SecretCorp{'z' * 80}\n", encoding="utf-8")
     _git(history_repo, "add", "long.txt")
@@ -255,6 +259,7 @@ def test_scan_truncates_long_lines_and_validates_known_content(history_repo: Pat
         history_repo,
         patterns_from_terms(["secretcorp"]),
         max_line_chars=40,
+        validation_term="SecretCorp",
     )
     long_match = next(
         match
@@ -264,9 +269,45 @@ def test_scan_truncates_long_lines_and_validates_known_content(history_repo: Pat
     assert long_match.truncated
     assert long_match.line.startswith("…")
     assert long_match.line.endswith("…")
+    assert report.validation_blob_count == EXPECTED_BLOB_MATCHES + 1
+
+
+class _EmptyHistoryRepository:
+    """In-memory repository for the missing-validation branch."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+
+    def object_inventory(self) -> tuple[list[str], dict[str, tuple[str, ...]]]:
+        return [], {}
+
+    def blob_ids(self, _object_ids: list[str]) -> list[str]:
+        return []
+
+    def iter_blobs(self, _blob_ids: list[str]) -> list[tuple[str, bytes]]:
+        return []
+
+    def commit_messages(self) -> list[object]:
+        return []
+
+    def tag_messages(self) -> list[object]:
+        return []
+
+
+def test_scan_rejects_a_validation_term_absent_from_history(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A missing positive control still fails without a second real scan."""
+    repository = _EmptyHistoryRepository(tmp_path)
+
+    def repository_factory(_root: Path) -> _EmptyHistoryRepository:
+        return repository
+
+    monkeypatch.setattr(history_scan, "GitRepository", repository_factory)
     with pytest.raises(HistoryScanError, match="scanner validation failed"):
         scan_repository(
-            history_repo,
+            tmp_path,
             patterns_from_terms(["secretcorp"]),
             validation_term="definitely absent",
         )
