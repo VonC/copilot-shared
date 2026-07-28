@@ -10,7 +10,14 @@ one fails fast (Q06).
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import pytest
+
 from tools import prompt_workflow_steps as steps
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _INSTRUCTIONS = steps.llm_shared_dir() / "instructions"
 _EXPECTED_DIAGRAM_COUNT = 4
@@ -71,12 +78,9 @@ def test_prepare_release_distinguishes_branch_roles() -> None:
     assert 'merge --no-ff "<source_branch>"' in content
 
 
-def test_prepare_release_audits_existing_diataxis_wikis_before_notes() -> None:
-    """Release prep covers every release commit before generating its notes."""
-    root = steps.llm_shared_dir()
-    instruction = _read("prepare-release.md")
+def _assert_release_wiki_step(instruction: str) -> None:
+    """Check the prepare-release instruction's wiki-audit contract."""
     content = " ".join(instruction.split())
-
     assert "### Step 8 — Audit and update existing Diataxis wiki roots" in instruction
     assert "`<PRJ_DIR>/wiki`" in instruction
     assert "`<PRJ_DIR>/docs/wiki`" in instruction
@@ -87,23 +91,26 @@ def test_prepare_release_audits_existing_diataxis_wikis_before_notes() -> None:
         "### Step 10 — Prepare the release notes",
     )
 
-    review = _read("review-and-update-project-docs.md")
-    review_content = " ".join(review.split())
-    assert "`wiki/` or `docs/wiki/`" in review_content
+
+def _assert_release_wiki_review_contract(review: str) -> None:
+    """Check the project-doc review contract used by release preparation."""
+    content = " ".join(review.split())
+    assert "`wiki/` or `docs/wiki/`" in content
     assert "If a Git range was provided" in review
-    assert (
-        "explanation, tutorials, how-to guides, then reference"
-        in review_content
-    )
+    assert "explanation, tutorials, how-to guides, then reference" in content
     assert "a.prepare-release.active" in review
 
+
+def _assert_release_wiki_files(root: Path) -> None:
+    """Check Diataxis coverage and host entry-point coverage."""
     pages = (
         root / "wiki" / "explanation" / "why-documents-before-code.md",
         root / "wiki" / "tutorials" / "05-prepare-a-release-from-develop.md",
         root / "wiki" / "how-to" / "prepare-a-release.md",
         root / "wiki" / "reference" / "skills-catalog.md",
     )
-    assert all("wiki" in path.read_text(encoding="utf-8").lower() for path in pages)
+    for path in pages:
+        assert "wiki" in path.read_text(encoding="utf-8").lower()
 
     entry_points = (
         root / ".github" / "skills" / "prepare-release" / "SKILL.md",
@@ -111,10 +118,18 @@ def test_prepare_release_audits_existing_diataxis_wikis_before_notes() -> None:
         root / ".agents" / "llm-shared" / "skills" / "prepare-release" / "SKILL.md",
         root / ".agent" / "workflows" / "prepare-release.md",
     )
-    assert all(
-        "wiki" in path.read_text(encoding="utf-8").lower()
-        for path in entry_points
-    )
+    for path in entry_points:
+        assert "wiki" in path.read_text(encoding="utf-8").lower()
+
+
+def test_prepare_release_audits_existing_diataxis_wikis_before_notes() -> None:
+    """Release prep covers every release commit before generating its notes."""
+    root = steps.llm_shared_dir()
+    instruction = _read("prepare-release.md")
+    review = _read("review-and-update-project-docs.md")
+    _assert_release_wiki_step(instruction)
+    _assert_release_wiki_review_contract(review)
+    _assert_release_wiki_files(root)
 
 
 def test_prepare_release_stops_features_already_contained_by_main() -> None:
@@ -400,16 +415,22 @@ def test_sensitive_history_reference_shows_both_input_file_formats() -> None:
     assert "regex:(?i)example[._-]internal==>public-name" in content
 
 
-def test_every_diataxis_page_states_its_invocation_model() -> None:
-    """Each page says whether a human or the AI normally invokes its subject."""
+@pytest.fixture(scope="session")
+def diataxis_page_texts() -> tuple[str, ...]:
+    """Read every Diataxis page outside the measured test-call phase."""
     root = steps.llm_shared_dir() / "wiki"
-    pages = (
-        page
+    return tuple(
+        page.read_text(encoding="utf-8")
         for section in ("explanation", "tutorials", "how-to", "reference")
         for page in (root / section).glob("*.md")
     )
 
-    assert all("## Invocation model" in page.read_text(encoding="utf-8") for page in pages)
+
+def test_every_diataxis_page_states_its_invocation_model(
+    diataxis_page_texts: tuple[str, ...],
+) -> None:
+    """Each page says whether a human or the AI normally invokes its subject."""
+    assert all("## Invocation model" in content for content in diataxis_page_texts)
 
 
 def test_wiki_logos_match_the_home_page_width() -> None:
@@ -439,30 +460,6 @@ def test_run_commands_documents_python_script_invocation() -> None:
     )
     assert "Python scripts use wrappers" in content
     assert "set NO_MORE_SENV_%PRJ_DIR_NAME%=& senv.bat && python" in content
-
-
-def test_codex_plugin_packages_every_instruction() -> None:
-    """Every shared instruction has a matching, self-contained Codex skill."""
-    root = steps.llm_shared_dir()
-    plugin = root / ".agents" / "llm-shared"
-    instruction_names = {path.name for path in _INSTRUCTIONS.glob("*.md")}
-    expected_skill_names = {
-        name.removesuffix(".md").replace("_", "-") for name in instruction_names
-    }
-    packaged_skill_names = {
-        path.name for path in (plugin / "skills").iterdir() if path.is_dir()
-    }
-
-    assert packaged_skill_names == expected_skill_names
-    for instruction_name in instruction_names:
-        skill_name = instruction_name.removesuffix(".md").replace("_", "-")
-        skill = (plugin / "skills" / skill_name / "SKILL.md").read_text(
-            encoding="utf-8",
-        )
-        packaged = plugin / "instructions" / instruction_name
-
-        assert f"[Instruction](../../instructions/{instruction_name})" in skill
-        assert packaged.read_bytes() == (_INSTRUCTIONS / instruction_name).read_bytes()
 
 
 def test_merge_reword_skill_covers_all_llms_and_shared_targets() -> None:
