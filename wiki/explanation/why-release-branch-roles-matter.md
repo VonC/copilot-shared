@@ -16,7 +16,7 @@ which content the author is selecting.
 
 ## The model is gitworkflow, one word
 
-The selective path in `prepare-release` comes from
+The branch-role model in `prepare-release` comes from
 [gitworkflow](https://git-scm.com/docs/gitworkflows), the workflow documented
 for the Git project itself, and the
 [task-oriented gitworkflow primer](https://github.com/rocketraman/gitworkflow).
@@ -49,36 +49,35 @@ for preparing and tagging releases.
 
 ## The prepare-release variant
 
-The common idea is that topics remain independently selectable after they
-have been tested together. A feature can therefore be picked twice:
+The common idea is that a topic first enters the earliest stability branch it
+needs. Invoking `prepare-release` from a feature therefore finishes continuous
+integration first:
 
-1. rebase the feature onto current `develop`, then merge it into develop with
-   `--no-ff` for continuous integration;
-2. if that topic belongs in a release subset, replay its exact commits onto
-   current `main` when needed and merge it into main with `--no-ff`.
+1. replay only the confirmed feature range onto current `develop` when needed,
+   using a temporary landing branch so the original ref is not rewritten;
+2. merge it into develop with `--no-ff` and reword that merge;
+3. inspect the feature's umbrella table before deciding whether release work
+   may begin.
 
-A feature can also be selected directly for main without first entering
-develop. In either case, develop being the hosting default changes clone and
-pull-request defaults, not the role of main as the release and tag branch.
+When another ordered requirement is pending, the run stops there. This is not
+an incomplete release: integration of one topic is the intended result, and
+`pw skill --after-merge` supplies the next `process-draft` command. When every
+umbrella row is complete, develop is promoted wholesale to main. If no
+integration branch exists, main is the first destination and the same umbrella
+checkpoint decides whether artifact preparation continues.
 
 | Common with gitworkflow | Different in this variant |
 | --- | --- |
-| Features/topics are first-class selectable units | `develop` is a long-lived default branch rather than a rebuildable `next` |
-| Integration testing does not automatically approve a topic for release | Topics are commonly rebased onto develop before their integration merge |
-| A topic may be merged once for integration and again for release | A temporary promotion copy may replay the exact topic onto main because its develop-based commits cannot be merged safely as-is |
-| `--no-ff` merge commits preserve each selection decision | Develop may be merged wholesale to main when every integrated topic is ready |
+| Features/topics are first-class integration units | `develop` is a long-lived default branch rather than a rebuildable `next` |
+| Integration testing does not automatically start release artifacts | A canonical umbrella table decides whether another topic comes next |
+| `--no-ff` merge commits preserve each integration decision | Temporary landing branches protect published feature refs during replay |
+| Release and integration remain separate stability levels | Develop is merged wholesale to main when every umbrella row is complete |
 
 This motivation and its contrast with GitFlow are developed in the cited
 Stack Overflow answers about
 [test versus production integration](https://stackoverflow.com/a/44470240/6309),
 [selecting production features](https://stackoverflow.com/a/216228/6309), and
 [independent feature deployment](https://stackoverflow.com/a/53405887/6309).
-
-The second pick is easiest to see as a separate history operation. The dashed
-arrow below creates new commit identities for only the confirmed topic range;
-the solid arrows record its integration and release decisions:
-
-![One feature is first merged into develop, then its isolated range is replayed onto main and merged there.](../assets/prepare-release/feature-from-develop-to-main.svg)
 
 ## Integration is a release train
 
@@ -96,40 +95,24 @@ main contains a production hotfix that develop lacks, merging main back into
 develop preserves both histories and makes the combined state pass the test
 gate before promotion.
 
-## Selective promotion needs isolation
+## Topic landing needs isolation
 
-Under gitworkflow and this variant, a topic can receive two non-fast-forward
-merges: one into the integration branch for combined testing, and another
-into `main` when it graduates. The second merge is not a duplicate accident;
-it records a different decision at a different stability level. Crucially,
-`develop` itself is not the source of that selective release.
+A feature branch created from develop or another feature can contain parent
+commits that do not belong to the topic. Plain `git rebase develop` does not
+express which commits are the feature, and rebasing the original ref can
+rewrite history that another branch already knows.
 
-Those two decisions need separate merge messages. Git's default message records
-the branch names but not why the topic was accepted at that target. Rewording
-the current merge before push records integration acceptance on `develop` and
-release acceptance on `main`; rewording only the later merge leaves the first
-shared-history boundary unexplained.
+The safe integration unit is the exact range after the feature's real fork
+point. `/prepare-release` reconstructs that boundary from reflog and branch
+topology, shows the commits for confirmation, then replays only that range onto
+the first destination when needed. The replay happens on a temporary landing
+branch. The original feature remains unchanged.
 
-A feature branch created from develop often contains earlier develop commits
-as ancestry. Plain `git rebase main` does not know which commits express the
-feature: it can replay every commit reachable from the feature branch but not
-from main. If the branch was already merged into develop, rewriting it also
-creates new commit identities for changes develop already knows.
-
-The safe selective-release unit is therefore the exact range after the
-feature's real fork point. That parent can be main, develop, or another
-feature. `/prepare-release` reconstructs the boundary from reflog and branch
-topology, shows the commits for confirmation, then replays only that range on
-a fresh promotion branch with `rebase --onto main`. The original branch stays
-unchanged, so develop can retain the history it already integrated.
-
-If the topic was originally forked from `main` as gitworkflow recommends, and
-still applies to current main, the same unchanged branch can simply be merged
-there. The temporary `rebase --onto` path is a compatibility measure for a
-topic based on develop, another topic, or stale main. It preserves the
-published original while reconstructing only the feature commits on main.
-
-![A stale feature range is rebased onto a temporary promotion copy and merged into main.](../assets/prepare-release/feature-direct-to-main.svg)
+The structured integration merge and the umbrella status serve different
+purposes. The merge says why this topic entered develop. The table says whether
+the collection has another pending topic. Rewording happens before the table
+checkpoint, so even a run that correctly stops before main leaves an explained
+history boundary.
 
 ## Why “all but one” is different
 

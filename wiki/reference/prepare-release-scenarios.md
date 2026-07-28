@@ -34,8 +34,8 @@ the [`rocketraman/gitworkflow` primer](https://github.com/rocketraman/gitworkflo
 not generic Git flow and not GitFlow. `main`, feature, and develop correspond
 roughly to `master`, topic, and `next`. Unlike canonical gitworkflow, this
 variant uses a long-lived default develop branch, commonly rebases features
-onto develop before `--no-ff` integration, may replay the exact feature onto
-main for release, and permits a wholesale develop merge when every topic is
+onto develop before `--no-ff` integration, checks an ordered umbrella after
+each feature merge, and promotes develop wholesale when every umbrella item is
 ready.
 
 ## Scenario matrix
@@ -48,10 +48,11 @@ ready.
 | integration already contained by main | Stopped safely by the skill | No integration-only content | Reject an ancestry-only `merge-no-ff` plan; release from main only when all unreleased main content is selected |
 | integration, all but one topic selected | Unsupported by planner | Desired tree excludes one merge | Stop before mutation; output the unique merge evidence and a review-branch revert, verification, re-entry, and reintroduction runbook |
 | integration, several arbitrary topics selected | Unsupported as one plan | Named topic branches only | Output one ordered feature-promotion plan per topic; merge them to main separately, then prepare artifacts once from main |
-| feature created from main and already containing latest main | Supported | Confirmed `feature_base..feature` range | Merge the original feature with `--no-ff` |
-| feature created from old main, integration, or another feature | Supported | Confirmed `feature_base..feature` range only | Rebase that range onto main on a promotion branch, verify and test, then merge `--no-ff` |
-| feature tip already contained by main and a release tag | Stopped safely | No new content | Report the earliest containing tag; do not replay or merge |
-| feature tip already contained by main but no release tag | Stopped safely | No safe feature-only operation remains | Report it as integrated but unreleased; suggest an explicit on-main invocation only if all `last_tag..main` changes should ship |
+| feature with integration branch present | Supported | Confirmed `feature_base..feature` range only | Land the exact range on integration, reword the merge, then check the umbrella before release artifacts |
+| feature with no integration branch | Supported | Confirmed `feature_base..feature` range only | Land the exact range on main, reword the merge, then check the umbrella before release artifacts |
+| feature whose umbrella has another pending row | Supported stop | The completed feature merge only | Emit the next `process-draft ... based on <slug>` command; do not update release files |
+| feature whose umbrella is exhausted, or standalone feature | Supported | Completed feature plus the selected release range | Continue from integration to main, or in place on main, then prepare release artifacts |
+| feature tip already contained by its first destination but the merge is historical | Stopped safely | No safe reword operation remains | Report the merge OID; do not rewrite a non-tip merge |
 | feature with ambiguous or erased fork evidence | Supported pause | Nothing until a boundary is selected | Ask for the parent or boundary; never guess or widen the range |
 | feature whose confirmed range contains merges | Unsupported by planner | A non-contiguous user-selected commit list | Mark the merges and output a clean-branch reconstruction runbook; the planner has no explicit commit-list option |
 
@@ -62,19 +63,10 @@ rebase onto develop followed by a solid `--no-ff` merge:
 
 ![Feature integration into develop.](../assets/prepare-release/feature-to-develop.svg)
 
-A stale feature selected directly for release is copied onto main and then
-merged. The dashed line is the identity-changing replay; the solid arrow is
-the release merge:
-
-![Direct feature selection for main.](../assets/prepare-release/feature-direct-to-main.svg)
-
-If the same logical feature is already on develop, only its confirmed range
-is replayed for the second selection:
-
-![Selective promotion of one develop-tested feature.](../assets/prepare-release/feature-from-develop-to-main.svg)
-
-If every integrated topic is ready, develop itself is merged and never
-rebased:
+After that merge, `pw skill --after-merge` checks the associated umbrella's
+canonical ordered table. A pending row stops the invocation before any main
+merge or release-file update. If every row is complete, develop itself is
+merged and never rebased:
 
 ![Bulk promotion of develop into main.](../assets/prepare-release/develop-to-main.svg)
 
@@ -91,7 +83,8 @@ the user-confirmed commits, validate it, then re-enter from that branch.
 
 | Release intent | Classification |
 | --- | --- |
-| One topic already tested on develop | Normal gitworkflow graduation: merge the same main-based topic into main, or promote only its exact commits when its base is unsuitable |
+| One umbrella topic completed on develop, later topics pending | Stop at integration after the structured merge and hand off the first pending row |
+| Every umbrella topic completed on develop | Bulk promotion: merge develop into main, then prepare release artifacts |
 | Every topic on develop is ready | Bulk optimization: merge develop into main; intentional departure from canonical gitworkflow |
 | Every topic except one is ready | GitFlow-style recovery: revert one merge, then bulk merge; not currently planner-supported |
 | Several arbitrary topics are ready | Graduate those topic branches individually; never infer the subset from develop's aggregate history |
@@ -114,17 +107,12 @@ range, or acceptable dependencies, the only safe instructions are to split
 the release, rebuild a clean topic, or abort. The skill never manufactures the
 missing evidence.
 
-Before these release scenarios, the normal integration operation is
-`feature rebase onto develop` followed by `develop merge --no-ff feature`.
-That pick proves the feature with other work. A selective release is a second,
-independent pick onto main. A feature may instead be picked directly for main
-without first entering develop.
-
-A topic merged into develop and later into main therefore has two merge
-commits with different meanings. Canonical gitworkflow does not require a
-rebase between them when the topic forked from the oldest target branch. The
-skill's temporary `rebase --onto main` is an adaptation for develop-based,
-nested, or stale topics and never rewrites the published original.
+Before these release scenarios, the normal integration operation is a replay
+of the exact feature range onto current develop when needed, followed by
+`develop merge --no-ff <source>`. That pick proves the feature with other work.
+The original feature ref is never rewritten. When the umbrella is exhausted,
+the release pick is the wholesale develop-to-main merge, not a second replay
+of each topic.
 
 ## Planner and conflict evidence
 
@@ -139,9 +127,9 @@ skill.
 | Planned action | Preview performed |
 | --- | --- |
 | Prepare on main | None; no branch histories are combined |
-| Merge integration or feature into main | Merge the exact source tip into current main |
+| Merge integration or feature into its target | Merge the exact source tip into the current target |
 | Synchronize stale integration | Merge current main into the integration tip |
-| Rebase a feature range | Replay each commit after the confirmed boundary onto a synthetic main tip; stop at first conflict |
+| Rebase a feature range | Replay each commit after the confirmed boundary onto a synthetic selected-target tip; stop at first conflict |
 
 The planner models one source branch at a time. It does not model a revert,
 an evolving sequence of several source branches, or a non-contiguous replay.
@@ -172,18 +160,20 @@ remain pending notes.
 
 | State | Integration mode | Effort mode |
 | --- | --- | --- |
-| main is ancestor of source | Merge is ready | Merge directly only when the confirmed base belongs to main; otherwise replay the feature-only range |
-| source lacks latest main | Merge main into integration, then `ghog day` | `rebase --onto main` on a promotion branch, `range-diff`, then `ghog day` |
-| feature tip is already an ancestor of main | Not applicable | Stop; a replay would be empty and cannot create a feature-only release boundary |
+| target is ancestor of source | Merge is ready | Merge directly only when the confirmed base belongs to the selected target; otherwise replay the feature-only range |
+| source lacks latest target | Merge main into integration, then `ghog day` | `rebase --onto <target>` on a landing branch, `range-diff`, then `ghog day` |
+| feature tip is already an ancestor of its target | Not applicable | Continue only for a verifiable current-tip merge; otherwise stop before historical rewording |
 | local main behind origin/main | Move the off-main local ref to origin/main | Same |
 | local main diverged from origin/main | Stop for reconciliation | Same |
 
 ## Outputs and boundaries
 
-The skill produces a structured merge commit when off main, updates
-`version.txt`, `CHANGELOG.md`, and optional pyproject/uv files, then creates
-one `chore(release): prepare for vX.Y.Z release` commit. It never pushes,
-runs `brel`, or creates a tag.
+The skill always produces and rewords the first structured merge when invoked
+from a feature. With a pending umbrella row, that merge plus the next
+`process-draft` command is the complete output; `main`, `version.txt`, and
+`CHANGELOG.md` remain untouched. With no pending row, it updates release files
+and creates one `chore(release): prepare for vX.Y.Z release` commit. It never
+pushes, runs `brel`, or creates a tag.
 
 Feature promotion branches remain until the author finishes review and
 `brel`; the original feature refs are never rewritten.

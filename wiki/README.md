@@ -45,8 +45,11 @@ decisions**.
   [why grouped commits carry that history](explanation/why-grouped-commits.md)
   and [how to review and replay them](how-to/group-commits-into-conventional-messages.md).
 - The release phase is equally complete: AI-assisted scope detection from
-  `main`, a feature, or `develop`; conflict preview; safe rebase or `--no-ff`
-  merge selection; release notes, versions, changelog, and a final preparation
+  `main`, a feature, or `develop`; conflict preview; safe replay or `--no-ff`
+  merge selection; and structured merge rewording. A feature in an umbrella
+  stops on integration with the next ordered requirement while any row is
+  pending. An exhausted umbrella continues with release notes, versions,
+  changelog, and a final preparation
   commit—without silently tagging or pushing. The human approves the topology
   and later runs the final build/tag action. Start with
   [why release branch roles matter](explanation/why-release-branch-roles-matter.md)

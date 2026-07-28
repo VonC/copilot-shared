@@ -33,12 +33,21 @@ an unchanged collection draft:
 2. require exactly one feature-request or issue filename with that version and
    normalized slug,
 3. use exactly one direct same-version, same-slug draft when present,
-4. otherwise require exactly one same-version umbrella draft that mentions the
-   complete normalized slug as a token.
+4. otherwise require exactly one same-version draft marked
+   `- Draft role: umbrella` whose canonical requirement table contains the
+   complete normalized slug.
 
 Missing and ambiguous relationships return no topic. A same-version draft that
 does not mention the item is never borrowed as context, and the umbrella draft
 is not renamed to the item slug.
+
+The collection checkpoint uses the same canonical table more strictly.
+`pw skill --after-merge <umbrella-draft>` reads rows in numeric order. A
+`completed` row must name an existing requirement and a validation plan whose
+first non-title line is exactly `Yes, it is implemented.`. A `pending` row with
+complete validation evidence is stale and fails closed. The first valid pending
+row starts or resumes its workflow; only an exhausted table emits
+`prepare-release`.
 
 ## 🎛️ The three modes side by side
 
@@ -46,7 +55,7 @@ is not renamed to the item slug.
 | --- | --- | --- | --- |
 | `pw` | a human, from a menu | a full next-step prompt | `a.prompt.txt` + clipboard + `a.prompt_memory` |
 | `pw handoff <task> <x>` | the caller (the step is given) | a full, assembled cycle prompt | `a.prompt.txt` + clipboard + `a.prompt_memory` |
-| `pw skill [name] [--after-write role]` | disk state, forced name, or explicit writer event | one bare command line | stdout |
+| `pw skill [name] [--after-write role] [--after-merge umbrella]` | disk state, forced name, writer event, or collection checkpoint | one bare command line | stdout |
 
 ## 🤝 pw handoff tasks
 
@@ -93,6 +102,7 @@ skill instructions, not by `pw`.
 | --- | --- |
 | `pw skill --after-write requirement\|design\|plan` | reviews the named artifact just written, ignoring settled-looking markers; prints nothing and exits not-applicable when it is absent |
 | `pw skill --after-commit <x>` | told the plan step the pending commit completes, prints the contextual next action (next `/implement-step`, `/prepare-release`, or nothing) — read-only, used to build the commit-gate labels |
+| `pw skill --after-merge <umbrella-draft>` | verifies the ordered umbrella status table; emits `process-draft ... based on <slug>`, resumes an existing pending effort, or emits `prepare-release` only when all rows are complete |
 | `pw skill --host claude\|codex` | forces the command prefix |
 | `pw skill <skill-name>` | prints a specific earlier phase's command, to re-run it by hand |
 | `pw --pick` | reopens the topic menu when the branch lock is wrong |

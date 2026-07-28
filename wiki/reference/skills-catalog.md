@@ -22,20 +22,20 @@ prerequisites already satisfied.
 
 | Skill | Inputs | Writes |
 | --- | --- | --- |
-| `/process-draft` | a named draft, `version.txt` | draft renamed `docs\draft.vX.Y.Z.<slug>.md`, effort branch or worktree |
-| `/split-and-define` | a multi-topic draft | list section appended to the draft |
+| `/process-draft` | a new draft and `version.txt`, or one canonical umbrella row selected by `pw` | named draft and effort branch; umbrella continuation also creates a focused child draft without renaming the umbrella |
+| `/split-and-define` | a multi-topic collection draft | explicit umbrella marker, ordered pending/completed table, and requirement-detail subsections |
 | `/write-requirement` | type, `vX.Y.Z`, topic | `docs\feature-request.vX.Y.Z.<topic>.md` or `docs\issue.vX.Y.Z.<topic>.md` |
 | `/review-ask-questions` | a requirement, design or plan | `## Open questions` section, `Q0x` summary table |
 | `/consolidate-then-review-ask-questions` | the doc with answers | decision table, stripped questions, or a new round |
 | `/write-design` | the settled requirement | `docs\design.vX.Y.Z.<topic>.md` |
 | `/write-plans` | the settled design | `docs\plan.vX.Y.Z.<topic>.md` + `.validation.md` skeleton |
 | `/implement-step N` | plan, design, requirement | code and tests, green `ghog day` |
-| `/implementation-check N` | the plan, the diff | verdict in `docs\plan...validation.md` |
+| `/implementation-check N` | the plan, the diff, and an associated umbrella when present | verdict in `docs\plan...validation.md`; the final successful step also completes the matching umbrella row with evidence paths |
 | `/implement-missing-step N` | the `Missing work` list | code and tests filling the gaps |
 | `/group-commits-msg` | the staged diff | `a.commit`, one message per group |
 | `/update-merge-commit-msg` | the current no-fast-forward merge | `a.docs`, `a.commit`, current merge reworded before push |
 | `/prepare_release_notes` | `version.txt`, git history | `a.md`, `version.txt` summary, `CHANGELOG.md` |
-| `/prepare-release` | `main`, integration, or an isolated effort branch | release-range Diataxis wiki audit, one `chore(release): prepare` commit on `main`, or an evidence-backed manual runbook for unsupported selections |
+| `/prepare-release` | `main`, integration, or an isolated effort branch | feature merged and reworded on integration plus the next umbrella handoff, or full release artifacts and one `chore(release): prepare` commit when no pending umbrella item remains |
 
 `/update-merge-commit-msg` runs immediately after a feature merge into
 `develop` or any no-fast-forward merge into `main`. The merge must still be the
@@ -69,13 +69,17 @@ hold the chain and read the document first.
 settles. `/implement-step`, `/implementation-check` and
 `/implement-missing-step` chain through `pw handoff` instead, and
 `/group-commits-msg` closes the chain at the commit gate with
-`pw skill --after-commit <x>`.
+`pw skill --after-commit <x>`. `/split-and-define` and feature-mode
+`/prepare-release` use `pw skill --after-merge <umbrella-draft>` as the ordered
+collection checkpoint.
 
 ## 📌 Fixed sentences and stops worth knowing
 
 - `/implementation-check` opens with exactly
   `Yes. Step N has been fully implemented.` or
-  `No. Step N has NOT been fully implemented.` — `pw` routes on that line.
+  `No. Step N has NOT been fully implemented.` — `pw` routes on that line. The
+  final successful check also changes an associated umbrella row from
+  `pending` to `completed` and records its requirement and validation paths.
 - `/review-ask-questions` always ends on the
   `Q0x | Title | Recommended Answer` table and never runs the next skill
   itself.

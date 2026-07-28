@@ -1,5 +1,5 @@
 ---
-description: Check if a step of a feature has been fully implemented, based on the feature notes and issue notes for that step, and any other relevant context.
+description: Check one plan step, update validation, and complete its umbrella row with evidence paths when the final step succeeds.
 ---
 
 1. Locate the shared instruction body `instructions/implementation-check.md`: in this

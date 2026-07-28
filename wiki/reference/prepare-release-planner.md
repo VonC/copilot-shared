@@ -59,6 +59,7 @@ launcher by its full path.
 | `--branch REF` | Plan for this ref instead of checked-out HEAD; useful for inspection and tests |
 | `--feature-base COMMIT` | Use a user-confirmed feature boundary |
 | `--feature-parent BRANCH` | Derive the boundary only from this user-confirmed parent |
+| `--feature-target main\|integration` | Select the feature's first landing branch; defaults to main and requires a resolved integration branch for `integration` |
 | `--no-conflict-preview` | Detect topology without running `merge-tree` |
 | `--json` | Emit the complete structured plan as JSON |
 
@@ -73,9 +74,10 @@ that also exists locally.
 | Action | Meaning |
 | --- | --- |
 | `prepare-in-place` | HEAD is main; no rebase or branch merge |
-| `merge-no-ff` | Merge the selected integration or already-main-based feature into main |
+| `merge-no-ff` | Merge the selected integration into main, or a feature already based on its selected target |
 | `sync-integration-then-merge` | Merge main into integration, test it, then merge integration into main |
 | `rebase-onto-main-then-merge` | Replay only `feature_base..feature` on a promotion branch, test, then merge it |
+| `rebase-onto-integration-then-merge` | Replay only `feature_base..feature` on an integration-based landing branch, test, then merge it into integration |
 | `already-released` | A release tag already contains the feature tip |
 | `already-integrated` | Main contains the feature tip, but no release tag does |
 | `needs-feature-boundary` | Git evidence is ambiguous or the selected range contains merges |
@@ -91,8 +93,9 @@ the conflict preview.
 | Non-empty on-main scope | Supported; no topology change is previewed |
 | Non-empty integration-to-main merge | Supported |
 | Main-to-stale-integration synchronization | Supported |
-| One main-based feature merge | Supported |
-| One contiguous stale, develop-based, or nested feature replay | Supported when its boundary is proven |
+| One feature landing on main | Supported |
+| One feature landing on the resolved integration branch | Supported with `--feature-target integration` |
+| One contiguous stale, develop-based, or nested feature replay | Supported when its boundary is proven for the selected target |
 | Already released or already integrated feature | Supported stop |
 | Ambiguous feature boundary | Supported pause with candidates |
 | Empty `main..integration` | Ancestry classification can currently emit `merge-no-ff`; callers must reject the empty scope |

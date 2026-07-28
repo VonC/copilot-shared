@@ -1,6 +1,6 @@
 ---
 name: split-and-define
-description: 'split a draft into several feature-requests and issues, and define their key title for each one'
+description: 'Split a multi-topic draft into an explicit umbrella with a machine-readable ordered status table, requirement boundaries, titles, and slugs. Use when a collection draft needs to become an ordered implementation backlog.'
 user-invocable: true
 metadata:
   - "This skill is used to extract titles for feature-requests and issues, from a draft markdown document where several topics are described."

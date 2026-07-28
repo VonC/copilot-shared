@@ -62,22 +62,35 @@ command straight away.
 ### Collection variation: keep the umbrella draft
 
 If `/process-draft` classified the note as a collection, `/split-and-define`
-adds item slugs such as `[route-cleanup]` to the umbrella draft. Keep that file
-under its collection name:
+adds `- Draft role: umbrella` and a delivery table. New rows begin as
+`pending`, with no document paths:
 
-```txt
-docs\draft.v10.0.0.sentinel.md
-docs\issue.v10.0.0.route-cleanup.md
-branch: route_cleanup
+```md
+| Order | Type | Key title | Slug | Status | Requirement | Validation plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Issue | Remove old routes | `route-cleanup` | pending | - | - |
+| 2 | Feature-request | Serve the root | `root-routing` | pending | - | - |
 ```
 
-The item branch does not require a renamed
-`draft.v10.0.0.route-cleanup.md`. When ordinary branch memory and changed-draft
-resolution find no topic, `pw skill` matches the branch leaf to exactly one
-requirement slug, treating `-` and `_` as equivalent. It then uses a direct
-same-slug draft when one exists, or the one same-version umbrella draft that
-mentions the complete item slug. Missing or ambiguous relationships stop
-resolution instead of borrowing an unrelated draft.
+The skill runs `pw skill --after-merge` on the umbrella. For the first row it
+proposes:
+
+```txt
+/process-draft on docs/draft.v10.0.0.sentinel.md based on route-cleanup
+```
+
+That continuation validates the table, creates a focused child draft on the
+item branch, and keeps the umbrella intact. The child records its parent:
+
+```md
+- Umbrella: docs/draft.v10.0.0.sentinel.md
+```
+
+After the item's last implementation check, the umbrella row becomes
+`completed` and records the requirement and validation-plan paths. Once that
+feature is merged into `develop`, `pw skill --after-merge` verifies the evidence
+and proposes `process-draft` for `root-routing`. Missing, ambiguous, or stale
+relationships stop resolution instead of borrowing an unrelated draft.
 
 ## 4. Stop at the review table
 

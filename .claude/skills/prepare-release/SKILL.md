@@ -1,8 +1,8 @@
 ---
 name: prepare-release
-description: 'Prepare a release from main, a long-lived integration branch such as develop, or a feature branch created from main, integration, or another feature. Apply gitworkflow topic graduation and preview conflicts; for unsupported selections, stop with an evidence-backed manual runbook. Audit existing wiki/ or docs/wiki/ Diataxis roots against every commit in the release range, prepare release artifacts, make one chore(release) prepare commit, stop before brel, and never push. Use when the user asks to prepare or cut a release.'
+description: 'Finish a feature by landing its exact range on develop when present, otherwise main, reword the merge, and stop with the next umbrella requirement from pw skill. When the umbrella is exhausted, or when invoked from main or integration for a release, continue through topology checks, the Diataxis wiki audit, release artifacts, and one chore(release) prepare commit. Stop before brel and never push. Use when the user asks to finish a feature or prepare a release.'
 user-invocable: true
-argument-hint: 'Explain the release context from main, develop/integration, or any feature branch. The skill automatically runs the planner; ambiguous feature ancestry pauses for a parent branch or boundary commit.'
+argument-hint: 'Explain the context from main, develop/integration, or any feature branch. Feature mode lands the requirement first and checks its umbrella; ambiguous ancestry pauses for a parent branch or boundary commit.'
 ---
 
 [Instruction](../../../instructions/prepare-release.md)

@@ -35,57 +35,64 @@ call `/write-requirement` directly with the type, version and topic.
    ```
 
 3. The skill appends a `## List of feature-requests and issues to create`
-   section to the draft. Each entry carries:
+   section and adds `- Draft role: umbrella` after the collection type. The
+   section starts with this canonical table:
 
-   - the type (`Feature-request:` or `Issue:`),
-   - a key title with a 2-3 word `[topic-slug]` in brackets,
-   - the rationale for the regrouping.
-
-   Items are ordered from most independent to most dependent, so they can
-   be defined and implemented in that order.
-
-4. The skill ends on a multi-choice with one
-   `/write-requirement on docs/feature-request.vX.Y.Z.<slugN>.md` (or
-   `issue.`) entry per slug. Pick the first item; repeat for each slug.
-
-5. Keep the processed draft under its collection slug. When an item is developed
-   on its own branch, name the branch from the item slug; underscores and hyphens
-   are equivalent for workflow matching:
-
-   ```txt
-   docs\draft.v10.0.0.sentinel.md
-   docs\issue.v10.0.0.route-cleanup.md
-   branch: route_cleanup
+   ```md
+   | Order | Type | Key title | Slug | Status | Requirement | Validation plan |
+   | --- | --- | --- | --- | --- | --- | --- |
+   | 1 | Issue | Remove old routes | `route-cleanup` | pending | - | - |
+   | 2 | Feature-request | Serve the root | `root-routing` | pending | - | - |
    ```
 
-   Do not rename the umbrella draft to `route-cleanup` or create a temporary
-   same-slug draft alias. The menu-less `pw skill` and `pw handoff` commands
-   first use ordinary branch memory and changed-draft resolution. If those find
-   no topic, their shared resolver can connect the item to the requirement and
-   unchanged umbrella:
+   Every new item is `pending`. The detail subsections below the table explain
+   what was regrouped, why the title and boundary were chosen, and which prior
+   items it depends on. Items are ordered from most independent to most
+   dependent.
 
-   - exactly one requirement filename must match the normalized branch leaf,
-   - a direct same-version, same-slug draft wins when exactly one exists,
-   - otherwise exactly one same-version umbrella draft must mention the complete
-     normalized item slug,
-   - missing or ambiguous matches leave the topic unresolved.
-
-6. Let each requirement writer run its explicit review handoff:
+4. The skill runs:
 
    ```txt
-   pw skill --after-write requirement
+   pw skill --after-merge docs/draft.vX.Y.Z.<umbrella-slug>.md
    ```
 
-   This reviews the requirement just written. It does not use settled-looking
-   content to decide whether review already happened.
+   For a fresh umbrella it prints
+   `/process-draft on docs/draft.vX.Y.Z.<umbrella-slug>.md based on
+   <first-slug>`. Run that continuation. It validates the ordered row, creates
+   a focused child draft through a temporary unversioned source, creates the
+   item branch, and then hands off to
+   `/write-requirement`.
+
+5. Let each item run through requirement, design, plan, implementation, and
+   validation. When the last plan step turns the validation document into
+   `Yes, it is implemented.`, `/implementation-check` updates the matching
+   umbrella row in the same commit:
+
+   ```md
+   | 1 | Issue | Remove old routes | `route-cleanup` | completed | `docs/issue.v10.0.0.route-cleanup.md` | `docs/plan.v10.0.0.route-cleanup.validation.md` |
+   ```
+
+6. Run `/prepare-release` from the completed feature branch. It lands that
+   exact feature on `develop` when present, otherwise `main`, rewords the merge,
+   then runs the same `pw skill --after-merge` check. If another row is pending,
+   the command proposes its `process-draft` continuation and stops before
+   `main`, `version.txt`, or `CHANGELOG.md`. When every row is completed, it
+   continues with full release preparation.
+
+Do not manually mark rows completed. A pending row with complete validation
+evidence or a completed row with missing evidence is a workflow error that must
+be corrected at the final implementation check.
+
+The focused writer still uses `pw skill --after-write requirement` for its
+review, and the later implementation cycle uses `pw handoff`. The umbrella
+checkpoint supplements those handoffs; it does not replace them.
 
 ## ✅ Check after the split
 
-The draft now ends with the list section, and each
-`/write-requirement` run creates one `docs\<type>.vX.Y.Z.<topic>.md` that
-enters its own review loop. An item branch can continue through `pw skill` and
-the later `pw handoff` implementation chain without a same-slug draft, while
-the umbrella collection remains intact.
+The draft is explicitly marked as an umbrella, its table is ordered and
+machine-readable, and each row accurately records whether its evidence-backed
+development effort is pending or completed. `pw` can now select the next row
+without reconstructing progress from prose or filenames.
 
 Related: [From draft note to settled requirement](../tutorials/02-from-draft-to-settled-requirement.md),
 [skills catalog](../reference/skills-catalog.md).

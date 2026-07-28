@@ -49,6 +49,45 @@ Check your validation plan update: re-read the status sentence you wrote under `
 
 The validation plan opens with its own document-level status sentence, `No, it is not implemented.` in the initial skeleton. After recording this step's verdict, re-read every `### Analysis of Step N implementation state` section of the document. When each one now starts with the exact `Yes. Step N has been fully implemented.` sentence (this check just turned the last pending step into a Yes), update that opening line to `Yes, it is implemented.` and refresh the theme sentence below it so the document no longer reads as pending. When any step still reads `No` or `Not started`, leave the opening line at `No, it is not implemented.`. Skipping this flip leaves a fully validated effort looking unfinished, and `prepare-release` stops on that line.
 
+## Complete the matching umbrella row
+
+Run this section only when this check changed the validation plan's
+document-level status to the exact `Yes, it is implemented.` sentence.
+
+Look for an umbrella relationship in this order:
+
+1. Read the topic's `docs/draft.vX.Y.Z.<topic>.md`. When it contains
+   `- Umbrella: docs/draft.vX.Y.Z.<umbrella-slug>.md`, use that exact
+   repository-relative path.
+2. Otherwise inspect same-version drafts marked `- Draft role: umbrella` and
+   find the one whose canonical table below
+   `## List of feature-requests and issues to create` contains the exact topic
+   slug. Use it only when exactly one matches.
+
+No match means this is a standalone requirement, so leave drafts unchanged.
+More than one match, a missing declared umbrella, a malformed table, or a
+duplicate slug is an error: stop before the handoff and report it rather than
+guessing which collection to complete.
+
+In the one matching row:
+
+- require its current `Status` to be `pending`, or accept an already-correct
+  `completed` row as an idempotent rerun;
+- change `Status` to `completed`;
+- set `Requirement` to the repository-relative, backticked path of the exact
+  `feature-request.vX.Y.Z.<topic>.md` or `issue.vX.Y.Z.<topic>.md` checked by
+  this effort;
+- set `Validation plan` to the repository-relative, backticked path of the
+  validation plan updated by this check;
+- leave the row order, type, key title, slug, every other row, and the
+  requirement-detail subsections unchanged.
+
+Re-read both named files. The requirement must exist, and the validation plan's
+first non-title line must be `Yes, it is implemented.`. A completed row without
+that evidence is invalid. This umbrella edit belongs in the same grouped commit
+as the final validation update, so the later feature merge carries the status
+transition into the integration branch.
+
 ## Handoff
 
 When the check is written and the `Analysis of Step x` status line records the Yes-or-No verdict in the validation plan, hand the cycle on, with no menu. From the project root, run:

@@ -1,5 +1,5 @@
 ---
-description: Prepare supported releases, audit existing Diataxis wiki roots against every release commit, and stop unsupported selections with an evidence-backed runbook; stop before brel.
+description: Land and reword a feature on integration, stop for the next umbrella row when pending, or audit the Diataxis wiki and prepare the full release after the umbrella is exhausted; stop before brel.
 ---
 
 1. Locate the shared instruction body `instructions/prepare-release.md`: in this

@@ -1,7 +1,6 @@
 ---
 name: process-draft
-description: 'Process a draft document into a named, versioned effort: classify it, choose title, slug, version, and branch layout, call the new_draft tool, then hand off to write-requirement or split-and-define. Use when the user asks to process a draft.'
+description: 'Process a new draft into a named, versioned effort, or continue a canonical umbrella from the pending row selected by pw skill. Initial mode classifies and names the draft; umbrella mode validates the ordered status table, preserves the umbrella, creates a focused child draft and item branch, then hands off to write-requirement.'
 ---
 
 [Instruction](../../instructions/process-draft.md)
-

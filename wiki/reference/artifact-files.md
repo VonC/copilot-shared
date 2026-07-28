@@ -23,7 +23,7 @@ independently developed requirements use their own item slugs:
 | Pattern | Written by | Holds |
 | --- | --- | --- |
 | `docs\draft.<topic>.md` | the author | the raw idea, no version yet |
-| `docs\draft.vX.Y.Z.<slug>.md` | `/process-draft` | the classified, branched draft |
+| `docs\draft.vX.Y.Z.<slug>.md` | `/process-draft`, then `/split-and-define` for collections | the classified, branched draft; an umbrella also carries the ordered status index |
 | `docs\feature-request.vX.Y.Z.<topic>.md` | `/write-requirement` | new behavior to build |
 | `docs\issue.vX.Y.Z.<topic>.md` | `/write-requirement` | a bug or missing behavior |
 | `docs\design.vX.Y.Z.<topic>.md` | `/write-design` | scope, constraints, acceptance cases |
@@ -47,12 +47,31 @@ docs\issue.v10.0.0.route-cleanup.md
 branch: route_cleanup
 ```
 
+The umbrella is marked explicitly:
+
+```md
+- Type: collection (feature-requests and issues)
+- Draft role: umbrella
+```
+
+Its exact `## List of feature-requests and issues to create` section starts
+with this compact schema:
+
+```md
+| Order | Type | Key title | Slug | Status | Requirement | Validation plan |
+| --- | --- | --- | --- | --- | --- | --- |
+```
+
+`Order` is consecutive from 1. `Status` is `pending` or `completed`. Pending
+rows use `-` for both paths; completed rows name an existing requirement and a
+validation plan whose document-level status is `Yes, it is implemented.`.
+`implementation-check` owns the completed transition.
+
 The requirement filename, not the umbrella draft filename, identifies the
 current item. The shared menu-less resolver used by `pw skill` and `pw handoff`
 accepts this layout only when the normalized branch leaf matches exactly one
-requirement and that requirement has exactly one related direct or umbrella
-draft. The umbrella must mention the complete item slug; same-version proximity
-alone is not a relationship.
+requirement and that requirement has exactly one related direct or canonical
+umbrella draft. Same-version proximity alone is not a relationship.
 
 ## 🧾 Transient a-dot files at the project root
 

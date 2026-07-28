@@ -11,10 +11,10 @@ calls, conflict evidence, supported Git operations, release notes, and version
 updates; do not run its prerequisites manually. Use the lower-level commands
 only for the diagnostic or unsupported-path circumstances named below.
 
-📊 Goal: select the intended release scope from main, develop/integration,
-or a feature branch created from any parent and finish with one
-`chore(release): prepare for vX.Y.Z release` commit on `main`, ready for the
-author to tag with `brel`.
+📊 Goal: finish a feature on `develop` when present, otherwise `main`, and
+either stop cleanly for the next ordered umbrella requirement or continue to
+one `chore(release): prepare for vX.Y.Z release` commit on `main` when the
+umbrella is exhausted.
 
 ## 🧭 Choose the invocation branch
 
@@ -23,9 +23,9 @@ author to tag with `brel`.
 | Release everything integrated and validated | `develop` or the configured integration branch | The skill proposes one `git merge --no-ff develop` into main and never rebases develop |
 | Release all but one integrated feature | `develop`, with the excluded topic named in the context | Unsupported by the planner; the skill stops before mutation and outputs the exact merge evidence plus a review-branch revert, verification, re-entry, and later restoration runbook |
 | Release several arbitrary integrated features | Name every feature branch and their intended order | Unsupported as one planner transaction; the skill outputs per-topic promotion evidence so you can promote them separately, then prepare the combined artifacts once from main |
-| Release one feature created from main | Its feature branch | Merge directly when it already contains latest main; otherwise replay its confirmed range onto main, test, and merge `--no-ff` |
-| Release one feature created from develop or another feature | Its feature branch | Recover and confirm the actual fork, replay only `fork..feature` onto main on a promotion branch, test, and merge `--no-ff` |
-| Revisit a feature branch already contained by main | Its feature branch | Stop as already integrated; if a tag contains it, report it as already released; otherwise rerun from main only if all unreleased main changes should ship |
+| Finish one feature in an umbrella | Its feature branch | Land its exact range on develop when present, otherwise main; reword the merge; stop for the next ordered row unless the umbrella is exhausted |
+| Release a standalone feature | Its feature branch | Land and reword it, then continue through full release preparation because no umbrella backlog applies |
+| Revisit a feature already contained by its first destination | Its feature branch | Verify only a current-tip structured merge; otherwise stop with the historical merge OID |
 | Prepare changes already on the release branch | `main` | Select `last_tag..main`; no rebase and no merge; prepare the version and notes in place |
 
 To name an integration branch other than develop:
@@ -56,12 +56,14 @@ $llm-shared:prepare-release - prepare v9.13.5 from develop; later-version docume
 
 The skill detects the branch mode and effort documents since the last tag,
 checks the working tree, automatically invokes `prepare_release_plan.bat`,
-synchronizes with the latest `origin/main`, confirms the selected scope,
-merges `--no-ff` into `main` when needed, rewords the merge commit, audits
-every existing `wiki/` or `docs/wiki/` root against `<last_tag>..HEAD`, sets
-`version.txt` to `X.Y.Z-SNAPSHOT`, runs the release-notes steps, updates
-`pyproject.toml` and `uv.lock`, and lands one prepare commit. You do not run
-the planner or set `LLM_SHARED_DIR` yourself. It never tags and never pushes.
+synchronizes the first destination, confirms the selected scope, merges with
+`--no-ff`, and rewords the merge commit. For an umbrella feature it then runs
+`pw skill --after-merge` before any release artifact. A pending row ends the
+run there. An exhausted umbrella, a standalone feature, or a run from main or
+integration continues through the Diataxis audit, `version.txt`,
+`CHANGELOG.md`, `pyproject.toml`, `uv.lock`, and one prepare commit. You do not
+run the planner or set `LLM_SHARED_DIR` yourself. It never tags and never
+pushes.
 
 If a feature boundary is ambiguous, the skill presents the candidates and
 reruns its planner with the boundary or parent you choose. It never asks you
@@ -174,8 +176,8 @@ validation gates.
 
 ## 🎯 Release one selected feature
 
-The usual integration pick rebases the feature onto current develop and then
-records a non-fast-forward merge:
+The usual feature-completion pick replays the exact confirmed range onto current
+develop when needed and then records a non-fast-forward merge:
 
 ![A feature is rebased onto develop and merged there with no fast-forward.](../assets/prepare-release/feature-to-develop.svg)
 
@@ -185,38 +187,36 @@ reflog and the candidate parent branches' fork and merge topology. It then
 shows the detected parent, boundary commit, ordered commit list, and diff
 summary. Confirm only when that range contains this feature and nothing else.
 
-When the feature already contains latest main and its boundary belongs to
-main, the skill can merge the feature branch directly with `--no-ff`.
-Otherwise it creates `prepare-release/<feature>-onto-main`, runs:
+After the merge and structured reword, an associated umbrella is checked before
+release artifacts. Each `completed` row must name an existing requirement and a
+validation plan whose first non-title line is `Yes, it is implemented.`. If the
+first unfinished row is still `pending`, the run prints its exact
+`process-draft on <umbrella> based on <slug>` command and stops. It does not
+merge develop into main or update `version.txt` and `CHANGELOG.md`.
+
+When every umbrella row is complete, the same invocation continues. If the
+first destination was develop, it promotes develop wholesale to main and
+rewords that merge before creating release artifacts. If no develop branch
+exists, the feature is already on main and artifact preparation continues in
+place.
+
+When the feature already contains the latest destination and its boundary
+belongs to that destination, the skill can merge it directly with `--no-ff`.
+Otherwise it creates a temporary landing branch and runs:
 
 ```bash
-git rebase --onto main <feature-base> <promotion-branch>
+git rebase --onto <destination> <feature-base> <landing-branch>
 ```
 
 It verifies the replay with `git range-diff`, runs `ghog day`, and merges the
-promotion branch with `--no-ff`. The original feature branch remains
-unchanged, including when it was already merged into develop.
+landing branch with `--no-ff`. The original feature ref remains unchanged.
+With develop, this is the continuous-integration pick. Without develop, main
+is the destination.
 
-![A stale feature is replayed onto a temporary main-based promotion copy and merged into main.](../assets/prepare-release/feature-direct-to-main.svg)
-
-This is gitworkflow's topic-graduation decision. The feature's merge into
-develop—normally after rebasing onto develop—tested it with other topics; its
-separate `--no-ff` merge into main accepts it for release. This is the second
-pick of the same logical feature. A main-based topic can be merged unchanged.
-The temporary promotion rebase exists for develop-derived, nested, or stale
-topics and never rewrites the original branch. A feature selected directly
-for main can skip the develop pick entirely.
-
-When the feature was already tested on develop, its exact confirmed range is
-still the selection unit. Other develop commits are not pulled along:
-
-![Only one develop-tested feature is replayed and merged into main; unrelated develop work stays out.](../assets/prepare-release/feature-from-develop-to-main.svg)
-
-If the feature tip is already an ancestor of main, there is nothing left to
-merge or replay. The skill stops. It reports the earliest containing release
-tag when one exists; otherwise it explains that the feature is integrated but
-unreleased. Start again from main only when you intend to release every change
-in `last_tag..main`—the skill never broadens the feature invocation for you.
+If the feature tip is already an ancestor of the destination, there is nothing
+to replay. The skill can continue only when the destination tip is the feature
+merge whose structured message can still be verified; otherwise it stops with
+the merge OID rather than rewriting historical integration.
 
 If the reflog expired, a squash or fast-forward erased the fork evidence, or
 two bases remain equally plausible, the skill pauses for a parent or boundary.
@@ -251,7 +251,7 @@ the groundhog loop), signalling each through the flag file
 | --- | --- |
 | Dirty working tree | let the skill commit pending work, or stop and sort it out |
 | Integration lacks main | merge main into integration and test, or abort; never rebase integration |
-| Feature is not safely on latest main | confirm the exact range, replay it with `rebase --onto main`, or abort |
+| Feature is not safely on its first destination | confirm the exact range, replay it on a temporary landing branch with `rebase --onto`, or abort |
 | Feature parent is ambiguous | choose or provide the parent/boundary; no mutation occurs first |
 | Feature range contains merges | confirm the desired commits, reconstruct a clean main-based topic, validate it, and rerun from that branch; the planner accepts no explicit commit list |
 | Empty `main..integration` | do not merge; rerun from main only if every unreleased main commit should ship |
@@ -262,6 +262,8 @@ the groundhog loop), signalling each through the flag file
 | Local main diverged | decide how to reconcile; the skill never resets local commits |
 | `ghog day` not green | review the grouped fixes, then "go ahead" |
 | Merge message | review or edit the `Why:` / `What:` message |
+| Umbrella has a pending row | take the printed `process-draft` command as the next effort; release files remain untouched |
+| Umbrella status and evidence disagree | rerun or repair the final implementation check; never infer completion |
 | Diataxis wiki audit | review grouped wiki corrections before release notes |
 | Title choice | pick one of three witty title and subtitle pairs |
 | Notes review | edit the `version.txt` summary, or ask for `.changelog.fixes` rules |

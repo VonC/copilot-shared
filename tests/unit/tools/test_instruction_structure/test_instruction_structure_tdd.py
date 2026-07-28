@@ -69,11 +69,14 @@ def test_prepare_release_distinguishes_branch_roles() -> None:
     content = " ".join(_read("prepare-release.md").split())
     assert "On-main release" in content
     assert "Integration release" in content
-    assert "Feature release" in content
+    assert "Feature completion" in content
     assert "Never rebase a published, long-lived integration branch" in content
-    assert 'rebase --onto main "<feature_base>" "<promotion_branch>"' in content
+    assert (
+        'rebase --onto "<target_branch>" "<feature_base>" "<landing_branch>"'
+        in content
+    )
     assert "do not blindly use the oldest entry" in content
-    assert "Never move or rewrite `<feature_branch>` itself" in content
+    assert "Preserve the original feature ref" in content
     assert 'There is no feature-mode "merge stale anyway" path' in content
     assert 'merge --no-ff "<source_branch>"' in content
 
@@ -132,12 +135,12 @@ def test_prepare_release_audits_existing_diataxis_wikis_before_notes() -> None:
     _assert_release_wiki_files(root)
 
 
-def test_prepare_release_stops_features_already_contained_by_main() -> None:
-    """prepare-release does not attempt an empty replay of an integrated feature."""
+def test_prepare_release_stops_historical_feature_merges() -> None:
+    """prepare-release does not reword a non-tip historical feature merge."""
     content = " ".join(_read("prepare-release.md").split())
     assert "branch tip already released" in content
-    assert "feature-only merge can no longer select it" in content
-    assert "Never silently convert the invocation to an on-main release" in content
+    assert "feature is already integrated into `<target_branch>`" in content
+    assert "cannot safely invent or reword a non-tip historical merge" in content
 
 
 def test_prepare_release_uses_read_only_planner_and_merge_tree_preview() -> None:
@@ -245,12 +248,12 @@ def test_prepare_release_names_and_applies_gitworkflow_precisely() -> None:
 
 
 def test_prepare_release_documents_default_develop_variant() -> None:
-    """The local variant rebases topics for develop and releases from main."""
+    """The local variant lands topics on develop before release preparation."""
     content = " ".join(_read("prepare-release.md").split())
     assert "published long-lived hosting default" in content
-    assert "rebase the feature onto current `develop`" in content
-    assert "A feature may also go directly to main" in content
-    assert "be picked twice with `--no-ff`" in content
+    assert "replay the exact feature range onto current `develop`" in content
+    assert "When no integration branch exists, `main` is that first target" in content
+    assert "Only after the umbrella is exhausted" in content
 
 
 def test_gitworkflow_explanation_links_the_primary_context() -> None:
@@ -495,9 +498,11 @@ def test_wiki_explains_and_specifies_shared_target_rewording() -> None:
     reference = (wiki / "reference" / "skills-catalog.md").read_text(
         encoding="utf-8",
     )
+    explanation_words = " ".join(explanation.split())
     reference_words = " ".join(reference.split())
 
-    assert "Those two decisions need separate merge messages" in explanation
+    assert "The merge says why this topic entered develop" in explanation
+    assert "Rewording happens before the table checkpoint" in explanation_words
     assert "feature merge into `develop`" in reference_words
     assert "any no-fast-forward merge into `main`" in reference_words
     assert "current commit" in reference_words
@@ -566,8 +571,9 @@ def test_wiki_covers_umbrella_topics_and_explicit_post_write_review() -> None:
 
     tutorial = content["tutorial"]
     assert "draft.v10.0.0.sentinel.md" in tutorial
-    assert "issue.v10.0.0.route-cleanup.md" in tutorial
-    assert "branch: route_cleanup" in tutorial
+    assert "- Draft role: umbrella" in tutorial
+    assert "based on route-cleanup" in tutorial
+    assert "`completed`" in tutorial
 
     reference = content["reference"]
     assert "$llm-shared:skill" in reference

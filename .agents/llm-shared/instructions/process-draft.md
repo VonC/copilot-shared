@@ -1,24 +1,79 @@
 # Process a draft into a named, versioned effort
 
-Take a draft document named in the prompt, run a light first-pass that names what
-it is, give it a title, a slug, and a target version, then hand the rename and the
-branch creation to the `new_draft` tool. The last step is a hand-off: a
-single-topic draft goes to the `write-requirement` instruction; a draft holding
-more than one topic goes to the `split-and-define` instruction.
+Take a draft document named in the prompt and use one of two modes:
 
-Do not write the feature-request or issue document here, and do not reshape the
-draft body. This instruction classifies, names, and versions the draft, lets the
-tool rename and branch it, then points at the next step.
+- **Initial draft mode** runs a light first-pass that names the draft, gives it
+  a title, slug, and target version, then hands the rename and branch creation
+  to the `new_draft` tool.
+- **Umbrella continuation mode** is selected by
+  `process-draft on <umbrella-draft> based on <item-slug>`. It takes the next
+  ordered item from an already settled collection, creates a focused child
+  draft without changing the umbrella, and creates the item branch.
+
+The last step is a hand-off: a single-topic draft goes to the
+`write-requirement` instruction; an initial draft holding more than one topic
+goes to the `split-and-define` instruction.
+
+Do not write the feature-request or issue document here. In initial mode, do not
+reshape the draft body. In umbrella continuation mode, the focused child draft
+is deliberately derived from one settled item while the umbrella remains
+unchanged.
 
 ## Inputs for process-draft
 
 - The draft document, named in the prompt (for example `docs\draft.duration_outliers.md`). If the prompt names no draft, or the file is missing, ask for the draft path and stop unless a valid path is supplied.
+- In umbrella continuation mode, the `based on <item-slug>` selector printed by
+  `pw skill --after-merge`. The selector must name exactly one entry below
+  `## List of feature-requests and issues to create` in a draft marked
+  `- Draft role: umbrella`.
 - `version.txt` at the repository root, read in step 5 to propose the target version.
 - The `new_draft` tool, called in step 6 to rename the draft and create the branch.
 
 Read the draft in full before proposing anything. If its content is empty or too
 thin to classify, say so and ask for added context, then stop unless enough
 context is supplied.
+
+## Umbrella continuation mode
+
+Run this section before the ordinary numbered steps when the prompt contains
+`based on <item-slug>`.
+
+1. Read the umbrella draft in full. Require `- Draft role: umbrella`, then
+   parse the exact compact table below the authoritative
+   `## List of feature-requests and issues to create` heading. Find the one row
+   whose backticked `Slug` cell equals the selector. Stop when the marker,
+   heading, canonical columns, consecutive order, row, or type is missing,
+   malformed, or duplicated.
+2. Recheck the ordering decision that `pw skill --after-merge` made. Every
+   earlier row must be `completed`, name its requirement and validation plan,
+   and point to a validation plan whose first non-title line is exactly
+   `Yes, it is implemented.`. The selected row must be `pending`, its two
+   document cells must be `-`, and no requirement document may already exist
+   for its slug. When either check fails, rerun
+   `pw skill --after-merge <umbrella-draft>` through its launcher and report
+   its result instead of creating a competing branch or document.
+3. Reuse the selected row's type, key title, slug, and the umbrella filename's
+   `vX.Y.Z`. Do not present the title, slug, version, or type menus from Steps 2
+   to 5: `split-and-define` already settled them.
+4. Create a temporary unversioned child source at
+   `docs/draft.<item-slug>.md`. Its heading is the settled key title; its metadata
+   records the settled type and `- Umbrella:
+   docs/draft.vX.Y.Z.<umbrella-slug>.md`. Include the selected split entry and
+   the matching requirement-detail subsection plus the umbrella sections,
+   rules, examples, and constraints that entry says it
+   regroups. Preserve their meaning and concrete detail; do not pull in work
+   assigned to another item. Never edit, rename, or delete the umbrella draft.
+5. Continue at Step 6 and present only the branch-layout choice. Pass the
+   temporary child source to `new_draft --from-draft` with the already settled
+   slug and version. The tool moves that child source to
+   `docs/draft.vX.Y.Z.<item-slug>.md` in the new branch or worktree; the
+   umbrella stays in the integration tree and is inherited by the new branch.
+6. Continue at Step 7 as one topic and hand off directly to
+   `write-requirement`, passing the settled type, version, and slug. The
+   umbrella draft remains associated context for the requirement.
+
+The ordinary initial-mode steps below do not run in umbrella continuation mode
+except for Steps 6 and 7 as narrowed above.
 
 ## User choices for process-draft
 

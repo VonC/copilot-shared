@@ -1,6 +1,6 @@
 ---
 name: prepare-release
-description: 'Prepare a release from main, a long-lived integration branch such as develop, or a feature branch created from main, integration, or another feature. Prepare main in place; merge integration wholesale without rebasing it; or discover and confirm the feature fork, replay only feature commits onto main on a promotion branch, and merge with --no-ff. Detect unsupported selections and return an evidence-backed manual runbook. Audit existing wiki/ or docs/wiki/ Diataxis roots against every commit in the release range, prepare release artifacts, and make one chore(release) prepare commit. Stop before brel and never push. Use when the user asks to prepare or cut a release.'
+description: 'Finish a feature by landing its exact range on develop when present, otherwise main, reword the merge, and stop with the next umbrella requirement from pw skill. When the umbrella is exhausted, or when invoked from main or integration for a release, continue through topology checks, the Diataxis wiki audit, release artifacts, and one chore(release) prepare commit. Stop before brel and never push. Use when the user asks to finish a feature or prepare a release.'
 ---
 
 [Instruction](../../instructions/prepare-release.md)

@@ -48,6 +48,27 @@ extend, debug or explain that code in a future session gets the context
 it needs from the repository itself: the history carries the reasoning,
 not just the result.
 
+## Why an umbrella is an executable document
+
+A multi-requirement draft is more than background prose. `split-and-define`
+marks it with `- Draft role: umbrella` and writes one ordered table with the
+type, key title, slug, status, requirement path, and validation-plan path for
+every item. The prose below the table still explains each boundary, while the
+table gives tools one unambiguous place to read delivery state.
+
+The status is deliberately evidence-backed. New rows start as `pending`.
+`implementation-check` changes a row to `completed` only when the last plan
+step makes the validation plan say `Yes, it is implemented.`, and records both
+document paths in the same commit. `pw skill --after-merge` verifies those
+paths and statuses before selecting the first pending row. It refuses stale or
+malformed state instead of inferring progress from filenames.
+
+This makes collection order part of the development topology. A completed
+feature can land on `develop`, receive its structured merge message, and stop
+before release artifacts while the umbrella still has pending work. Only an
+exhausted umbrella permits release preparation to continue to `main`,
+`version.txt`, and `CHANGELOG.md`.
+
 ## 📚 Why the wiki gets a release-range review
 
 Documentation written one feature at a time can still leave a release-level

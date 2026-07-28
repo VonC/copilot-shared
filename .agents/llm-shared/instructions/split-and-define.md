@@ -1,43 +1,93 @@
 # Split and define feature-requests and issues
 
-Check your prompt for a `draft.vX.Y.Z.<topic>.md` document in the context, and if it exists, review it and split it into several feature-requests and issues, and define their key title for each one.
+Check the prompt for a `draft.vX.Y.Z.<topic>.md` document. Review it and
+regroup its several topics into feature-requests and issues. This skill defines
+the collection and its delivery order; it does not create any requirement
+document.
 
-The goal is not to create the feature-request and issue documents, but only to regroup topics from the draft document into a list of feature-requests and issues, and to define a key title for each one.
+The input draft must already be classified as:
 
-As a result, add a section "List of feature-requests and issues to create" at the end of the draft document, with a list of the feature-requests and issues to create, and their key title. For example:
+```md
+- Type: collection (feature-requests and issues)
+```
+
+If that line is absent or the draft contains only one topic, stop and return to
+`process-draft` for correction.
+
+## Mark the draft as an umbrella
+
+Add this metadata line immediately after the collection type:
+
+```md
+- Draft role: umbrella
+```
+
+Keep the versioned draft under its umbrella slug for the lifetime of the
+collection. Child requirements and branches use their own item slugs; they do
+not rename or replace the umbrella.
+
+## Define the ordered requirement index
+
+Add or replace the exact
+`## List of feature-requests and issues to create` section. Start it with this
+compact table, using one row per requirement:
 
 ```md
 ## List of feature-requests and issues to create
-- Feature-request: "Add support for X in Y"
-- Issue: "Fix the bug in Z when doing W"
+
+| Order | Type | Key title | Slug | Status | Requirement | Validation plan |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Issue | Fix the bug in Z when doing W | `z-w-bug` | pending | - | - |
+| 2 | Feature-request | Add support for X in Y | `x-y-support` | pending | - | - |
 ```
 
-(there can be more than one feature-request and issue in the list, depending on the number of topics described in the draft document).
+The table is the machine-readable, authoritative delivery index:
 
-For each item, detail what has been regrouped from the draft document to create it, and what is the key title for it, with arguments for this choice of title.
+- `Order` starts at 1 and is consecutive.
+- `Type` is exactly `Feature-request` or `Issue`.
+- `Key title` is concise and does not repeat the slug in brackets.
+- `Slug` contains two or three short topic words separated by `-`, using only
+  lowercase letters, digits, `_`, or `-`, and starting with a letter or digit.
+- `Status` is exactly `pending` for every newly split item.
+- `Requirement` and `Validation plan` are exactly `-` while the item is
+  pending.
 
-In addition of a key title, provide two to three words to describe the topic of the feature-request or issue, to help the reader understand at a glance what it is about. Those words should be separated by `-`, and should be added in brackets at the end of the title. For example:
+After the table, add `### Requirement details for the umbrella`. For every row,
+add one numbered H4 section in the same order. State its type, key title, slug,
+what content was regrouped into it, why that boundary and title were chosen,
+and which earlier items it depends on. Preserve concrete rules, examples, and
+constraints from the source draft.
 
-```md
-## List of feature-requests and issues to create
-- Feature-request: "Add support for X in Y [X-Y-support]: short description of the elements from the draft document that have been regrouped to create this feature-request, and arguments for the choice of the title."
-- Issue: "Fix the bug in Z when doing W [Z-W-bug]: short description of the elements from the draft document that have been regrouped to create this issue, and arguments for the choice of the title."
-```
+Review the final order so the most independent requirement is first and each
+dependent requirement follows everything it needs. The order is an execution
+contract: `pw skill --after-merge` and `process-draft` always select the first
+pending row.
 
-They will be used for the future filenames of the feature-request and issue documents, as well as for the future branch names in which commits will be created to implement the feature or fix the issue.
+Do not mark an item complete here. `implementation-check` owns that transition:
+when its final plan step makes the validation plan fully implemented, it changes
+the matching row to `completed` and records the requirement and validation-plan
+paths. A pending row with complete validation evidence, or a completed row with
+missing evidence, is an error rather than an invitation to guess.
 
-Again, do not create documents, do not write feature-request or issue in full, only regroup topics from the draft document into a list of feature-requests and issues, and define a key title for each one, with arguments for this choice of title, and two to three words to describe the topic of the feature-request or issue.
-
-Once the list is complete, review that list and change the order of the items, to list the most independent ones first, and the most dependent ones last. The most dependent ones are the ones that will be created last, and that will depend on the implementation of the most independent ones. The most independent ones are the ones that will be created first, and that will not depend on the implementation of any other feature-request or issue.
-
-## Handoff
+## Handoff after defining the umbrella
 
 Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
-Once the list is settled, read [`../rules/interactive_menu.md`](../rules/interactive_menu.md), present the next-step choice, and run the chosen one, with no go-ahead beyond the pick. The slugs live only in the split you just defined, not yet as files, so the instruction builds the list (not `pw`): offer one entry per slug and run the selection straight away:
+Once the index is settled, run `pw skill --after-merge
+docs/draft.vX.Y.Z.<umbrella-slug>.md` through its launcher (see
+[`run-pw.md`](run-pw.md)). This read-only lookup validates the table and prints
+the first ordered action:
 
-- `<command-prefix>write-requirement on docs/feature-request.vX.Y.Z.<slug1>.md` or `docs/issue.vX.Y.Z.<slug1>.md`, for the first defined slug.
-- `<command-prefix>write-requirement on docs/feature-request.vX.Y.Z.<slug2>.md` or `docs/issue.vX.Y.Z.<slug2>.md`, for the second, and so on — one entry per slug, with no cap, in the order the list defined them.
-- `Type something else` — let the author provide a different next instruction or correction.
+```text
+<command-prefix>process-draft on docs/draft.vX.Y.Z.<umbrella-slug>.md based on <first-slug>
+```
+
+Read [`../rules/interactive_menu.md`](../rules/interactive_menu.md), present
+that printed command as the contextual next-step choice, and run it when
+selected, with no additional go-ahead. `process-draft` creates the focused
+child draft and then hands it to `write-requirement`. Include
+`Type something else` as the correction choice when the host provides a native
+menu. If the lookup fails or prints nothing, stop and report the malformed or
+ambiguous umbrella instead of composing a requirement command by hand.
