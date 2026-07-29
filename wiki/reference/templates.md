@@ -55,8 +55,9 @@ checks. Freshly created sections hold
 ## ❓ open-question.template.md
 
 One `### Qxx: {title}` block per question: the description, a BBQ
-rewording, an options section with pros and cons per option, the
-recommended option, and an explicit `Answer to Qxx` slot.
+rewording closed by an "In this picture: ..." mapping of each analogy
+element to its concrete concept, an options section with pros and cons per
+option, the recommended option, and an explicit `Answer to Qxx` slot.
 
 ## ✉️ group-commits-msg.template.md
 

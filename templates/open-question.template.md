@@ -14,6 +14,8 @@ Question description: a clear and concise description of the question, including
 
 Short section reformulating the question description in BBQ-style, to clarify the stakes and the impact of the question, and to make it easier to understand why the question matters and what are the implications of each option.
 
+Always close the BBQ with an explicit mapping that names, for each element of the analogy, the concrete concept it stands for, so the reader never has to guess the correspondence. Write it as one "In this picture: ..." sentence or a short list, for example: "In this picture: the badge reader is the session dependency, the locked corridor is the `/api/admin` prefix, and the end-of-job inspection is the acceptance test suite." An analogy element with no named concept is a gap to fix before publishing the question.
+
 #### Options for Qxx
 
 - Option X1: (with pros and cons: you can list multiple pros and cons for each option, but at least one pro and one con for each option)

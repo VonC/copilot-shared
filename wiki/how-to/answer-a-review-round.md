@@ -19,7 +19,9 @@ design or plan, and get the answers folded into the document.
 `## Open questions` section to the document, one `Qxx` block per question.
 Each block follows the
 [open-question template](../reference/templates.md): a description, a BBQ
-rewording (how two people at a barbecue would say it), two or three
+rewording (how two people at a barbecue would say it, closed by an
+"In this picture: ..." mapping that names the concrete concept behind each
+analogy element), two or three
 options with pros and cons, and a recommended option. The chat ends with
 the summary table:
 
