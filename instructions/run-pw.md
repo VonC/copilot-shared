@@ -54,4 +54,4 @@ For a `pw handoff` command, which writes `a.prompt.txt`, `a.prompt_memory`, and 
 Before using or showing a host-prefixed workflow command printed by `pw`, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md).
 
-A pw command prints one line to stdout — for example `<command-prefix>review-ask-questions on docs/feature-request.vX.Y.Z.<slug>.md`, with the prefix selected for the active host. Read that line and act on it as the calling handoff describes; the not-applicable case prints nothing and exits non-zero.
+A pw command prints one line to stdout — for example `<command-prefix>review-ask-questions on docs/vX.Y.Z/<slug>/feature-request.vX.Y.Z.<slug>.md`, with the prefix selected for the active host. Read that line and act on it as the calling handoff describes; the not-applicable case prints nothing and exits non-zero.
