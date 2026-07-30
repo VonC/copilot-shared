@@ -306,6 +306,26 @@ def test_llm_shared_senv_reinitializes_project_scoped_aliases() -> None:
     assert senv.index(clear) < senv.index(initialize)
 
 
+def test_llm_shared_senv_bootstraps_shared_sensitive_rules_file() -> None:
+    """A new workstation gets an empty shared rules file before hook setup."""
+    root = steps.llm_shared_dir()
+    senv = (root / "senv.bat").read_text(encoding="utf-8")
+
+    shared_rules = (
+        'set "SENSITIVE_SHARED_RULES='
+        '%PROG%\\git\\a.sensitive.replacements.local.txt"'
+    )
+    bootstrap = 'if not exist "%SENSITIVE_SHARED_RULES%" ('
+    create_empty = 'type NUL > "%SENSITIVE_SHARED_RULES%"'
+    install_hooks = (
+        'python "%PRJ_DIR%\\tools\\sensitive_history\\install_hooks.py"'
+    )
+
+    assert senv.index(shared_rules) < senv.index(bootstrap)
+    assert senv.index(bootstrap) < senv.index(create_empty)
+    assert senv.index(create_empty) < senv.index(install_hooks)
+
+
 def test_sensitive_history_scanner_has_package_launcher_and_alias() -> None:
     """The audit skill and interactive shell share one stable scanner launcher."""
     root = steps.llm_shared_dir()

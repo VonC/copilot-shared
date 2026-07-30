@@ -215,6 +215,13 @@ REM rules below with its own local rules file. Checking the whole managed
 REM fleet here would launch one Python per repo and delay every project
 REM senv; the other repos get their check when senv runs from inside them.
 set "SENSITIVE_SHARED_RULES=%PROG%\git\a.sensitive.replacements.local.txt"
+if not exist "%SENSITIVE_SHARED_RULES%" (
+  type NUL > "%SENSITIVE_SHARED_RULES%"
+  if errorlevel 1 (
+    %_fatal% "Could not create default shared sensitive rules file '%SENSITIVE_SHARED_RULES%'" 233
+  )
+  %_info% "Created default shared sensitive rules file '%SENSITIVE_SHARED_RULES%'"
+)
 set "SENSITIVE_CURRENT_REPO="
 for /f "delims=" %%i in ('git rev-parse --show-toplevel 2^>nul') do set "SENSITIVE_CURRENT_REPO=%%~fi"
 for %%r in ("%PRJ_DIR%" "%PROG%\git\workspace-halo" "%PROG%\git\cplx" "%PRGS%\senv") do (
