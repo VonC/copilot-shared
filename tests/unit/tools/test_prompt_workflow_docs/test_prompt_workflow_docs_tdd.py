@@ -482,4 +482,25 @@ def test_has_consolidated_decisions_needs_the_heading(tmp_path: Path) -> None:
     assert docs.has_consolidated_decisions(rows_only) is False
 
 
+def test_has_consolidated_decisions_rejects_a_late_question_column(
+    tmp_path: Path,
+) -> None:
+    """A question id in a later cell is the seeded shape, not the routing shape.
+
+    The design-decisions table in `process-draft.md` places `Question` third.
+    Copying that column order into a consolidated document must keep routing to
+    a review round, because widening the match would make every seeded table
+    look consolidated, which is the bug the strict row check prevents.
+    """
+    late_column = tmp_path / "late_column.md"
+    late_column.write_text(
+        "# Title\n\n## Requirement clarifications\n\n"
+        "| Area | Decision | Question | Integrated in |\n"
+        "| --- | --- | --- | --- |\n"
+        "| Naming | keep it | Q01 | Step 4 |\n",
+        encoding="utf-8",
+    )
+    assert docs.has_consolidated_decisions(late_column) is False
+
+
 # eof

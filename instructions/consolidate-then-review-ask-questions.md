@@ -10,6 +10,25 @@ You need to remove `Qxx:` sections and integrate their answers within the docume
 
 Create a decision table in the document's decisions section, naming that section for the document type: "Design decisions" for a design, "Implementation decisions" for an implementation plan, or "Requirement clarifications" for a feature-request or an issue. Summarize all the choices that have been made, with their arguments and the alternatives that were rejected. Do reference the number of the question (Qxx) that led to each choice, as well as the section of the document where the choice is integrated. Keep the choices to the nature of the document: implementation decisions for a plan (file layout, step order, test and split strategy), design choices for a design, feature or issue clarifications for a requirement.
 
+The question id must be the **first** column of every decision row. `pw skill`
+routes on `has_consolidated_decisions`, which requires a row opening with
+`| Qxx` (or the `No open questions` settled row) so that a table seeded when the
+document was first written is not mistaken for a consolidated one. A table that
+carries the question id in a later column is not recognized, and `pw skill`
+routes back to another review round instead of forward to the next phase. Use
+this normative shape, adding columns after the first as the document needs:
+
+```md
+| Question | Decision | Integrated in | Rejected alternatives |
+| --- | --- | --- | --- |
+| Q01 | ... | ... | ... |
+```
+
+The design-decisions table shown in [`process-draft.md`](process-draft.md),
+which places `Question` in a later column, is a seeded design record written
+with that instruction rather than a consolidation output, so it is deliberately
+not the routing shape and must not be copied here.
+
 Be mindful of the type of the document you are reviewing, because the kind of question you may consolidate or ask changes with it. A question that fits one type is out of place in another:
 
 - a feature-request or an issue document takes only questions that clarify the feature or the issue itself: scope, expected behaviour, acceptance criteria, edge cases. No design choice, no implementation detail.

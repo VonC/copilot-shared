@@ -225,6 +225,13 @@ These choices come from the two review rounds (Q01 to Q08); each row names the
 question that settled it, the step where it is integrated, and the options that were
 turned down.
 
+This table is a seeded design record for this instruction, not a consolidation
+output. Its `Question` column sits third on purpose. Do not copy this column
+order into a document's decisions section: `pw skill` routes on a row opening
+with `| Qxx`, so a consolidated table must lead with the question id, as
+[`consolidate-then-review-ask-questions.md`](consolidate-then-review-ask-questions.md)
+specifies.
+
 | Area | Decision | Question | Integrated in | Rejected alternatives |
 | --- | --- | --- | --- | --- |
 | Version source | Keep `version.txt`; the parse rule moves to a shared `new_draft_models.read_version_txt` | Q01 | Step 5 | `pyproject.toml` only; read both and reconcile |
