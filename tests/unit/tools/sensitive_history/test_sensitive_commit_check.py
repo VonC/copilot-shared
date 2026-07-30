@@ -145,6 +145,31 @@ def test_message_check_is_redacted_and_main_returns_hook_statuses(
     assert main(["--root", str(pending_repo), "staged"]) == 0
 
 
+def test_empty_rule_files_warn_and_do_not_block_commits(
+    pending_repo: Path,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An intentionally empty bootstrap configuration leaves commits usable."""
+    shared = tmp_path / "shared.rules"
+    shared.write_text("", encoding="utf-8")
+    (pending_repo / "a.sensitive.replacements.local.txt").write_text(
+        "",
+        encoding="utf-8",
+    )
+    _run_git(pending_repo, "config", "sensitive.sharedRulesFile", str(shared))
+
+    assert main(["--root", str(pending_repo), "staged"]) == 0
+    warning = capsys.readouterr().err
+    assert "sensitive commit check skipped" in warning
+    assert "no sensitive replacement rules configured" in warning
+
+    missing = tmp_path / "missing.rules"
+    _run_git(pending_repo, "config", "sensitive.sharedRulesFile", str(missing))
+    assert main(["--root", str(pending_repo), "staged"]) == ERROR
+    assert "cannot read replacement file" in capsys.readouterr().err
+
+
 def test_configuration_and_git_errors_fail_closed(
     pending_repo: Path,
     tmp_path: Path,

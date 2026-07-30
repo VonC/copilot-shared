@@ -162,7 +162,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         root = repository_root(args.root)
-        patterns = patterns_from_repository_rules(root)
+        patterns = patterns_from_repository_rules(root, allow_empty=True)
+        if not patterns:
+            sys.stderr.write(
+                "WARNING: sensitive commit check skipped: "
+                "no sensitive replacement rules configured\n",
+            )
+            return 0
         findings = (
             check_staged_blobs(root, patterns)
             if args.command == "staged"

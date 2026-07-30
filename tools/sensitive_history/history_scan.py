@@ -201,7 +201,10 @@ def patterns_from_replacement_file(path: Path) -> list[PatternSpec]:
     return patterns
 
 
-def merge_patterns(*groups: Sequence[PatternSpec]) -> list[PatternSpec]:
+def merge_patterns(
+    *groups: Sequence[PatternSpec],
+    allow_empty: bool = False,
+) -> list[PatternSpec]:
     """Combine input groups while keeping the first equivalent pattern."""
     merged: list[PatternSpec] = []
     seen: set[str] = set()
@@ -211,7 +214,7 @@ def merge_patterns(*groups: Sequence[PatternSpec]) -> list[PatternSpec]:
             if key not in seen:
                 merged.append(pattern)
                 seen.add(key)
-    if not merged:
+    if not merged and not allow_empty:
         message = "provide terms, a terms file, or a replacement file"
         raise HistoryScanError(message)
     return merged
@@ -253,10 +256,15 @@ def repository_replacement_files(root: Path) -> tuple[Path, ...]:
     return tuple(files)
 
 
-def patterns_from_repository_rules(root: Path) -> list[PatternSpec]:
+def patterns_from_repository_rules(
+    root: Path,
+    *,
+    allow_empty: bool = False,
+) -> list[PatternSpec]:
     """Merge configured shared and project-local replacement patterns."""
     return merge_patterns(
         *(patterns_from_replacement_file(path) for path in repository_replacement_files(root)),
+        allow_empty=allow_empty,
     )
 
 

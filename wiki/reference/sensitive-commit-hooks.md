@@ -123,12 +123,15 @@ Commit blocked; sensitive content was not printed.
 
 | Status | Meaning |
 | --- | --- |
-| `0` | The pending content checked by this hook is clean |
+| `0` | The pending content is clean, or the existing rule files are empty and the hook printed a warning that protection is inactive |
 | `1` | Sensitive content was found; commit blocked |
 | `2` | Rules, repository state, Git, or message input could not be checked reliably |
 
-Configuration failures fail closed. Git's `--no-verify` bypasses client-side
-hooks; enforce an equivalent server-side check when bypass must be prohibited.
+An existing but empty shared-and-local rule set is a visible no-op so the
+default bootstrap file does not prevent commits. Missing configured files,
+unreadable or invalid rules, and other configuration failures still fail
+closed. Git's `--no-verify` bypasses client-side hooks; enforce an equivalent
+server-side check when bypass must be prohibited.
 
 ## Source layout
 
