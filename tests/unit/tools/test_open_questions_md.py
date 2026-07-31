@@ -236,6 +236,26 @@ def test_resolve_doc_in_version_subdir(tmp_path: Path) -> None:
     assert resolved == doc
 
 
+@pytest.mark.parametrize(
+    "subdir",
+    [None, "v1.2", "v1.2.3", "v1.2/v1.2.3"],
+)
+def test_resolve_doc_accepts_exact_path_in_every_layout(
+    tmp_path: Path,
+    subdir: str | None,
+) -> None:
+    """An exact repository-relative path resolves in every supported layout."""
+    doc = _write_doc(
+        tmp_path,
+        "design.v1.2.3.topic.md",
+        "# Body\n",
+        subdir=subdir,
+    )
+    relative = doc.relative_to(tmp_path).as_posix()
+
+    assert open_questions_md._resolve_doc(tmp_path, relative) == doc
+
+
 def test_resolve_doc_missing_raises(tmp_path: Path) -> None:
     """A missing document fails early with a fatal error."""
     # Act / Assert

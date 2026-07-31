@@ -13,13 +13,11 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+
+import pytest
 
 from tools import prompt_workflow_docs as docs
-from tools.prompt_workflow_models import Topic
-
-if TYPE_CHECKING:
-    import pytest
+from tools.prompt_workflow_models import PromptWorkflowError, Topic
 
 # pyright: reportPrivateUsage=false, reportUnknownLambdaType=false
 # pyright: reportUnknownArgumentType=false
@@ -313,17 +311,93 @@ def test_branch_requirement_topic_rejects_an_unrelated_same_version_draft(
     assert docs.branch_requirement_topic(tmp_path, "route_cleanup") is None
 
 
-def test_docs_dirs_empty_and_with_version_subdir(tmp_path: Path) -> None:
-    """Docs discovery returns nothing without docs, then docs and version dirs."""
+def test_docs_dirs_supports_four_layouts(tmp_path: Path) -> None:
+    """Docs discovery returns only the four supported directory layouts."""
     assert docs.docs_dirs(tmp_path) == []
 
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
+    (docs_dir / "v9.8").mkdir()
     (docs_dir / "v9.8.0").mkdir()
+    (docs_dir / "v9.8" / "v9.8.0").mkdir()
+    (docs_dir / "v9.8.0" / "topic").mkdir()
     (docs_dir / "archive").mkdir()
     (docs_dir / "draft.v9.8.0.iso.md").write_text("d", encoding="utf-8")
 
-    assert docs.docs_dirs(tmp_path) == [docs_dir, docs_dir / "v9.8.0"]
+    assert docs.docs_dirs(tmp_path) == [
+        docs_dir,
+        docs_dir / "v9.8",
+        docs_dir / "v9.8" / "v9.8.0",
+        docs_dir / "v9.8.0",
+    ]
+
+
+@pytest.mark.parametrize(
+    "relative_dir",
+    ["docs", "docs/v9.8", "docs/v9.8.0", "docs/v9.8/v9.8.0"],
+)
+def test_resolve_document_uses_only_version_slug_and_type(
+    tmp_path: Path,
+    relative_dir: str,
+) -> None:
+    """The selector resolves the same plan contract in every layout."""
+    directory = tmp_path / relative_dir
+    directory.mkdir(parents=True)
+    expected = directory / "plan.v9.8.0.git-history-report.md"
+    expected.write_text("plan", encoding="utf-8")
+
+    assert (
+        docs.resolve_document(tmp_path, "v9.8.0", "git_history_report", "plan")
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    ("document_type", "name"),
+    [
+        ("draft", "draft.v9.8.0.iso.md"),
+        ("feature-request", "feature-request.v9.8.0.iso.md"),
+        ("issue", "issue.v9.8.0.iso.md"),
+        ("design", "design.v9.8.0.iso.md"),
+        ("plan", "plan.v9.8.0.iso.md"),
+        ("validation-plan", "plan.v9.8.0.iso.validation.md"),
+    ],
+)
+def test_resolve_document_supports_each_concrete_type(
+    tmp_path: Path,
+    document_type: str,
+    name: str,
+) -> None:
+    """Every workflow document type has an exact selector."""
+    directory = tmp_path / "docs" / "v9.8.0"
+    directory.mkdir(parents=True)
+    expected = directory / name
+    expected.write_text("body", encoding="utf-8")
+
+    assert docs.resolve_document(tmp_path, "v9.8.0", "iso", document_type) == expected
+
+
+def test_resolve_document_supports_the_requirement_role(tmp_path: Path) -> None:
+    """The logical requirement type resolves either requirement prefix."""
+    directory = tmp_path / "docs" / "v9.8"
+    directory.mkdir(parents=True)
+    expected = directory / "issue.v9.8.0.iso.md"
+    expected.write_text("body", encoding="utf-8")
+
+    assert docs.resolve_document(tmp_path, "v9.8.0", "iso", "requirement") == expected
+
+
+def test_resolve_document_rejects_duplicates_across_layouts(tmp_path: Path) -> None:
+    """A selector fails closed instead of choosing one duplicate silently."""
+    root_docs = tmp_path / "docs"
+    version_docs = root_docs / "v9.8.0"
+    version_docs.mkdir(parents=True)
+    name = "design.v9.8.0.iso.md"
+    (root_docs / name).write_text("old", encoding="utf-8")
+    (version_docs / name).write_text("new", encoding="utf-8")
+
+    with pytest.raises(PromptWorkflowError, match="Ambiguous design document"):
+        docs.resolve_document(tmp_path, "v9.8.0", "iso", "design")
 
 
 def _make_topic_docs(root: Path) -> None:
@@ -357,6 +431,21 @@ def test_find_matching_documents_per_role(tmp_path: Path) -> None:
     assert names("design") == ["design.v9.8.0.iso.md", "design.v9.8.0.iso_sub.md"]
     assert names("plan") == ["plan.v9.8.0.iso.md"]
     assert names("validation_plan") == ["plan.v9.8.0.iso.validation.md"]
+
+
+def test_find_matching_documents_prefers_the_draft_layout(tmp_path: Path) -> None:
+    """A canonical draft keeps pw from mixing duplicate files across layouts."""
+    root_docs = tmp_path / "docs"
+    selected = root_docs / "v9.8" / "v9.8.0"
+    selected.mkdir(parents=True)
+    draft = selected / "draft.v9.8.0.iso.md"
+    draft.write_text("draft", encoding="utf-8")
+    (root_docs / "design.v9.8.0.iso.md").write_text("old", encoding="utf-8")
+    expected = selected / "design.v9.8.0.iso.md"
+    expected.write_text("selected", encoding="utf-8")
+    topic = Topic(version="v9.8.0", slug="iso", draft_path=draft)
+
+    assert docs.find_matching_documents(tmp_path, topic, "design") == [expected]
 
 
 def test_find_matching_documents_folds_hyphen_and_underscore(tmp_path: Path) -> None:

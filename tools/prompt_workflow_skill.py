@@ -103,8 +103,6 @@ def render_command(prefix: str, instruction: str, document: str) -> str:
     return f"{prefix}{name} on {document}"
 
 
-# The docs folder the skill commands name, relative to the project root.
-DOCS_DIR = "docs"
 # The instruction named before the workflow proper, when only a new draft exists.
 PROCESS_DRAFT = "process-draft.md"
 # The instruction each resolved workflow step names (step 1 on the slug branch writes).
@@ -282,7 +280,9 @@ def _document(root: Path, topic: Topic, role: str, state: WorkflowState) -> str:
     }[role]
     if existing is not None:
         return _relpath(root, existing)
-    return f"{DOCS_DIR}/{PRODUCED_TYPE[role]}.{topic.version}.{topic.slug}.md"
+    effort_dir = _relpath(root, topic.draft_path.parent)
+    filename = f"{PRODUCED_TYPE[role]}.{topic.version}.{topic.slug}.md"
+    return (Path(effort_dir) / filename).as_posix()
 
 
 def _relpath(root: Path, path: Path) -> str:
@@ -579,7 +579,7 @@ def _plan_topics(root: Path) -> list[Topic]:
     seen: set[tuple[str, str]] = set()
     for directory in docs.docs_dirs(root):
         for entry in sorted(directory.iterdir()):
-            topic = _topic_from_validation_plan(root, entry)
+            topic = _topic_from_validation_plan(entry)
             if topic is None:
                 continue
             key = (topic.version, topic.slug)
@@ -590,7 +590,7 @@ def _plan_topics(root: Path) -> list[Topic]:
     return topics
 
 
-def _topic_from_validation_plan(root: Path, path: Path) -> Topic | None:
+def _topic_from_validation_plan(path: Path) -> Topic | None:
     """Parse a Topic from ``plan.<version>.<slug>.validation.md``."""
     name = path.name
     if (
@@ -608,7 +608,7 @@ def _topic_from_validation_plan(root: Path, path: Path) -> Topic | None:
     if not rest.startswith(".") or not rest[1:]:
         return None
     slug = rest[1:]
-    draft = root / DOCS_DIR / f"draft.{version}.{slug}{MD_SUFFIX}"
+    draft = path.parent / f"draft.{version}.{slug}{MD_SUFFIX}"
     return Topic(version=version, slug=slug, draft_path=draft.resolve())
 
 

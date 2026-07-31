@@ -336,6 +336,18 @@ def run(root: Path, *, pick: bool = False) -> int:
     return 0
 
 
+def run_document(root: Path, version: str, slug: str, document_type: str) -> int:
+    """Print the unique document selected by version, slug, and type."""
+    path = docs.resolve_document(root, version, slug, document_type)
+    if path is None:
+        sys.stderr.write(
+            f"pw document: no {document_type} document for {version} {slug}.\n",
+        )
+        return skill.EXIT_NOT_APPLICABLE
+    sys.stdout.write(f"{path.relative_to(root).as_posix()}\n")
+    return 0
+
+
 def _relevant_drafts(root: Path, branch: str) -> list[Topic]:
     """Call the branch-aware draft resolver while tolerating old test doubles."""
     if len(signature(docs.relevant_drafts).parameters) == _RELEVANT_DRAFTS_LEGACY_ARITY:
@@ -502,6 +514,18 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Print the next ordered item from the named umbrella draft.",
     )
+    document_parser = subparsers.add_parser(
+        "document",
+        parents=[common],
+        help="Find one document from its version, slug, and type.",
+    )
+    document_parser.add_argument("version", help="Document version, such as v1.2.3.")
+    document_parser.add_argument("slug", help="Document topic slug.")
+    document_parser.add_argument(
+        "document_type",
+        choices=docs.DOCUMENT_TYPES,
+        help="Document type to resolve.",
+    )
     return parser
 
 
@@ -517,6 +541,8 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve() if args.root else find_project_root(Path.cwd())
     if args.command == "handoff":
         return run_handoff(root, args.task, args.step)
+    if args.command == "document":
+        return run_document(root, args.version, args.slug, args.document_type)
     if args.command == "skill":
         return skill.run_skill(
             root,
