@@ -9,10 +9,10 @@ document name without its ``.md`` suffix. The companion of
 
 The project root is located with the shared ``find_project_root`` helper, so the
 tool honors ``PRJ_DIR`` and otherwise walks up to the first ``.git`` directory,
-exactly like the other tools in this package. The document itself is looked up
-under ``<root>/docs/<name>`` first, then ``<root>/docs/<vX.Y.Z>/<name>`` when a
-version token is present in the name. The document must exist and be non-empty;
-otherwise the tool fails early with a fatal error.
+exactly like the other tools in this package. The document can be passed by its
+exact repository-relative path in any supported docs layout. A basename-only
+call searches those layouts for backward compatibility. The document must
+exist and be non-empty; otherwise the tool fails early with a fatal error.
 
 Exactly one of three mutually exclusive modes must be selected:
 
@@ -48,9 +48,8 @@ if __name__ == "__main__":
         sys.path.insert(0, str(_project_root))
 
 from tools import find_project_root
+from tools.prompt_workflow_docs import docs_dirs
 
-# Name of the documentation folder, relative to the project root.
-DOCS_DIR_NAME = "docs"
 # Suffix of the documents this tool operates on.
 MD_SUFFIX = ".md"
 # Companion file name = COMPANION_PREFIX + <base> + COMPANION_SUFFIX.
@@ -110,11 +109,11 @@ def _companion_name(base: str) -> str:
 
 
 def _resolve_doc(root: Path, name: str) -> Path:
-    """Locate a non-empty document under the docs folder.
+    """Locate a non-empty document in a supported docs layout.
 
-    The lookup tries ``<root>/docs/<name>`` first, then
-    ``<root>/docs/<version>/<name>`` when ``name`` carries a version token. The
-    first candidate that exists and is non-empty is returned.
+    An exact relative path is resolved from ``root``. A basename searches the
+    four layouts returned by ``prompt_workflow_docs.docs_dirs``. The first
+    candidate that exists and is non-empty is returned.
 
     Args:
         root: The resolved project root directory.
@@ -127,14 +126,20 @@ def _resolve_doc(root: Path, name: str) -> Path:
         OpenQuestionsError: When no candidate exists, or every candidate that
             does exist is empty.
     """
-    docs_dir = root / DOCS_DIR_NAME
-    version = _extract_version(name)
-    candidates = [docs_dir / name]
-    if version:
-        candidates.append(docs_dir / version / name)
+    requested = Path(name)
+    directories = docs_dirs(root)
+    supported = {directory.resolve() for directory in directories}
+    if requested.is_absolute():
+        candidates = [requested]
+    elif requested.parent != Path():
+        candidates = [root / requested]
+    else:
+        candidates = [directory / requested.name for directory in directories]
 
     empty_hits: list[Path] = []
     for candidate in candidates:
+        if candidate.resolve().parent not in supported:
+            continue
         if not candidate.is_file():
             continue
         if candidate.read_text(encoding="utf-8").strip():
@@ -305,15 +310,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description=(
-            "Manage the '## Open questions' section of a docs/<type>.vX.Y.Z."
-            "<topic>.md document and its a.<base>.open.questions.md companion."
+            "Manage the '## Open questions' section of a versioned effort "
+            "document and its a.<base>.open.questions.md companion."
         ),
     )
     parser.add_argument(
         "docfile",
         help=(
-            "Document file name (for example design.v1.2.3.cdc-gap.md), "
-            "looked up under <root>/docs or <root>/docs/<vX.Y.Z>."
+            "Document path or basename (for example "
+            "docs/v1.2/v1.2.3/design.v1.2.3.cdc-gap.md)."
         ),
     )
     group = parser.add_mutually_exclusive_group(required=True)
@@ -365,7 +370,7 @@ def main(argv: list[str] | None = None) -> int:
     base = name[: -len(MD_SUFFIX)]
 
     # Precondition shared by all modes: the document must exist and be non-empty.
-    doc_path = _resolve_doc(root, name)
+    doc_path = _resolve_doc(root, args.docfile)
     LOGGER.info("Document: %s", doc_path)
 
     companion_path = root / _companion_name(base)

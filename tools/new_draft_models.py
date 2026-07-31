@@ -2,8 +2,8 @@
 
 The tool asks for a slug, proposes a patch/minor/major bump of the current
 version, creates a branch (and optionally a sibling worktree), bumps
-`pyproject.toml`, and drops a `docs/draft.vX.Y.Z.<slug>.md` skeleton so a new
-development effort starts already isolated.
+`pyproject.toml`, and drops a `draft.vX.Y.Z.<slug>.md` skeleton in one of four
+docs layouts so a new development effort starts already isolated.
 
 This module holds the side-effect-free pieces so they stay unit-testable:
 semantic-version parsing and bumping, the `pyproject.toml` version read, the
@@ -22,14 +22,19 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import datetime
-    from pathlib import Path
 
 # Bump kinds offered in the version menu, least-disruptive first.
 BUMP_PARTS: tuple[str, ...] = ("patch", "minor", "major")
+
+# Documentation layouts offered by process-draft. The value is persisted by
+# the canonical draft's parent directory, so every later workflow step can
+# recover the choice without a project-global configuration file.
+DOCS_LAYOUTS: tuple[str, ...] = ("flat", "minor", "version", "minor-version")
 
 # A slug must read as both a Git branch name and a filename component: lowercase
 # letters, digits, hyphen, or underscore, starting with a letter or digit.
@@ -174,6 +179,34 @@ def validate_slug(raw: str) -> str:
 def draft_filename(version: SemanticVersion, slug: str) -> str:
     """Return the `draft.vX.Y.Z.<slug>.md` filename for an effort."""
     return f"draft.v{version}.{slug}.md"
+
+
+def docs_relative_dir(version: SemanticVersion, layout: str) -> Path:
+    """Return the docs directory for ``version`` under the selected layout.
+
+    Args:
+        version: The effort's semantic version.
+        layout: One of ``flat``, ``minor``, ``version``, or ``minor-version``.
+
+    Returns:
+        A repository-relative path rooted at ``docs``.
+
+    Raises:
+        NewDraftError: When ``layout`` is not one of the supported values.
+    """
+    minor = f"v{version.major}.{version.minor}"
+    full = f"v{version}"
+    paths = {
+        "flat": Path("docs"),
+        "minor": Path("docs", minor),
+        "version": Path("docs", full),
+        "minor-version": Path("docs", minor, full),
+    }
+    try:
+        return paths[layout]
+    except KeyError as err:
+        msg = f"Unknown docs layout: {layout!r}"
+        raise NewDraftError(msg) from err
 
 
 def worktree_dir_name(project_root_name: str, slug: str) -> str:

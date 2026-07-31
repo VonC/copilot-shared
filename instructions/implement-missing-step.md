@@ -1,6 +1,6 @@
 # Implement the missing work of a step
 
-Your goal is to finish the missing work of the plan step named in your prompt, not to redo the whole step. The validation plan `docs\plan.vX.Y.Z.<topic>.validation.md` in your context has marked that step "No, it is not implemented" and listed what is left in its `### Missing work for Step N` section. Read that section first and treat it as the work list for this step.
+Your goal is to finish the missing work of the plan step named in your prompt, not to redo the whole step. The validation plan `<effort-dir>/plan.vX.Y.Z.<topic>.validation.md` in your context has marked that step "No, it is not implemented" and listed what is left in its `### Missing work for Step N` section. Read that section first and treat it as the work list for this step. Use the exact path supplied by `pw`; `<effort-dir>` is the canonical draft's parent directory.
 
 Include "Step XXXX" in the title of this conversation (replace XXXX with the step mentioned in the prompt).
 

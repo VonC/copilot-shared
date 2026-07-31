@@ -390,6 +390,76 @@ def test_skill_advances_on_a_settled_requirement(
     assert out == "/write-design on docs/design.v0.9.0.handoff_automation.md"
 
 
+@pytest.mark.parametrize(
+    "effort_dir",
+    ["docs", "docs/v0.9", "docs/v0.9.0", "docs/v0.9/v0.9.0"],
+)
+def test_skill_preserves_selected_docs_layout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    effort_dir: str,
+) -> None:
+    """Pw emits the next document beside the canonical draft in every layout."""
+    directory = tmp_path / effort_dir
+    directory.mkdir(parents=True)
+    draft_relpath = f"{effort_dir}/draft.v0.9.0.handoff_automation.md"
+    (tmp_path / draft_relpath).write_text("# Draft\n", encoding="utf-8")
+    (directory / "feature-request.v0.9.0.handoff_automation.md").write_text(
+        "# x\n\n## Requirement clarifications\n\n| Q01 | consolidated |\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(git, "current_branch", lambda _cwd: "handoff_automation")
+    monkeypatch.setattr(
+        git,
+        "working_tree_changed_files",
+        lambda _cwd: [draft_relpath],
+    )
+    monkeypatch.setattr(git, "fork_point", lambda _cwd: None)
+    monkeypatch.setenv("CLAUDECODE", "1")
+    monkeypatch.delenv("CODEX_THREAD_ID", raising=False)
+
+    assert prompt_workflow.main(["skill", "--root", str(tmp_path)]) == 0
+    out = capsys.readouterr().out.strip()
+    assert out == (
+        f"/write-design on {effort_dir}/design.v0.9.0.handoff_automation.md"
+    )
+
+
+@pytest.mark.parametrize(
+    ("effort_dir", "document_type"),
+    [
+        ("docs", "design"),
+        ("docs/v0.9", "plan"),
+        ("docs/v0.9.0", "design"),
+        ("docs/v0.9/v0.9.0", "plan"),
+    ],
+)
+def test_document_mode_finds_a_document_without_branch_or_draft(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    effort_dir: str,
+    document_type: str,
+) -> None:
+    """Version, slug, and type are sufficient to print the exact path."""
+    directory = tmp_path / effort_dir
+    directory.mkdir(parents=True)
+    relative = f"{effort_dir}/{document_type}.v0.9.0.route-cleanup.md"
+    (tmp_path / relative).write_text("body", encoding="utf-8")
+
+    assert prompt_workflow.main(
+        [
+            "document",
+            "v0.9.0",
+            "route_cleanup",
+            document_type,
+            "--root",
+            str(tmp_path),
+        ],
+    ) == 0
+    assert capsys.readouterr().out.strip() == relative
+
+
 def test_skill_resolves_a_branch_requirement_from_an_umbrella_draft(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

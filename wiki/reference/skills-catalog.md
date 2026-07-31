@@ -24,13 +24,13 @@ prerequisites already satisfied.
 | --- | --- | --- |
 | `/process-draft` | a new draft and `version.txt`, or one canonical umbrella row selected by `pw` | named draft and effort branch; umbrella continuation also creates a focused child draft without renaming the umbrella |
 | `/split-and-define` | a multi-topic collection draft | explicit umbrella marker, ordered pending/completed table, and requirement-detail subsections |
-| `/write-requirement` | type, `vX.Y.Z`, topic | `docs\feature-request.vX.Y.Z.<topic>.md` or `docs\issue.vX.Y.Z.<topic>.md` |
+| `/write-requirement` | type, `vX.Y.Z`, topic | `<effort-dir>/feature-request.vX.Y.Z.<topic>.md` or `<effort-dir>/issue.vX.Y.Z.<topic>.md` |
 | `/review-ask-questions` | a requirement, design or plan | `## Open questions` section, `Q0x` summary table |
 | `/consolidate-then-review-ask-questions` | the doc with answers | decision table, stripped questions, or a new round |
-| `/write-design` | the settled requirement | `docs\design.vX.Y.Z.<topic>.md` |
-| `/write-plans` | the settled design | `docs\plan.vX.Y.Z.<topic>.md` + `.validation.md` skeleton |
+| `/write-design` | the settled requirement | `<effort-dir>/design.vX.Y.Z.<topic>.md` |
+| `/write-plans` | the settled design | `<effort-dir>/plan.vX.Y.Z.<topic>.md` + `.validation.md` skeleton |
 | `/implement-step N` | plan, design, requirement | code and tests, green `ghog day` |
-| `/implementation-check N` | the plan, the diff, and an associated umbrella when present | verdict in `docs\plan...validation.md`; the final successful step also completes the matching umbrella row with evidence paths |
+| `/implementation-check N` | the plan, the diff, and an associated umbrella when present | verdict in `<effort-dir>/plan...validation.md`; the final successful step also completes the matching umbrella row with evidence paths |
 | `/implement-missing-step N` | the `Missing work` list | code and tests filling the gaps |
 | `/group-commits-msg` | the staged diff | `a.commit`, one message per group |
 | `/update-merge-commit-msg` | the current no-fast-forward merge | `a.docs`, `a.commit`, current merge reworded before push |

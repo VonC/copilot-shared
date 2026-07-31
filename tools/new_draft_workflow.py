@@ -3,9 +3,9 @@
 Flow: ask for a slug (re-prompting until it is valid and free of any local or
 remote branch), read the current version from `pyproject.toml` and let the user
 pick a patch/minor/major bump, offer a sibling worktree, then create the branch
-(in place or in the worktree) and write the `docs/draft.vX.Y.Z.<slug>.md`
-skeleton in the chosen worktree. The chosen version only labels the draft and
-its filename; `pyproject.toml` is read but never rewritten.
+(in place or in the worktree) and write `draft.vX.Y.Z.<slug>.md` in the selected
+docs layout. The chosen version only labels the draft and its filename;
+`pyproject.toml` is read but never rewritten.
 
 The terminal seams (`ask_text`, `select`) and the Git calls are imported as
 module attributes so tests monkeypatch them and drive every branch without a TTY
@@ -13,11 +13,10 @@ or a real repository.
 
 Fix: add the non-interactive `--from-draft` mode used by the `process-draft`
 instruction. It takes an existing draft path, a `--slug`, an optional
-`--version` (defaulting to the current `version.txt` version), and a
-`--worktree` or `--in-place` layout, then checks the slug, creates the branch,
-and relocates the draft to `draft.vX.Y.Z.<slug>.md` inside the chosen tree -
-reusing the same slug, collision, worktree, and filename rules as the
-interactive flow so the two never drift.
+`--version` (defaulting to the current `version.txt` version), a
+`--docs-layout`, and a `--worktree` or `--in-place` branch placement, then
+checks the slug, creates the branch, and relocates the draft inside the chosen
+tree and effort directory.
 """
 
 from __future__ import annotations
@@ -40,9 +39,11 @@ from tools.new_draft_git import (
 )
 from tools.new_draft_models import (
     BUMP_PARTS,
+    DOCS_LAYOUTS,
     NewDraftError,
     SemanticVersion,
     compute_worktree_path,
+    docs_relative_dir,
     draft_filename,
     draft_skeleton,
     read_pyproject_version,
@@ -63,8 +64,6 @@ EXIT_FATAL = 2
 PYPROJECT_NAME = "pyproject.toml"
 # Name of the human-facing release file read by the --from-draft default.
 VERSION_TXT_NAME = "version.txt"
-# Folder under the chosen worktree that holds the draft file.
-DOCS_DIRNAME = "docs"
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
@@ -101,6 +100,15 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         "--version",
         default=None,
         help="Target version X.Y.Z (with --from-draft; defaults to the version.txt version).",
+    )
+    parser.add_argument(
+        "--docs-layout",
+        choices=DOCS_LAYOUTS,
+        default="flat",
+        help=(
+            "Draft directory layout: docs, docs/vX.Y, docs/vX.Y.Z, or "
+            "docs/vX.Y/vX.Y.Z (default: flat docs)."
+        ),
     )
     layout = parser.add_mutually_exclusive_group()
     layout.add_argument(
@@ -195,9 +203,10 @@ def _write_draft(
     version: SemanticVersion,
     slug: str,
     today: datetime.date,
+    docs_layout: str = "flat",
 ) -> Path:
-    """Write the draft skeleton under `target_root/docs` and return its path."""
-    docs_dir = target_root / DOCS_DIRNAME
+    """Write the draft skeleton under the selected docs layout."""
+    docs_dir = target_root / docs_relative_dir(version, docs_layout)
     docs_dir.mkdir(parents=True, exist_ok=True)
     draft = docs_dir / draft_filename(version, slug)
     draft.write_text(
@@ -307,21 +316,19 @@ def _log_from_draft_summary(
     *,
     slug: str,
     version: SemanticVersion,
-    source: Path,
     target: Path,
+    target_root: Path,
     use_worktree: bool,
 ) -> None:
     """Log the branch created and the draft move for the --from-draft mode."""
-    location = (
-        f"worktree {target.parent.parent}" if use_worktree else "the current worktree"
-    )
+    location = f"worktree {target_root}" if use_worktree else "the current worktree"
     LOGGER.info(
         "Created branch '%s' in %s (target version v%s).",
         slug,
         location,
         version,
     )
-    LOGGER.info("Moved draft %s -> %s.", source, target)
+    LOGGER.info("Moved draft to %s.", target)
 
 
 def _run_from_draft(args: argparse.Namespace, root: Path) -> int:
@@ -367,13 +374,16 @@ def _run_from_draft(args: argparse.Namespace, root: Path) -> int:
         worktree_path=worktree_path,
         use_worktree=args.use_worktree,
     )
-    target = target_root / DOCS_DIRNAME / draft_filename(version, slug)
+    target = target_root / docs_relative_dir(version, args.docs_layout) / draft_filename(
+        version,
+        slug,
+    )
     _relocate_draft(source, target, source_cwd=root, target_cwd=target_root)
     _log_from_draft_summary(
         slug=slug,
         version=version,
-        source=source,
         target=target,
+        target_root=target_root,
         use_worktree=args.use_worktree,
     )
     return 0

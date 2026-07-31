@@ -25,13 +25,14 @@ call `/write-requirement` directly with the type, version and topic.
 ## 📋 Steps to split the draft
 
 1. Make sure the draft has been processed: `/process-draft` classified it
-   as a collection and renamed it `docs\draft.vX.Y.Z.<slug>.md` on its own
-   effort branch.
+   as a collection and renamed it
+   `<effort-dir>/draft.vX.Y.Z.<slug>.md` on its own effort branch. The effort
+   directory is one of the four layouts selected during `process-draft`.
 
 2. Run the split:
 
    ```txt
-   /split-and-define on docs/draft.vX.Y.Z.<slug>.md
+   /split-and-define on <effort-dir>/draft.vX.Y.Z.<slug>.md
    ```
 
 3. The skill appends a `## List of feature-requests and issues to create`
@@ -53,14 +54,14 @@ call `/write-requirement` directly with the type, version and topic.
 4. The skill runs:
 
    ```txt
-   pw skill --after-merge docs/draft.vX.Y.Z.<umbrella-slug>.md
+   pw skill --after-merge <effort-dir>/draft.vX.Y.Z.<umbrella-slug>.md
    ```
 
    For a fresh umbrella it prints
-   `/process-draft on docs/draft.vX.Y.Z.<umbrella-slug>.md based on
+   `/process-draft on <effort-dir>/draft.vX.Y.Z.<umbrella-slug>.md based on
    <first-slug>`. Run that continuation. It validates the ordered row, creates
-   a focused child draft through a temporary unversioned source, creates the
-   item branch, and then hands off to
+   a focused child draft through a temporary unversioned source, inherits the
+   umbrella's layout, creates the item branch, and then hands off to
    `/write-requirement`.
 
 5. Let each item run through requirement, design, plan, implementation, and
@@ -69,7 +70,7 @@ call `/write-requirement` directly with the type, version and topic.
    umbrella row in the same commit:
 
    ```md
-   | 1 | Issue | Remove old routes | `route-cleanup` | completed | `docs/issue.v10.0.0.route-cleanup.md` | `docs/plan.v10.0.0.route-cleanup.validation.md` |
+   | 1 | Issue | Remove old routes | `route-cleanup` | completed | `docs/v10.0.0/issue.v10.0.0.route-cleanup.md` | `docs/v10.0.0/plan.v10.0.0.route-cleanup.validation.md` |
    ```
 
 6. Run `/prepare-release` from the completed feature branch. It lands that

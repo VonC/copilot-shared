@@ -54,6 +54,17 @@ def test_splitting_instructions_present_the_multi_choice() -> None:
         assert "Type something else" in content
 
 
+def test_process_draft_offers_and_passes_every_docs_layout() -> None:
+    """The initial draft flow records one of the four supported effort paths."""
+    content = _read("process-draft.md")
+    for path in ("docs/", "docs/vX.Y/", "docs/vX.Y.Z/", "docs/vX.Y/vX.Y.Z/"):
+        assert path in content
+    for layout in ("flat", "minor", "version", "minor-version"):
+        assert f"--docs-layout {layout}" in content
+    assert "documentation-layout choice" in content
+    assert "five setup menus" in content
+
+
 def test_group_commits_carries_the_commit_gate_multi_choice() -> None:
     """group-commits-msg presents the commit-gate multi-choice via pw skill."""
     content = _read("group-commits-msg.md")
@@ -615,6 +626,33 @@ def test_wiki_covers_shared_menu_less_umbrella_resolution() -> None:
 
     for path in pages[1:4]:
         assert "temporary" in path.read_text(encoding="utf-8")
+
+
+def test_wiki_covers_document_layouts_and_stateless_lookup() -> None:
+    """Every Diataxis purpose covers its part of document organization."""
+    root = steps.llm_shared_dir() / "wiki"
+    explanation = (
+        root / "explanation" / "where-the-human-stays-in-the-loop.md"
+    ).read_text(encoding="utf-8")
+    tutorial = (
+        root / "tutorials" / "02-from-draft-to-settled-requirement.md"
+    ).read_text(encoding="utf-8")
+    how_to = (root / "how-to" / "run-pw-from-any-shell.md").read_text(
+        encoding="utf-8",
+    )
+    reference = (root / "reference" / "artifact-files.md").read_text(
+        encoding="utf-8",
+    )
+
+    assert "five menus" in explanation
+    assert "documentation-layout choice" in explanation
+    for layout in ("docs/", "docs/vX.Y/", "docs/vX.Y.Z/", "docs/vX.Y/vX.Y.Z/"):
+        assert layout in tutorial
+        assert layout in reference
+    assert "pw document <version> <slug> <type>" in how_to
+    assert "without knowing its folder" in how_to
+    assert "version, slug, and document type" in reference
+    assert "same selector exists in more than one supported layout" in reference
 
 
 def test_oqm_wrapper_clears_the_project_senv_guard() -> None:

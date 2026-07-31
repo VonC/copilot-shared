@@ -75,7 +75,7 @@ The settled-plan handoff starts the implementation by default. To settle
 the plan without starting it, say so in the consolidation invocation:
 
 ```txt
-/consolidate-then-review-ask-questions on docs/plan.vX.Y.Z.<slug>.md stop here
+/consolidate-then-review-ask-questions on <effort-dir>/plan.vX.Y.Z.<slug>.md stop here
 ```
 
 Any explicit instruction not to implement works the same way: the skill

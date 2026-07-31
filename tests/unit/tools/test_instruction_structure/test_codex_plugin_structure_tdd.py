@@ -54,6 +54,17 @@ def test_codex_plugin_packages_every_instruction(
         assert packaged == source
 
 
+def test_codex_plugin_packages_the_docs_layout_rule() -> None:
+    """Layout-aware packaged instructions can read their shared rule."""
+    root = steps.llm_shared_dir()
+    source = (root / "rules" / "docs_layout.md").read_bytes()
+    packaged = (
+        root / ".agents" / "llm-shared" / "rules" / "docs_layout.md"
+    ).read_bytes()
+
+    assert packaged == source
+
+
 def test_llmup_alias_refreshes_the_personal_codex_plugin() -> None:
     """The console shortcut keeps the documented plugin update loop together."""
     root = steps.llm_shared_dir()

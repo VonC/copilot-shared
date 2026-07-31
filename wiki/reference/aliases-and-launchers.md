@@ -20,7 +20,7 @@ the corresponding launcher.
 
 | Alias | Runs | Purpose |
 | --- | --- | --- |
-| `pw` | `bin\prompt_workflow.bat` | next-step prompt: menu, `handoff`, `skill` modes |
+| `pw` | `bin\prompt_workflow.bat` | next-step prompt through menu, `handoff`, or `skill`; stateless path lookup through `document` |
 | `gcmp` | `bin\gcmp.bat` | write `a.diff`, clear `a.commit`, build the `/group-commits-msg` prompt to the clipboard |
 | `gcba` | `bin\gcba.bat --root-a-commit` | validate `a.commit`, then replay the grouped commits |
 | `grmc` | `scripts\update-merge-commit-msg\git-reword-merge.sh` | rewrite the current merge commit from `a.commit` |

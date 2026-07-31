@@ -30,7 +30,7 @@ think about code; think about what you want.
 /process-draft on docs\draft.progress-log.md
 ```
 
-The skill reads the draft and walks you through four short menus, one at a
+The skill reads the draft and walks you through five short menus, one at a
 time:
 
 1. the classification (`- Type:` line: one feature-request, one issue, or
@@ -38,19 +38,23 @@ time:
 2. three collision-checked slug proposals,
 3. the target version, derived from `version.txt` (keep `X.Y.Z`, or step
    major, minor, or patch),
-4. the branch layout: a new sibling worktree, or `git switch -c <slug>` in
+4. the documentation layout: `docs/`, `docs/vX.Y/`, `docs/vX.Y.Z/`, or
+   `docs/vX.Y/vX.Y.Z/`; choose `docs/vX.Y.Z/` in this tutorial,
+5. the branch layout: a new sibling worktree, or `git switch -c <slug>` in
    the current tree.
 
 It then calls the `new_draft` tool, which renames the file to
-`docs\draft.vX.Y.Z.<slug>.md` and creates the effort branch.
+`docs\vX.Y.Z\draft.vX.Y.Z.<slug>.md` and creates the effort branch. The
+draft's parent directory is now the effort directory: every later requirement,
+design, plan, and validation plan is written beside it.
 
 ## 3. Let the chain write the requirement
 
 `/process-draft` ends on a multi-choice fed by `pw skill`. For a
 single-topic draft, pick the proposed
-`/write-requirement on docs/draft.vX.Y.Z.<slug>.md`. The skill validates
+`/write-requirement on docs/vX.Y.Z/draft.vX.Y.Z.<slug>.md`. The skill validates
 its three inputs (type, version, topic label), then writes
-`docs\feature-request.vX.Y.Z.<slug>.md` (or `issue.`) from the
+`docs\vX.Y.Z\feature-request.vX.Y.Z.<slug>.md` (or `issue.`) from the
 [requirement template](../reference/templates.md).
 
 No "go ahead" is needed here: the writing skill ends by running
@@ -76,14 +80,14 @@ The skill runs `pw skill --after-merge` on the umbrella. For the first row it
 proposes:
 
 ```txt
-/process-draft on docs/draft.v10.0.0.sentinel.md based on route-cleanup
+/process-draft on docs/v10.0.0/draft.v10.0.0.sentinel.md based on route-cleanup
 ```
 
 That continuation validates the table, creates a focused child draft on the
 item branch, and keeps the umbrella intact. The child records its parent:
 
 ```md
-- Umbrella: docs/draft.v10.0.0.sentinel.md
+- Umbrella: docs/v10.0.0/draft.v10.0.0.sentinel.md
 ```
 
 After the item's last implementation check, the umbrella row becomes
@@ -119,9 +123,9 @@ review or consolidation has actually settled a document.
 ## 6. Look at what landed on disk
 
 ```txt
-docs\draft.vX.Y.Z.<slug>.md            the classified draft
-docs\feature-request.vX.Y.Z.<slug>.md  the requirement with its decision table
-a.prompt_memory                        the branch-locked workflow state
+docs\vX.Y.Z\draft.vX.Y.Z.<slug>.md            the classified draft
+docs\vX.Y.Z\feature-request.vX.Y.Z.<slug>.md  the requirement with its decision table
+a.prompt_memory                                the branch-locked workflow state
 ```
 
 The requirement document now carries not just the need, but the questions

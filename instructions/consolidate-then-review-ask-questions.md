@@ -4,9 +4,16 @@ ultrathink: take the time to reason through the document deeply before drafting 
 
 Check your prompt for type (feature-request, issue, design or plan), vX.Y.Z and topic (for instance "design v9.3.0 sentinels").
 
-Consolidate `docs\<type>.vX.Y.Z.<topic>.md` by integrating answers given to existing questions in its "Open questions for the vX.Y.Z ..." section (the section names the document type: feature request, issue, design or implementation plan). Do not leave the question and their recommended options; "consolidate" means integrate the answers chosen into the document (with a summary of the question and its options).
+Consolidate the exact `<document-path>` named in the prompt by integrating
+answers given to existing questions in its "Open questions for the vX.Y.Z ..."
+section. Read [`../rules/docs_layout.md`](../rules/docs_layout.md) and preserve
+the document's effort directory. Do not leave the questions and their options;
+consolidation integrates the chosen answers into the document.
 
-You need to remove `Qxx:` sections and integrate their answers within the document. Make sure all the questions are removed and their decision integrated before adding any new question. Once every answer is integrated into the document body, remove the whole `## Open questions` section with `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --strip"` (see "Consolidating and placing questions with oqm" below).
+You need to remove `Qxx:` sections and integrate their answers within the
+document. Once every answer is integrated, remove the whole `## Open questions`
+section with `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"`
+(see "Consolidating and placing questions with oqm" below).
 
 Create a decision table in the document's decisions section, naming that section for the document type: "Design decisions" for a design, "Implementation decisions" for an implementation plan, or "Requirement clarifications" for a feature-request or an issue. Summarize all the choices that have been made, with their arguments and the alternatives that were rejected. Do reference the number of the question (Qxx) that led to each choice, as well as the section of the document where the choice is integrated. Keep the choices to the nature of the document: implementation decisions for a plan (file layout, step order, test and split strategy), design choices for a design, feature or issue clarifications for a requirement.
 
@@ -43,7 +50,11 @@ If you have no more questions, say so, and we will proceed to that next phase.
 
 Do not try to ask too many questions, but ask as many as you can, as long as they are relevant and not redundant with already answered questions. The only reason to add new questions is that you think you cannot start the next step (the design, the implementation plan, or the coding) without having answers to those questions, and that those questions are not already answered in the document. Keep any new question within the nature of the current document: an implementation plan asks only implementation-detail questions, never design or feature questions. If you think you have enough information to start the next step, say so, and do not ask any new question.
 
-Otherwise, review that `docs\<type>.vX.Y.Z.<topic>.md` document (see other `docs\<other_type>.vX.Y.Z.<topic>.md` documents in your context if provided), and write your new questions into the companion scratch file `a.<base>.open.questions.md`, following the template, then let `oqm` place them into the document as described below. Each question must comes with options (and their pros and cons), as well as a recommended choice (with arguments) from those options, as well as "Answer to Qxx: option Y" repeating the recommended option, but adding a reason why it must be accepted as the answer.
+Otherwise, review the exact document again, using related documents beside it
+when provided. Write new questions into `a.<base>.open.questions.md`, then let
+`oqm` place them as described below. Each question must come with options and
+their pros and cons, a recommended choice with arguments, and an "Answer to
+Qxx: option Y" line with the acceptance reason.
 
 Follow the template defined in [`open-question.template.md`](../templates/open-question.template.md).
 
@@ -57,25 +68,25 @@ Do not edit the `## Open questions` section of the document by hand. Use the
 `oqm` wrapper ([`oqm.bat`](../bin/oqm.bat), which runs
 [`open_questions_md.py`](../tools/open_questions_md.py) through the consuming
 project environment) to manage that section. It finds the project root,
-resolves the document under `docs\` or `docs\vX.Y.Z\`, and works through the
+resolves the exact path in any supported docs layout, and works through the
 companion scratch file `a.<base>.open.questions.md` kept at the project root,
 where `<base>` is the document name without its `.md` suffix.
 
 The companion scratch file `a.<base>.open.questions.md` is the one file you author by hand: write the new open questions there, starting with the `## Open questions for the vX.Y.Z ...` line and following [`open-question.template.md`](../templates/open-question.template.md). `oqm` then removes any older `## Open questions` section from the document and appends the new section taken from `a.<base>.open.questions.md`, so the questions you wrote in the companion become the document's only `## Open questions` section.
 
-The tool has three modes, each taking the document file name:
+The tool has three modes, each taking the exact repository-relative document path:
 
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --create"`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --strip"`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --append"`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
+- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
+- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
+- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
 
 Run these steps, in order:
 
-1. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --strip"` once you have integrated every existing answer into the document body and the decision table, to remove the consolidated `## Open questions` section.
+1. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"` once you have integrated every existing answer into the document body and the decision table, to remove the consolidated `## Open questions` section.
 2. Stop here when you have no new question to ask, and say you are ready for the next step.
-3. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --create"` to start an empty `a.<base>.open.questions.md` companion when you do have new questions.
+3. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"` to start an empty `a.<base>.open.questions.md` companion when you do have new questions.
 4. Write your new questions into `a.<base>.open.questions.md`, starting with the `## Open questions for the vX.Y.Z ...` line and following the template.
-5. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --append"` to move the questions from `a.<base>.open.questions.md` into the document.
+5. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"` to move the questions from `a.<base>.open.questions.md` into the document.
 6. Present the placed questions in your reply as the mandatory three-column table described in "Presenting any follow-up questions" below — never as a bulleted list.
 
 ## Presenting any follow-up questions
@@ -103,4 +114,8 @@ When the consolidation settles the document — every open question answered, no
 
 The settled handoff has one explicit hold: when the invocation argument contains the literal phrase `stop here`, or the human has explicitly asked not to start the next phase (for a plan, not to start the implementation), do not run the printed command. Still settle the document, still run `pw skill`, then present its printed line as the "Next step" command with the Tab-completable hint, and stop. The hold changes only who launches the next phase, never the on-disk state; without such an explicit instruction the default above stands and the next phase starts now.
 
-When new open questions remain to ask, this is not a settled outcome: append them with `oqm` (steps 3 to 5 above), present them in the three-column table above, and stop for another review round. Leave the next step in two forms, as the review skill does: the "Next step" command `<command-prefix>consolidate-then-review-ask-questions on docs/<type>.vX.Y.Z.<slug>.md` for the next round, and, in addition, the same command as a gray, Tab-completable hint the human can accept with a keystroke — do not run the handoff.
+When new open questions remain, append them with `oqm`, present them in the
+three-column table, and stop for another review round. Leave the next step as
+`<command-prefix>consolidate-then-review-ask-questions on <document-path>`, using
+the same exact path, plus the gray Tab-completable hint where supported. Do not
+run that handoff.

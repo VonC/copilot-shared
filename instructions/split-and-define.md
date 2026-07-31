@@ -75,13 +75,13 @@ Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
-Once the index is settled, run `pw skill --after-merge
-docs/draft.vX.Y.Z.<umbrella-slug>.md` through its launcher (see
-[`run-pw.md`](run-pw.md)). This read-only lookup validates the table and prints
-the first ordered action:
+Once the index is settled, run `pw skill --after-merge <umbrella-draft>` through
+its launcher (see [`run-pw.md`](run-pw.md)), passing the umbrella's exact
+repository-relative path in its selected docs layout. This read-only lookup
+validates the table and prints the first ordered action:
 
 ```text
-<command-prefix>process-draft on docs/draft.vX.Y.Z.<umbrella-slug>.md based on <first-slug>
+<command-prefix>process-draft on <umbrella-draft> based on <first-slug>
 ```
 
 Read [`../rules/interactive_menu.md`](../rules/interactive_menu.md), present

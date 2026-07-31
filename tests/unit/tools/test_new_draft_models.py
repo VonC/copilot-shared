@@ -96,6 +96,30 @@ def test_draft_filename_builds_versioned_name() -> None:
     assert name == "draft.v0.3.1.topic.md"
 
 
+@pytest.mark.parametrize(
+    ("layout", "expected"),
+    [
+        ("flat", Path("docs")),
+        ("minor", Path("docs/v1.2")),
+        ("version", Path("docs/v1.2.3")),
+        ("minor-version", Path("docs/v1.2/v1.2.3")),
+    ],
+)
+def test_docs_relative_dir_supports_every_layout(
+    layout: str,
+    expected: Path,
+) -> None:
+    """The selected layout maps one version to its repository-relative path."""
+    version = models.SemanticVersion(1, 2, 3)
+    assert models.docs_relative_dir(version, layout) == expected
+
+
+def test_docs_relative_dir_rejects_unknown_layout() -> None:
+    """An unknown layout never silently falls back to flat docs."""
+    with pytest.raises(models.NewDraftError, match="Unknown docs layout"):
+        models.docs_relative_dir(models.SemanticVersion(1, 2, 3), "topic")
+
+
 def test_worktree_dir_name_strips_trailing_suffix() -> None:
     """worktree_dir_name drops a trailing _<suffix> from the root folder name."""
     assert models.worktree_dir_name("llm-shared_main", "topic") == "llm-shared_topic"

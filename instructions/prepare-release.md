@@ -237,7 +237,9 @@ commits:
 
 ```bash
 git -C "<PRJ_DIR>" log --format= --name-only "<last_tag>..HEAD" -- \
-  "docs/feature*" "docs/issue*" "docs/design*" "docs/plan*"
+  "docs/feature*" "docs/issue*" "docs/design*" "docs/plan*" \
+  ":(glob)docs/**/feature*" ":(glob)docs/**/issue*" \
+  ":(glob)docs/**/design*" ":(glob)docs/**/plan*"
 ```
 
 When that list is empty, make no change to the tree and stop with one of
@@ -270,8 +272,8 @@ makes a second run a no-op.
 ### Step 3 — Derive the target version, slug, and release mode
 
 Read the current branch first. Candidate versions are filtered to the release
-mode's exact scope after classification, matching
-`docs/{feature,feature-request,issue,design,plan}.vX.Y.Z.*.md`:
+mode's exact scope after classification, matching effort documents in any of
+the four directories from `rules/docs_layout.md`:
 
 ```bash
 git -C "<PRJ_DIR>" rev-parse --abbrev-ref HEAD
@@ -518,8 +520,9 @@ last released tag. Choose the lowest version strictly greater than the last
 released version. This is the next release target. Documents carrying later
 versions are forward-looking notes for later efforts; list those versions in
 the detection summary, but do not stop and do not exclude their commits from
-the selected branch scope. Also scan `docs/draft.vX.Y.Z.*.md` in the selected
-branch scope and list later-version drafts as carried notes. Drafts never
+the selected branch scope. Also scan `draft.vX.Y.Z.*.md` in each supported
+effort directory in the selected branch scope and list later-version drafts as
+carried notes. Drafts never
 trigger Step 2 and never become target-version candidates. Selecting a version
 labels the release; selecting the invocation branch selects its content.
 
@@ -544,7 +547,9 @@ Cross-check the derived `X.Y.Z` against the first word of `version.txt`:
   version.
 
 Then check every target-version validation plan selected by the branch scope,
-`docs/plan.vX.Y.Z.<topic>.validation.md`, when the target effort has a plan.
+`<effort-dir>/plan.vX.Y.Z.<topic>.validation.md`, when the target effort has a
+plan. Resolve `<effort-dir>` through the canonical draft and
+`rules/docs_layout.md`.
 Later-version plans are forward-looking notes and do not gate this release.
 Read each target plan's opening status line (the first non-title line): when it
 still starts with `No, it is not implemented`, the implementation checks of
@@ -1192,8 +1197,8 @@ Run the skill twice and the second run does nothing harmful:
   `pw skill --after-merge` verifies every completed row against its named
   requirement and validation plan, and refuses missing, malformed, or stale
   collection state instead of assuming that release preparation may continue.
-- The effort test keys on the
-  `docs/{feature,feature-request,issue,design,plan}.*` files. A release that is
+- The effort test keys on `feature`, `feature-request`, `issue`, `design`, and
+  `plan` documents in the four supported effort directories. A release that is
   only code, with no such document, reads as "nothing to release"; add the
   matching document, or release it by hand. Versioned drafts are reported as
   notes but never trigger a release or choose its target.

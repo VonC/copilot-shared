@@ -1,10 +1,10 @@
 # Implementation check instructions
 
-Your goal is to analyze if the step from the `docs\plan.vX.Y.Z.<topic>.md` plan in your context -- step indicated in your prompt -- has been fully implemented, based on the files present in your context, or based on a Git diff `a.diff` present at the root folder of the project. Write this analysis as a markdown answer, and update `docs\plan.vX.Y.Z.<topic>.validation.md` with that analysis.
+Your goal is to analyze if the step from the `<effort-dir>/plan.vX.Y.Z.<topic>.md` plan in your context -- step indicated in your prompt -- has been fully implemented, based on the files present in your context, or based on a Git diff `a.diff` present at the root folder of the project. Write this analysis as a markdown answer, and update `<effort-dir>/plan.vX.Y.Z.<topic>.validation.md` with that analysis. Use the exact paths supplied by `pw`; `<effort-dir>` is the canonical draft's parent directory.
 
-Check your prompt and your context for the step to check, for example "step 2 v9.3.0 sentinels", checking if yes or no step XXXXX from `docs\plan.vX.Y.Z.<topic>.md` was fully implemented, and asserting the state of the DDD-Hexagonal architecture (is there any smell or violation?).
+Check your prompt and your context for the step to check, for example "step 2 v9.3.0 sentinels", checking if yes or no step XXXXX from `<effort-dir>/plan.vX.Y.Z.<topic>.md` was fully implemented, and asserting the state of the DDD-Hexagonal architecture (is there any smell or violation?).
 
-Read first the `docs\plan.vX.Y.Z.<topic>.md` plan in your context, and only check the step you were instructed to in the prompt.
+Read first the exact `<effort-dir>/plan.vX.Y.Z.<topic>.md` plan in your context, and only check the step you were instructed to in the prompt.
 
 Start with a general short confirmation in the `### Analysis of Step N implementation state` section. Its first sentence MUST be one of these two sentences, copied verbatim from [`write-plans.validation.template.md`](../templates/write-plans.validation.template.md) (with `N` replaced by the step number):
 
@@ -20,7 +20,7 @@ After that first sentence, leave one empty line, then write a short summary of w
 
 Then, in case it is fully implemented, write also a sub-section `### Architecture check for Step x`, in which you assess if you detect any DDD-Hexagonal (adapters-ports) architecture violation or smell, any layer using other layers it should not, or other internal lib it should not. In particular, is there any class which is importing another class it should not (either a layer importing another wrong layer, or importing a technical lib when it should be business-only). Is there any function whose intent should not be in a particular class or layer?
 
-Follow the per-step section structure defined in [`write-plans.validation.template.md`](../templates/write-plans.validation.template.md), which is the template of the `docs\plan.vX.Y.Z.<topic>.validation.md` document you update.
+Follow the per-step section structure defined in [`write-plans.validation.template.md`](../templates/write-plans.validation.template.md), which is the template of the `<effort-dir>/plan.vX.Y.Z.<topic>.validation.md` document you update.
 
 `a.diff` in your context is updated: do you see any DDD-Hexagonal smell or violation?
 
@@ -56,8 +56,8 @@ document-level status to the exact `Yes, it is implemented.` sentence.
 
 Look for an umbrella relationship in this order:
 
-1. Read the topic's `docs/draft.vX.Y.Z.<topic>.md`. When it contains
-   `- Umbrella: docs/draft.vX.Y.Z.<umbrella-slug>.md`, use that exact
+1. Read the topic's `<effort-dir>/draft.vX.Y.Z.<topic>.md`. When it contains
+   `- Umbrella: <umbrella-draft-path>`, use that exact
    repository-relative path.
 2. Otherwise inspect same-version drafts marked `- Draft role: umbrella` and
    find the one whose canonical table below
