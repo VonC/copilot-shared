@@ -12,7 +12,7 @@ Make sure DDD-Hexagonal architecture is strictly respected: no violation, no sme
 
 Make sure no existing feature or reporting capability is impaired.
 
-Do not update the validation plan (`docs\plan.vX.Y.Z.<topic>.validation.md`): recording the step's state there is the separate implementation-check step. This step writes code and tests only.
+Do not update the validation plan (`<effort-dir>/plan.vX.Y.Z.<topic>.validation.md`): recording the step's state there is the separate implementation-check step. This step writes code and tests only. Use the exact path supplied by `pw`; `<effort-dir>` is the canonical draft's parent directory.
 
 Each new test must follow the convention `...\tests\unit\xxx\yyy\...\test_filename\test_filename_tdd.py`, and you must check if a pbt is needed as well. And do not forget the `__init__.py` to create or to update, for test and non-test code.
 

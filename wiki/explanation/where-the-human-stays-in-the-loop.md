@@ -23,8 +23,10 @@ is reversible text on disk, so the chain runs it without asking.
 
 ## ✋ The stops of the document phase
 
-- **The four menus of /process-draft** — title, slug, version, branch
-  layout. Naming and versioning shape everything downstream.
+- **The five menus of /process-draft** — title, slug, version, documentation
+  layout, and branch layout. Naming and versioning shape everything downstream;
+  the documentation-layout choice decides where every document for the effort
+  will live.
 - **The review table** — the one `[STOP]` of the write, review,
   consolidate loop: the model asks, the human answers the
   `Q0x | Title | Recommended Answer` table. The chain resumes on the

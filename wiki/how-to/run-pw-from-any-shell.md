@@ -30,6 +30,7 @@ From PowerShell:
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-write design
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" skill --after-commit 3
+& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" document v10.0.0 route-cleanup plan
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" handoff check 3
 & "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" handoff after-check 3
 ```
@@ -45,6 +46,7 @@ switches and the call becomes a silent no-op.
 | `pw skill` | the bare next-step command | stdout |
 | `pw skill --after-write requirement\|design\|plan` | review of the artifact just written | stdout |
 | `pw skill --after-commit <x>` | the contextual after-commit action | stdout |
+| `pw document <version> <slug> <type>` | the unique repository-relative document path | stdout |
 | `pw handoff check <x>` | the full implementation-check prompt | `a.prompt.txt` + clipboard |
 | `pw handoff after-check <x>` | the routed next cycle prompt | `a.prompt.txt` + clipboard |
 
@@ -75,6 +77,23 @@ The explicit form deliberately ignores settled-looking decision markers and
 reviews the named artifact. It exits without printing a command if that
 artifact does not exist.
 
+## 🔎 Find a document without knowing its folder
+
+Pass only the full version, topic slug, and document type:
+
+```powershell
+& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" document v10.0.0 route_cleanup design
+```
+
+The locator checks `docs/`, `docs/v10.0/`, `docs/v10.0.0/`, and
+`docs/v10.0/v10.0.0/`. It treats `route_cleanup` and `route-cleanup` as the same
+slug. Use one of `draft`, `requirement`, `feature-request`, `issue`, `design`,
+`plan`, or `validation-plan` as the type.
+
+If the same exact selector exists in more than one layout, remove or relocate
+the duplicate. The command deliberately reports ambiguity instead of choosing
+one copy.
+
 On an item branch split from a collection draft, you do not need to rename the
 umbrella draft. All menu-less forms — bare, post-write, and post-commit
 `pw skill`, plus `pw handoff` — use the same topic resolver. If ordinary
@@ -93,4 +112,5 @@ launcher is being called: point at the launcher inside the real llm-shared
 checkout.
 
 Related: [pw launcher reference](../reference/pw-launcher.md),
+[Artifact files and naming conventions](../reference/artifact-files.md), and
 [run_commands rule](../reference/writing-rules.md).

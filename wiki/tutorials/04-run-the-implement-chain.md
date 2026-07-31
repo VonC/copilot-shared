@@ -13,7 +13,7 @@ Your role is to validate the evidence and approve the commit plan.
 🔁 In this tutorial you execute one step of a settled implementation plan
 and watch the automated chain carry it from code to a reviewed commit
 plan, with a single "go ahead" at the very end. You need an effort whose
-plan is settled: `docs\plan.vX.Y.Z.<topic>.md` and its validation
+plan is settled: `<effort-dir>/plan.vX.Y.Z.<topic>.md` and its validation
 companion exist, and the plan's decision table is in place (see
 [the requirement tutorial](02-from-draft-to-settled-requirement.md)).
 
@@ -47,7 +47,7 @@ umbrella mentions `route-cleanup`. Do not rename the umbrella or create a
 temporary `draft.v10.0.0.route-cleanup.md` alias.
 
 1. `/implementation-check 1` — reads the diff and the plan, writes its
-   verdict into `docs\plan.vX.Y.Z.<topic>.validation.md`, first sentence
+   verdict into `<effort-dir>/plan.vX.Y.Z.<topic>.validation.md`, first sentence
    exactly `Yes. Step 1 has been fully implemented.` or `No. ...`,
 2. `pw handoff after-check 1` — neutral on purpose: `pw` reads the
    verdict line the check just wrote and routes the branch,

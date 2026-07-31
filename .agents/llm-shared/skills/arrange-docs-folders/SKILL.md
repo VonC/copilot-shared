@@ -1,6 +1,6 @@
 ---
 name: arrange-docs-folders
-description: 'Arrange current documents into version and topic subfolders. It moves markdown documents from docs/ or docs/vX.Y.Z/ into docs/vX.Y.Z/<topic>/ and creates a dedicated commit.'
+description: 'Arrange current effort documents into one of the four supported docs layouts: docs/, docs/vX.Y/, docs/vX.Y.Z/, or docs/vX.Y/vX.Y.Z/. It keeps each effort together and prepares a dedicated grouped commit for user approval.'
 ---
 
 [Instruction](../../instructions/arrange-docs-folders.md)

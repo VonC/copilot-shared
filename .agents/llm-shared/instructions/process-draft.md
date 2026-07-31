@@ -3,8 +3,8 @@
 Take a draft document named in the prompt and use one of two modes:
 
 - **Initial draft mode** runs a light first-pass that names the draft, gives it
-  a title, slug, and target version, then hands the rename and branch creation
-  to the `new_draft` tool.
+  a title, slug, target version, and documentation layout, then hands the rename
+  and branch creation to the `new_draft` tool.
 - **Umbrella continuation mode** is selected by
   `process-draft on <umbrella-draft> based on <item-slug>`. It takes the next
   ordered item from an already settled collection, creates a focused child
@@ -27,7 +27,9 @@ unchanged.
   `## List of feature-requests and issues to create` in a draft marked
   `- Draft role: umbrella`.
 - `version.txt` at the repository root, read in step 5 to propose the target version.
-- The `new_draft` tool, called in step 6 to rename the draft and create the branch.
+- [`../rules/docs_layout.md`](../rules/docs_layout.md), which defines the four
+  supported effort-directory layouts and how later skills recover the choice.
+- The `new_draft` tool, called in step 7 to rename the draft and create the branch.
 
 Read the draft in full before proposing anything. If its content is empty or too
 thin to classify, say so and ask for added context, then stop unless enough
@@ -53,27 +55,31 @@ Run this section before the ordinary numbered steps when the prompt contains
    `pw skill --after-merge <umbrella-draft>` through its launcher and report
    its result instead of creating a competing branch or document.
 3. Reuse the selected row's type, key title, slug, and the umbrella filename's
-   `vX.Y.Z`. Do not present the title, slug, version, or type menus from Steps 2
-   to 5: `split-and-define` already settled them.
+   `vX.Y.Z`. Infer the documentation layout kind from the umbrella draft's
+   parent directory and apply that kind to the child version. Do not present
+   the title, slug, version, documentation-layout, or type menus from Steps 2
+   to 6: `split-and-define` already settled the identity and the umbrella path
+   already records the layout.
 4. Create a temporary unversioned child source at
-   `docs/draft.<item-slug>.md`. Its heading is the settled key title; its metadata
-   records the settled type and `- Umbrella:
-   docs/draft.vX.Y.Z.<umbrella-slug>.md`. Include the selected split entry and
-   the matching requirement-detail subsection plus the umbrella sections,
-   rules, examples, and constraints that entry says it
+   `<umbrella-dir>/draft.<item-slug>.md`. Its heading is the settled key title;
+   its metadata records the settled type and the exact repository-relative
+   umbrella path in `- Umbrella: <umbrella-draft>`. Include the selected split
+   entry and the matching requirement-detail subsection plus the umbrella
+   sections, rules, examples, and constraints that entry says it
    regroups. Preserve their meaning and concrete detail; do not pull in work
    assigned to another item. Never edit, rename, or delete the umbrella draft.
-5. Continue at Step 6 and present only the branch-layout choice. Pass the
+5. Continue at Step 7 and present only the branch-layout choice. Pass the
    temporary child source to `new_draft --from-draft` with the already settled
-   slug and version. The tool moves that child source to
-   `docs/draft.vX.Y.Z.<item-slug>.md` in the new branch or worktree; the
-   umbrella stays in the integration tree and is inherited by the new branch.
-6. Continue at Step 7 as one topic and hand off directly to
+   slug, version, and inherited `--docs-layout` value. The tool moves that child
+   source to `draft.vX.Y.Z.<item-slug>.md` in the derived effort directory in
+   the new branch or worktree; the umbrella stays in the integration tree and
+   is inherited by the new branch.
+6. Continue at Step 8 as one topic and hand off directly to
    `write-requirement`, passing the settled type, version, and slug. The
    umbrella draft remains associated context for the requirement.
 
 The ordinary initial-mode steps below do not run in umbrella continuation mode
-except for Steps 6 and 7 as narrowed above.
+except for Steps 7 and 8 as narrowed above.
 
 ## User choices for process-draft
 
@@ -81,14 +87,15 @@ Every user choice in this instruction follows
 [`../rules/interactive_menu.md`](../rules/interactive_menu.md). Read that rule
 before presenting the first choice. Present one choice at a time and wait for
 the selection before showing the next choice. Do not batch the title, slug,
-version, and branch-layout choices into one chat prompt.
+version, documentation-layout, and branch-layout choices into one chat prompt.
 
-The four setup menus are:
+The five setup menus are:
 
 1. title choice;
 2. slug choice;
 3. target-version choice;
-4. branch-layout choice.
+4. documentation-layout choice;
+5. branch-layout choice.
 
 Each step below specifies the concrete choices for that decision. The shared
 rule decides whether to add standard final entries or use a plain-text fallback.
@@ -181,7 +188,27 @@ version must parse as `X.Y.Z` before it is accepted. When the draft holds severa
 draft and its branch; each requirement that comes out of `split-and-define`
 settles its own version later.
 
-## Step 6 for process-draft, rename and branch with the new_draft tool
+## Step 6 for process-draft, choose the documentation layout
+
+Read [`../rules/docs_layout.md`](../rules/docs_layout.md). Using the target
+`vX.Y.Z` selected in Step 5, present these four concrete directory choices:
+
+- `docs/` (`--docs-layout flat`): keep every effort document directly under
+  the documentation root; this preserves the historical layout.
+- `docs/vX.Y/` (`--docs-layout minor`): group all patch releases for one minor
+  release line.
+- `docs/vX.Y.Z/` (`--docs-layout version`): group each exact release version in
+  one directory. Mark this as the recommended choice because it adds one useful
+  boundary without a second directory level.
+- `docs/vX.Y/vX.Y.Z/` (`--docs-layout minor-version`): group exact versions
+  below their minor release line for repositories with many maintained lines.
+
+Show the computed paths, not the formulas alone. For target version `0.4.1`,
+the choices are `docs/`, `docs/v0.4/`, `docs/v0.4.1/`, and
+`docs/v0.4/v0.4.1/`. This choice is per effort. The canonical draft's parent
+directory records it for `pw` and every later writing skill.
+
+## Step 7 for process-draft, rename and branch with the new_draft tool
 
 Hand the mechanical part to the `new_draft` tool rather than running git by hand,
 so the slug, worktree-path, and branch rules stay in one tested place. Present
@@ -191,47 +218,57 @@ the branch-layout choices, then call the tool:
 - The current working tree: the branch is created in place.
 
 Call the `new_draft` `--from-draft` mode with the values already gathered, passed as
-flags so the tool prompts for nothing: the draft path, `--slug`, `--version`, and
-`--worktree` or `--in-place`. The tool checks the slug for a collision, creates the
-branch with `git switch -c <slug>` in the current tree or a sibling worktree with
-`git worktree add -b <slug>`, then places the draft as `draft.vX.Y.Z.<slug>.md`
-inside the chosen tree. In the current tree the rename is a `git mv` when the draft is
+flags so the tool prompts for nothing: the draft path, `--slug`, `--version`,
+`--docs-layout`, and `--worktree` or `--in-place`. The tool checks the slug for a
+collision, creates the branch with `git switch -c <slug>` in the current tree or
+a sibling worktree with `git worktree add -b <slug>`, then places the draft as
+`draft.vX.Y.Z.<slug>.md` inside the selected effort directory. In the current
+tree the rename is a `git mv` when the draft is
 already tracked, or a plain file rename when it is still untracked; for a worktree the
-tool reads the draft text, writes it under the worktree's `docs`, stages it, and drops
-the source. Either way, a draft that is not yet committed still moves across. Because
-the tool creates the tree first and writes the draft inside it, there is no
-cross-tree file move to do by hand.
+tool reads the draft text, writes it under the selected effort directory in the
+worktree, stages it, and drops the source. Either way, a draft that is not yet
+committed still moves across. Because the tool creates the tree first and writes
+the draft inside it, there is no cross-tree file move to do by hand.
 
-## Step 7 for process-draft, hand off to the next instruction
+## Step 8 for process-draft, hand off to the next instruction
 
 Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
 Present the next-step choice and run the chosen one, with no go-ahead beyond
-the pick. `pw skill` (run via its launcher, see
-[`run-pw.md`](run-pw.md)) supplies the produced `draft.vX.Y.Z.<slug>.md` name;
-offer these and run the selection straight away:
+the pick. `pw skill` (run via its launcher, see [`run-pw.md`](run-pw.md))
+supplies the produced draft's actual repository-relative path. Reuse that
+printed path verbatim; do not reconstruct one of the four layouts. Offer these
+and run the selection straight away:
 
-- `<command-prefix>write-requirement on docs/draft.vX.Y.Z.<slug>.md` — one topic (one feature-request or issue, including the single-requirement exception from step 2); pass the type from step 2, the version as `vX.Y.Z` from step 5, and the slug from step 4.
-- `<command-prefix>split-and-define on docs/draft.vX.Y.Z.<slug>.md` — more than one topic, regrouped into a list of feature-requests and issues before any requirement is written.
+- `<command-prefix>write-requirement on <effort-dir>/draft.vX.Y.Z.<slug>.md` — one topic (one feature-request or issue, including the single-requirement exception from step 2); pass the type from step 2, the version as `vX.Y.Z` from step 5, and the slug from step 4.
+- `<command-prefix>split-and-define on <effort-dir>/draft.vX.Y.Z.<slug>.md` — more than one topic, regrouped into a list of feature-requests and issues before any requirement is written.
 - `Type something else` — let the author provide a different next instruction or correction.
 
 Pre-select the entry the step-2 topic count points at (`write-requirement` for one topic, `split-and-define` for several), and leave the other entries for the author to pick.
 
 ## Design decisions for process-draft
 
-These choices come from the two review rounds (Q01 to Q08); each row names the
-question that settled it, the step where it is integrated, and the options that were
-turned down.
+The original choices come from the two review rounds (Q01 to Q08); the
+documentation-layout row records the later configurable-layout extension. Each
+row names its source, integration step, and alternatives.
+
+This table is a seeded design record for this instruction, not a consolidation
+output. Its `Question` column sits third on purpose. Do not copy this column
+order into a document's decisions section: `pw skill` routes on a row opening
+with `| Qxx`, so a consolidated table must lead with the question id, as
+[`consolidate-then-review-ask-questions.md`](consolidate-then-review-ask-questions.md)
+specifies.
 
 | Area | Decision | Question | Integrated in | Rejected alternatives |
 | --- | --- | --- | --- | --- |
 | Version source | Keep `version.txt`; the parse rule moves to a shared `new_draft_models.read_version_txt` | Q01 | Step 5 | `pyproject.toml` only; read both and reconcile |
-| Mechanical steps | The `new_draft` `--from-draft` mode renames and branches; the instruction keeps the reader-only steps | Q02 | Step 6 | Restate the rules in prose; reuse helpers but stitch by hand |
-| Branch safety | Check the slug for a collision and create with `git switch -c` | Q03 | Steps 4, 6 | `git switch -C` overwrite; `-C` after a warning |
-| Worktree order | Create the branch or worktree first, then rename inside the chosen tree | Q04 | Step 6 | Rename then move into the worktree; commit then branch |
+| Mechanical steps | The `new_draft` `--from-draft` mode renames and branches; the instruction keeps the reader-only steps | Q02 | Step 7 | Restate the rules in prose; reuse helpers but stitch by hand |
+| Branch safety | Check the slug for a collision and create with `git switch -c` | Q03 | Steps 4, 7 | `git switch -C` overwrite; `-C` after a warning |
+| Worktree order | Create the branch or worktree first, then rename inside the chosen tree | Q04 | Step 7 | Rename then move into the worktree; commit then branch |
 | Multi-topic naming | One umbrella slug and version name the draft and branch; per-topic keys come from `split-and-define` | Q05 | Steps 4, 5 | Skip naming until the split; branch the flow by topic count |
 | Body edits | Light touch: set the heading and the `- Type:` line, leave the body | Q06 | Steps 2, 3 | Reshape to the skeleton; record the type only in the hand-off |
-| Tool interface | `--from-draft` takes the slug, version, and layout as flags and prompts for nothing | Q07 | Step 6 | Re-prompt interactively; hybrid flag-or-prompt |
-| Draft relocation | Read the text and write it into the chosen tree, stage it, drop the source; in place `git mv` a tracked draft or plain-rename an untracked one | Q08 | Step 6 | Require a commit first; rename then move into the worktree |
+| Tool interface | `--from-draft` takes the slug, version, docs layout, and branch placement as flags and prompts for nothing | Q07 | Step 7 | Re-prompt interactively; hybrid flag-or-prompt |
+| Draft relocation | Read the text and write it into the chosen tree, stage it, drop the source; in place `git mv` a tracked draft or plain-rename an untracked one | Q08 | Step 7 | Require a commit first; rename then move into the worktree |
+| Documentation layout | Offer `docs/`, `docs/vX.Y/`, `docs/vX.Y.Z/`, and `docs/vX.Y/vX.Y.Z/`; persist the choice in the draft parent | User request | Step 6 | One fixed version/topic directory; project-global configuration |

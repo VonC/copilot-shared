@@ -19,10 +19,16 @@ valid concrete choices when they are known.
 13. When asking for a correction, keep any earlier fields that were already confirmed as valid and ask only for the current field.
 14. If the user does not answer the clarification request, or answers again with an invalid value, stop and explain which field still needs a valid value.
 15. If associated documents are missing, invalid, or not useful for the requested requirement, notify the user and ask for additional context before writing the document body.
-16. After validation succeeds, write the file as `docs\vX.Y.Z\<topic>\<type>.vX.Y.Z.<topic>.md` in markdown format.
-17. Fill the document body from the user story, bug report, feature request, and associated documents in your context. Use only the user-provided version that you confirmed as valid for the file name and version references.
-18. Include these core items in the document: the user story or bug summary, the current behavior, the expected behavior or gap, and acceptance criteria or confirmed rules.
-19. Add concrete examples, code references, and technical constraints only when they are directly mentioned in the user input or in associated documents.
+16. Read [`../rules/docs_layout.md`](../rules/docs_layout.md). Resolve the
+    effort directory as the parent of the canonical draft named in the prompt,
+    and confirm that it matches one of the four supported layouts for the
+    settled version.
+17. After validation succeeds, write the file as
+    `<effort-dir>\<type>.vX.Y.Z.<topic>.md` in markdown format, beside the
+    canonical draft. Do not add a topic subdirectory.
+18. Fill the document body from the user story, bug report, feature request, and associated documents in your context. Use only the user-provided version that you confirmed as valid for the file name and version references.
+19. Include these core items in the document: the user story or bug summary, the current behavior, the expected behavior or gap, and acceptance criteria or confirmed rules.
+20. Add concrete examples, code references, and technical constraints only when they are directly mentioned in the user input or in associated documents.
 
 ## Requirement document templates
 
@@ -41,10 +47,20 @@ Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
-When the `docs\vX.Y.Z\<slug>\feature-request.vX.Y.Z.<slug>.md` or `docs\vX.Y.Z\<slug>\issue.vX.Y.Z.<slug>.md` is written, hand the cycle on to its review, with no menu and no go-ahead. From the project root, in a PowerShell shell, run the explicit post-write form through the `pw skill` launcher (see [`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw` alias does not resolve in a tool shell):
+When the `<effort-dir>\feature-request.vX.Y.Z.<slug>.md` or
+`<effort-dir>\issue.vX.Y.Z.<slug>.md` is written, hand the cycle on to its
+review, with no menu and no go-ahead. From the project root, in a PowerShell
+shell, run the explicit post-write form through the `pw skill` launcher (see
+[`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw`
+alias does not resolve in a tool shell):
 
 - `pw skill --after-write requirement`
 
-The explicit post-write form prints `<command-prefix>review-ask-questions on docs/vX.Y.Z/<slug>/feature-request.vX.Y.Z.<slug>.md` (with the prefix selected by `command_prefix_char.md`) regardless of settled-looking content in the new requirement. Read that line and run it straight away: a handoff is the go-ahead to perform the next step now, so do not stop to ask whether to proceed, and do not compose the next prompt yourself.
+The explicit post-write form prints the exact
+`<command-prefix>review-ask-questions on <requirement-path>` line (with the
+prefix selected by `command_prefix_char.md`) regardless of settled-looking
+content in the new requirement. Read that line and run it straight away: a
+handoff is the go-ahead to perform the next step now, so do not stop to ask
+whether to proceed, and do not compose the next prompt yourself.
 
 To hold the chain here instead — to read the requirement before the review runs — pass the literal phrase `stop here` in this skill's argument when you invoke it. With `stop here` in the argument, write the requirement and skip this handoff.

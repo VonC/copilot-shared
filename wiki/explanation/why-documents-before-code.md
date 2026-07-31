@@ -85,7 +85,7 @@ so the release history and its documentation agree.
 ## 🏷️ Why versions live in every filename
 
 Every artifact carries the `vX.Y.Z` slug of its effort:
-`docs\design.v0.9.0.handoff_automation.md` names its version, its phase
+`docs\v0.9.0\design.v0.9.0.handoff_automation.md` names its version, its phase
 and its topic at a glance. Two efforts never collide, and the release
 preparation can find every document the merged branch carried — that is
 what the merge reword reads.

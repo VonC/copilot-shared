@@ -4,7 +4,12 @@ ultrathink: take the time to reason through the user story, bug report, or featu
 
 Check your prompt for version vX.Y.Z and topic (for instance "v9.3.0 sentinels").
 
-Write a design document named `docs\vX.Y.Z\<topic>\design.vX.Y.Z.<topic>.md`, in markdown format, from a user story, a bug report, or a feature request included in your context. The generated document should stay at design level: describe scope, confirmed facts, constraints, target behavior, and major design areas. Do not turn the document into an implementation plan.
+Read [`../rules/docs_layout.md`](../rules/docs_layout.md). Resolve the effort
+directory from the parent of the requirement or canonical draft named in the
+prompt. Write `design.vX.Y.Z.<topic>.md` beside that source document. Do not add
+a topic subdirectory. The generated document should stay at design level:
+describe scope, confirmed facts, constraints, target behavior, and major design
+areas. Do not turn the document into an implementation plan.
 
 Follow the template from [`write-design.template.md`](../templates/write-design.template.md) to write the design document, and adapt it as needed if some sections are not relevant for the specific design you are writing.
 
@@ -22,10 +27,19 @@ Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
-When the `docs\vX.Y.Z\<slug>\design.vX.Y.Z.<slug>.md` is written, hand the cycle on to its review, with no menu and no go-ahead. From the project root, in a PowerShell shell, run the explicit post-write form through the `pw skill` launcher (see [`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw` alias does not resolve in a tool shell):
+When `<effort-dir>\design.vX.Y.Z.<slug>.md` is written, hand the cycle on to
+its review, with no menu and no go-ahead. From the project root, in a PowerShell
+shell, run the explicit post-write form through the `pw skill` launcher (see
+[`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw`
+alias does not resolve in a tool shell):
 
 - `pw skill --after-write design`
 
-The explicit post-write form prints `<command-prefix>review-ask-questions on docs/vX.Y.Z/<slug>/design.vX.Y.Z.<slug>.md` (with the prefix selected by `command_prefix_char.md`) even if the new design already contains text that resembles a settled decision marker. Read that line and run it straight away: a handoff is the go-ahead to perform the next step now, so do not stop to ask whether to proceed, and do not compose the next prompt yourself.
+The explicit post-write form prints the exact
+`<command-prefix>review-ask-questions on <design-path>` line (with the prefix
+selected by `command_prefix_char.md`) even if the new design already contains
+text that resembles a settled decision marker. Read that line and run it
+straight away: a handoff is the go-ahead to perform the next step now, so do not
+stop to ask whether to proceed, and do not compose the next prompt yourself.
 
 To hold the chain here instead — to read the design before the review runs — pass the literal phrase `stop here` in this skill's argument when you invoke it. With `stop here` in the argument, write the design and skip this handoff.

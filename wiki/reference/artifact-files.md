@@ -20,30 +20,64 @@ A single-topic effort normally keeps one version slug `vX.Y.Z` and one topic
 slug through every phase. A collection can keep one umbrella draft while its
 independently developed requirements use their own item slugs:
 
+`/process-draft` chooses one effort directory and keeps every versioned
+document for that effort there:
+
+| Layout | Effort directory for `vX.Y.Z` |
+| --- | --- |
+| Flat | `docs/` |
+| Minor version | `docs/vX.Y/` |
+| Full version | `docs/vX.Y.Z/` |
+| Minor and full version | `docs/vX.Y/vX.Y.Z/` |
+
+The full-version layout is the recommended default. In the patterns below,
+`<effort-dir>` means whichever one of these four directories contains the
+canonical draft.
+
 | Pattern | Written by | Holds |
 | --- | --- | --- |
 | `docs\draft.<topic>.md` | the author | the raw idea, no version yet |
-| `docs\draft.vX.Y.Z.<slug>.md` | `/process-draft`, then `/split-and-define` for collections | the classified, branched draft; an umbrella also carries the ordered status index |
-| `docs\feature-request.vX.Y.Z.<topic>.md` | `/write-requirement` | new behavior to build |
-| `docs\issue.vX.Y.Z.<topic>.md` | `/write-requirement` | a bug or missing behavior |
-| `docs\design.vX.Y.Z.<topic>.md` | `/write-design` | scope, constraints, acceptance cases |
-| `docs\plan.vX.Y.Z.<topic>.md` | `/write-plans` | numbered implementation steps |
-| `docs\plan.vX.Y.Z.<topic>.validation.md` | `/write-plans`, then `/implementation-check` | per-step verdicts and checks |
+| `<effort-dir>/draft.vX.Y.Z.<slug>.md` | `/process-draft`, then `/split-and-define` for collections | the classified, branched draft; an umbrella also carries the ordered status index |
+| `<effort-dir>/feature-request.vX.Y.Z.<topic>.md` | `/write-requirement` | new behavior to build |
+| `<effort-dir>/issue.vX.Y.Z.<topic>.md` | `/write-requirement` | a bug or missing behavior |
+| `<effort-dir>/design.vX.Y.Z.<topic>.md` | `/write-design` | scope, constraints, acceptance cases |
+| `<effort-dir>/plan.vX.Y.Z.<topic>.md` | `/write-plans` | numbered implementation steps |
+| `<effort-dir>/plan.vX.Y.Z.<topic>.validation.md` | `/write-plans`, then `/implementation-check` | per-step verdicts and checks |
+
+### Document selector contract
+
+Utilities do not need the effort directory when they already know the full
+version, slug, and document type. The selector checks only the four supported
+directories for that version. For example:
+
+```text
+pw document v10.0.0 route-cleanup plan
+```
+
+prints the unique repository-relative plan path. Supported types are `draft`,
+`requirement`, `feature-request`, `issue`, `design`, `plan`, and
+`validation-plan`. `requirement` accepts either concrete requirement prefix.
+Hyphens and underscores in the slug compare as equivalent.
+
+The match is exact: asking for `route-cleanup` does not silently select
+`route-cleanup-extra`. No match returns the not-applicable exit code. If the
+same selector exists in more than one supported layout, resolution fails as
+ambiguous instead of choosing the newest or first copy.
 
 ### Direct and umbrella draft relationships
 
 For a single topic, the draft and requirement usually share a slug:
 
 ```txt
-docs\draft.v10.0.0.route-cleanup.md
-docs\issue.v10.0.0.route-cleanup.md
+docs\v10.0.0\draft.v10.0.0.route-cleanup.md
+docs\v10.0.0\issue.v10.0.0.route-cleanup.md
 ```
 
 For a collection, the umbrella draft deliberately keeps the collection slug:
 
 ```txt
-docs\draft.v10.0.0.sentinel.md
-docs\issue.v10.0.0.route-cleanup.md
+docs\v10.0.0\draft.v10.0.0.sentinel.md
+docs\v10.0.0\issue.v10.0.0.route-cleanup.md
 branch: route_cleanup
 ```
 

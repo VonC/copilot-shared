@@ -12,7 +12,15 @@ Be mindful of the type of the document you are reviewing, because the kind of qu
 
 Never carry a question across types: a plan review does not re-ask a design question the design already settled, and it does not re-clarify the feature or the issue. If the right place for a question is an earlier document, say so instead of asking it here.
 
-Review that `docs\vX.Y.Z\<topic>\<type>.vX.Y.Z.<topic>.md` document (see other `docs\vX.Y.Z\<topic>\<other_type>.vX.Y.Z.<topic>.md` documents in your context if provided), and write your new questions into the companion scratch file `a.<base>.open.questions.md`, following the template, then let `oqm` place them into the document as described below. Each question must comes with options (and their pros and cons), as well as a recommended choice (with arguments) from those options, as well as "Answer to Qxx: option Y" repeating the recommended option, but adding a reason why it must be accepted as the answer.
+Review the exact `<effort-dir>\<type>.vX.Y.Z.<topic>.md` document named in the
+prompt (see other documents beside it when provided), and write your new
+questions into the companion scratch file `a.<base>.open.questions.md`,
+following the template, then let `oqm` place them into the document as described
+below. Read [`../rules/docs_layout.md`](../rules/docs_layout.md) and preserve the
+document's selected effort directory. Each question must come with options and
+their pros and cons, a recommended choice with arguments, and an "Answer to
+Qxx: option Y" line that repeats the recommendation and gives the acceptance
+reason.
 
 Follow the template defined in [`open-question.template.md`](../templates/open-question.template.md).
 
@@ -26,24 +34,24 @@ Do not edit the `## Open questions` section of the document by hand. Use the
 `oqm` wrapper ([`oqm.bat`](../bin/oqm.bat), which runs
 [`open_questions_md.py`](../tools/open_questions_md.py) through the consuming
 project environment) to manage that section. It finds the project root,
-resolves the document under `docs\` or `docs\vX.Y.Z\`, and works through the
+resolves the exact repository-relative path in any supported docs layout, and works through the
 companion scratch file `a.<base>.open.questions.md` kept at the project root,
 where `<base>` is the document name without its `.md` suffix.
 
 The companion scratch file `a.<base>.open.questions.md` is the one file you author by hand: write the new open questions there, starting with the `## Open questions for the vX.Y.Z ...` line and following [`open-question.template.md`](../templates/open-question.template.md). `oqm` then removes any older `## Open questions` section from the document and appends the new section taken from `a.<base>.open.questions.md`, so the questions you wrote in the companion become the document's only `## Open questions` section.
 
-The tool has three modes, each taking the document file name:
+The tool has three modes, each taking the exact repository-relative document path:
 
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --create"`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --strip"`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --append"`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
+- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
+- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
+- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
 
 Run these steps for the document you are reviewing:
 
-1. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --strip"` to drop any prior `## Open questions` section from the document.
-2. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --create"` to start an empty `a.<base>.open.questions.md` companion.
+1. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"` to drop any prior `## Open questions` section from the document.
+2. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"` to start an empty `a.<base>.open.questions.md` companion.
 3. Write your new questions into `a.<base>.open.questions.md`, starting with the `## Open questions for the vX.Y.Z ...` line and following the template.
-4. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <type>.vX.Y.Z.<topic>.md --append"` to move the questions from `a.<base>.open.questions.md` into the document.
+4. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"` to move the questions from `a.<base>.open.questions.md` into the document.
 5. Present the placed questions in your reply as the mandatory three-column table described in "Presenting the review questions" below — never as a bulleted list.
 
 
@@ -64,6 +72,11 @@ Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
-The review is a stop, not an automatic chain: a human answers the questions before the consolidation. Leave the next step in two forms rather than running the next skill: the "Next step" command — `<command-prefix>consolidate-then-review-ask-questions on docs/vX.Y.Z/<slug>/<doc type>.vX.Y.Z.<slug>.md` you just reviewed, carrying the reviewed document name so it is ready to run once the answers are in — and, in addition, a hint: where the host can render a gray, Tab-completable prompt, show that same command as the ghost prompt the human can accept with a keystroke rather than retype (the reliable trigger is still to be studied).
+The review is a stop, not an automatic chain: a human answers the questions
+before consolidation. Leave the next step in two forms rather than running it:
+the "Next step" command
+`<command-prefix>consolidate-then-review-ask-questions on <document-path>` using
+the exact path just reviewed, plus the same command as a gray, Tab-completable
+hint where the host supports one.
 
 When the review round raises no question at all, do not leave the document with no section: write a one-row decisions table — the consolidate step's `Requirement clarifications`, `Design decisions`, or `Implementation decisions` section, with a single row such as "No open questions, all decisions made" — so the on-disk state reads as settled. Keep the words "No open questions" verbatim in that row: the `pw` routing reads that row (or a `| Qxx` row) as the consolidated signal, and a decisions heading without one still routes to a review. From that settled state, run `pw skill` and run the printed command straight away, the same settled handoff as the consolidate skill: from a plan that command is `<command-prefix>implement-step` on the plan's first step (its id read from the validation plan, not always 1). The same explicit hold applies here: with `stop here` in the invocation argument, or a human instruction not to start the next phase, present the printed line as the "Next step" command and stop instead of running it.
