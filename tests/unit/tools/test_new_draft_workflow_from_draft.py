@@ -271,6 +271,54 @@ def test_run_from_draft_in_place(
     assert "Moved draft" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize(
+    ("layout", "relative_parent"),
+    [
+        ("flat", Path("docs")),
+        ("minor", Path("docs/v0.5")),
+        ("version", Path("docs/v0.5.0")),
+        ("minor-version", Path("docs/v0.5/v0.5.0")),
+    ],
+)
+def test_run_from_draft_places_draft_in_selected_docs_layout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    layout: str,
+    relative_parent: Path,
+) -> None:
+    """--docs-layout persists the choice in the canonical draft path."""
+    root = tmp_path.resolve()
+
+    def fake_create(slug: str, *, cwd: Path) -> None:
+        del slug, cwd
+
+    monkeypatch.setattr(workflow, "branch_collision", _no_collision)
+    monkeypatch.setattr(workflow, "create_local_branch", fake_create)
+    monkeypatch.setattr(workflow, "path_is_tracked", _untracked)
+    source = _write_source_draft(root, text="# Draft topic\n")
+
+    result = workflow.run(
+        [
+            "--root",
+            str(root),
+            "--from-draft",
+            "docs/draft.topic.md",
+            "--slug",
+            "topic",
+            "--version",
+            "0.5.0",
+            "--docs-layout",
+            layout,
+            "--in-place",
+        ],
+    )
+
+    assert result == _EXIT_OK
+    target = root / relative_parent / "draft.v0.5.0.topic.md"
+    assert target.read_text(encoding="utf-8") == "# Draft topic\n"
+    assert not source.exists()
+
+
 def test_run_from_draft_worktree(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

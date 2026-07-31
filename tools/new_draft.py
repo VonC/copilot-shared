@@ -4,7 +4,8 @@
 Interactively asks for a slug, proposes a patch/minor/major bump of the current
 `pyproject.toml` version, checks the slug against local branches and every
 declared remote, creates the branch (optionally inside a sibling
-`<project>_<slug>` worktree), and writes a `docs/draft.vX.Y.Z.<slug>.md`
+`<project>_<slug>` worktree), and writes a `draft.vX.Y.Z.<slug>.md` in the
+selected docs layout
 skeleton so the effort starts already isolated. The chosen version only labels
 the draft and its filename; `pyproject.toml` is left untouched.
 
