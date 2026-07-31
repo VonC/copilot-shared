@@ -6,37 +6,40 @@ release. The groundhog test loop (ghog), the prompt-workflow cycle (pw),
 and the commit and changelog helpers are mutualized across sibling
 projects.
 
-## [v0.10.0-SNAPSHOT unreleased] No Guessing at the Fork - 3475df792210cc535b2d3b8e8d6d9038ef45fa73
+## [v0.10.0-SNAPSHOT unreleased] Four Folders, One Document - 128c4e03e1a1fc7614208220c1f08b30710c9536
 
-Topology previews pin down main, integration, and feature releases.
+`pw document` finds an artifact from its version, slug, and type.
 
-- Five Doors, One Instruction
-  -- Antigravity joins the shared skill wrappers and documentation.
-- Decks, Docs, and Clean Histories
-  -- Generators, local docs, and Git audits replace manual chores.
+- No Guessing at the Fork
+  -- Topology previews prove branch boundaries before a merge starts.
+- Hooks, Hogs, and History
+  -- Commit hooks, Groundhog, and history scans catch repository trouble.
 
-Release 0.10.0 makes release selection branch-aware. The new topology
-planner identifies on-main, integration, and feature scopes, proves feature
-boundaries, and previews merges or commit-by-commit rebases outside the
-repository object database. The prepare-release skill now handles selective
-promotion, bulk integration releases, and concrete manual handoffs.
+Release 0.10.0 makes branch selection explicit. The topology planner reports
+on-main, integration, and feature scopes, proves feature boundaries, and
+previews merges or commit-by-commit replays in an isolated object directory.
+Prepare-release can land one topic, follow an ordered umbrella, audit the
+Diátaxis wiki, and prepare the final release files without rewriting a
+published feature branch.
 
-The project also gained 22 Antigravity wrappers, a Diataxis wiki, a contextual
-Git history scanner, logo-sheet isolation, a local MkDocs server, and editable
-PowerPoint generation from the HTML presentation source.
+Document workflows now carry one of four layouts from draft processing through
+release. `pw document` locates an artifact from version, slug, and type alone,
+while ordered umbrella routing advances only after the validation evidence on
+disk agrees with the declared status table.
 
 ### Key changes (v0.10.0)
 
-- **Branch-aware releases**: The topology planner reports exact scopes,
-  boundaries, commits, and conflict previews before a release changes Git
-  history.
+- **Proven release scope**: The planner reports exact commits, boundaries, and
+  conflict previews for main, integration, and feature releases before Git
+  history changes.
 
-- **More shared entry points**: Antigravity wrappers and the expanded wiki make
-  the same instruction set available across five supported AI hosts.
+- **Folder-independent documents**: Drafts and later artifacts share a chosen
+  flat, minor, full-version, or nested directory, and `pw document` finds the
+  unique match without branch or prompt-memory context.
 
-- **New repository tools**: History scanning, logo extraction, local Markdown
-  serving, release diagrams, and presentation generators replace repeat manual
-  work with tested commands.
+- **Safer repository tools**: Sensitive-commit hooks and contextual history
+  scans catch exposed terms, while Groundhog, the local docs server, editable
+  presentation builds, and logo extraction provide tested project utilities.
 
 ### 🚀 Features (v0.10.0)
 
@@ -52,6 +55,20 @@ PowerPoint generation from the HTML presentation source.
 - *(release)* Apply gitworkflow selection
 - *(history-scan)* Add contextual Git audit
 - *(git-diagrams)* Render release histories
+- *(hooks)* Block sensitive pending commits
+- *(skills)* Add sensitive hook setup
+- *(ghog)* Restore fast tests under half floor
+- *(release)* Audit Diataxis wiki coverage
+- *(prepare-release)* Target integration first
+- *(pw)* Route ordered umbrella work
+- *(workflow)* Chain umbrella requirements
+- *(plugin)* Add refresh launcher
+- *(doc-structure)* Update document output paths to versioned topic folders
+- *(docs)* Add skill to arrange docs folders
+- *(drafts)* Add selectable docs layouts
+- *(pw)* Find documents across layouts
+- *(workflow)* Carry docs layout choices
+- *(document-layouts)* Support four layouts
 
 ### 🐛 Bug Fixes (v0.10.0)
 
@@ -70,11 +87,28 @@ PowerPoint generation from the HTML presentation source.
 - *(new-draft)* Skip same-path draft move
 - *(codex)* Package every shared instruction
 - *(wiki)* Build mounted documentation cleanly
+- *(serve-docs)* Preserve emoji nav titles
+- *(venv)* Repair incomplete scaffolds
+- *(senv)* Recover incomplete project venvs
+- *(workflow)* Require reviewed decision rows
+- *(covg)* Use an explicit --root verbatim
+- *(workflow)* Resolve umbrella branch topics
+- *(workflow)* Force post-write review
+- *(merge)* Cover develop and main targets
+- *(pw)* Share umbrella topic resolution
+- *(plans)* Make line estimates advisory
+- *(senv)* Create shared sensitive rules file
+- *(sensitive-hooks)* Allow empty rule files
 
 ### 🚜 Refactor (v0.10.0)
 
 - *(groundhog)* Split out reporting_nextstep
 - *(pptx)* Strict types, split deck build
+- *(senv)* Delegate venv setup to switchpy
+- *(pw)* Rename settled-row constant
+- *(tests)* Split structural checks
+- *(pw)* Isolate collection routing
+- *(release)* Split feature planning
 
 ### 📚 Documentation (v0.10.0)
 
@@ -109,6 +143,20 @@ PowerPoint generation from the HTML presentation source.
 - *(release)* Define branch-aware preparation
 - *(release)* Explain selection workflows
 - *(workflow)* Explain AI ownership and review
+- *(hooks)* Explain shared sensitive rules
+- *(sanitize)* Classify binary hits, bound terms
+- *(wiki)* Binary triage and word-boundary rules
+- *(ghog)* Record the Q70 half-floor restore
+- *(workflow)* Explain routing handoffs
+- *(readme)* Document agents and test gate
+- *(merge)* Explain shared target rewording
+- *(merge)* Define rewording contract
+- *(release)* Explain release wiki audits
+- *(pw)* Document umbrella handoff routing
+- *(open-questions)* Map BBQ analogy concepts
+- *(workflow)* Pin decisions table routing shape
+- *(wiki)* Document reusable logo workflow
+- *(document-layouts)* Record feature request
 
 ### ⚡ Performance (v0.10.0)
 
@@ -116,16 +164,24 @@ PowerPoint generation from the HTML presentation source.
 - *(prompt)* Reuse current branch
 - *(git-history)* Move repo setup to fixtures
 - *(tests)* Trim slow validation calls
+- *(senv)* Check hooks only in the current repo
+- *(sensitive-history)* Stub git failure
+- *(tests)* Cut repeated Git setup
 
 ### 🎨 Styling (v0.10.0)
 
 - *(instructions)* Drop doubled blank line
+- *(sensitive)* End hook tools with eof marker
 
 ### 🧪 Testing (v0.10.0)
 
 - *(instructions)* Normalize wrapper assertion
 - *(prompt)* Cover post-commit fallbacks
 - *(release)* Cover workflow contracts
+- *(sensitive)* Type the monkeypatched doubles
+- *(tools)* Hermetic project-root walk tests
+- *(release)* Cover the planner to the gate
+- *(prompt-workflow)* Cover draft edge cases
 
 ### ⚙️ Miscellaneous Tasks (v0.10.0)
 
@@ -135,6 +191,10 @@ PowerPoint generation from the HTML presentation source.
 - *(vscode)* Add Workspace Halo logo
 - *(codex)* Expose isolate-logos skill
 - *(codex)* Refresh plugin cachebuster
+- *(vscode)* Refresh workspace metadata
+- *(codex)* Rebundle drifted instructions
+- *(vscode)* Add project spelling terms
+- *(plugin)* Refresh llm-shared cache version
 
 ### 🔨 Build (v0.10.0)
 
