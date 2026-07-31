@@ -108,6 +108,7 @@ their choices.
 
 ### Additional utilities
 
+- 🤖 [Why project logos use a shared visual system](explanation/why-project-logos-use-a-shared-visual-system.md)
 - 🧪 [Groundhog as a reset loop](explanation/groundhog-as-a-reset-loop.md)
 - 📊 [Why grouped commits, least dependent first](explanation/why-grouped-commits.md)
 - 📊 [Why release branch roles matter](explanation/why-release-branch-roles-matter.md)
@@ -152,6 +153,7 @@ Recipes for a precise goal, for readers who already know the basics.
 
 ### Additional utilities
 
+- 🤖 [Create a coherent logo family for a project](how-to/create-a-logo-family-for-a-project.md)
 - 🧪 [Fix a red groundhog walk](how-to/fix-a-red-groundhog-walk.md)
 - 🧪 [Fix a slow test flagged as an outlier](how-to/fix-a-slow-test.md)
 - 🧪 [Register groundhog in a project](how-to/register-groundhog-in-a-project.md)
@@ -183,6 +185,7 @@ Exact descriptions of commands, formats, files, and supported behavior.
 
 ### Additional utilities
 
+- 🤖 [Project logo prompt template and asset conventions](reference/project-logo-prompt-template.md)
 - 🤖 [Aliases and bin launchers](reference/aliases-and-launchers.md)
 - 📊 [Commit message format](reference/commit-message-format.md)
 - 🧪 [ghog commands and exit codes](reference/ghog-commands-and-exit-codes.md)

@@ -9,6 +9,11 @@ combined llm-shared logo. The shared style block keeps the five outputs
 consistent; the palette reuses the presentation brand colors (deep blue
 `#00566f`, orange `#ec6608`).
 
+For the reusable project-wide method, see, in Diátaxis order:
+[why logo families use a shared visual system](../explanation/why-project-logos-use-a-shared-visual-system.md),
+[how to create a logo family](../how-to/create-a-logo-family-for-a-project.md),
+and the [prompt and asset reference](../reference/project-logo-prompt-template.md).
+
 ## 🎨 Shared style block appended to every prompt
 
 > Flat 2D vector logo, sticker style, no text, no letters. Bold rounded
