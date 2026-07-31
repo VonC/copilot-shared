@@ -1,4 +1,4 @@
-0.10.0-SNAPSHOT -- Four Folders, One Document
+0.10.0 -- Four Folders, One Document
 
 `pw document` finds an artifact from its version, slug, and type.
 

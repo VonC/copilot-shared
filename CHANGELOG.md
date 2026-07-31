@@ -6,7 +6,7 @@ release. The groundhog test loop (ghog), the prompt-workflow cycle (pw),
 and the commit and changelog helpers are mutualized across sibling
 projects.
 
-## [v0.10.0-SNAPSHOT unreleased] Four Folders, One Document - 128c4e03e1a1fc7614208220c1f08b30710c9536
+## [v0.10.0] - 2026-07-31 - Four Folders, One Document
 
 `pw document` finds an artifact from its version, slug, and type.
 
