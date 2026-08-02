@@ -15,3 +15,8 @@ A walk is finished only when `a.ghog.status` at the project root reads `state=do
 Whenever a task creates or maintains a Diataxis documentation set, present
 and link its categories in this order: explanation, tutorials, how-to guides,
 then reference. Keep every page focused on exactly one Diataxis purpose.
+
+## LLM-specific Markdown adapters
+
+When adding or modifying an LLM-specific skill, prompt, workflow, or other
+Markdown adapter, follow `rules/llm-specific-adapters.md`.
