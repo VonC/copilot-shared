@@ -22,25 +22,28 @@ The plugin package lives under `.agents/llm-shared/` in the clone:
 .agents/llm-shared/
 ├─ .codex-plugin/plugin.json     manifest; its "skills": "./skills/" line drives discovery
 ├─ skills/<skill>/SKILL.md       24 wrappers, UTF-8 without BOM, name + description frontmatter only
-└─ instructions/                 bundled copy of the bodies, so the package stands alone
+└─ instructions/                 compatibility redirects to root instructions/
 ```
 
 It sits one level below `.agents/` on purpose: a package directly in
 `.agents/skills` would also be picked up as raw project skills and every
 skill would appear twice.
 
-## 🧩 Keep every instruction in the package
+## 🧩 Keep every instruction at the repository root
 
-For every root `instructions\<name>.md`, the plugin package must contain:
+For every root `instructions\<name>.md`, the plugin package contains:
 
 - `skills\<hyphenated-name>\SKILL.md`, with valid `name` and `description`
   frontmatter,
-- `instructions\<name>.md`, as an exact bundled copy of the root instruction,
-- `[Instruction](../../instructions/<name>.md)` in the wrapper, so the link
-  resolves inside an installed plugin cache.
+- `instructions\<name>.md`, as a compatibility redirect to the root
+  instruction,
+- a direct redirect from the wrapper to the root instruction.
 
-Do not point a wrapper upward into the source checkout. That may work in the
-clone but fails after Codex copies the plugin into its versioned cache.
+Never copy the instruction body into the plugin package. Follow
+[`llm-specific-adapters.md`](../../rules/llm-specific-adapters.md) whenever a
+wrapper or compatibility path is added or changed. Because the installed
+plugin cache contains redirects rather than bodies, keep the llm-shared source
+checkout available to the Codex workspace, for example with `--add-dir`.
 
 The structural regression test checks the complete one-to-one contract:
 
@@ -100,7 +103,7 @@ python -m pytest tests\unit\tools\test_instruction_structure\test_instruction_st
 
 The junction keeps the marketplace source synchronized with the clone, but
 Codex still caches the installed plugin by manifest version. After changing an
-instruction, wrapper, or bundled body:
+instruction or redirect:
 
 1. Initialize an interactive `cmd` with `senv.bat`.
 2. Run the repository shortcut:

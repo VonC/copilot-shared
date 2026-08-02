@@ -112,9 +112,8 @@ order.
 9. `oqm` accepts exact repository-relative paths in every supported layout.
 10. Release preparation scans effort documents, drafts, and validation plans
     in every supported layout.
-11. Root instructions and their packaged Codex copies describe the same path
-    behavior, and the packaged plugin contains the shared layout rule it links
-    to.
+11. Packaged Codex adapters redirect to the root instructions and root shared
+    layout rule instead of copying their content.
 12. The Diátaxis wiki explains the human layout choice, teaches it in the
     draft-to-requirement tutorial, shows how to locate a document, and records
     the exact layout and selector contracts in reference pages.

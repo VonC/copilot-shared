@@ -19,18 +19,18 @@ the integration or diagnosing discovery.
 ```txt
 .github/                     GitHub Copilot discovery
 ├─ agents/                   agent definitions (split-large-file)
-├─ copilot-instructions.md   shared chat and code-writing rules
+├─ copilot-instructions.md   redirect to rules/chat.md
 ├─ prompts/                  one-shot prompts (analyse, discuss, check-api*,
 │                            fix-issue, extend-test-coverage, ...)
 └─ skills/<skill>/SKILL.md   frontmatter + reference to instructions/<skill>.md
 .claude/                     Claude Code discovery
-├─ CLAUDE.md                 shared chat and code-writing rules
+├─ CLAUDE.md                 redirect to rules/chat.md
 └─ skills/<skill>/SKILL.md   mirrors .github/skills/
 AGENTS.md                    the Codex channel: run_commands pointer + groundhog section
-.agents/llm-shared/          self-contained ChatGPT Codex plugin package
+.agents/llm-shared/          source-linked ChatGPT Codex plugin package
 ├─ .codex-plugin/plugin.json manifest; "skills": "./skills/" drives discovery
 ├─ skills/<skill>/SKILL.md   24 BOM-less wrappers (name + description only)
-└─ instructions/             bundled copy of the bodies
+└─ instructions/             compatibility redirects to root instructions/
 .agent/workflows/<skill>.md  24 Google Antigravity workflow wrappers,
                              junctioned into projects, slash-invoked
 ```
@@ -39,8 +39,8 @@ AGENTS.md                    the Codex channel: run_commands pointer + groundhog
 
 ```txt
 instructions/                one markdown body per skill — the single source
-rules/                       blacklist, markdown, preserve_code, run_commands,
-                             command_prefix_char, interactive_menu
+rules/                       canonical shared rules, including chat and
+                             LLM-specific adapter maintenance
 templates/                   document skeletons the skills fill
 ```
 

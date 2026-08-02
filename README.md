@@ -665,8 +665,8 @@ shows how to connect each one to a consuming project.
    └─ ...                                mirrors .github/skills/ with one extra: write-release-notes-summary
 .agents/llm-shared/                       OpenAI Codex plugin package
 ├─ .codex-plugin/plugin.json             plugin manifest
-├─ skills/<skill>/SKILL.md               Codex skill wrappers
-└─ instructions/                         bundled copies of the shared bodies
+├─ skills/<skill>/SKILL.md               Codex redirects to root instructions/
+└─ instructions/                         compatibility redirects, never copies
 .agent/workflows/                         Google Antigravity workflow wrappers
 ├─ <skill>.md                             slash-command wrapper for one shared body
 └─ ...                                    same hyphenated skill names
@@ -676,8 +676,8 @@ shows how to connect each one to a consuming project.
 
 Both `.github/skills/<skill>/SKILL.md` and `.claude/skills/<skill>/SKILL.md`
 delegate to the same markdown body under `instructions/`. Antigravity's
-workflow wrappers point there too, while the Codex plugin bundles the
-same bodies in its package. Another LLM that does not read any of these
+workflow wrappers and Codex plugin adapters point there too. Another LLM
+that does not read any of these
 folders can still run a skill by being handed the matching
 `instructions/<skill>.md` file as part of its context.
 
@@ -926,10 +926,11 @@ After that, the same slash commands resolve in any directory.
 
 ### From OpenAI Codex (as a local plugin)
 
-The repository ships a self-contained Codex plugin package under
+The repository ships a source-linked Codex plugin package under
 [`.agents/llm-shared/`](.agents/llm-shared/): a `.codex-plugin/plugin.json`
-manifest, one BOM-less `SKILL.md` wrapper per skill, and a bundled copy
-of the instruction bodies. Registering it takes a personal marketplace
+manifest, one BOM-less `SKILL.md` redirect per skill, and compatibility
+redirects for older instruction paths. The canonical bodies remain only in
+the root `instructions/` folder. Registering it takes a personal marketplace
 file, one junction pointing at the clone (no copy), and three `codex
 plugin` commands; the skills then appear in every new Codex session as
 `$llm-shared:<skill>`. The step-by-step recipe, including the
