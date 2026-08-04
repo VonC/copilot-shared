@@ -81,10 +81,11 @@ def fork_point(cwd: Path, current: str | None = None) -> str | None:
     """Return the commit where the current branch forked from another branch.
 
     The branch start is found with a single ``git rev-list --first-parent
-    --boundary HEAD --not <other branches>``. The boundary commit (prefixed with
-    ``-`` in the output) is the newest commit the current branch shares with
-    another local branch, and is returned as the diff base for files created on
-    the branch.
+    --boundary HEAD --not <other branches> --``. The final separator prevents a
+    branch such as ``docs`` from being parsed as an ambiguous path. The boundary
+    commit (prefixed with ``-`` in the output) is the newest commit the current
+    branch shares with another local branch, and is returned as the diff base for
+    files created on the branch.
 
     Fix: when that rev-list is empty, ``HEAD`` carries no commit unique to this
     branch -- a branch freshly created on a commit it shares with another branch,
@@ -105,7 +106,7 @@ def fork_point(cwd: Path, current: str | None = None) -> str | None:
     if not others:
         return None
     output = run_git(
-        ["rev-list", "--first-parent", "--boundary", "HEAD", "--not", *others],
+        ["rev-list", "--first-parent", "--boundary", "HEAD", "--not", *others, "--"],
         cwd=cwd,
     )
     lines = _non_empty_lines(output)
@@ -120,7 +121,7 @@ def fork_point(cwd: Path, current: str | None = None) -> str | None:
 def changed_files_since(cwd: Path, base: str) -> list[str]:
     """Return repo-relative paths added, modified or renamed since base."""
     output = run_git(
-        ["diff", "--name-only", "--diff-filter=AMR", base, "HEAD"],
+        ["diff", "--name-only", "--diff-filter=AMR", base, "HEAD", "--"],
         cwd=cwd,
     )
     return _non_empty_lines(output)
@@ -173,20 +174,27 @@ def status_entries(cwd: Path) -> list[tuple[str, str]]:
 
 def staged_files(cwd: Path) -> list[str]:
     """Return the repo-relative paths currently staged for commit."""
-    return _non_empty_lines(run_git(["diff", "--cached", "--name-only"], cwd=cwd))
+    return _non_empty_lines(run_git(["diff", "--cached", "--name-only", "--"], cwd=cwd))
 
 
 def has_step_commit(cwd: Path, step: str, base: str | None) -> bool:
-    """Return whether a ``record step <id> validation`` commit exists in range (Q16).
+    """Return whether a step validation or completion commit exists in range (Q16).
 
     The range is ``base..HEAD`` when a branch start is known, otherwise the whole
-    history of HEAD. The grep is case-insensitive. The ``step`` id may carry a
-    letter suffix such as ``4A``; because the grep is space-delimited, ``record
-    step 4 validation`` does not match ``record step 4A validation``, so a parent
-    step and its sub-steps are tracked apart (Q44).
+    history of HEAD. The two greps are case-insensitive alternatives, accepting
+    either ``record step <id> validation`` or ``record step <id> completion``.
+    The ``step`` id may carry a letter suffix such as ``4A``; because each grep
+    is space-delimited, a parent step and its sub-steps are tracked apart (Q44).
     """
-    args = ["log", "-i", f"--grep=record step {step} validation", "--format=%H"]
+    args = [
+        "log",
+        "-i",
+        f"--grep=record step {step} validation",
+        f"--grep=record step {step} completion",
+        "--format=%H",
+    ]
     args.append(f"{base}..HEAD" if base is not None else "HEAD")
+    args.append("--")
     return bool(_non_empty_lines(run_git(args, cwd=cwd)))
 
 
