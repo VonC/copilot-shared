@@ -229,7 +229,7 @@ The core initializes a missing transcript from the template selected by review f
 Each appended entry has this logical shape:
 
 ```md
-## Round <n> by <requestor-or-reviewer>
+## Round <n> by <requestor-or-reviewer> - Step <identifier when applicable>
 
 - Recorded: <local ISO-8601 timestamp with numeric UTC offset, such as 2026-08-03T14:30:05+02:00>
 - Exchange: <family>/<type-token>/vX.Y.Z/<slug>
@@ -242,6 +242,11 @@ Each appended entry has this logical shape:
 ```
 
 The core serializes appends under the identity's short operating-system lock. Agents pass the new entry to the core and do not read historical transcript content. Each entry has a stable identity and is appended idempotently, so repair cannot duplicate a completed round. This preserves the transcript's documentation-only purpose while making round order, no-progress evidence, and escalation history human-verifiable.
+
+For implementation-code review, the implementation step is appended to every
+round heading. This keeps headings unique when one transcript records rounds
+for multiple implementation steps and preserves the `MD024` duplicate-heading
+check.
 
 ---
 

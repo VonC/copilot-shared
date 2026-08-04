@@ -2,7 +2,7 @@
 
 No, it is not implemented.
 
-This validation records Steps 1 and 2 as complete; Steps 3 through 5 have not yet been implemented.
+This validation records Steps 1 through 3 as complete; Steps 4 and 5 have not yet been implemented.
 
 ---
 
@@ -213,7 +213,9 @@ No, no existing feature or reporting capability appears impaired by Step 2.
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because the lifecycle classifier, transitions, wait policy, repair, escalation, and confirmation service do not exist yet.
+Yes. Step 3 has been fully implemented.
+
+The repository now provides the complete fail-closed lifecycle classifier, marker-first transition service, monotonic bounded waits, automated round and escalation rules, durable convergence confirmation, and fresh-round human resolution required by the plan.
 
 ### Goal for Step 3
 
@@ -230,27 +232,73 @@ Implement every observable state and safe transition, bounded waiting and abando
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Observable state classifier**: added immutable artifact snapshots and decisions covering idle, active, pending, repair, abandoned, convergence, owning-action, escalated, and inconsistent states, with identity and parse errors taking precedence over lease-time evaluation.
+- **Lifecycle application service**: added start, request publication, answer publication and repair, answer consumption, round continuation, escalation, and completion transitions over the typed protocol models and exact-path store.
+- **Marker-first recovery**: retained incomplete-transition markers through artifact mutation, transcript append, and post-append cleanup so request, answer, escalation, confirmation, and resolution retries remain identity-scoped and idempotent.
+- **Bounded waiting**: added one-call monotonic deadlines, exact expected-state matching, periodic in-process progress callbacks, and terminal timeout, abandonment, inconsistency, escalation, and repair-required outcomes without lease renewal. A repair state whose marker is the counterpart's own in-flight publication of the expected artifact is polled through rather than treated as terminal, so an unlocked poll cannot abort a healthy publication.
+- **Automated progress rules**: implemented escalation after two unchanged change-request rounds and after one unsuccessful clarification round, while substantive change resets the no-progress streak.
+- **Durable human gate**: added role-neutral registered-choice validation, retained convergence evidence, another-round guidance and progress reset, replayable owning-action authorization, cancellation through escalation, and explicit completion after the owning action succeeds.
+- **Fresh human resolution**: added clear-or-archive handling over the fixed evidence set, an idempotent human-resolution transcript entry, and a new active round and lease rather than resuming stopped authority.
+- **Focused validation**: added table, property, lifecycle, confirmation, recovery, boundary, timeout, and fail-closed tests; the final `ghog day` exercised 1,398 tests and reported 100% coverage, zero outliers, zero exclusions, and `exit=0`.
+
+### Step 3 implementation-to-plan variances
+
+Pure state classification, exact-path observation, bounded waiting, and human transitions were extracted into `tools/review_exchange_state.py`, `tools/review_exchange_observer.py`, `tools/review_exchange_wait.py`, and `tools/review_exchange_human.py`. This keeps `ReviewExchangeCore` focused on application orchestration and every production file below the 650-line ceiling; `tools/review_exchange_core.py` remains within the plan's below-550 safe target at 529 lines.
+
+Lifecycle tests were split into the planned lifecycle and state packages plus focused confirmation and boundary leaves. The split keeps every test file below the 650-line ceiling while making recovery and defensive branches deterministic rather than dependent on randomized property examples.
+
+`ReviewExchangeStore.append_transcript_once` gained a backward-compatible `clear_marker` keyword whose default preserves Step 2 behavior. Step 3 uses `clear_marker=False` so a marker remains durable through lifecycle-owned cleanup and the final coordination write.
+
+The Step 3 code review repaired two gaps found against the staged work. First, the bounded wait returned `repair-required` whenever a poll observed a repair state, so an unlocked poll landing inside the counterpart's healthy in-flight publication aborted the wait; the wait now polls through the counterpart's own publication marker and reserves `repair-required` for foreign markers, with a deterministic regression test using the injected sleeper hook. Second, the design's step-qualified transcript round headings had been applied to the design and the recorded transcript but not to `_render_transcript_entry`; the renderer now appends ` - Step <identifier>` when the context carries an implementation step, and the store test pins the qualified heading.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+- `ReviewExchangeCore`: application facade coordinating exact-path lifecycle transitions, injected clocks, and repair ordering.
+- `ArtifactSnapshot` and `StateDecision`: immutable inputs and outputs for pure observable-state classification.
+- `ReviewExchangeObserver` and `ExchangeObservation`: read-only adapter that validates one fixed artifact set and evaluates lease currency.
+- `WaitOutcome`, `WaitProgress`, and `WaitResult`: stable bounded-wait result and progress values.
+- `ReviewExchangeHumanMixin`, `ConfirmationDecision`, and `ResolutionResult`: durable human-gate, owning-authorization, and escalation-resolution behavior.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Dependency direction**: the pure state module depends only on protocol values, while the observer and store adapters depend inward on those values; protocol models do not import persistence or application orchestration.
+- **Application boundary**: `ReviewExchangeCore` owns transition ordering and coordinates the store, observer, and wait policy without moving filesystem mechanics into the lifecycle service.
+- **Human transition cohesion**: confirmation and resolution are separated into an application-layer mixin but remain part of the public core facade; they use role-neutral outcomes and do not grant owning authority to the reviewer.
+- **Adapter isolation**: wall time, monotonic time, sleeping, filesystem state, and locking remain injected or delegated, so tests exercise application policy without hidden waits or project-tree discovery.
+- **Maintainability**: production files are 529, 324, 139, 275, and 188 lines for core, human, observer, state, and wait respectively, all below the 650-line ceiling and with the core below its 550-line safe target.
+
+No, there is nothing that needs to be addressed for Step 3.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **No new `O(n^2)` or `O(n log n)` path**: state and transition decisions inspect a constant artifact tuple and fixed coordination fields; no operation sorts or scans project content.
+- **Wait-loop bound**: each poll reads only the exact request, answer, tombstone, and coordination paths, computes one monotonic deadline comparison, and never rereads the transcript or renews a lease.
+- **Recovery bound**: transcript repair delegates to the Step 2 persisted suffix offset, while escalation resolution iterates only the four supported live evidence paths.
+- **Verification evidence**: production lifecycle modules contain no `rglob`, `glob`, or `iterdir` call, and the wait module contains no coordination write, lease renewal, wall clock, or persisted deadline.
+- **Duration stability**: the generated-shape property's I/O-heavy examples are capped while the previously probabilistic fail-closed branches now have deterministic tests; its measured call phase fell from 5.58 seconds to 0.70 seconds without removing assertions.
+
+No, there is no performance issue that needs to be addressed for Step 3.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **State classifier**: table and property tests cover every designed state, lease status, marker overlay, convergence recovery, and the fail-closed catch-all, with deterministic boundary tests for every defensive branch.
+- **Lifecycle facade**: tests cover start, request, answer, consume, continue, escalation, confirmation, completion, resolution, invalid transition boundaries, and identity or round mismatch rejection.
+- **Repair behavior**: fault-injection tests cover torn request entries, interrupted answer replacement, escalation append failure, confirmation cleanup interruption, replay mismatch, and exact visible-answer repair.
+- **Wait behavior**: injected-clock tests cover periodic progress, monotonic timeout, abandonment attribution, already-escalated, inconsistent, and repair-required terminal states with no lease writes during polls.
+- **Human behavior**: tests cover both convergence choices, persisted authorization replay, cancellation, guidance propagation, progress reset, clear and archive resolution, and rejection of unauthorized or incomplete actions.
+- **Coverage evidence**: the final full Groundhog run reports 100% repository coverage across all Step 3 production modules.
+
+No, there is no unit-tested class below 100% that needs completing for Step 3.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Existing protocol and store behavior**: the Step 1 model contracts and Step 2 exact-path persistence tests remain green; the store extension defaults to its prior marker-clearing behavior for existing callers.
+- **Opt-in compatibility**: lifecycle start rejects disabled review mode, so existing workflows remain inert until later adapters explicitly invoke the core under enabled configuration.
+- **Evidence preservation**: timeout, abandonment, no-progress, disagreement, cancellation, and inconsistent shapes stop safely without deleting authoritative review evidence.
+- **Reporting and diagnostics**: stable state diagnostics, transcript outcomes, wait results, expected-actor attribution, and human decision metadata extend reporting without changing existing workflow output surfaces.
+- **Global regression evidence**: the final Groundhog walk passed quality checks, affected tests, the full 1,398-test suite, 100% coverage, and the duration gate.
+
+No, no existing feature or reporting capability appears impaired by Step 3.
 
 ---
 
