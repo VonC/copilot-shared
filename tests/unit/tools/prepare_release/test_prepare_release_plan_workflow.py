@@ -7,6 +7,9 @@ first-parent merge success and an underivable failure), an explicit base
 that is not a proper ancestor, rebase and reset reflog evidence, and the
 ambiguity path where deduplicated parent candidates elect a unique nearest
 boundary with reflogs disabled.
+
+Fix: real-Git scenarios whose planner calls are accepted slow prepare their
+plans in fixtures, leaving the measured calls to verify the resulting model.
 """
 
 from __future__ import annotations
@@ -29,6 +32,8 @@ from .prepare_release_plan_test_support import commit_file, git, initialize_repo
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from tools.prepare_release.prepare_release_plan_models import ReleasePlan
 
 _EXPECTED_CANDIDATES = 2
 
@@ -120,6 +125,97 @@ def _stub_feature_repository(
     monkeypatch.setattr(workflow, "GitRepository", repository_factory)
 
 
+@pytest.fixture
+def integration_merge_plan(tmp_path: Path) -> ReleasePlan:
+    """Prepare the real-Git integration merge plan outside assertion time."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "develop")
+    commit_file(repo, "develop.txt", "develop\n", "feat: integrated work")
+    git(repo, "switch", "main")
+    return build_release_plan(repo, branch="develop", integration_branch="develop")
+
+
+@pytest.fixture
+def integration_conflict_plan(tmp_path: Path) -> ReleasePlan:
+    """Prepare the real-Git integration conflict plan outside assertion time."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "develop")
+    commit_file(repo, "shared.txt", "develop\n", "feat: develop change")
+    git(repo, "switch", "main")
+    commit_file(repo, "shared.txt", "main\n", "fix: main change")
+    return build_release_plan(repo, branch="develop", integration_branch="develop")
+
+
+@pytest.fixture
+def explicit_parent_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare the first-parent boundary plan outside assertion time."""
+    repo = tmp_path / "repo"
+    base = initialize_repository(repo)
+    git(repo, "switch", "-c", "feature")
+    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
+    git(repo, "switch", "-c", "develop", "main")
+    git(repo, "merge", "--no-ff", "feature", "-m", "merge feature")
+    plan = build_release_plan(
+        repo,
+        branch="feature",
+        feature_parent="develop",
+        preview_conflicts=False,
+    )
+    return base, plan
+
+
+@pytest.fixture
+def single_parent_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare the sole-parent boundary plan outside assertion time."""
+    repo = tmp_path / "repo"
+    base = initialize_repository(repo)
+    git(repo, "switch", "-c", "feature")
+    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
+    git(repo, "switch", "main")
+    commit_file(repo, "main.txt", "main\n", "fix: main work")
+    shutil.rmtree(repo / ".git" / "logs")
+    plan = build_release_plan(repo, branch="feature", preview_conflicts=False)
+    return base, plan
+
+
+@pytest.fixture
+def ambiguous_parent_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare the deduplicated-parent plan outside assertion time."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "develop")
+    fork_point = commit_file(repo, "parent.txt", "develop\n", "feat: parent work")
+    git(repo, "switch", "-c", "feature")
+    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
+    # Advance develop and main past the fork and drop every reflog, so no
+    # fork-point or branch-creation answer survives and the planner must
+    # weigh plain merge-base candidates from every parent branch.
+    git(repo, "switch", "develop")
+    commit_file(repo, "parent.txt", "develop again\n", "feat: later parent work")
+    git(repo, "switch", "main")
+    commit_file(repo, "main.txt", "main\n", "fix: main work")
+    git(repo, "branch", "other", "main")
+    shutil.rmtree(repo / ".git" / "logs")
+    plan = build_release_plan(repo, branch="feature", preview_conflicts=False)
+    return fork_point, plan
+
+
+@pytest.fixture
+def rebased_feature_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare the reflog-backed rebase plan outside assertion time."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    git(repo, "switch", "-c", "feature")
+    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
+    git(repo, "switch", "main")
+    main_tip = commit_file(repo, "main.txt", "main\n", "fix: main work")
+    git(repo, "rebase", "main", "feature")
+    plan = build_release_plan(repo, preview_conflicts=False)
+    return main_tip, plan
+
+
 def test_plan_on_main_prepares_in_place(tmp_path: Path) -> None:
     """Starting from main never proposes a rebase or branch merge."""
     repo = tmp_path / "repo"
@@ -134,15 +230,11 @@ def test_plan_on_main_prepares_in_place(tmp_path: Path) -> None:
     assert plan.operations == ("prepare version and release notes in place",)
 
 
-def test_plan_integration_merges_no_ff_when_it_contains_main(tmp_path: Path) -> None:
+def test_plan_integration_merges_no_ff_when_it_contains_main(
+    integration_merge_plan: ReleasePlan,
+) -> None:
     """A current integration branch is promoted directly with --no-ff."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "develop")
-    commit_file(repo, "develop.txt", "develop\n", "feat: integrated work")
-    git(repo, "switch", "main")
-
-    plan = build_release_plan(repo, branch="develop", integration_branch="develop")
+    plan = integration_merge_plan
 
     assert plan.mode is ReleaseMode.INTEGRATION
     assert plan.action is ReleaseAction.MERGE_NO_FF
@@ -167,16 +259,11 @@ def test_plan_uses_configured_integration_role(tmp_path: Path) -> None:
     assert plan.action is ReleaseAction.MERGE_NO_FF
 
 
-def test_plan_integration_previews_main_sync_conflict(tmp_path: Path) -> None:
+def test_plan_integration_previews_main_sync_conflict(
+    integration_conflict_plan: ReleasePlan,
+) -> None:
     """A stale integration branch previews the main-into-integration sync first."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "develop")
-    commit_file(repo, "shared.txt", "develop\n", "feat: develop change")
-    git(repo, "switch", "main")
-    commit_file(repo, "shared.txt", "main\n", "fix: main change")
-
-    plan = build_release_plan(repo, branch="develop", integration_branch="develop")
+    plan = integration_conflict_plan
 
     assert plan.action is ReleaseAction.SYNC_INTEGRATION_THEN_MERGE
     assert plan.merge_preview is not None
@@ -389,22 +476,10 @@ def test_plan_direct_merge_previews_conflicts(tmp_path: Path) -> None:
 
 
 def test_plan_explicit_parent_uses_the_first_parent_merge_boundary(
-    tmp_path: Path,
+    explicit_parent_plan: tuple[str, ReleasePlan],
 ) -> None:
     """A parent branch that merged the feature proves the fork point."""
-    repo = tmp_path / "repo"
-    base = initialize_repository(repo)
-    git(repo, "switch", "-c", "feature")
-    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
-    git(repo, "switch", "-c", "develop", "main")
-    git(repo, "merge", "--no-ff", "feature", "-m", "merge feature")
-
-    plan = build_release_plan(
-        repo,
-        branch="feature",
-        feature_parent="develop",
-        preview_conflicts=False,
-    )
+    base, plan = explicit_parent_plan
 
     assert plan.feature_base == base
     assert plan.boundary_evidence == "first-parent merge into develop"
@@ -444,17 +519,11 @@ def test_plan_explicit_base_must_be_a_proper_ancestor(tmp_path: Path) -> None:
         )
 
 
-def test_plan_rebased_feature_uses_the_reflog_onto_evidence(tmp_path: Path) -> None:
+def test_plan_rebased_feature_uses_the_reflog_onto_evidence(
+    rebased_feature_plan: tuple[str, ReleasePlan],
+) -> None:
     """A completed rebase leaves the exact new base in the branch reflog."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "feature")
-    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
-    git(repo, "switch", "main")
-    main_tip = commit_file(repo, "main.txt", "main\n", "fix: main work")
-    git(repo, "rebase", "main", "feature")
-
-    plan = build_release_plan(repo, preview_conflicts=False)
+    main_tip, plan = rebased_feature_plan
 
     assert plan.feature_base == main_tip
     assert plan.boundary_evidence is not None
@@ -479,18 +548,10 @@ def test_plan_reset_reflog_entry_wins_as_latest_evidence(tmp_path: Path) -> None
 
 
 def test_plan_single_parent_candidate_is_selected_without_ranking(
-    tmp_path: Path,
+    single_parent_plan: tuple[str, ReleasePlan],
 ) -> None:
     """One surviving parent candidate is the boundary without a nearest vote."""
-    repo = tmp_path / "repo"
-    base = initialize_repository(repo)
-    git(repo, "switch", "-c", "feature")
-    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
-    git(repo, "switch", "main")
-    commit_file(repo, "main.txt", "main\n", "fix: main work")
-    shutil.rmtree(repo / ".git" / "logs")
-
-    plan = build_release_plan(repo, branch="feature", preview_conflicts=False)
+    base, plan = single_parent_plan
 
     assert plan.feature_base == base
     assert plan.boundary_evidence == "merge-base main feature"
@@ -500,26 +561,10 @@ def test_plan_single_parent_candidate_is_selected_without_ranking(
 
 
 def test_plan_ambiguous_parents_select_the_unique_nearest_boundary(
-    tmp_path: Path,
+    ambiguous_parent_plan: tuple[str, ReleasePlan],
 ) -> None:
     """Without reflogs, deduplicated candidates elect the nearest fork point."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    git(repo, "switch", "-c", "develop")
-    fork_point = commit_file(repo, "parent.txt", "develop\n", "feat: parent work")
-    git(repo, "switch", "-c", "feature")
-    commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
-    # Advance develop and main past the fork and drop every reflog, so no
-    # fork-point or branch-creation answer survives and the planner must
-    # weigh plain merge-base candidates from every parent branch.
-    git(repo, "switch", "develop")
-    commit_file(repo, "parent.txt", "develop again\n", "feat: later parent work")
-    git(repo, "switch", "main")
-    commit_file(repo, "main.txt", "main\n", "fix: main work")
-    git(repo, "branch", "other", "main")
-    shutil.rmtree(repo / ".git" / "logs")
-
-    plan = build_release_plan(repo, branch="feature", preview_conflicts=False)
+    fork_point, plan = ambiguous_parent_plan
 
     assert plan.feature_base == fork_point
     assert plan.feature_parent_refs == ("develop",)

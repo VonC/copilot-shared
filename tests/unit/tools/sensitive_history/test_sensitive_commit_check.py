@@ -3,6 +3,8 @@
 Fix: the monkeypatched Git doubles are fully typed (``object`` parameters,
 explicit returns, and named functions instead of untyped lambdas), so the
 strict pyright gate no longer flags unknown parameter or argument types.
+The empty-rules case injects repository/config discovery so it tests parsing
+and hook outcomes without paying for an unrelated Git repository fixture.
 """
 
 from __future__ import annotations
@@ -13,6 +15,7 @@ from typing import TYPE_CHECKING, NoReturn
 import pytest
 
 import tools.sensitive_history.sensitive_commit_check as check
+from tools.sensitive_history import history_scan
 from tools.sensitive_history.history_scan import (
     HistoryScanError,
     patterns_from_replacement_file,
@@ -146,27 +149,43 @@ def test_message_check_is_redacted_and_main_returns_hook_statuses(
 
 
 def test_empty_rule_files_warn_and_do_not_block_commits(
-    pending_repo: Path,
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """An intentionally empty bootstrap configuration leaves commits usable."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
     shared = tmp_path / "shared.rules"
     shared.write_text("", encoding="utf-8")
-    (pending_repo / "a.sensitive.replacements.local.txt").write_text(
+    (repo / "a.sensitive.replacements.local.txt").write_text(
         "",
         encoding="utf-8",
     )
-    _run_git(pending_repo, "config", "sensitive.sharedRulesFile", str(shared))
+    configured = [shared]
 
-    assert main(["--root", str(pending_repo), "staged"]) == 0
+    def resolve_root(root: Path) -> Path:
+        return root.resolve()
+
+    def configured_file(root: Path) -> Path:
+        assert root == repo.resolve()
+        return configured[0]
+
+    monkeypatch.setattr(check, "repository_root", resolve_root)
+    monkeypatch.setattr(
+        history_scan,
+        "configured_shared_replacement_file",
+        configured_file,
+    )
+
+    assert main(["--root", str(repo), "staged"]) == 0
     warning = capsys.readouterr().err
     assert "sensitive commit check skipped" in warning
     assert "no sensitive replacement rules configured" in warning
 
     missing = tmp_path / "missing.rules"
-    _run_git(pending_repo, "config", "sensitive.sharedRulesFile", str(missing))
-    assert main(["--root", str(pending_repo), "staged"]) == ERROR
+    configured[0] = missing
+    assert main(["--root", str(repo), "staged"]) == ERROR
     assert "cannot read replacement file" in capsys.readouterr().err
 
 

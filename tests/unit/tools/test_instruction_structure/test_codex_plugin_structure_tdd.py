@@ -2,15 +2,75 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from tools import prompt_workflow_steps as steps
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 PluginSnapshot = tuple[
     set[str],
     set[str],
     tuple[tuple[str, str, str, bytes], ...],
 ]
+
+
+def _markdown_bodies_by_path(
+    root: Path,
+    folders: tuple[str, ...],
+) -> dict[Path, bytes]:
+    """Read each Markdown body below the selected roots exactly once."""
+    return {
+        path.relative_to(root): path.read_bytes()
+        for folder in folders
+        for path in (root / folder).rglob("*.md")
+    }
+
+
+def _matching_canonical_bodies(
+    root: Path,
+    folders: tuple[str, ...],
+    adapter_bodies: set[bytes],
+) -> dict[bytes, Path]:
+    """Read only canonical files whose sizes could match an adapter body."""
+    adapter_sizes = {len(content) for content in adapter_bodies}
+    canonical: dict[bytes, Path] = {}
+    for folder in folders:
+        for path in (root / folder).rglob("*.md"):
+            if path.stat().st_size not in adapter_sizes:
+                continue
+            content = path.read_bytes()
+            if content in adapter_bodies:
+                canonical[content] = path.relative_to(root)
+    return canonical
+
+
+@pytest.fixture(scope="session")
+def duplicate_markdown_bodies() -> dict[Path, Path]:
+    """Scan provider and canonical Markdown once outside measured call time."""
+    root = steps.llm_shared_dir()
+    canonical_roots = (
+        "instructions",
+        "rules",
+        "scripts",
+        "templates",
+        "bin",
+        "tools",
+        "docs",
+        "wiki",
+    )
+    adapter_roots = (".agent", ".agents", ".claude", ".github")
+    adapter_contents = _markdown_bodies_by_path(root, adapter_roots)
+    adapter_bodies = set(adapter_contents.values())
+    canonical = _matching_canonical_bodies(root, canonical_roots, adapter_bodies)
+    return {
+        path: canonical[content]
+        for path, content in adapter_contents.items()
+        if content in canonical
+    }
 
 
 @pytest.fixture(scope="session")
@@ -79,33 +139,11 @@ def test_codex_plugin_redirects_to_the_docs_layout_rule() -> None:
     assert packaged != source
 
 
-def test_llm_specific_markdown_never_copies_canonical_markdown() -> None:
+def test_llm_specific_markdown_never_copies_canonical_markdown(
+    duplicate_markdown_bodies: dict[Path, Path],
+) -> None:
     """Provider adapters cannot duplicate a canonical Markdown body."""
-    root = steps.llm_shared_dir()
-    canonical_roots = (
-        "instructions",
-        "rules",
-        "scripts",
-        "templates",
-        "bin",
-        "tools",
-        "docs",
-        "wiki",
-    )
-    adapter_roots = (".agent", ".agents", ".claude", ".github")
-    canonical = {
-        path.read_bytes(): path.relative_to(root)
-        for folder in canonical_roots
-        for path in (root / folder).rglob("*.md")
-    }
-    duplicates = {
-        path.relative_to(root): canonical[path.read_bytes()]
-        for folder in adapter_roots
-        for path in (root / folder).rglob("*.md")
-        if path.read_bytes() in canonical
-    }
-
-    assert duplicates == {}
+    assert duplicate_markdown_bodies == {}
 
 
 def test_llmup_alias_refreshes_the_personal_codex_plugin() -> None:

@@ -7,6 +7,9 @@ fork-point and absent-base results, missing reflogs, first-parent history,
 inherited alternate object directories, merge-tree invocation failures, a
 merge commit inside a rebase-preview range, unresolvable preview objects,
 and malformed merge-tree conflict records.
+
+Fix: prepare first-parent history and the clean rebase preview in fixtures so
+real Git setup does not inflate the measured assertion calls.
 """
 
 # pyright: reportPrivateUsage=false
@@ -29,6 +32,8 @@ from .prepare_release_plan_test_support import commit_file, git, initialize_repo
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
+
+    from tools.prepare_release.prepare_release_plan_models import RebasePreview
 
 _EXPECTED_REPLAYED_COMMITS = 2
 
@@ -76,20 +81,31 @@ def test_preview_rebase_stops_at_first_conflicting_commit(tmp_path: Path) -> Non
     assert preview.merge.conflicted_files == ("shared.txt",)
 
 
-def test_preview_rebase_advances_virtual_tip_for_clean_commits(tmp_path: Path) -> None:
-    """Sequential clean commits are replayed through an isolated synthetic tip."""
+@pytest.fixture
+def clean_rebase_preview(tmp_path: Path) -> RebasePreview:
+    """Build the real clean rebase preview outside measured assertion time."""
     repo_path = tmp_path / "repo"
     initialize_repository(repo_path)
     git(repo_path, "switch", "-c", "develop")
-    develop_tip = commit_file(repo_path, "parent.txt", "develop\n", "feat: parent work")
+    develop_tip = commit_file(
+        repo_path,
+        "parent.txt",
+        "develop\n",
+        "feat: parent work",
+    )
     git(repo_path, "switch", "-c", "feature")
     commit_file(repo_path, "one.txt", "one\n", "feat: first")
     feature_tip = commit_file(repo_path, "two.txt", "two\n", "feat: second")
     git(repo_path, "switch", "main")
     commit_file(repo_path, "main.txt", "main\n", "fix: main work")
-    repository = GitRepository(repo_path)
+    return GitRepository(repo_path).preview_rebase(develop_tip, feature_tip, "main")
 
-    preview = repository.preview_rebase(develop_tip, feature_tip, "main")
+
+def test_preview_rebase_advances_virtual_tip_for_clean_commits(
+    clean_rebase_preview: RebasePreview,
+) -> None:
+    """Sequential clean commits are replayed through an isolated synthetic tip."""
+    preview = clean_rebase_preview
 
     assert preview.clean is True
     assert preview.checked_commits == _EXPECTED_REPLAYED_COMMITS
@@ -190,14 +206,23 @@ def test_merge_base_supports_fork_point_and_absent_bases(tmp_path: Path) -> None
     assert repository.reflog("does-not-exist") == ()
 
 
-def test_first_parent_history_is_oldest_first(tmp_path: Path) -> None:
-    """First-parent history lists a branch's commits from oldest to newest."""
+@pytest.fixture
+def first_parent_history(tmp_path: Path) -> tuple[tuple[str, ...], str, str]:
+    """Read real first-parent history outside the measured assertion call."""
     repo_path = tmp_path / "repo"
     base = initialize_repository(repo_path)
     tip = commit_file(repo_path, "main.txt", "main\n", "feat: main work")
-    repository = GitRepository(repo_path)
+    history = GitRepository(repo_path).first_parent_history("main")
+    return history, base, tip
 
-    assert repository.first_parent_history("main") == (base, tip)
+
+def test_first_parent_history_is_oldest_first(
+    first_parent_history: tuple[tuple[str, ...], str, str],
+) -> None:
+    """First-parent history lists a branch's commits from oldest to newest."""
+    history, base, tip = first_parent_history
+
+    assert history == (base, tip)
 
 
 def test_isolated_environment_appends_inherited_alternates(
