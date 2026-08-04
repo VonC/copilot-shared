@@ -278,8 +278,15 @@ class ReviewExchangeStore:
         *,
         transition: IncompleteTransitionKind,
         entry: TranscriptEntry,
+        clear_marker: bool = True,
     ) -> CoordinationRecord:
-        """Append or repair one entry using only its persisted suffix offset."""
+        """Append or repair one entry and optionally leave its marker durable.
+
+        Step 3 lifecycle transitions can retain the marker until their
+        post-append artifact cleanup and final coordination write are durable.
+        Existing direct store callers keep the Step 2 behavior that clears the
+        marker immediately after a complete append.
+        """
         self._validate_context(record.context)
         if not self.paths.transcript.is_file():
             raise ReviewExchangeError("transcript must be initialized before append")
@@ -303,6 +310,8 @@ class ReviewExchangeStore:
                 self._append_bytes(self.paths.transcript, rendered)
             except OSError as error:
                 raise ReviewExchangeError(f"transcript append failed: {error}") from error
+        if not clear_marker:
+            return marked
         cleared = replace(
             marked,
             incomplete_transition=None,
@@ -435,9 +444,12 @@ class ReviewExchangeStore:
             if context.umbrella_path is not None
             else "none"
         )
+        heading = f"## Round {record.round_number} by {entry.role.value}"
+        if context.implementation_step is not None:
+            heading += f" - Step {context.implementation_step}"
         lines = [
             "",
-            f"## Round {record.round_number} by {entry.role.value}",
+            heading,
             "",
             f"- Recorded: {entry.recorded_at}",
             f"- Exchange: {context.identity.key}",

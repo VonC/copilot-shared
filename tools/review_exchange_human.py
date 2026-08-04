@@ -1,0 +1,324 @@
+"""Human-gated confirmation and escalation resolution transitions.
+
+Step 3 separates the convergence-only human facet from automated round
+orchestration while keeping it mixed into the public ``ReviewExchangeCore``
+service. Choices remain role-neutral, durable, idempotent, and advisory until
+the owning workflow explicitly completes.
+"""
+
+# ruff: noqa: EM101, TRY003
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING
+
+from tools.review_exchange_models import (
+    Actor,
+    ArchiveKind,
+    ArtifactState,
+    ConfirmationOutcome,
+    CoordinationStatus,
+    FamilyPolicy,
+    IncompleteTransitionKind,
+    ReviewContext,
+    ReviewExchangeError,
+    ReviewRole,
+)
+from tools.review_exchange_models_coordination import CoordinationRecord
+from tools.review_exchange_store import TranscriptEntry
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from datetime import datetime
+    from pathlib import Path
+
+    from tools.review_exchange_models_envelope import Envelope
+    from tools.review_exchange_observer import ExchangeObservation
+    from tools.review_exchange_store import ReviewExchangeStore
+
+
+@dataclass(frozen=True)
+class ConfirmationDecision:
+    """Durable human choice and whether it authorizes the owning action."""
+
+    outcome: ConfirmationOutcome
+    owning_action_authorized: bool
+    record: CoordinationRecord
+
+
+@dataclass(frozen=True)
+class ResolutionResult:
+    """Fresh active round plus exact evidence archives created by resolution."""
+
+    record: CoordinationRecord
+    archived_paths: tuple[Path, ...]
+
+
+class ReviewExchangeHumanMixin(ABC):
+    """Provide human transitions to the bound review-exchange core facade."""
+
+    store: ReviewExchangeStore
+    context: ReviewContext
+    policy: FamilyPolicy
+    _wall_clock: Callable[[], datetime]
+
+    @abstractmethod
+    def classify(self) -> ExchangeObservation:
+        """Return the current exact-path observation."""
+
+    @abstractmethod
+    def escalate(self, reason: str, role: ReviewRole) -> CoordinationRecord:
+        """Persist an escalation transition."""
+
+    @abstractmethod
+    def _require_record(self, observation: ExchangeObservation) -> CoordinationRecord:
+        """Return the observation's coordination record or fail."""
+
+    @abstractmethod
+    def _restore_convergence_gate(
+        self,
+        record: CoordinationRecord,
+        envelope: Envelope | None,
+    ) -> CoordinationRecord:
+        """Restore the durable convergence-gate fields."""
+
+    @abstractmethod
+    def _mark_transition(
+        self,
+        record: CoordinationRecord,
+        transition: IncompleteTransitionKind,
+        entry_id: str,
+    ) -> CoordinationRecord:
+        """Persist a marker before a transcript side effect."""
+
+    @abstractmethod
+    def _timestamp(self) -> str:
+        """Return a local ISO-8601 timestamp."""
+
+    @abstractmethod
+    def _clear_marker(self, record: CoordinationRecord) -> CoordinationRecord:
+        """Return a record with transition bookkeeping cleared."""
+
+    def confirm(
+        self,
+        label: str,
+        *,
+        guidance: str | None = None,
+    ) -> ConfirmationDecision:
+        """Persist one registered human choice and finish its durable transition."""
+        outcome = self.policy.outcome_for(label)
+        with self.store.transition_lock():
+            observation = self.classify()
+            record = self._require_record(observation)
+            if (
+                record.confirmed_outcome is ConfirmationOutcome.CONTINUE_OWNING_WORKFLOW
+                and record.incomplete_transition is None
+            ):
+                if record.confirmation_label != label:
+                    raise ReviewExchangeError("persisted confirmation uses another label")
+                return ConfirmationDecision(
+                    outcome=outcome,
+                    owning_action_authorized=True,
+                    record=record,
+                )
+            repairing = record.incomplete_transition is (
+                IncompleteTransitionKind.HUMAN_CONFIRMATION
+            )
+            if not repairing:
+                if observation.state is not ArtifactState.CONVERGENCE_GATE:
+                    raise ReviewExchangeError("confirmation requires the convergence gate")
+                record = self._restore_convergence_gate(record, observation.answer_envelope)
+                entry_id = f"human-confirmation-round-{record.round_number}"
+                record = self._mark_transition(
+                    record,
+                    IncompleteTransitionKind.HUMAN_CONFIRMATION,
+                    entry_id,
+                )
+                record = replace(
+                    record,
+                    confirmation_label=label,
+                    confirmed_outcome=outcome,
+                    confirmation_timestamp=self._timestamp(),
+                    human_guidance=guidance,
+                )
+                self.store.write_coordination(record)
+            else:
+                self._validate_confirmation_replay(record, label, outcome, guidance)
+            entry = TranscriptEntry(
+                f"human-confirmation-round-{record.round_number}",
+                ReviewRole.HUMAN,
+                "human-confirmation",
+                record.confirmation_timestamp or self._timestamp(),
+                self._confirmation_content(label, outcome, guidance),
+            )
+            marked = self.store.append_transcript_once(
+                record,
+                transition=IncompleteTransitionKind.HUMAN_CONFIRMATION,
+                entry=entry,
+                clear_marker=False,
+            )
+            if outcome is ConfirmationOutcome.CONTINUE_OWNING_WORKFLOW:
+                final = self._clear_marker(marked)
+                self.store.write_coordination(final)
+                return ConfirmationDecision(
+                    outcome=outcome,
+                    owning_action_authorized=True,
+                    record=final,
+                )
+            self.store.remove_exact(self.store.paths.answer)
+            final = replace(
+                marked,
+                status=CoordinationStatus.ACTIVE,
+                owner=Actor.REQUESTOR,
+                expected_next_actor=Actor.REVIEWER,
+                round_number=marked.round_number + 1,
+                lease_renewed_at=self._timestamp(),
+                reviewed_work_changed=None,
+                convergence_recommended=None,
+                no_progress_streak=0,
+                clarification_used=False,
+                incomplete_transition=None,
+                transcript_entry_id=None,
+                transcript_offset=None,
+                confirmation_label=None,
+                confirmed_outcome=None,
+                confirmation_timestamp=None,
+                human_guidance=guidance,
+            )
+            self.store.write_coordination(final)
+            return ConfirmationDecision(
+                outcome=outcome,
+                owning_action_authorized=False,
+                record=final,
+            )
+
+    def cancel(self, reason: str) -> CoordinationRecord:
+        """Route a human convergence cancellation through escalation."""
+        if self.classify().state not in {
+            ArtifactState.CONVERGENCE_GATE,
+            ArtifactState.ESCALATED,
+        }:
+            raise ReviewExchangeError("cancellation requires a convergence gate")
+        return self.escalate(reason, ReviewRole.HUMAN)
+
+    def complete(self) -> bool:
+        """Remove retained evidence only after the authorized owning action succeeds."""
+        with self.store.transition_lock():
+            record = self.store.read_coordination()
+            if record is None:
+                return False
+            if (
+                record.status is not CoordinationStatus.AWAITING_HUMAN_CONFIRMATION
+                or record.confirmed_outcome
+                is not ConfirmationOutcome.CONTINUE_OWNING_WORKFLOW
+                or record.incomplete_transition is not None
+            ):
+                raise ReviewExchangeError("owning action is not durably authorized")
+            self.store.remove_exact(self.store.paths.answer)
+            self.store.remove_exact(self.store.paths.coordination)
+            return True
+
+    def resolve_escalation(
+        self,
+        summary: str,
+        *,
+        archive: bool,
+    ) -> ResolutionResult:
+        """Record human resolution, clear or archive evidence, and start fresh."""
+        if not summary.strip():
+            raise ReviewExchangeError("human resolution summary must be non-empty")
+        with self.store.transition_lock():
+            record = self.store.read_coordination(required=True)
+            if record is None or record.status is not CoordinationStatus.ESCALATED:
+                raise ReviewExchangeError("resolution requires an escalated exchange")
+            if record.incomplete_transition is not None:
+                raise ReviewExchangeError("repair the pending transition before resolution")
+            resolved_round = record.round_number + 1
+            staged = replace(
+                record,
+                round_number=resolved_round,
+                human_guidance=summary,
+            )
+            self.store.write_coordination(staged)
+            entry = TranscriptEntry(
+                f"human-resolution-round-{resolved_round}",
+                ReviewRole.HUMAN,
+                "human-resolution",
+                self._timestamp(),
+                summary,
+            )
+            marked = self._mark_transition(
+                staged,
+                IncompleteTransitionKind.HUMAN_RESOLUTION,
+                entry.entry_id,
+            )
+            marked = self.store.append_transcript_once(
+                marked,
+                transition=IncompleteTransitionKind.HUMAN_RESOLUTION,
+                entry=entry,
+                clear_marker=False,
+            )
+            self.store.write_coordination(self._clear_marker(marked))
+            archived = self._resolve_live_evidence(archive=archive)
+            fresh = CoordinationRecord(
+                self.context,
+                self.policy,
+                CoordinationStatus.ACTIVE,
+                Actor.REQUESTOR,
+                Actor.REVIEWER,
+                resolved_round,
+                self._timestamp(),
+            )
+            self.store.write_coordination(fresh)
+            return ResolutionResult(fresh, archived)
+
+    @staticmethod
+    def _confirmation_content(
+        label: str,
+        outcome: ConfirmationOutcome,
+        guidance: str | None,
+    ) -> str:
+        """Render role-neutral human confirmation transcript content."""
+        content = f"Human choice: {label}\nOutcome: {outcome.value}"
+        if guidance is not None:
+            content += f"\nGuidance: {guidance}"
+        return content
+
+    @staticmethod
+    def _validate_confirmation_replay(
+        record: CoordinationRecord,
+        label: str,
+        outcome: ConfirmationOutcome,
+        guidance: str | None,
+    ) -> None:
+        """Reject a retry that differs from its durable human decision."""
+        if (
+            record.confirmation_label != label
+            or record.confirmed_outcome is not outcome
+            or record.human_guidance != guidance
+        ):
+            raise ReviewExchangeError("confirmation retry differs from durable choice")
+
+    def _resolve_live_evidence(self, *, archive: bool) -> tuple[Path, ...]:
+        """Archive or clear only the fixed live transient evidence paths."""
+        archived: list[Path] = []
+        compact = self._wall_clock().astimezone().strftime("%Y%m%d-%H%M%S")
+        ordered = (
+            (ArchiveKind.REQUEST, self.store.paths.request),
+            (ArchiveKind.ANSWER, self.store.paths.answer),
+            (ArchiveKind.CONSUMED, self.store.paths.tombstone),
+            (ArchiveKind.COORDINATION, self.store.paths.coordination),
+        )
+        for kind, path in ordered:
+            if not path.exists():
+                continue
+            if archive:
+                archived.append(self.store.archive_evidence(kind, compact))
+            else:
+                self.store.remove_exact(path)
+        return tuple(archived)
+
+
+# eof
