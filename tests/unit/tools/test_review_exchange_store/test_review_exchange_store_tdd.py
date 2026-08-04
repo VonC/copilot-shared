@@ -292,7 +292,7 @@ def test_append_transcript_once_labels_role_round_and_stable_footer(
     )
     transcript = store.paths.transcript.read_text(encoding="utf-8")
 
-    assert transcript.count("## Round 1 by requestor") == 1
+    assert transcript.count("## Round 1 by requestor - Step 2") == 1
     assert transcript.count("review-entry-id: request-round-1") == 1
     assert "Implementation step: 2" in transcript
     assert first.incomplete_transition is None
