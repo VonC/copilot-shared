@@ -10,6 +10,8 @@ boundary with reflogs disabled.
 
 Fix: real-Git scenarios whose planner calls are accepted slow prepare their
 plans in fixtures, leaving the measured calls to verify the resulting model.
+On-main and nested-feature planning follow the same boundary so repository setup
+and planner Git subprocesses are not charged to the assertion calls.
 """
 
 from __future__ import annotations
@@ -216,13 +218,18 @@ def rebased_feature_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
     return main_tip, plan
 
 
-def test_plan_on_main_prepares_in_place(tmp_path: Path) -> None:
-    """Starting from main never proposes a rebase or branch merge."""
+@pytest.fixture
+def main_plan(tmp_path: Path) -> ReleasePlan:
+    """Prepare the real-Git on-main plan outside assertion time."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     commit_file(repo, "main.txt", "main\n", "feat: release work")
+    return build_release_plan(repo, preview_conflicts=False)
 
-    plan = build_release_plan(repo, preview_conflicts=False)
+
+def test_plan_on_main_prepares_in_place(main_plan: ReleasePlan) -> None:
+    """Starting from main never proposes a rebase or branch merge."""
+    plan = main_plan
 
     assert plan.mode is ReleaseMode.ON_MAIN
     assert plan.action is ReleaseAction.PREPARE_IN_PLACE
@@ -272,8 +279,9 @@ def test_plan_integration_previews_main_sync_conflict(
     assert plan.operations[1] == "git merge --no-ff main"
 
 
-def test_plan_nested_feature_uses_exact_onto_replay(tmp_path: Path) -> None:
-    """A feature forked from develop replays only commits after that fork."""
+@pytest.fixture
+def nested_feature_plan(tmp_path: Path) -> tuple[str, str, ReleasePlan]:
+    """Prepare the real-Git nested-feature plan outside assertion time."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     git(repo, "switch", "-c", "develop")
@@ -289,6 +297,14 @@ def test_plan_nested_feature_uses_exact_onto_replay(tmp_path: Path) -> None:
         integration_branch="develop",
         feature_base=develop_tip,
     )
+    return develop_tip, feature_tip, plan
+
+
+def test_plan_nested_feature_uses_exact_onto_replay(
+    nested_feature_plan: tuple[str, str, ReleasePlan],
+) -> None:
+    """A feature forked from develop replays only commits after that fork."""
+    develop_tip, feature_tip, plan = nested_feature_plan
 
     assert plan.mode is ReleaseMode.FEATURE
     assert plan.action is ReleaseAction.REBASE_ONTO_MAIN_THEN_MERGE
