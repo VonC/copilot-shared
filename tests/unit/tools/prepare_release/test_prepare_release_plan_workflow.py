@@ -10,8 +10,9 @@ boundary with reflogs disabled.
 
 Fix: real-Git scenarios whose planner calls are accepted slow prepare their
 plans in fixtures, leaving the measured calls to verify the resulting model.
-On-main and nested-feature planning follow the same boundary so repository setup
-and planner Git subprocesses are not charged to the assertion calls.
+On-main, configured-integration, explicit-merge-scope, and nested-feature
+planning follow the same boundary so repository setup and planner Git
+subprocesses are not charged to the assertion calls.
 """
 
 from __future__ import annotations
@@ -251,15 +252,22 @@ def test_plan_integration_merges_no_ff_when_it_contains_main(
     assert plan.operations[-1] == "git merge --no-ff develop"
 
 
-def test_plan_uses_configured_integration_role(tmp_path: Path) -> None:
-    """Repository config can name a non-develop integration branch."""
+@pytest.fixture
+def configured_integration_plan(tmp_path: Path) -> ReleasePlan:
+    """Prepare the configured integration plan outside assertion time."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     git(repo, "switch", "-c", "next")
     commit_file(repo, "next.txt", "next\n", "feat: integrated work")
     git(repo, "config", "prepare-release.integrationBranch", "next")
+    return build_release_plan(repo, preview_conflicts=False)
 
-    plan = build_release_plan(repo, preview_conflicts=False)
+
+def test_plan_uses_configured_integration_role(
+    configured_integration_plan: ReleasePlan,
+) -> None:
+    """Repository config can name a non-develop integration branch."""
+    plan = configured_integration_plan
 
     assert plan.integration_branch == "next"
     assert plan.mode is ReleaseMode.INTEGRATION
@@ -452,8 +460,9 @@ def test_plan_orphan_branch_requires_a_boundary(tmp_path: Path) -> None:
     assert any("--feature-base" in note for note in plan.notes)
 
 
-def test_plan_flags_merges_inside_an_explicit_feature_scope(tmp_path: Path) -> None:
-    """A feature range containing a merge asks for explicit commit selection."""
+@pytest.fixture
+def explicit_merge_scope_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare the explicit merge-scope plan outside assertion time."""
     repo = tmp_path / "repo"
     base = initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
@@ -462,13 +471,20 @@ def test_plan_flags_merges_inside_an_explicit_feature_scope(tmp_path: Path) -> N
     commit_file(repo, "side.txt", "side\n", "feat: side change")
     git(repo, "switch", "feature")
     git(repo, "merge", "--no-ff", "side", "-m", "merge side")
-
     plan = build_release_plan(
         repo,
         branch="feature",
         feature_base=base,
         preview_conflicts=False,
     )
+    return base, plan
+
+
+def test_plan_flags_merges_inside_an_explicit_feature_scope(
+    explicit_merge_scope_plan: tuple[str, ReleasePlan],
+) -> None:
+    """A feature range containing a merge asks for explicit commit selection."""
+    base, plan = explicit_merge_scope_plan
 
     assert plan.action is ReleaseAction.NEEDS_FEATURE_BOUNDARY
     assert plan.feature_base == base
