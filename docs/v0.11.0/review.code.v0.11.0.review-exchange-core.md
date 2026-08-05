@@ -206,3 +206,96 @@ human commit decision. This recommendation is advisory and does not authorize
 a commit.
 
 <!-- review-entry-id: answer-round-1-step-3 -->
+
+## Round 1 by requestor - Step 4
+
+- Recorded: 2026-08-04T22:48:48+02:00
+- Exchange: code/code/v0.11.0/review-exchange-core
+- Umbrella: docs/v0.11.0/draft.v0.11.0/review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-exchange-core.md
+- Implementation step: 4
+- Outcome: request
+
+Step 4, "Non-interactive utility, templates, and canonical requestor
+adapters," is reported fully implemented.
+
+- Added `tools/review_exchange_cli.py` with exact document identity inference,
+  stable JSON output, exit codes 0/2/3, ignored caller-file validation, one
+  bounded wait, and delegation for every planned lifecycle operation.
+- Added `bin/review_exchange.bat` using the self-locating llm-shared virtual
+  environment pattern without project activation.
+- Added the canonical `instructions/review-requestor.md` procedure and thin
+  `.agent` and `.agents` redirects without copying the canonical body.
+- Added focused command, boundary, entry-point, and instruction-structure
+  tests.
+- Recorded the independent implementation-check verdict in
+  `docs/v0.11.0/plan.v0.11.0.review-exchange-core.validation.md`; its Step 4
+  status begins exactly `Yes. Step 4 has been fully implemented.`.
+- Prepared `a.commit` with five groups for the staged workspace dictionary,
+  command adapter, canonical requestor adapters, tests, and trailing validation
+  and review documentation. No Step 4 commit has been made.
+
+Verification evidence: the final Groundhog walk exercised 1,438 tests with
+zero failures, zero warnings, zero expected failures, 100 percent coverage,
+zero duration outliers, zero exclusions, and `exit=0`.
+
+Use `$llm-shared:implementation-check` to independently verify the exact Step
+4 completion criteria against all staged changes. Check command validation and
+machine-readable output for every planned operation, exact summary identity,
+ignored root `a.*` inputs, single-call bounded waiting with stderr-only
+progress, exit-code mapping, self-locating launcher behavior, canonical
+instruction ownership, redirect-only provider adapters, line ceilings,
+DDD/hexagonal boundaries, fixed-path complexity, and existing feature
+integrity. Repair only missing Step 4 work and amend `a.commit` if needed.
+Return `changes-requested` for another implementation round or
+`convergence-recommended` for the advisory human commit decision. Do not
+commit.
+
+<!-- review-entry-id: request-round-1-step-4 -->
+
+## Round 1 by reviewer - Step 4
+
+- Recorded: 2026-08-04T23:29:06+02:00
+- Exchange: code/code/v0.11.0/review-exchange-core
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-exchange-core.md
+- Implementation step: 4
+- Outcome: answer
+
+Step 4 was independently verified with the implementation-check method against
+the staged changes, the plan, and the design. The verdict `Yes. Step 4 has
+been fully implemented.` is confirmed after one reviewer repair.
+
+Verified: the command adapter validates arguments through a JSON-preserving
+parser, infers the exchange identity from the exact document name including
+the design-specification filename bridge, requires plan documents for the
+code family, accepts substantive Markdown only from existing, effectively
+ignored, root `a.*` UTF-8 files read once and never deleted, delegates every
+planned operation through a structural core port with no lifecycle logic in
+the adapter, runs one bounded in-process wait with JSON-lines progress on
+standard error and exactly one final JSON object on standard output, and maps
+completed, expected-stop, and fatal results to exit codes 0, 3, and 2. The
+launcher follows the self-locating llm-shared virtual-environment pattern, the
+canonical instruction delegates every mutation to the launcher without
+duplicating the state table, and all three provider entries are redirect-only.
+The 86 focused command, instruction, and structure tests pass with the adapter
+at 100% individual coverage, and ruff is clean.
+
+One gap was found and repaired by the reviewer, staged: the expected-stop exit
+mapping omitted the owning-action-pending state that the consolidated Q05
+answer lists among exit-3 protocol stops, so a status call observing a durable
+pending owning action returned exit 0. The stop set, the parametrized
+stop-state test, and the canonical instruction's exit-3 enumeration now all
+include the pending human-authorized owning action. The validation record
+documents the repair and `a.commit` gained matching feat, docs, and test
+bullets.
+
+Notes without required action: the 575-line adapter remains below the 650
+ceiling with dispatch split into typed handlers, and `-h` help output is the
+one deliberate non-JSON standard-output path, reserved for interactive use.
+
+Disposition: convergence-recommended. The staged changes are ready for the
+human commit decision. This recommendation is advisory and does not authorize
+a commit.
+
+<!-- review-entry-id: answer-round-1-step-4 -->

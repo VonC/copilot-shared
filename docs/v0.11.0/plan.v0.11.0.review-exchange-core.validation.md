@@ -2,7 +2,7 @@
 
 No, it is not implemented.
 
-This validation records Steps 1 through 3 as complete; Steps 4 and 5 have not yet been implemented.
+This validation records Steps 1 through 4 as complete; Step 5 has not yet been implemented.
 
 ---
 
@@ -306,7 +306,9 @@ No, no existing feature or reporting capability appears impaired by Step 3.
 
 ### Analysis of Step 4 implementation state
 
-Not started. Step 4 is not implemented because the CLI, launcher, canonical requestor instruction, adapters, and their focused tests do not exist yet.
+Yes. Step 4 has been fully implemented.
+
+The repository now exposes the lifecycle core through one exact-document CLI and self-locating launcher, one canonical requestor instruction, redirect-only provider adapters, and focused command and instruction tests.
 
 ### Goal for Step 4
 
@@ -323,27 +325,67 @@ Expose all core operations through one stable non-interactive launcher and one c
 
 ### What was implemented for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Non-interactive CLI**: added exact document-name identity inference, typed runtime construction, configuration loading, activation checks, and dispatch for activate, status, start, request and answer publication, request and answer waits, answer consumption, automated continuation, escalation, confirmation, cancellation, clear-or-archive resolution, and completion.
+- **Stable result contract**: every handled invocation emits one final sorted UTF-8 JSON object with operation, identity, state, outcome, round, paths, and diagnostic data; expected protocol stops use exit `3`, invalid or fatal input uses exit `2`, and completed operations use exit `0`.
+- **Caller-owned input boundary**: substantive content, summaries, and guidance must be exact UTF-8 files directly under the project root with `a.*` names and effective Git-ignore coverage; each file is read once and never deleted by the CLI.
+- **Bounded wait reporting**: wait operations remain one core-owned monotonic call, emit periodic JSON only on standard error, and leave standard output for the one final result.
+- **Self-locating launcher**: added `bin/review_exchange.bat` using the established newest llm-shared virtual-environment interpreter pattern without project activation.
+- **Canonical requestor guidance**: added one root instruction that defines authored input, identity-summary, automated-round, convergence, escalation, recovery, and exit handling while delegating every protocol mutation to the launcher.
+- **Redirect-only provider surfaces**: added the `.agent` workflow locator plus packaged instruction and skill redirects without copying the canonical body.
+- **Focused verification**: added command, boundary, entry-point, canonical-body, and redirect tests; the final Groundhog walk passed the quality gate, 7 affected tests, all 1,438 tests, 100% coverage, and the duration gate with zero outliers or exclusions.
+
+### Step 4 implementation-to-plan variances
+
+CLI boundary coverage was extracted to `test_review_exchange_cli_boundaries_tdd.py` so the primary parameterized command test remains below the 650-line test ceiling. Both leaves target the same command adapter and remain in the planned test package.
+
+`tools/review_exchange_cli.py` is 575 lines, which is above the advisory 550-line safe target but below the 650-line ceiling. Operation dispatch is split into small typed handlers, and the project complexity gate reports no violation; the plan requires a production split only if the file exceeds 650 lines.
+
+The Step 4 code review repaired one contract gap found against the staged work: the expected-stop exit mapping omitted the owning-action-pending state that the consolidated Q05 answer lists among exit-3 protocol stops. The stop set, the parametrized stop-state test, and the canonical instruction's exit-3 enumeration now all include the pending human-authorized owning action.
 
 ### New types or classes introduced for Step 4
 
-_(empty — no check has taken place yet.)_.
+- `CorePort`: structural application port listing only the lifecycle operations used by the command adapter.
+- `Runtime`: immutable bundle of project root, validated context, derived paths, configuration, and lifecycle port.
+- `OperationResult`: immutable delegated outcome with optional observation, exit override, and operation-specific fields.
+- `JsonArgumentParser`: parser adapter that converts argument failures into the mandatory JSON fatal-result path.
 
 ### Architecture check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Dependency direction**: the CLI imports and calls the application-facing `ReviewExchangeCore`; the core does not import the CLI, launcher, instruction, or provider adapters.
+- **Thin adapter boundary**: command handlers validate transport inputs and translate typed results but contain no lifecycle state table, transition ordering, lease renewal, transcript repair, or confirmation policy.
+- **Filesystem isolation**: exact caller-input reads and one fixed Git ignore probe stay in the outer command adapter, while protocol artifact persistence remains in the existing store adapter.
+- **Instruction ownership**: reusable coordination prose exists only under `instructions/`; `.agent` and `.agents` files retain discovery metadata and direct canonical redirects.
+- **Cohesion and size**: dispatch is split by operation family, all production and test files stay below the 650-line ceiling, and the quality gate reports no complexity violation.
+
+No, there is nothing that needs to be addressed for Step 4.
 
 ### Performance check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **No new `O(n^2)` or `O(n log n)` path**: identity parsing uses one fixed regular expression, output rendering walks one constant path set, and dispatch selects one operation from a fixed dictionary.
+- **Input cost**: each operation validates only its explicit root input paths, performs one Git ignore probe per input, and reads each UTF-8 file exactly once without scanning project content.
+- **Wait cost**: the CLI delegates one bounded call to the core and adds only constant-time progress serialization; it does not create repeated short waits or persisted wall-time deadlines.
+- **Test timing**: CLI tests inject the application port and clocks, perform no real waits, and the final Groundhog duration gate reports zero outliers.
+
+No, there is no performance issue that needs to be addressed for Step 4.
 
 ### Unit test coverage check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Command operations**: parameterized tests cover every registered operation, typed argument propagation, common JSON fields, exact found states, caller-input retention, stderr progress, and exit `0`, `2`, and `3` behavior.
+- **Command boundaries**: focused tests cover numeric validation, family/document mismatch, real runtime construction, Git ignore outcomes, missing and invalid UTF-8 inputs, disabled status, defensive dispatch, and direct script execution.
+- **Instruction structure**: tests require launcher and core delegation, caller-input flags, output-channel guidance, direct provider redirects, and absence of a copied lifecycle table or canonical body.
+- **Coverage evidence**: Groundhog reports 100% repository coverage with all branches in `tools/review_exchange_cli.py` exercised.
+
+No, there is no unit-tested class below 100% that needs completing for Step 4.
 
 ### Feature integrity for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Opt-in behavior**: disabled configuration returns the documented expected stop without calling a lifecycle mutation, preserving existing writer behavior until later integrations opt in.
+- **Protocol reuse**: all artifact state and transition authority remains in the Step 3 core; the new surface adds transport and reporting without changing existing model, store, lifecycle, or transcript contracts.
+- **Caller evidence**: rejected or consumed caller-owned input files remain untouched, and fatal command input produces a diagnostic without manual artifact cleanup.
+- **Adapter integrity**: existing instruction-structure checks pass with the new canonical instruction, packaged redirect, skill redirect, and workflow locator.
+- **Global regression evidence**: the final walk passed the quality gate and all 1,438 tests with no warnings, expected failures, outliers, or exclusions.
+
+No, no existing feature or reporting capability appears impaired by Step 4.
 
 ---
 
