@@ -157,6 +157,54 @@ def test_fork_point_separates_branch_revisions_from_paths(
     ]
 
 
+def test_fork_point_prefers_a_merge_commits_first_parent_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A merged topic boundary cannot hide the destination branch changes."""
+
+    def fake(args: list[str], *, cwd: Path) -> str:
+        del cwd
+        if args[:2] == ["rev-parse", "--abbrev-ref"]:
+            return "umbrella"
+        if args[:1] == ["for-each-ref"]:
+            return "feature\nmain\numbrella\n"
+        if args[:3] == ["rev-list", "--first-parent", "--boundary"]:
+            return "merge-tip\n-feature-tip\n-destination-tip\n"
+        if args == ["rev-list", "--parents", "-n", "1", "HEAD"]:
+            return "merge-tip destination-tip feature-tip\n"
+        msg = f"Unexpected git args: {args}"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(git, "run_git", fake)
+
+    assert git.fork_point(tmp_path) == "destination-tip"
+
+
+def test_fork_point_keeps_the_first_boundary_without_a_parent_match(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Ambiguous boundaries retain the established first-boundary fallback."""
+
+    def fake(args: list[str], *, cwd: Path) -> str:
+        del cwd
+        if args[:2] == ["rev-parse", "--abbrev-ref"]:
+            return "feature"
+        if args[:1] == ["for-each-ref"]:
+            return "feature\nmain\nside\n"
+        if args[:3] == ["rev-list", "--first-parent", "--boundary"]:
+            return "tip\n-main-tip\n-side-tip\n"
+        if args == ["rev-list", "--parents", "-n", "1", "HEAD"]:
+            return "tip unrelated-parent\n"
+        msg = f"Unexpected git args: {args}"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(git, "run_git", fake)
+
+    assert git.fork_point(tmp_path) == "main-tip"
+
+
 def test_fork_point_none_without_other_branches(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

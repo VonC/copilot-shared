@@ -199,6 +199,21 @@ def test_resolve_topic_refuses_without_lock() -> None:
     assert handoff.resolve_topic([_OTHER, _TOPIC], mismatch, "main") is None
 
 
+def test_resolve_topic_prefers_the_exact_branch_slug() -> None:
+    """A branch-matched draft wins when merged history exposes several topics."""
+    stale = MemoryRecord(
+        branch="other-feature",
+        version="v9.9.9",
+        topic="other",
+    )
+
+    assert handoff.resolve_topic(
+        [_OTHER, _TOPIC],
+        stale,
+        "feature/pw-handoff",
+    ) == _TOPIC
+
+
 def _handoff_state(tmp_path: Path, validation_text: str) -> WorkflowState:
     validation = _write_validation(tmp_path, validation_text)
     plan_doc = tmp_path / "plan.v0.1.0.pw_handoff.md"
