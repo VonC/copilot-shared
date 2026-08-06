@@ -372,7 +372,18 @@ def run_skill(  # noqa: PLR0913
             forced_command(root, topic, skill_name, os.environ, host_override),
             f"pw skill: {skill_name} is not applicable here.\n",
         )
-    return _emit(next_command(root, topic, branch, os.environ, host_override), "")
+    branch_slug = branch.rsplit("/", maxsplit=1)[-1]
+    if (
+        _slug_key(branch_slug) == _slug_key(topic.slug)
+        and docs.collection_items(topic.draft_path)
+    ):
+        umbrella = _relpath(root, topic.draft_path)
+        command = post_merge_command(root, umbrella, os.environ, host_override)
+        error = f"pw skill: no collection backlog resolved from {umbrella}.\n"
+    else:
+        command = next_command(root, topic, branch, os.environ, host_override)
+        error = ""
+    return _emit(command, error)
 
 
 def post_merge_command(

@@ -85,7 +85,9 @@ def fork_point(cwd: Path, current: str | None = None) -> str | None:
     branch such as ``docs`` from being parsed as an ambiguous path. The boundary
     commit (prefixed with ``-`` in the output) is the newest commit the current
     branch shares with another local branch, and is returned as the diff base for
-    files created on the branch.
+    files created on the branch. A merge may expose both excluded parents as
+    boundaries; in that case the current commit's first parent is selected so
+    the merged topic tip cannot replace the destination branch's diff base.
 
     Fix: when that rev-list is empty, ``HEAD`` carries no commit unique to this
     branch -- a branch freshly created on a commit it shares with another branch,
@@ -110,9 +112,17 @@ def fork_point(cwd: Path, current: str | None = None) -> str | None:
         cwd=cwd,
     )
     lines = _non_empty_lines(output)
-    for line in lines:
-        if line.startswith("-"):
-            return line[1:]
+    boundaries = [line[1:] for line in lines if line.startswith("-")]
+    if len(boundaries) == 1:
+        return boundaries[0]
+    if len(boundaries) > 1:
+        head_with_parents = run_git(
+            ["rev-list", "--parents", "-n", "1", "HEAD"],
+            cwd=cwd,
+        ).split()
+        if len(head_with_parents) > 1 and head_with_parents[1] in boundaries:
+            return head_with_parents[1]
+        return boundaries[0]
     if not lines:
         return run_git(["rev-parse", "HEAD"], cwd=cwd).strip()
     return None
