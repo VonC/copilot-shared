@@ -211,7 +211,7 @@ a commit.
 
 - Recorded: 2026-08-04T22:48:48+02:00
 - Exchange: code/code/v0.11.0/review-exchange-core
-- Umbrella: docs/v0.11.0/draft.v0.11.0/review-mode.md
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
 - Reviewed document: docs/v0.11.0/plan.v0.11.0.review-exchange-core.md
 - Implementation step: 4
 - Outcome: request
@@ -299,3 +299,109 @@ human commit decision. This recommendation is advisory and does not authorize
 a commit.
 
 <!-- review-entry-id: answer-round-1-step-4 -->
+
+## Round 1 by requestor - Step 5
+
+- Recorded: 2026-08-06T06:28:31+02:00
+- Exchange: code/code/v0.11.0/review-exchange-core
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-exchange-core.md
+- Implementation step: 5
+- Outcome: request
+
+Step 5, "Integrated acceptance and rollout verification," is reported fully
+implemented.
+
+- Added a 638-line real-CLI acceptance leaf covering opt-in activation,
+  effective-ignore refusal, concurrent identities, same-document exclusion,
+  multi-round code convergence, durable authorization replay, specification
+  override and archive behavior, fresh-round resumption, transcript ordering,
+  and one-deadline wait reporting.
+- Added a 432-line recovery acceptance leaf covering non-repository refusal,
+  interrupted request and answer publication, torn transcript repair,
+  consumed-answer abandonment, escalation and owning-completion replay,
+  no-progress and disagreement stops, and exact-wait isolation.
+- Repaired the Windows subprocess boundary discovered by the real CLI journey:
+  effective-ignore validation now uses NUL-delimited
+  `git check-ignore -z --stdin`, with focused unit coverage.
+- Moved real-Git construction for the new recovery tests and eight existing
+  prepare-release duration cases into fixtures while retaining their behavior
+  assertions and file-size limits.
+- Recorded the independent implementation-check verdict in
+  `docs/v0.11.0/plan.v0.11.0.review-exchange-core.validation.md`; Step 5 begins
+  exactly `Yes. Step 5 has been fully implemented.`, the document-level status
+  is implemented, and the matching umbrella row is completed with evidence.
+- Prepared `a.commit` with four groups for the Git-path fix, prepare-release
+  duration fixtures, integrated acceptance journeys, and trailing validation
+  and review evidence. No Step 5 commit has been made.
+
+Verification evidence: the final Groundhog walk exercised 1,451 tests with
+zero failures, zero warnings, zero expected failures, 100 percent coverage,
+zero duration outliers, zero exclusions, and `exit=0`.
+
+Use `$llm-shared:implementation-check` to independently verify the exact Step
+5 completion criteria against every staged change. Check real temporary-Git
+and CLI subprocess composition, both artifact families, opt-in behavior,
+effective-ignore failure, identity isolation, same-document exclusion, every
+planned crash window, idempotent repair, escalation evidence, automated
+stagnation, both human outcomes, cross-session authorization replay, local
+timestamp and transcript order, one monotonic wait deadline, stderr-only
+progress, one final stdout result, fixed-path complexity, line ceilings,
+DDD/hexagonal boundaries, 100 percent coverage, and existing feature
+integrity. Repair only missing Step 5 work and amend `a.commit` if needed.
+Return `changes-requested` for another implementation round or
+`convergence-recommended` for the advisory human commit decision. Do not
+commit.
+
+<!-- review-entry-id: request-round-1-step-5 -->
+
+## Round 1 by reviewer - Step 5
+
+- Recorded: 2026-08-06T06:51:54+02:00
+- Exchange: code/code/v0.11.0/review-exchange-core
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-exchange-core.md
+- Implementation step: 5
+- Outcome: answer
+
+Step 5 was independently verified with the implementation-check method against
+the staged changes, the plan, and the design. The verdict `Yes. Step 5 has
+been fully implemented.` is confirmed, and with it the whole
+review-exchange-core effort. No code defect was found this round.
+
+Verified: the acceptance journeys run the real command adapter in separate
+Python processes against temporary Git repositories with explicit ignore
+rules, proving opt-in inertness, unignored and non-repository refusal,
+concurrent identity isolation with the intentional `code.code` path,
+same-document exclusion, two-round code convergence with replayed owning
+authorization and idempotent completion, specification override with enforced
+guidance, escalation, archived fresh resumption, transcript round order with
+local-offset timestamps, and one monotonic wait deadline with stderr-only
+progress and one final stdout object. The recovery leaf injects failures at
+all six documented durable boundaries and proves fresh-session repair without
+evidence loss or duplicate entries. The Windows repair replacing
+line-delimited `git check-ignore` input with the NUL-delimited protocol is
+correct on both ends of the pipe and covered by the focused path tests. The
+prepare-release changes move real-Git setup into fixtures with assertions
+preserved. The 69 acceptance, recovery, path, and prepare-release tests pass
+locally; the validation record's document-level status is now implemented and
+the umbrella row is completed with valid evidence paths.
+
+Three staged-evidence repairs were applied by the reviewer: the Step 4 and
+Step 5 requestor transcript entries wrote a slash instead of a dot inside the
+umbrella name, and the Step 5 entry did the same inside the reviewed-document
+name. These hand-authored identity lines are exactly the machine-versus-human
+mismatch the core's summary validation rejects; once specialized adapters
+drive this outer loop through the core, such lines fail closed before
+publication. The validation record documents the repairs and `a.commit`
+gained the matching docs bullet.
+
+Note without required action: the acceptance suite reuses `_SECOND_ROUND` as
+an exit-code expectation and `_EXPECTED_STOP` as a round number in two
+assertions; the values are correct but dedicated constants would read better.
+
+Disposition: convergence-recommended. The staged changes complete the
+review-exchange-core plan and are ready for the human commit decision. This
+recommendation is advisory and does not authorize a commit.
+
+<!-- review-entry-id: answer-round-1-step-5 -->

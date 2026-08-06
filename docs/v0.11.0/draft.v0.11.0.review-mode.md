@@ -130,7 +130,7 @@ The feature request and design will need to insist on termination criteria for t
 
 | Order | Type | Key title | Slug | Status | Requirement | Validation plan |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Feature-request | Build the review exchange core | `review-exchange-core` | pending | - | - |
+| 1 | Feature-request | Build the review exchange core | `review-exchange-core` | completed | `docs/v0.11.0/feature-request.v0.11.0.review-exchange-core.md` | `docs/v0.11.0/plan.v0.11.0.review-exchange-core.validation.md` |
 | 2 | Feature-request | Request specification reviews | `spec-review-requestor` | pending | - | - |
 | 3 | Feature-request | Respond to specification reviews | `spec-reviewer` | pending | - | - |
 | 4 | Feature-request | Request implementation code reviews | `code-review-requestor` | pending | - | - |

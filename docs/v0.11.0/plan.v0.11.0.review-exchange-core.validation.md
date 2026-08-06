@@ -1,8 +1,8 @@
 # v0.11.0 review-exchange-core implementation tracking and validation
 
-No, it is not implemented.
+Yes, it is implemented.
 
-This validation records Steps 1 through 4 as complete; Step 5 has not yet been implemented.
+This validation records all five review-exchange-core implementation steps as complete, including integrated acceptance and rollout verification.
 
 ---
 
@@ -393,7 +393,9 @@ No, no existing feature or reporting capability appears impaired by Step 4.
 
 ### Analysis of Step 5 implementation state
 
-Not started. Step 5 is not implemented because the temporary-repository end-to-end acceptance suite does not exist yet.
+Yes. Step 5 has been fully implemented.
+
+The repository now proves the public review-exchange boundary across real temporary Git repositories, process boundaries, both artifact families, recovery and escalation paths, convergence outcomes, identity isolation, and deterministic bounded waits.
 
 ### Goal for Step 5
 
@@ -410,24 +412,71 @@ Validate the public core boundary across real Git repositories, both artifact fa
 
 ### What was implemented for Step 5
 
-_(empty — no check has taken place yet.)_.
+- **Real CLI and Git acceptance**: added subprocess journeys in effectively ignored temporary repositories for absent-marker inertness, ignore refusal, concurrent specification and code identities, same-document exclusion, and independent transcripts.
+- **Multi-round convergence**: exercised code-family continuation, convergence retention, cross-session gate re-presentation, continuing Commit authorization, owning-action completion, and ordered local-offset transcript evidence.
+- **Human override and resumption**: exercised specification-family another-round guidance, escalation archival, artifact cleanup, and a fresh round after human resolution.
+- **Wait reporting**: verified injected-clock progress emits multiple standard-error diagnostics, one final standard-output JSON result, and one monotonic deadline without a real wait.
+- **Crash recovery**: added fault-injected acceptance coverage for request publication, answer rename and visible append, torn transcript suffixes, answer consumption, escalation append, and owning-action completion.
+- **Bounded automation**: verified attributed abandonment, no-progress escalation, persistent disagreement escalation, and exact wait isolation from unrelated identities.
+- **Windows Git boundary**: changed effective-ignore validation to NUL-delimited `git check-ignore -z --stdin`, preventing text-mode carriage returns from becoming part of transient paths across Windows subprocess boundaries, with focused unit coverage.
+- **Duration-gate repair**: moved real-Git setup for the new recovery journeys and eight existing prepare-release scenarios into fixtures while preserving their behavioral assertions.
+- **Global verification**: the final Groundhog walk passed all 1,451 tests, 100% coverage, and the duration gate with zero failures, warnings, expected failures, outliers, or exclusions.
+
+### Step 5 implementation-to-plan variances
+
+The acceptance coverage exceeded one safe leaf, so recovery and fault-injection journeys were extracted to `tests/unit/tools/test_review_exchange_recovery_acceptance/test_review_exchange_recovery_acceptance_tdd.py` exactly as the plan's split guidance permits. The primary acceptance leaf remains below the 650-line ceiling.
+
+Real CLI subprocess coverage exposed Windows text-mode newline translation in the existing Git ignore probe. The outer path adapter and its focused unit test were updated to use Git's NUL-delimited protocol; no lifecycle or persistence contract changed.
+
+The global duration gate initially reported repository setup inside four new recovery calls and eight existing prepare-release calls. Heavy real-Git setup now occurs in fixtures, leaving measured calls to assert the same results; both affected files and the final full walk pass.
+
+The Step 5 code review repaired three malformed identity paths in the versioned review transcript: the Step 4 and Step 5 requestor entries wrote a slash instead of a dot inside the umbrella name, and the Step 5 entry did the same inside the reviewed-document name. These hand-authored lines are exactly the machine-versus-human identity mismatch the core's summary validation rejects; once the specialized adapters drive the outer dogfood loop through the core, such lines fail closed before publication.
 
 ### New types or classes introduced for Step 5
 
-_(empty — no check has taken place yet.)_.
+- `CliResult`: immutable test result for one real CLI subprocess invocation.
+- `IsolationJourney`: immutable fixture result for opt-in and identity-isolation evidence.
+- `CodeJourney`: immutable fixture result for multi-round code convergence and authorization evidence.
+- `ResolutionJourney`: immutable fixture result for human override, archive, and fresh-round evidence.
+- `FakeTime`: deterministic acceptance clock that advances waits without sleeping.
+
+No new production type or class was introduced in Step 5.
 
 ### Architecture check for Step 5
 
-_(empty — no check has taken place yet.)_.
+- **Public boundary**: end-to-end journeys invoke the command adapter as a subprocess and inspect only result JSON and observable artifacts.
+- **Fault boundary**: recovery tests inject faults through the public lifecycle core and store seam so they can target atomic crash windows deterministically without duplicating protocol behavior.
+- **Dependency direction**: the Windows ignore repair remains in the outer path-validation adapter; domain models, lifecycle policy, and persistence do not import Git or command concerns.
+- **Identity isolation**: each journey supplies one exact reviewed document and observes only its derived fixed path set, preserving the established ports-and-adapters boundary.
+- **Cohesion and size**: the plan-authorized recovery leaf keeps both acceptance files below the 650-line ceiling, and the quality gate reports no complexity violation.
+
+No, there is nothing that needs to be addressed for Step 5.
 
 ### Performance check for Step 5
 
-_(empty — no check has taken place yet.)_.
+- **No new asymptotic growth**: activation adds one NUL-delimited Git ignore probe over the constant transient-path set; state operations still derive and touch only fixed identity paths.
+- **No scans**: acceptance verifies exact-path isolation, and production review-exchange code introduces no project-tree traversal or transcript-history scan.
+- **Deterministic waits**: injected clocks advance the one monotonic deadline without `sleep`, repeated short waits, or persisted wall-time deadlines.
+- **Measured duration**: real-Git construction is fixture setup rather than assertion-call work; the final duration report contains zero outliers and zero exclusions.
+
+No, there is no performance issue that needs to be addressed for Step 5.
 
 ### Unit test coverage check for Step 5
 
-_(empty — no check has taken place yet.)_.
+- **Production classes**: Step 5 introduces no production class requiring a new class-named unit-test leaf.
+- **Path adapter change**: the focused path suite asserts the `-z` Git invocation and NUL-delimited input and output handling, alongside existing activation and ignore-failure branches.
+- **Acceptance support types**: the new immutable journey results and fake clock are test-only scaffolding exercised by their owning acceptance leaves.
+- **Coverage evidence**: the final Groundhog walk reports 100% repository coverage across all 1,451 tests.
+
+No, there is no unit-tested class below 100% that needs completing for Step 5.
 
 ### Feature integrity for Step 5
 
-_(empty — no check has taken place yet.)_.
+- **Opt-in rollout**: an absent marker remains inert, and non-ignored transients or a non-repository root fail before artifact mutation.
+- **Artifact families**: specification and code exchanges both complete through shared core behavior without introducing later specialized requestor or reviewer roles.
+- **Recovery evidence**: every planned publication, append, consumption, escalation, and owning-completion interruption either repairs once or preserves an attributed escalation.
+- **Convergence outcomes**: both confirmation and another-round guidance survive process interruption, and continuing authorization replays without a second human question.
+- **Isolation and ordering**: different identities progress concurrently, the same document is excluded, exact waits ignore unrelated artifacts, and transcripts retain ordered local-offset evidence.
+- **Regression evidence**: the quality gate, full suite, coverage gate, and duration gate all pass with no existing feature or reporting regression detected.
+
+No, no existing feature or reporting capability appears impaired by Step 5.
