@@ -1,0 +1,432 @@
+"""Recovery acceptance coverage across fresh review-exchange sessions.
+
+Step 5 injects failures only at documented durable boundaries, then constructs
+fresh public core instances over the same real files. The tests prove that
+requests, answers, torn transcript suffixes, escalations, consumed answers,
+and owning authorization repair without evidence loss or duplicate entries.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import pytest
+
+from tests.unit.tools.test_review_exchange_acceptance.test_review_exchange_acceptance_tdd import (
+    FakeTime,
+    _artifact,
+    _context,
+    _init_repo,
+    _policy,
+)
+from tools.review_exchange_core import ReviewExchangeCore, WaitOutcome
+from tools.review_exchange_models import (
+    Actor,
+    ArtifactState,
+    CoordinationStatus,
+    IncompleteTransitionKind,
+    ReviewConfiguration,
+    ReviewDisposition,
+    ReviewExchangeError,
+    ReviewFamily,
+    ReviewRole,
+)
+from tools.review_exchange_paths import (
+    derive_artifact_paths,
+    transient_paths_for_ignore,
+    validate_activation,
+)
+from tools.review_exchange_store import ReviewExchangeStore
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from tools.review_exchange_models import ReviewContext
+    from tools.review_exchange_models_coordination import CoordinationRecord
+
+    Harness = tuple[
+        ReviewExchangeCore,
+        ReviewExchangeStore,
+        ReviewContext,
+        FakeTime,
+    ]
+
+_WAIT_SECONDS = 60
+
+
+def _harness(
+    root: Path,
+    *,
+    family: ReviewFamily = ReviewFamily.CODE,
+    slug: str = "recovery",
+) -> tuple[ReviewExchangeCore, ReviewExchangeStore, ReviewContext, FakeTime]:
+    """Build one real-file core with deterministic time in a Git repository."""
+    _init_repo(root)
+    step = "5" if family is ReviewFamily.CODE else None
+    context = _context(root, family, slug, step=step)
+    store = ReviewExchangeStore(derive_artifact_paths(root, context))
+    clock = FakeTime()
+    return _fresh(store, context, clock), store, context, clock
+
+
+def _fresh(
+    store: ReviewExchangeStore,
+    context: ReviewContext,
+    clock: FakeTime,
+) -> ReviewExchangeCore:
+    """Construct a later-session core over the same exact artifact paths."""
+    return ReviewExchangeCore(
+        store,
+        context,
+        _policy(context),
+        ReviewConfiguration(enabled=True, wait_timeout_seconds=_WAIT_SECONDS),
+        wall_clock=clock.now,
+        monotonic_clock=clock.monotonic_now,
+        sleeper=clock.sleep,
+    )
+
+
+def _publish_request(
+    core: ReviewExchangeCore,
+    context: ReviewContext,
+    round_number: int,
+    *,
+    guidance: str | None = None,
+) -> None:
+    """Publish one valid request through the public core boundary."""
+    core.publish_request(
+        _artifact(
+            context,
+            ReviewRole.REQUESTOR,
+            round_number,
+            guidance=guidance,
+        ),
+        f"Requestor acceptance report for round {round_number}.",
+    )
+
+
+def _publish_answer(
+    core: ReviewExchangeCore,
+    context: ReviewContext,
+    round_number: int,
+    disposition: ReviewDisposition = ReviewDisposition.CHANGES_REQUESTED,
+) -> None:
+    """Publish one valid reviewer answer through the public core boundary."""
+    core.publish_answer(
+        _artifact(
+            context,
+            ReviewRole.REVIEWER,
+            round_number,
+            disposition=disposition,
+        ),
+        f"Reviewer acceptance report for round {round_number}.",
+    )
+
+
+def _start_request(
+    core: ReviewExchangeCore,
+    context: ReviewContext,
+    round_number: int = 1,
+) -> None:
+    """Start when needed and publish the selected round request."""
+    if round_number == 1:
+        core.start()
+    _publish_request(core, context, round_number)
+
+
+def _reach_gate(core: ReviewExchangeCore, context: ReviewContext) -> None:
+    """Drive one exchange to a retained convergence recommendation."""
+    _start_request(core, context)
+    _publish_answer(
+        core,
+        context,
+        1,
+        ReviewDisposition.CONVERGENCE_RECOMMENDED,
+    )
+
+
+@pytest.fixture
+def answer_repair_harnesses(tmp_path: Path) -> tuple[Harness, Harness]:
+    """Build both answer crash repositories outside the measured test call."""
+    return (
+        _harness(tmp_path / "answer-rename"),
+        _harness(tmp_path / "answer-append", slug="answer-append"),
+    )
+
+
+@pytest.fixture
+def escalation_harnesses(tmp_path: Path) -> tuple[Harness, Harness]:
+    """Build escalation and owning repositories outside the measured call."""
+    return (
+        _harness(tmp_path / "escalation"),
+        _harness(tmp_path / "owning", slug="owning"),
+    )
+
+
+@pytest.fixture(params=("no-progress", "disagreement"))
+def stagnation_harness(
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+) -> tuple[str, Harness, CoordinationRecord]:
+    """Prepare round one outside each measured stagnation assertion call."""
+    mode = str(request.param)
+    harness = _harness(tmp_path / mode, slug=mode)
+    core, _store, context, _clock = harness
+    _start_request(core, context)
+    _publish_answer(core, context, 1)
+    first = core.consume_answer(
+        reviewed_work_changed=mode == "disagreement",
+        disagreement=mode == "disagreement",
+    )
+    core.continue_round()
+    return mode, harness, first
+
+
+def test_activation_outside_git_fails_without_artifact_mutation(tmp_path: Path) -> None:
+    """A real non-repository cannot pass effective ignore activation."""
+    root = tmp_path / "outside-git"
+    root.mkdir()
+    context = _context(root, ReviewFamily.CODE, "outside-git", step="5")
+    paths = derive_artifact_paths(root, context)
+
+    with pytest.raises(ReviewExchangeError, match="requires a Git repository"):
+        validate_activation(root, paths)
+
+    assert not any(path.exists() for path in transient_paths_for_ignore(paths))
+
+
+def test_interrupted_request_and_torn_transcript_repair_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A fresh session truncates a torn request entry and appends it once."""
+    core, store, context, clock = _harness(tmp_path / "request")
+    core.start()
+    original_append = store.append_transcript_once
+
+    def tear_then_stop(*_args: object, **_kwargs: object) -> object:
+        with store.paths.transcript.open("ab") as transcript:
+            transcript.write(b"\n## torn acceptance suffix")
+        message = "injected request append interruption"
+        raise ReviewExchangeError(message)
+
+    monkeypatch.setattr(store, "append_transcript_once", tear_then_stop)
+    with pytest.raises(ReviewExchangeError, match="request append interruption"):
+        _publish_request(core, context, 1)
+    marked = store.read_coordination(required=True)
+    assert marked is not None
+    assert marked.incomplete_transition is IncompleteTransitionKind.PUBLISH_REQUEST
+    assert store.paths.request.is_file()
+
+    monkeypatch.setattr(store, "append_transcript_once", original_append)
+    _publish_request(_fresh(store, context, clock), context, 1)
+
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert "torn acceptance suffix" not in transcript
+    assert transcript.count("review-entry-id: request-round-1") == 1
+    assert _fresh(store, context, clock).classify().state is ArtifactState.REQUEST_PENDING
+
+
+def test_interrupted_answer_rename_and_visible_append_repair(
+    answer_repair_harnesses: tuple[Harness, Harness],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tombstone-only and visible-answer crash windows both resume exactly."""
+    first_harness, second_harness = answer_repair_harnesses
+    core, store, context, clock = first_harness
+    _start_request(core, context)
+    answer = _artifact(
+        context,
+        ReviewRole.REVIEWER,
+        1,
+        disposition=ReviewDisposition.CHANGES_REQUESTED,
+    )
+    original_commit = store._commit_prepared
+
+    def stop_before_answer(prepared: Path, target: Path) -> None:
+        if target == store.paths.answer:
+            message = "injected answer visibility interruption"
+            raise ReviewExchangeError(message)
+        original_commit(prepared, target)
+
+    monkeypatch.setattr(store, "_commit_prepared", stop_before_answer)
+    with pytest.raises(ReviewExchangeError, match="answer visibility interruption"):
+        core.publish_answer(answer, "Reviewer acceptance report.")
+    assert not store.paths.request.exists()
+    assert store.paths.tombstone.is_file()
+    assert not store.paths.answer.exists()
+
+    monkeypatch.setattr(store, "_commit_prepared", original_commit)
+    _fresh(store, context, clock).publish_answer(answer, "Reviewer acceptance report.")
+    assert store.paths.answer.is_file()
+    assert not store.paths.tombstone.exists()
+
+    second, second_store, second_context, second_clock = second_harness
+    _start_request(second, second_context)
+    second_answer = _artifact(
+        second_context,
+        ReviewRole.REVIEWER,
+        1,
+        disposition=ReviewDisposition.CHANGES_REQUESTED,
+    )
+    original_second_append = second_store.append_transcript_once
+
+    def stop_after_answer(*_args: object, **_kwargs: object) -> object:
+        message = "injected answer append interruption"
+        raise ReviewExchangeError(message)
+
+    monkeypatch.setattr(second_store, "append_transcript_once", stop_after_answer)
+    with pytest.raises(ReviewExchangeError, match="answer append interruption"):
+        second.publish_answer(second_answer, "Reviewer visible-answer report.")
+    assert second_store.paths.answer.is_file()
+    assert second_store.paths.tombstone.is_file()
+
+    monkeypatch.setattr(second_store, "append_transcript_once", original_second_append)
+    _fresh(second_store, second_context, second_clock).publish_answer(
+        second_answer,
+        "Reviewer visible-answer report.",
+    )
+    transcript = second_store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("review-entry-id: answer-round-1") == 1
+    assert not second_store.paths.tombstone.exists()
+
+
+def test_consumed_answer_interruption_becomes_attributed_abandonment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A crash after answer removal retains coordination for later escalation."""
+    core, store, context, clock = _harness(tmp_path / "consumption")
+    _start_request(core, context)
+    _publish_answer(core, context, 1)
+    original_write = store.write_coordination
+
+    def stop_after_consumption(record: CoordinationRecord) -> None:
+        if record.reviewed_work_changed is not None:
+            message = "injected answer consumption interruption"
+            raise ReviewExchangeError(message)
+        original_write(record)
+
+    monkeypatch.setattr(store, "write_coordination", stop_after_consumption)
+    with pytest.raises(ReviewExchangeError, match="consumption interruption"):
+        core.consume_answer(reviewed_work_changed=True)
+    assert not store.paths.answer.exists()
+    assert store.paths.coordination.is_file()
+
+    monkeypatch.setattr(store, "write_coordination", original_write)
+    clock.sleep(_WAIT_SECONDS + 1)
+    later = _fresh(store, context, clock)
+    observation = later.classify()
+    assert observation.state is ArtifactState.ABANDONED_MID_ROUND
+    assert observation.record is not None
+    assert observation.record.expected_next_actor is Actor.REQUESTOR
+    later.escalate(observation.diagnostic)
+    assert later.classify().state is ArtifactState.ESCALATED
+
+
+def test_escalation_append_and_owning_completion_replay(
+    escalation_harnesses: tuple[Harness, Harness],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Escalation and confirmed completion survive their final write failures."""
+    escalation_harness, owning_harness = escalation_harnesses
+    core, store, context, clock = escalation_harness
+    _start_request(core, context)
+    original_append = store.append_transcript_once
+
+    def stop_escalation(*_args: object, **_kwargs: object) -> object:
+        message = "injected escalation append interruption"
+        raise ReviewExchangeError(message)
+
+    monkeypatch.setattr(store, "append_transcript_once", stop_escalation)
+    with pytest.raises(ReviewExchangeError, match="escalation append interruption"):
+        core.escalate("Acceptance evidence requires human review.")
+    marked = store.read_coordination(required=True)
+    assert marked is not None
+    assert marked.status is CoordinationStatus.ESCALATED
+    assert marked.incomplete_transition is IncompleteTransitionKind.ESCALATION
+
+    monkeypatch.setattr(store, "append_transcript_once", original_append)
+    _fresh(store, context, clock).escalate("Acceptance evidence requires human review.")
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("review-entry-id: escalation-round-1") == 1
+
+    owning, owning_store, owning_context, owning_clock = owning_harness
+    _reach_gate(owning, owning_context)
+    owning.confirm("Commit")
+    original_remove = owning_store.remove_exact
+    failed = False
+
+    def stop_coordination_cleanup(path: Path) -> bool:
+        nonlocal failed
+        if path == owning_store.paths.coordination and not failed:
+            failed = True
+            message = "injected owning completion interruption"
+            raise ReviewExchangeError(message)
+        return original_remove(path)
+
+    monkeypatch.setattr(owning_store, "remove_exact", stop_coordination_cleanup)
+    with pytest.raises(ReviewExchangeError, match="owning completion interruption"):
+        owning.complete()
+    assert not owning_store.paths.answer.exists()
+    assert owning_store.paths.coordination.is_file()
+
+    monkeypatch.setattr(owning_store, "remove_exact", original_remove)
+    later_owning = _fresh(owning_store, owning_context, owning_clock)
+    assert later_owning.complete() is True
+    assert later_owning.complete() is False
+
+
+def test_automated_stagnation_and_persistent_disagreement_stop(
+    stagnation_harness: tuple[str, Harness, CoordinationRecord],
+) -> None:
+    """Two unchanged rounds or a repeated disagreement preserve the last answer."""
+    mode, harness, first = stagnation_harness
+    core, store, context, _clock = harness
+    assert first.status is CoordinationStatus.ACTIVE
+    _publish_request(core, context, 2)
+    _publish_answer(core, context, 2)
+
+    stopped = core.consume_answer(
+        reviewed_work_changed=False,
+        disagreement=mode == "disagreement",
+    )
+
+    assert stopped.status is CoordinationStatus.ESCALATED
+    assert store.paths.answer.is_file()
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("Outcome: escalation") == 1
+
+
+def test_exact_wait_ignores_an_unrelated_identity(
+    tmp_path: Path,
+) -> None:
+    """A request for another slug cannot satisfy one injected-clock deadline."""
+    root = tmp_path / "wait-isolation"
+    _init_repo(root)
+    wanted_context = _context(root, ReviewFamily.CODE, "wanted", step="5")
+    other_context = _context(root, ReviewFamily.CODE, "other", step="5")
+    wanted_store = ReviewExchangeStore(derive_artifact_paths(root, wanted_context))
+    other_store = ReviewExchangeStore(derive_artifact_paths(root, other_context))
+    clock = FakeTime()
+    wanted = _fresh(wanted_store, wanted_context, clock)
+    other = _fresh(other_store, other_context, clock)
+    wanted.start()
+    other.start()
+    _publish_request(other, other_context, 1)
+
+    result = wanted.wait_for_exact(
+        ArtifactState.REQUEST_PENDING,
+        timeout_seconds=2,
+        poll_interval=1,
+        progress_interval=1,
+    )
+
+    assert result.outcome is WaitOutcome.TIMED_OUT
+    assert wanted.classify().state is ArtifactState.ESCALATED
+    assert other.classify().state is ArtifactState.REQUEST_PENDING
+    assert other_store.paths.request.is_file()
+    assert not wanted_store.paths.request.exists()
+
+
+# eof

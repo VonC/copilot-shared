@@ -8,6 +8,9 @@ Fix: Supply the commit identity through the GIT_AUTHOR_*/GIT_COMMITTER_* env
 vars on every git call and drop the two `git config` subprocess calls from
 `_init_repo`. Each git spawn costs a few hundred milliseconds on Windows, so
 removing the redundant config processes cuts the test's setup wall time.
+
+Fix: The real working-tree workflow run is prepared by a fixture, keeping the
+measured assertion call focused on its persisted prompt and memory outcomes.
 """
 
 from __future__ import annotations
@@ -83,19 +86,28 @@ def branch_draft_repo(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_run_end_to_end_with_real_git(
+@pytest.fixture
+def completed_working_tree_run(
     monkeypatch: pytest.MonkeyPatch,
     working_tree_repo: Path,
-) -> None:
-    """A working-tree draft drives a real run to a written prompt and memory."""
+) -> tuple[Path, int]:
+    """Run the real Git workflow outside the measured assertion call."""
     monkeypatch.setattr(
         prompt_workflow.menu,
         "select",
         lambda _message, options: options[0][1],
     )
     monkeypatch.setattr(prompt_workflow, "set_clipboard_text", lambda _text: None)
+    return working_tree_repo, prompt_workflow.run(working_tree_repo)
 
-    assert prompt_workflow.run(working_tree_repo) == 0
+
+def test_run_end_to_end_with_real_git(
+    completed_working_tree_run: tuple[Path, int],
+) -> None:
+    """A working-tree draft drives a real run to a written prompt and memory."""
+    working_tree_repo, status = completed_working_tree_run
+
+    assert status == 0
 
     prompt = (working_tree_repo / "a.prompt.txt").read_text(encoding="utf-8")
     assert "llm-shared/instructions/split-and-define.md" in prompt
