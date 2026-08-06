@@ -8,11 +8,9 @@ that is not a proper ancestor, rebase and reset reflog evidence, and the
 ambiguity path where deduplicated parent candidates elect a unique nearest
 boundary with reflogs disabled.
 
-Fix: real-Git scenarios whose planner calls are accepted slow prepare their
-plans in fixtures, leaving the measured calls to verify the resulting model.
-On-main, configured-integration, explicit-merge-scope, and nested-feature
-planning follow the same boundary so repository setup and planner Git
-subprocesses are not charged to the assertion calls.
+Fix: accepted-slow real-Git scenarios prepare plans in fixtures, leaving
+measured calls to verify the model. All such planning follows this boundary,
+so repository setup and planner Git subprocesses do not inflate assertions.
 """
 
 from __future__ import annotations
@@ -411,14 +409,21 @@ def test_plan_rejects_an_unknown_feature_target(
         )
 
 
-def test_plan_auto_detects_branch_creation_boundary(tmp_path: Path) -> None:
-    """The latest branch-positioning reflog entry can prove the feature fork."""
+@pytest.fixture
+def auto_detected_boundary_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare automatic branch-boundary detection outside assertion time."""
     repo = tmp_path / "repo"
     base = initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
     commit_file(repo, "feature.txt", "feature\n", "feat: feature")
+    return base, build_release_plan(repo, preview_conflicts=False)
 
-    plan = build_release_plan(repo, preview_conflicts=False)
+
+def test_plan_auto_detects_branch_creation_boundary(
+    auto_detected_boundary_plan: tuple[str, ReleasePlan],
+) -> None:
+    """The latest branch-positioning reflog entry can prove the feature fork."""
+    base, plan = auto_detected_boundary_plan
 
     assert plan.mode is ReleaseMode.FEATURE
     assert plan.action is ReleaseAction.MERGE_NO_FF
@@ -427,8 +432,9 @@ def test_plan_auto_detects_branch_creation_boundary(tmp_path: Path) -> None:
     assert plan.boundary_evidence.startswith("reflog:")
 
 
-def test_plan_stops_feature_already_contained_by_release_tag(tmp_path: Path) -> None:
-    """An old feature tip produces no empty replay when main already released it."""
+@pytest.fixture
+def already_released_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare an already-released feature plan outside assertion time."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
@@ -436,22 +442,34 @@ def test_plan_stops_feature_already_contained_by_release_tag(tmp_path: Path) -> 
     git(repo, "switch", "main")
     git(repo, "merge", "--no-ff", "feature", "-m", "merge feature")
     git(repo, "tag", "v1.1.0")
-
     plan = build_release_plan(repo, branch="feature", preview_conflicts=False)
+    return feature_tip, plan
+
+
+def test_plan_stops_feature_already_contained_by_release_tag(
+    already_released_plan: tuple[str, ReleasePlan],
+) -> None:
+    """An old feature tip produces no empty replay when main already released it."""
+    feature_tip, plan = already_released_plan
 
     assert plan.branch_oid == feature_tip
     assert plan.action is ReleaseAction.ALREADY_RELEASED
     assert plan.containing_release_tags == ("v1.1.0",)
 
 
-def test_plan_orphan_branch_requires_a_boundary(tmp_path: Path) -> None:
-    """A branch without provable topology stops instead of guessing a base."""
+@pytest.fixture
+def orphan_boundary_plan(tmp_path: Path) -> ReleasePlan:
+    """Prepare an orphan-branch boundary plan outside assertion time."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     git(repo, "switch", "--orphan", "rescue")
     commit_file(repo, "orphan.txt", "orphan\n", "feat: unrelated history")
+    return build_release_plan(repo, preview_conflicts=False)
 
-    plan = build_release_plan(repo, preview_conflicts=False)
+
+def test_plan_orphan_branch_requires_a_boundary(orphan_boundary_plan: ReleasePlan) -> None:
+    """A branch without provable topology stops instead of guessing a base."""
+    plan = orphan_boundary_plan
 
     assert plan.mode is ReleaseMode.FEATURE
     assert plan.action is ReleaseAction.NEEDS_FEATURE_BOUNDARY
@@ -492,14 +510,21 @@ def test_plan_flags_merges_inside_an_explicit_feature_scope(
     assert any("contains merges" in note for note in plan.notes)
 
 
-def test_plan_direct_merge_previews_conflicts(tmp_path: Path) -> None:
-    """A feature still rooted at the main tip previews the merge itself."""
+@pytest.fixture
+def direct_merge_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare a direct-merge preview plan outside assertion time."""
     repo = tmp_path / "repo"
     base = initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
     commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
+    return base, build_release_plan(repo)
 
-    plan = build_release_plan(repo)
+
+def test_plan_direct_merge_previews_conflicts(
+    direct_merge_plan: tuple[str, ReleasePlan],
+) -> None:
+    """A feature still rooted at the main tip previews the merge itself."""
+    base, plan = direct_merge_plan
 
     assert plan.action is ReleaseAction.MERGE_NO_FF
     assert plan.feature_base == base
@@ -518,21 +543,30 @@ def test_plan_explicit_parent_uses_the_first_parent_merge_boundary(
     assert plan.action is ReleaseAction.MERGE_NO_FF
 
 
-def test_plan_explicit_parent_without_a_boundary_fails(tmp_path: Path) -> None:
-    """A parent giving no derivable fork point raises instead of guessing."""
+@pytest.fixture
+def explicit_parent_boundary_error(tmp_path: Path) -> ReleasePlanError:
+    """Capture an underivable parent-boundary error outside assertion time."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
     commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
     git(repo, "branch", "twin", "feature")
 
-    with pytest.raises(ReleasePlanError, match="Could not derive a boundary"):
+    with pytest.raises(ReleasePlanError) as caught:
         build_release_plan(
             repo,
             branch="feature",
             feature_parent="twin",
             preview_conflicts=False,
         )
+    return caught.value
+
+
+def test_plan_explicit_parent_without_a_boundary_fails(
+    explicit_parent_boundary_error: ReleasePlanError,
+) -> None:
+    """A parent giving no derivable fork point raises instead of guessing."""
+    assert "Could not derive a boundary" in str(explicit_parent_boundary_error)
 
 
 def test_plan_explicit_base_must_be_a_proper_ancestor(tmp_path: Path) -> None:
@@ -563,16 +597,23 @@ def test_plan_rebased_feature_uses_the_reflog_onto_evidence(
     assert plan.action is ReleaseAction.MERGE_NO_FF
 
 
-def test_plan_reset_reflog_entry_wins_as_latest_evidence(tmp_path: Path) -> None:
-    """The newest branch-positioning entry supersedes the creation entry."""
+@pytest.fixture
+def reset_reflog_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
+    """Prepare reset reflog evidence outside assertion time."""
     repo = tmp_path / "repo"
     base = initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
     commit_file(repo, "feature.txt", "feature\n", "feat: discarded work")
     git(repo, "reset", "--hard", "main")
     commit_file(repo, "feature.txt", "again\n", "feat: kept work")
+    return base, build_release_plan(repo, preview_conflicts=False)
 
-    plan = build_release_plan(repo, preview_conflicts=False)
+
+def test_plan_reset_reflog_entry_wins_as_latest_evidence(
+    reset_reflog_plan: tuple[str, ReleasePlan],
+) -> None:
+    """The newest branch-positioning entry supersedes the creation entry."""
+    base, plan = reset_reflog_plan
 
     assert plan.feature_base == base
     assert plan.feature_parent_refs == ("main",)

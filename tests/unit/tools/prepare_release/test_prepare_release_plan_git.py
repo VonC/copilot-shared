@@ -8,8 +8,8 @@ inherited alternate object directories, merge-tree invocation failures, a
 merge commit inside a rebase-preview range, unresolvable preview objects,
 and malformed merge-tree conflict records.
 
-Fix: prepare first-parent history and the clean rebase preview in fixtures so
-real Git setup does not inflate the measured assertion calls.
+Fix: prepare first-parent history, rebase conflicts, and the clean rebase
+preview in fixtures so real Git setup does not inflate measured assertions.
 """
 
 # pyright: reportPrivateUsage=false
@@ -58,8 +58,11 @@ def test_preview_merge_reports_conflicted_file_without_changing_objects(tmp_path
     assert git(repo_path, "count-objects", "-v") == objects_before
 
 
-def test_preview_rebase_stops_at_first_conflicting_commit(tmp_path: Path) -> None:
-    """A rebase preview identifies the exact commit that would stop replay."""
+@pytest.fixture
+def conflicting_rebase_preview(
+    tmp_path: Path,
+) -> tuple[str, str, str, RebasePreview]:
+    """Prepare a conflicting rebase preview outside assertion time."""
     repo_path = tmp_path / "repo"
     base = initialize_repository(repo_path)
     git(repo_path, "switch", "-c", "develop")
@@ -69,10 +72,17 @@ def test_preview_rebase_stops_at_first_conflicting_commit(tmp_path: Path) -> Non
     git(repo_path, "switch", "main")
     commit_file(repo_path, "shared.txt", "main\n", "fix: main change")
     repository = GitRepository(repo_path)
-
     preview = repository.preview_rebase(develop_tip, feature_tip, "main")
+    return base, repository.resolve(base), feature_tip, preview
 
-    assert repository.resolve(base) == base
+
+def test_preview_rebase_stops_at_first_conflicting_commit(
+    conflicting_rebase_preview: tuple[str, str, str, RebasePreview],
+) -> None:
+    """A rebase preview identifies the exact commit that would stop replay."""
+    base, resolved_base, feature_tip, preview = conflicting_rebase_preview
+
+    assert resolved_base == base
     assert preview.clean is False
     assert preview.checked_commits == 1
     assert preview.conflict_commit == feature_tip
@@ -268,8 +278,9 @@ def test_preview_merge_reports_an_unrunnable_merge_tree(
         repository.preview_merge("main", "main")
 
 
-def test_preview_rebase_rejects_a_merge_commit_in_range(tmp_path: Path) -> None:
-    """A merge commit inside the replay range stops the preview explicitly."""
+@pytest.fixture
+def merge_commit_rebase_error(tmp_path: Path) -> ReleasePlanError:
+    """Capture a merge-in-range rebase error outside assertion time."""
     repo_path = tmp_path / "repo"
     base = initialize_repository(repo_path)
     git(repo_path, "switch", "-c", "feature")
@@ -280,8 +291,16 @@ def test_preview_rebase_rejects_a_merge_commit_in_range(tmp_path: Path) -> None:
     git(repo_path, "merge", "--no-ff", "side", "-m", "merge side")
     repository = GitRepository(repo_path)
 
-    with pytest.raises(ReleasePlanError, match="select commits explicitly"):
+    with pytest.raises(ReleasePlanError) as caught:
         repository.preview_rebase(base, "feature", "main")
+    return caught.value
+
+
+def test_preview_rebase_rejects_a_merge_commit_in_range(
+    merge_commit_rebase_error: ReleasePlanError,
+) -> None:
+    """A merge commit inside the replay range stops the preview explicitly."""
+    assert "select commits explicitly" in str(merge_commit_rebase_error)
 
 
 def test_preview_helpers_reject_unresolvable_objects(tmp_path: Path) -> None:
