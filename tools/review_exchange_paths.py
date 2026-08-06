@@ -2,7 +2,8 @@
 
 Step 1 derives the fixed artifact set from validated context, parses artifact
 names back to their complete identity, and verifies all transient probes with
-one effective Git-ignore call before protocol mutation.
+one effective Git-ignore call before protocol mutation. Step 5 uses NUL
+delimiters so Windows text-mode newline conversion cannot alter probe paths.
 """
 
 # ruff: noqa: EM101, EM102, S105, TRY003
@@ -210,16 +211,16 @@ def _require_git_repository(root: Path) -> None:
 
 def _require_ignored_transients(root: Path, relative: tuple[str, ...]) -> None:
     """Submit the exact transient set through one effective ignore query."""
-    input_text = "".join(f"{path}\n" for path in relative)
+    input_text = "".join(f"{path}\0" for path in relative)
     ignored = _run_git(
-        ["git", "check-ignore", "--stdin"],
+        ["git", "check-ignore", "-z", "--stdin"],
         cwd=root,
         input_text=input_text,
     )
     if ignored.returncode not in {0, 1}:
         diagnostic = ignored.stderr.strip() or "git check-ignore failed"
         raise ReviewExchangeError(f"cannot verify transient ignore coverage: {diagnostic}")
-    matched = frozenset(line for line in ignored.stdout.splitlines() if line)
+    matched = frozenset(path for path in ignored.stdout.split("\0") if path)
     missing = tuple(path for path in relative if path not in matched)
     if missing:
         raise ReviewExchangeError(

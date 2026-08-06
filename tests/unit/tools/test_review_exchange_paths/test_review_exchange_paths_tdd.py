@@ -172,7 +172,7 @@ def test_activation_checks_all_transients_in_one_ignore_call(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Activation submits one constant path set to effective ignore logic."""
+    """Activation submits one NUL-delimited path set to effective ignore logic."""
     paths = derive_artifact_paths(tmp_path, _context(tmp_path, ReviewFamily.CODE))
     calls: list[tuple[list[str], Path, str | None]] = []
 
@@ -194,7 +194,8 @@ def test_activation_checks_all_transients_in_one_ignore_call(
 
     ignore_calls = [call for call in calls if "check-ignore" in call[0]]
     assert len(ignore_calls) == 1
-    submitted = set((ignore_calls[0][2] or "").splitlines())
+    assert "-z" in ignore_calls[0][0]
+    submitted = set(filter(None, (ignore_calls[0][2] or "").split("\0")))
     expected = {
         path.relative_to(tmp_path).as_posix()
         for path in transient_paths_for_ignore(paths)
@@ -246,8 +247,10 @@ def test_activation_reports_each_path_missing_ignore_coverage(
         if "rev-parse" in command:
             return subprocess.CompletedProcess(command, 0, "true\n", "")
         assert input_text is not None
-        matched = "\n".join(line for line in input_text.splitlines() if line != missing)
-        return subprocess.CompletedProcess(command, 0, f"{matched}\n", "")
+        matched = "\0".join(
+            path for path in input_text.split("\0") if path and path != missing
+        )
+        return subprocess.CompletedProcess(command, 0, f"{matched}\0", "")
 
     monkeypatch.setattr("tools.review_exchange_paths._run_git", fake_run)
 
