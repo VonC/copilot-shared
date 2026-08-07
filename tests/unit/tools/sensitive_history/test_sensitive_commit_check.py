@@ -5,6 +5,9 @@ explicit returns, and named functions instead of untyped lambdas), so the
 strict pyright gate no longer flags unknown parameter or argument types.
 The empty-rules case injects repository/config discovery so it tests parsing
 and hook outcomes without paying for an unrelated Git repository fixture.
+The unborn-branch case supplies exact Git protocol records through typed
+doubles, preserving empty-tree coverage without repeated Windows process
+startup in the timed test call.
 """
 
 from __future__ import annotations
@@ -32,9 +35,24 @@ from tools.sensitive_history.sensitive_commit_check import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from pathlib import Path
 
 TERM = "ForbiddenValue"
+_EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+_FIRST_OID = "1111111111111111111111111111111111111111"
+
+
+class _UnbornRepository:
+    """Return one staged blob without launching a real cat-file process."""
+
+    def __init__(self, _root: Path) -> None:
+        """Accept the repository root used by the production boundary."""
+
+    def iter_blobs(self, blob_ids: tuple[str, ...]) -> Iterator[tuple[str, bytes]]:
+        """Yield the exact staged object content requested by the scanner."""
+        for oid in blob_ids:
+            yield oid, f"{TERM}\n".encode()
 
 
 def _run_git(repo: Path, *args: str) -> str:
@@ -114,18 +132,44 @@ def test_staged_check_reports_text_binary_and_renamed_blob_updates(
     }
 
 
-def test_staged_check_handles_initial_commit_and_no_pending_changes(tmp_path: Path) -> None:
-    """An unborn branch compares against Git's empty tree."""
+def test_staged_check_handles_initial_commit_and_no_pending_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unborn branch compares against Git's empty tree without real processes."""
     repo = tmp_path / "new"
     repo.mkdir()
-    _run_git(repo, "init", "-b", "main")
     _write_rules(repo)
-    (repo / "first.txt").write_text(f"{TERM}\n", encoding="utf-8")
-    _run_git(repo, "add", "first.txt")
+    diff_calls = 0
+    calls: list[tuple[str, ...]] = []
+
+    def unborn_git(
+        _root: Path,
+        *args: str,
+        input_bytes: bytes | None = None,
+    ) -> bytes:
+        """Model an unborn HEAD, one staged addition, then an empty index."""
+        nonlocal diff_calls
+        calls.append(args)
+        if args == ("rev-parse", "--verify", "HEAD"):
+            message = "unborn HEAD"
+            raise HistoryScanError(message)
+        if args == ("hash-object", "-t", "tree", "--stdin"):
+            assert input_bytes == b""
+            return _EMPTY_TREE.encode()
+        diff_calls += 1
+        if diff_calls == 1:
+            metadata = f":000000 100644 {'0' * 40} {_FIRST_OID} A"
+            return metadata.encode() + b"\0first.txt\0"
+        return b""
+
+    monkeypatch.setattr(check, "_git", unborn_git)
+    monkeypatch.setattr(check, "GitRepository", _UnbornRepository)
 
     assert check_staged_blobs(repo, _patterns(repo))[0].location == "first.txt:1"
-    _run_git(repo, "reset")
     assert staged_blob_paths(repo) == {}
+    assert ("hash-object", "-t", "tree", "--stdin") in calls
+    assert all(_EMPTY_TREE in args for args in calls if args and args[0] == "diff")
 
 
 def test_message_check_is_redacted_and_main_returns_hook_statuses(
