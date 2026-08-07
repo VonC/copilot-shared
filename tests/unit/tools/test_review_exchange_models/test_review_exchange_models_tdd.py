@@ -173,7 +173,7 @@ def test_family_policy_rejects_ambiguous_registration(
 
 
 def test_envelope_uses_only_the_first_fenced_json_block(tmp_path: Path) -> None:
-    """Later JSON fences remain untouched role-authored Markdown."""
+    """A titled JSON section leaves later authored JSON fences untouched."""
     context = _context(tmp_path)
     envelope = Envelope(
         context.identity,
@@ -186,14 +186,20 @@ def test_envelope_uses_only_the_first_fenced_json_block(tmp_path: Path) -> None:
     )
     content = '## Request\n\nPlease review.\n\n```json\n{"authored": true}\n```\n'
 
-    parsed, parsed_content = parse_envelope_markdown(
-        render_envelope_markdown(envelope, content),
-    )
+    rendered = render_envelope_markdown(envelope, content)
+    parsed, parsed_content = parse_envelope_markdown(rendered)
 
     assert parsed == envelope
     assert parsed_content == content
-    with pytest.raises(ReviewExchangeError, match="first fenced block must be JSON"):
-        parse_envelope_markdown("```python\npass\n```\n```json\n{}\n```\n")
+    assert rendered.startswith(
+        "# Review request for "
+        "specification/feature-request/v0.11.0/review-exchange_core\n\n"
+        "## JSON\n\n```json\n",
+    )
+    with pytest.raises(ReviewExchangeError, match="first Markdown section"):
+        parse_envelope_markdown(
+            "# Review request\n\n## Metadata\n\n```json\n{}\n```\n",
+        )
 
 
 def test_envelope_rejects_unknown_fields_role_errors_and_utc_z(tmp_path: Path) -> None:

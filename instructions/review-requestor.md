@@ -30,10 +30,12 @@ the location, name, Git ignore result, existence, and UTF-8 encoding before it
 reads a file once. It never deletes a caller-owned input.
 
 Use the shared `templates/review-request.template.md` shape for complete
-request or answer content. Pass the full first-fenced JSON envelope plus its
-authored Markdown through `--content-file`. Pass only the complete substantive
-content to append to the transcript through `--summary-file`. Optional human
-guidance enters through `--guidance-file`.
+request or answer content. Start the Markdown with one `#` title, make
+`## JSON` its first section, put the fenced JSON envelope inside that section,
+and start every later top-level authored section at `##`. Pass that complete
+Markdown through `--content-file`. Pass only the complete substantive content
+to append to the transcript through `--summary-file`. Optional human guidance
+enters through `--guidance-file`.
 
 Before publishing a request, its human-readable authored content must include
 each applicable identity field exactly once:
@@ -81,6 +83,13 @@ and recommendations to the calling workflow.
    authorized action and call `complete`.
 
 ## Escalation and recovery commands
+
+Use `reclaim` when `status` reports a round abandoned only because its lease
+expired while the expected actor was still working. It renews the durable
+lease in place and restores the pending round without touching any request,
+answer, or transcript content; it is idempotent while the round stays live.
+Reclaim never applies once an escalation is recorded, and it never repairs an
+interrupted or inconsistent exchange.
 
 Use `escalate --summary-file <path>` when the specialized workflow must stop
 automation with an authored reason. Use `cancel --summary-file <path>` for a

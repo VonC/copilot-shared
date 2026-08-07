@@ -36,6 +36,10 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+_H1_RE = re.compile(r"\A# [^\r\n]+\r?\n")
+_JSON_SECTION_RE = re.compile(r"\A\r?\n## JSON\r?\n\r?\n```json\r?\n")
+
+
 @dataclass(frozen=True)
 class Envelope:
     """Strict machine-readable metadata for request and answer Markdown."""
@@ -122,33 +126,56 @@ class Envelope:
         )
 
 
-def render_envelope_markdown(envelope: Envelope, content: str) -> str:
-    """Render one first-fenced JSON envelope followed by authored Markdown."""
-    metadata = json.dumps(envelope.to_dict(), indent=2, sort_keys=True)
-    return f"```json\n{metadata}\n```\n{content}"
+def render_json_markdown(title: str, data: Mapping[str, Any], content: str) -> str:
+    """Render titled Markdown with JSON as its first section."""
+    if not title.strip() or "\n" in title or "\r" in title:
+        raise ReviewExchangeError("Markdown title must be one non-empty line")
+    metadata = json.dumps(data, indent=2, sort_keys=True)
+    prefix = f"# {title}\n\n## JSON\n\n```json\n{metadata}\n```\n"
+    return prefix if not content else f"{prefix}\n{content}"
 
 
-def parse_envelope_markdown(markdown: str) -> tuple[Envelope, str]:
-    """Parse exactly the first fenced block and return later Markdown unchanged."""
-    opener = re.search(r"(?m)^```([^\r\n]*)\r?\n", markdown)
+def parse_json_markdown(markdown: str) -> tuple[Mapping[str, Any], str]:
+    """Parse the first JSON section from one titled Markdown document."""
+    title = _H1_RE.match(markdown)
+    if title is None:
+        raise ReviewExchangeError("review Markdown must start with an H1 title")
+    remainder = markdown[title.end() :]
+    opener = _JSON_SECTION_RE.match(remainder)
     if opener is None:
-        raise ReviewExchangeError("review content has no fenced metadata block")
-    if opener.group(1).strip() != "json":
-        raise ReviewExchangeError("first fenced block must be JSON metadata")
-    closer = re.search(r"(?m)^```[ \t]*\r?$", markdown[opener.end() :])
+        raise ReviewExchangeError("first Markdown section must be ## JSON")
+    payload_start = title.end() + opener.end()
+    closer = re.search(r"(?m)^```[ \t]*(?:\r?\n|$)", markdown[payload_start:])
     if closer is None:
         raise ReviewExchangeError("JSON metadata fence is not closed")
-    payload_start = opener.end()
     payload_end = payload_start + closer.start()
     content_start = payload_start + closer.end()
-    if content_start < len(markdown) and markdown[content_start] == "\n":
-        content_start += 1
+    content = markdown[content_start:]
+    if content.startswith("\r\n"):
+        content = content[2:]
+    elif content.startswith("\n"):
+        content = content[1:]
     try:
         data = json.loads(markdown[payload_start:payload_end])
     except json.JSONDecodeError as error:
         raise ReviewExchangeError(f"invalid envelope JSON: {error.msg}") from error
-    envelope_data = mapping_value(data, "envelope JSON")
-    return Envelope.from_dict(envelope_data), markdown[content_start:]
+    return mapping_value(data, "JSON section"), content
+
+
+def render_envelope_markdown(envelope: Envelope, content: str) -> str:
+    """Render one titled request or answer with JSON as its first section."""
+    artifact = "request" if envelope.role is ReviewRole.REQUESTOR else "answer"
+    title = f"Review {artifact} for {envelope.identity.key}"
+    return render_json_markdown(title, envelope.to_dict(), content)
+
+
+def parse_envelope_markdown(markdown: str) -> tuple[Envelope, str]:
+    """Parse the first JSON section and return later Markdown unchanged."""
+    data, content = parse_json_markdown(markdown)
+    first_authored_heading = re.search(r"(?m)^(#{1,6}) ", content)
+    if first_authored_heading is not None and first_authored_heading.group(1) != "##":
+        raise ReviewExchangeError("authored Markdown sections must start at H2")
+    return Envelope.from_dict(data), content
 
 
 def _summary_value(summary: str, label: str) -> str:

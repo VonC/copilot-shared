@@ -113,6 +113,11 @@ class FakeCore:
         self._call("continue_round")
         return replace(self.record, round_number=self.record.round_number + 1)
 
+    def reclaim(self) -> CoordinationRecord:
+        """Record an abandoned-round lease renewal."""
+        self._call("reclaim")
+        return self.record
+
     def escalate(self, reason: str) -> CoordinationRecord:
         """Record an escalation reason."""
         self._call("escalate", reason)
@@ -304,6 +309,7 @@ def _assert_inputs_retained(content: Path, summary: Path, guidance: Path) -> Non
             "consume_answer",
         ),
         ("continue", [], "continue_round"),
+        ("reclaim", [], "reclaim"),
         ("escalate", ["--summary-file", "SUMMARY"], "escalate"),
         (
             "confirm",

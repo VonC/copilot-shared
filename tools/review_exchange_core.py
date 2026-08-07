@@ -61,6 +61,16 @@ __all__ = [
 ]
 
 _NO_PROGRESS_LIMIT: Final[int] = 2
+_RECLAIMABLE_STATES: Final[frozenset[ArtifactState]] = frozenset(
+    {
+        ArtifactState.ABANDONED_REQUEST,
+        ArtifactState.ABANDONED_ANSWER,
+        ArtifactState.ABANDONED_MID_ROUND,
+        ArtifactState.REQUEST_PENDING,
+        ArtifactState.ANSWER_PENDING,
+        ArtifactState.ROUND_IN_PROGRESS,
+    },
+)
 
 
 class ReviewExchangeCore(ReviewExchangeHumanMixin):
@@ -281,6 +291,25 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
                 clarification_used=clarification_used,
                 convergence_recommended=False,
             )
+            self.store.write_coordination(updated)
+            return updated
+
+    def reclaim(self) -> CoordinationRecord:
+        """Renew one expired lease in place for an intact, unescalated round.
+
+        Reclaiming restores the live counterpart state of an abandoned round
+        without touching any artifact or transcript content. It is idempotent
+        while the round stays live and never applies to an escalated,
+        confirming, interrupted, or inconsistent exchange.
+        """
+        with self.store.transition_lock():
+            observation = self.classify()
+            record = self._require_record(observation)
+            if observation.state not in _RECLAIMABLE_STATES:
+                raise ReviewExchangeError(
+                    "reclaim requires an intact abandoned or live round",
+                )
+            updated = replace(record, lease_renewed_at=self._timestamp())
             self.store.write_coordination(updated)
             return updated
 

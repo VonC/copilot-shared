@@ -1,8 +1,8 @@
-"""Lifecycle and recovery coverage for the review-exchange application core.
+"""Publication, round-transition, and wait coverage for the exchange core.
 
 Step 3 coordinates marker-first publication, bounded waits, automated progress,
-escalation, human confirmation, and fresh-round resolution over the Step 2
-store without holding locks across counterpart work.
+and convergence over the Step 2 store without holding locks across counterpart
+work. Recovery and escalation cases live in the focused recovery sibling.
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ import pytest
 from tools.review_exchange_core import ReviewExchangeCore, WaitOutcome, WaitProgress
 from tools.review_exchange_models import (
     Actor,
-    ArchiveKind,
     ArtifactState,
     CoordinationStatus,
     ExchangeIdentity,
@@ -29,7 +28,6 @@ from tools.review_exchange_models import (
     ReviewFamily,
     ReviewRole,
 )
-from tools.review_exchange_models_coordination import CoordinationRecord
 from tools.review_exchange_models_envelope import Envelope, render_envelope_markdown
 from tools.review_exchange_paths import derive_artifact_paths
 from tools.review_exchange_store import ReviewExchangeStore
@@ -37,6 +35,8 @@ from tools.review_exchange_store import ReviewExchangeStore
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
+
+    from tools.review_exchange_models_coordination import CoordinationRecord
 
 _START = datetime(2026, 8, 4, 14, 0, tzinfo=UTC)
 _SECOND_ROUND = 2
@@ -496,120 +496,6 @@ def test_wait_uses_one_monotonic_deadline_progress_and_no_lease_write(
     assert result.observation.state is ArtifactState.REQUEST_PENDING
     assert len(progress) >= 1
     assert writes == []
-
-
-def test_wait_timeout_escalates_once_and_preserves_state(tmp_path: Path) -> None:
-    """A monotonic deadline records one timeout escalation without a heartbeat."""
-    core, store, _, _ = _harness(tmp_path)
-    core.start()
-
-    result = core.wait_for_exact(
-        ArtifactState.REQUEST_PENDING,
-        timeout_seconds=2,
-        poll_interval=1,
-        progress_interval=1,
-    )
-    again = core.escalate("wait timed out while request was absent")
-
-    assert result.outcome is WaitOutcome.TIMED_OUT
-    assert result.observation.state is ArtifactState.ESCALATED
-    assert again.status is CoordinationStatus.ESCALATED
-    transcript = store.paths.transcript.read_text(encoding="utf-8")
-    assert transcript.count("Outcome: escalation") == 1
-
-
-def test_wait_detects_abandonment_and_attributes_expected_actor(tmp_path: Path) -> None:
-    """An expired active lease escalates with the expected actor in evidence."""
-    core, store, context, _ = _harness(tmp_path)
-    expired = CoordinationRecord(
-        context,
-        FamilyPolicy("commit-ready", "Another round", "Commit"),
-        CoordinationStatus.ACTIVE,
-        Actor.REQUESTOR,
-        Actor.REVIEWER,
-        1,
-        "2026-08-04T12:00:00+00:00",
-    )
-    store.initialize_transcript(context)
-    store.write_coordination(expired)
-
-    result = core.wait_for_exact(
-        ArtifactState.REQUEST_PENDING,
-        timeout_seconds=5,
-        poll_interval=1,
-    )
-
-    assert result.outcome is WaitOutcome.ABANDONED
-    assert result.observation.record is not None
-    assert result.observation.record.escalation_reason is not None
-    assert "reviewer" in result.observation.record.escalation_reason
-
-
-def test_invalid_transition_and_confirmation_labels_fail_without_mutation(
-    tmp_path: Path,
-) -> None:
-    """Wrong actors, states, and labels cannot advance the exchange."""
-    core, store, context, clock = _harness(tmp_path)
-    core.start()
-    with pytest.raises(ReviewExchangeError, match="request pending"):
-        core.publish_answer(_answer(context, clock, 1), "Too early.")
-    with pytest.raises(ReviewExchangeError, match="answer pending"):
-        core.consume_answer(reviewed_work_changed=True)
-    with pytest.raises(ReviewExchangeError, match="completed answer assessment"):
-        core.continue_round()
-
-    core.publish_request(_request(context, clock, 1), "Valid request.")
-    core.publish_answer(
-        _answer(context, clock, 1, ReviewDisposition.CONVERGENCE_RECOMMENDED),
-        "Converged.",
-    )
-    with pytest.raises(ReviewExchangeError, match="unregistered confirmation label"):
-        core.confirm("Reviewer says yes")
-    assert store.paths.answer.is_file()
-
-
-def test_escalation_append_failure_repairs_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """An interrupted escalation append remains marker-owned and idempotent."""
-    core, store, _, _ = _harness(tmp_path)
-    core.start()
-    original_append = store._append_bytes
-    failed = False
-
-    def fail_once(path: Path, content: bytes) -> None:
-        nonlocal failed
-        if not failed:
-            failed = True
-            message = "injected escalation append failure"
-            raise OSError(message)
-        original_append(path, content)
-
-    monkeypatch.setattr(store, "_append_bytes", fail_once)
-    with pytest.raises(ReviewExchangeError, match="transcript append failed"):
-        core.escalate("Manual review required")
-
-    marked = store.read_coordination(required=True)
-    assert marked is not None
-    assert marked.incomplete_transition is IncompleteTransitionKind.ESCALATION
-    record = core.escalate("Manual review required")
-
-    assert record.status is CoordinationStatus.ESCALATED
-    assert record.incomplete_transition is None
-    transcript = store.paths.transcript.read_text(encoding="utf-8")
-    assert transcript.count("Outcome: escalation") == 1
-
-
-def test_resolution_archives_only_supported_exact_evidence(tmp_path: Path) -> None:
-    """Resolution returns identity-scoped archives for each live evidence kind."""
-    core, _, context, clock = _harness(tmp_path)
-    _start_and_request(core, context, clock)
-    core.escalate("Archive the stopped request")
-
-    resolution = core.resolve_escalation("Restart cleanly.", archive=True)
-
-    names = {path.name for path in resolution.archived_paths}
-    assert len(names) == _EXPECTED_ARCHIVE_COUNT
-    assert any(f".{ArchiveKind.REQUEST.value}.md" in name for name in names)
-    assert any(f".{ArchiveKind.COORDINATION.value}.md" in name for name in names)
 
 
 # eof

@@ -625,7 +625,7 @@ def test_long_wait_has_progress_stderr_and_one_monotonic_deadline(
     captured = capsys.readouterr()
     stdout_lines = captured.out.splitlines()
     progress = [json.loads(line)["progress"] for line in captured.err.splitlines()]
-    assert code == _EXPECTED_STOP
+    assert code == _EXPECTED_STOP, captured.out + captured.err
     assert len(stdout_lines) == 1
     assert json.loads(stdout_lines[0])["outcome"] == "timed-out"
     assert len(progress) >= _EXPECTED_STOP

@@ -324,6 +324,24 @@ def test_consumed_answer_interruption_becomes_attributed_abandonment(
     assert later.classify().state is ArtifactState.ESCALATED
 
 
+def test_abandoned_request_is_reclaimed_by_a_fresh_session(tmp_path: Path) -> None:
+    """A late reviewer session renews the lease in place and answers the round."""
+    core, store, context, clock = _harness(tmp_path / "reclaim", slug="reclaim")
+    _start_request(core, context)
+    clock.sleep(_WAIT_SECONDS + 1)
+    later = _fresh(store, context, clock)
+    assert later.classify().state is ArtifactState.ABANDONED_REQUEST
+
+    reclaimed = later.reclaim()
+
+    assert reclaimed.round_number == 1
+    assert later.classify().state is ArtifactState.REQUEST_PENDING
+    _publish_answer(later, context, 1)
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("review-entry-id: answer-round-1") == 1
+    assert transcript.count("Outcome: escalation") == 0
+
+
 def test_escalation_append_and_owning_completion_replay(
     escalation_harnesses: tuple[Harness, Harness],
     monkeypatch: pytest.MonkeyPatch,

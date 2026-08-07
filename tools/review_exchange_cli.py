@@ -110,6 +110,10 @@ class CorePort(Protocol):
         """Advance to the next automated round."""
         ...
 
+    def reclaim(self) -> CoordinationRecord:
+        """Renew an expired lease for an intact abandoned round."""
+        ...
+
     def escalate(self, reason: str) -> CoordinationRecord:
         """Stop automation with durable evidence."""
         ...
@@ -199,7 +203,7 @@ def _parser() -> JsonArgumentParser:
 
     parser = JsonArgumentParser(prog="review-exchange")
     subparsers = parser.add_subparsers(dest="operation", required=True)
-    for name in ("activate", "status", "start", "continue", "complete"):
+    for name in ("activate", "status", "start", "continue", "reclaim", "complete"):
         subparsers.add_parser(name, parents=[common])
     for name in ("publish-request", "publish-answer"):
         command = subparsers.add_parser(name, parents=[common])
@@ -357,6 +361,9 @@ def _dispatch_simple(
     if args.operation == "continue":
         runtime.core.continue_round()
         return OperationResult("continued")
+    if args.operation == "reclaim":
+        runtime.core.reclaim()
+        return OperationResult("reclaimed")
     return OperationResult("completed", extra={"removed": runtime.core.complete()})
 
 
@@ -458,6 +465,7 @@ _HANDLERS: dict[str, OperationHandler] = {
     "status": _SIMPLE_HANDLER,
     "start": _SIMPLE_HANDLER,
     "continue": _SIMPLE_HANDLER,
+    "reclaim": _SIMPLE_HANDLER,
     "complete": _SIMPLE_HANDLER,
     "publish-request": _dispatch_publication,
     "publish-answer": _dispatch_publication,
