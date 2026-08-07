@@ -1,0 +1,331 @@
+# v0.11.0 specification review requestor implementation tracking and validation
+
+No, it is not implemented.
+
+Step 1 is implemented and validated. The specialized orchestration, workflow
+routing, and end-to-end acceptance slices in Steps 2 through 4 remain pending.
+
+> Initial-skeleton note: each not-yet-checked section uses the literal empty
+> placeholder required by the validation workflow. Implementation checks replace
+> those placeholders with evidence and add a missing-work section only when a
+> checked step is incomplete.
+
+---
+
+## File-based IO cost clarification for v0.11.0 specification review requestor implementation
+
+All implementation work must preserve these plan constraints:
+
+- Resolve one effort and inspect only its bounded exact document and
+  coordination paths.
+- Read each feedback or guidance input once and render paired outputs without
+  reparsing generated Markdown.
+- Publish, wait, reclaim, and complete through shared exact-path atomic
+  operations.
+- Never load sibling transcript history as routing or working context.
+
+## Complexity bound clarification for v0.11.0 specification review requestor implementation
+
+- **O(1) per render or protocol action** over a constant exact-path set.
+- **O(n) per authored input** for feedback and guidance rendering.
+- **O(k) per workflow resolution with constant k** for the bounded current
+  effort candidates.
+
+Every implementation check must reject documentation-tree scans, transcript
+history reads, or repeated generated-Markdown parsing.
+
+---
+
+## Step 1. Add paired specification request rendering
+
+### Analysis of Step 1 implementation state
+
+Yes. Step 1 has been fully implemented.
+
+The repository now provides one frozen, validated specification-round input,
+one paired request and transcript-summary render result, a strict ignored-file
+CLI and self-locating launcher, a canonical specialized template, public
+exports, and focused tests covering every supported type and failure boundary.
+
+### Goal for Step 1
+
+Add one validated specification-round input that produces coherent complete
+request content and substantive transcript-summary content for all supported
+specification types.
+
+### Step 1 improvement expectations
+
+- Shared identity and Markdown validation are reused rather than copied.
+- Request and summary identity, round, assessment, and changes cannot diverge.
+- Guided replacement rounds emit the literal `Human guidance:` label and a
+  separate writer response.
+- Rendering performs one linear pass over caller-authored inputs and one write
+  per output.
+
+### What was implemented for Step 1
+
+- **Paired renderer**: added `tools/spec_review_request.py` with exact filename
+  identity derivation, the `design` to `design-specification` mapping, shared
+  envelope rendering and parsing, and independent request and transcript
+  composition from one immutable input.
+- **Authored request boundary**: added
+  `templates/spec-review-request.template.md` with unique round-qualified H2
+  sections, the prescribed reviewer conclusion, and an exact answer artifact.
+  The transcript summary uses H3 sections and excludes fixed conclusion
+  boilerplate.
+- **File command contract**: added `bin/spec_review_request.bat` and CLI flags
+  for exact context and round, separate assessment, change-summary,
+  writer-response, and optional-guidance inputs, plus two explicit output
+  paths. Every caller-owned path must be an effectively ignored root `a.*`
+  file, and all paths are validated before either output is written.
+- **Guided override behavior**: preserved the literal `Human guidance:` value
+  and a separately labeled writer response in both paired artifacts.
+- **Package surface**: exported `SpecificationRoundInput`,
+  `SpecificationRequestRender`, `specification_context`, and
+  `render_specification_request` from `tools/__init__.py`.
+- **Validation evidence**: the focused renderer suite, lifecycle split suite,
+  and sensitive-commit suite pass. The final `ghog day` completed with 1,486
+  passing tests, 100% coverage, zero outliers, zero exclusions, and `exit=0`.
+
+### Step 1 implementation-to-plan variances
+
+`tools/spec_review_request.py` finished at 413 lines rather than the advisory
+240-340 estimate, and its focused test finished at 477 rather than 300-420.
+Both remain below the plan's 550-line safe threshold and 650-line ceiling. The
+extra lines provide strict caller-path, UTF-8, Git-ignore, template, shared
+validation, and IO failure coverage without creating another production
+module.
+
+The existing 683-line lifecycle test was split into a 501-line transition
+module and a 225-line recovery module so the repository-wide line ceiling
+remains green. No lifecycle assertion was removed.
+
+The Groundhog duration gate identified one unrelated real-Git unit test at
+5.19 seconds. Its unborn-branch Git protocol was replaced by typed exact-output
+doubles while preserving and strengthening its empty-tree, finding-location,
+and no-pending assertions; its isolated call phase is now below 0.01 seconds.
+
+### New types or classes introduced for Step 1
+
+- `SpecificationRoundInput`: frozen exact context, positive round, timestamp,
+  authored assessment, change summary, writer response, and optional literal
+  human guidance.
+- `SpecificationRequestRender`: frozen complete request content and substantive
+  transcript summary pair.
+- `_ArgumentParser`: internal command adapter that converts parse failures into
+  the shared fail-closed validation error.
+
+### Architecture check for Step 1
+
+- **Domain boundary**: the two public dataclasses hold validated review content
+  and depend on shared exchange value objects, not persistence or workflow
+  orchestration.
+- **Rendering boundary**: the pure paired renderer uses shared `Envelope`,
+  `render_envelope_markdown`, and `parse_envelope_markdown` contracts. It does
+  not derive one generated artifact by reparsing the other.
+- **Adapter boundary**: Git-ignore checks, caller-owned file IO, argument
+  parsing, and process exit handling remain in the thin command portion of the
+  focused renderer module; publication stays delegated to the shared exchange.
+- **Dependency direction**: the package root exports stable renderer values,
+  while the renderer imports shared model and envelope modules directly and
+  introduces no dependency on higher workflow layers.
+- **Maintainability**: every modified or split Python file is below 550 lines,
+  and no production file approaches the 650-line ceiling.
+
+No, there is nothing that needs to be addressed for Step 1.
+
+### Performance check for Step 1
+
+- **Linear authored content**: request and summary composition each traverse
+  the bounded authored strings once, so work is `O(n)` in supplied content.
+- **Constant path set**: the CLI validates four authored inputs, optional
+  guidance, and two outputs without a directory scan. Git ignore checks use a
+  fixed command per supplied root path.
+- **One-write result**: both output paths are validated before rendering, and
+  each rendered artifact is written once.
+- **No generated-output parsing for composition**: shared parsing validates the
+  complete request envelope only; the transcript summary is composed directly
+  from the frozen source input.
+
+No, there is no performance issue that needs to be addressed for Step 1.
+
+### Unit test coverage check for Step 1
+
+- **Supported identities**: parameterized tests cover feature requests, issues,
+  designs mapped to `design-specification`, and plans, with and without an
+  umbrella.
+- **Model and Markdown contract**: tests cover frozen values, positive rounds,
+  required authored content, H1 and JSON-first structure, H2 request sections,
+  paired identity fields, guidance preservation, and boilerplate exclusion.
+- **CLI and filesystem boundary**: tests cover exact flags, missing and
+  malformed UTF-8 inputs, non-root, tracked, duplicate, wrongly named, and
+  directory paths, Git absence and failure, output errors, template failure,
+  and shared-validation mismatch.
+- **Coverage evidence**: the full suite reports 100% coverage, including every
+  mapped defensive branch in `tools/spec_review_request.py`.
+
+No, there is no unit-tested class below 100% that needs completing for Step 1.
+
+### Feature integrity for Step 1
+
+- **Shared exchange compatibility**: existing envelope and context validation
+  remain the source of truth, and publication behavior is unchanged.
+- **Lifecycle preservation**: the lifecycle-test split moved recovery cases
+  without removing assertions; both focused modules pass.
+- **Test reliability**: the sensitive-commit optimization replaces only slow
+  subprocess setup with exact protocol doubles and retains the behavior under
+  test. The full suite reports zero failures and zero duration warnings.
+- **Adapter integrity**: the launcher follows the established self-locating
+  `llm-shared` batch pattern, and the canonical template contains no
+  provider-specific fork.
+
+No, no existing feature or reporting capability appears impaired by Step 1.
+
+---
+
+## Step 2. Add the specialized requestor instruction and adapters
+
+### Analysis of Step 2 implementation state
+
+Not started. Step 2 is not implemented because the canonical specialized role,
+workflow, Codex, and Claude redirects, and instruction-structure tests do not
+exist.
+
+### Goal for Step 2
+
+Add one discoverable specification requestor that owns assessment, edits, and
+authorized consolidation while delegating every durable transition to the
+shared requestor and exchange launcher.
+
+### Step 2 improvement expectations
+
+- The exact specification family policy is registered on every operation.
+- Intermediate rounds, convergence, reclaim, escalation, and owning-action
+  replay follow the shared protocol without manual artifact mutation.
+- Canonical consolidation runs only after durable `Consolidate` authorization.
+- The `.agent/workflows`, `.agents/llm-shared/instructions`,
+  `.agents/llm-shared/skills`, and `.claude/skills` Markdown files remain
+  direct canonical redirects.
+
+### What was implemented for Step 2
+
+_(empty — no check has taken place yet.)_.
+
+### New types or classes introduced for Step 2
+
+_(empty — no check has taken place yet.)_.
+
+### Architecture check for Step 2
+
+_(empty — no check has taken place yet.)_.
+
+### Performance check for Step 2
+
+_(empty — no check has taken place yet.)_.
+
+### Unit test coverage check for Step 2
+
+_(empty — no check has taken place yet.)_.
+
+### Feature integrity for Step 2
+
+_(empty — no check has taken place yet.)_.
+
+---
+
+## Step 3. Route new questions and resume live exchanges through pw
+
+### Analysis of Step 3 implementation state
+
+Not started. Step 3 is not implemented because question-workflow delegation,
+bounded review routing, forced specialized-role targeting, and live-exchange
+precedence have not been added.
+
+### Goal for Step 3
+
+Connect both question workflows to one specialized requestor and make an exact
+matching live exchange authoritative over ordinary disk-derived routing without
+growing the at-risk workflow module beyond 650 lines.
+
+### Step 3 improvement expectations
+
+- Marker absence, no-question passes, and direct holds preserve existing
+  behavior and create no exchange state.
+- Marker-present new questions delegate through `pw` to the exact current
+  requirement, design, or plan.
+- Current, reclaimable, escalated, convergence, and owning-action states route
+  according to the shared contract.
+- Routing checks a constant candidate set with no tree scan or transcript read.
+
+### What was implemented for Step 3
+
+_(empty — no check has taken place yet.)_.
+
+### New types or classes introduced for Step 3
+
+_(empty — no check has taken place yet.)_.
+
+### Architecture check for Step 3
+
+_(empty — no check has taken place yet.)_.
+
+### Performance check for Step 3
+
+_(empty — no check has taken place yet.)_.
+
+### Unit test coverage check for Step 3
+
+_(empty — no check has taken place yet.)_.
+
+### Feature integrity for Step 3
+
+_(empty — no check has taken place yet.)_.
+
+---
+
+## Step 4. Prove the full specification requestor workflow
+
+### Analysis of Step 4 implementation state
+
+Not started. Step 4 is not implemented because no end-to-end requestor
+acceptance or IO acceptance suite exists.
+
+### Goal for Step 4
+
+Validate the complete opt-in requestor behavior across every specification
+type, repeated rounds, session recovery, transcript aggregation, convergence,
+durable authorization, canonical consolidation, and completion.
+
+### Step 4 improvement expectations
+
+- Public launchers and canonical contracts compose without private state
+  mutation or specialized transport exceptions.
+- Every supported artifact identity and failure boundary is exercised.
+- Transcript aggregation remains append-only evidence and is never read as
+  working context.
+- Acceptance IO checks prove bounded exact-path behavior and the repository
+  coverage gate remains green.
+
+### What was implemented for Step 4
+
+_(empty — no check has taken place yet.)_.
+
+### New types or classes introduced for Step 4
+
+_(empty — no check has taken place yet.)_.
+
+### Architecture check for Step 4
+
+_(empty — no check has taken place yet.)_.
+
+### Performance check for Step 4
+
+_(empty — no check has taken place yet.)_.
+
+### Unit test coverage check for Step 4
+
+_(empty — no check has taken place yet.)_.
+
+### Feature integrity for Step 4
+
+_(empty — no check has taken place yet.)_.
