@@ -54,6 +54,20 @@ Run these steps for the document you are reviewing:
 4. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"` to move the questions from `a.<base>.open.questions.md` into the document.
 5. Present the placed questions in your reply as the mandatory three-column table described in "Presenting the review questions" below — never as a bulleted list.
 
+## Review-mode delegation after placing questions
+
+Apply this block only when the workflow placed one or more new questions.
+Honor an invocation containing `stop here` before checking exchange state: keep
+the existing human-review stop and create no review artifact. When review mode
+is absent because the project-root `a.review-mode` marker does not exist, keep
+that same existing stop.
+
+When the marker is present, run `pw skill spec-review-requestor` through the
+launcher described in [`run-pw.md`](run-pw.md), then run the exact specialized
+role command it prints for the reviewed document. Do not duplicate round
+coordination here. A no-question pass skips this block and retains its existing
+settled-document handoff.
+
 
 ## Presenting the review questions
 

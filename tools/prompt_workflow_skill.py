@@ -19,6 +19,7 @@ from tools import prompt_workflow_git as git
 from tools import prompt_workflow_handoff as handoff
 from tools import prompt_workflow_memory as memory
 from tools import prompt_workflow_plan as plan
+from tools import prompt_workflow_review as review
 from tools import prompt_workflow_steps as steps
 from tools.prompt_workflow_models import (
     VALIDATION_SUFFIX,
@@ -138,7 +139,7 @@ ADVANCE_PAST_REVIEW = {2: 4, 5: 7, 8: 10}
 PRODUCED_TYPE = {"requirement": "feature-request", "design": "design", "plan": "plan"}
 # Workflow step number that hands execution to the plan implementation cycle.
 IMPLEMENT_STEP = 10
-
+SPEC_REVIEW_REQUESTOR = "spec-review-requestor"
 
 def next_command(
     root: Path,
@@ -168,6 +169,13 @@ def next_command(
         One bare ``<prefix><name> on <document>`` command line.
     """
     state = steps.compute_state(root, topic, None)
+    review_document = review.live_specification_document(root, topic, state)
+    if review_document is not None:
+        return render_command(
+            host_prefix(env, override),
+            f"{SPEC_REVIEW_REQUESTOR}{MD_SUFFIX}",
+            _relpath(root, review_document),
+        )
     step = _resolve_step(state)
     instruction, document = _instruction_and_document(step, root, topic, branch, state)
     prefix = host_prefix(env, override)
@@ -452,10 +460,21 @@ def forced_command(
         The host-prefixed command naming the skill's document when that document
         exists; None when the skill is unknown or its document is absent.
     """
+    state = steps.compute_state(root, topic, None)
+    if skill_name == SPEC_REVIEW_REQUESTOR:
+        doc = review.forced_specification_document(root, topic, state)
+        return (
+            None
+            if doc is None
+            else render_command(
+                host_prefix(env, override),
+                f"{SPEC_REVIEW_REQUESTOR}{MD_SUFFIX}",
+                _relpath(root, doc),
+            )
+        )
     role = FORCED_ROLE.get(skill_name)
     if role is None:
         return None
-    state = steps.compute_state(root, topic, None)
     doc = (
         topic.draft_path
         if role == "draft"
