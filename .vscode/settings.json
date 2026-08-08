@@ -60,6 +60,7 @@
     "INTERNALERROR",
     "isclose",
     "itsdangerous",
+    "junctioned",
     "lastfailed",
     "loopable",
     "macrofile",
