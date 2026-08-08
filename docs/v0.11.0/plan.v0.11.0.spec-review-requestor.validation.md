@@ -304,9 +304,13 @@ No, no existing feature or reporting capability appears impaired by Step 2.
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because question-workflow delegation,
-bounded review routing, forced specialized-role targeting, and live-exchange
-precedence have not been added.
+Yes. Step 3 has been fully implemented.
+
+Both question workflows now delegate marker-enabled new questions through
+`pw`, while a focused exact-path adapter gives one matching live specification
+exchange precedence over ordinary routing. Forced delegation, ambiguity
+handling, explicit holds, no-question behavior, and replay states are covered
+without adding exchange parsing to the main skill router.
 
 ### Goal for Step 3
 
@@ -326,27 +330,89 @@ growing the at-risk workflow module beyond 650 lines.
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Added `tools/prompt_workflow_review.py` to derive at most the resolved
+  requirement, design, and plan contexts, map designs to
+  `design-specification`, resolve the declared umbrella, and classify exact
+  exchanges through the shared observer.
+- Added forced `spec-review-requestor` targeting for one question-bearing
+  document and ordinary `pw skill` precedence for one non-idle live exchange.
+- Added fail-closed diagnostics containing every exact identity, document, and
+  state when more than one specification exchange is live for a topic.
+- Added matching marker-gated delegation blocks to both canonical question
+  workflows after question placement and after the explicit hold decision.
+- Added focused routing, skill integration, and instruction contract tests,
+  including every defensive routing branch required for 100% coverage.
+- Reached the Groundhog objective with 1,515 passing tests, 100% coverage, no
+  warnings, no duration outliers, and no exclusions.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+- `SpecificationReviewRoutingError`: prompt-workflow error that carries exact
+  fail-closed ambiguity or context diagnostics to the command adapter.
+- `_LiveRoute`: private frozen pairing of one validated `ReviewContext` with
+  its observed `ArtifactState` during bounded candidate selection.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Routing boundary**: `prompt_workflow_review` owns specification candidate
+  derivation and shared observer construction; `prompt_workflow_skill` only
+  asks for a forced or live target and renders the resulting command.
+- **Exchange boundary**: state classification remains in `ReviewExchangeCore`
+  and its observer, so the new router neither parses coordination nor mutates
+  protocol artifacts.
+- **Writer boundary**: both question instructions retain question detection,
+  explicit holds, and existing non-review handoffs while delegating all round
+  work to the specialized role.
+- **Dependency direction**: the adapter depends inward on prompt state and the
+  shared exchange surface; the shared exchange has no dependency on `pw`.
+- **File size**: the focused adapter remains below 550 lines, and
+  `prompt_workflow_skill.py` remains at the 650-line repository ceiling.
+
+No, there is nothing that needs to be addressed for Step 3.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Constant candidates**: routing checks only `state.requirement`,
+  `state.design`, and `state.plan`; it uses no glob, recursive scan, or
+  directory enumeration.
+- **Exact artifacts**: each candidate delegates classification to the shared
+  fixed-path observer and never reads a versioned transcript.
+- **Linear draft marker**: the child draft is read once to resolve its optional
+  umbrella declaration, with work linear only in that bounded document text.
+- **No nested traversal**: live and question-bearing selections are single
+  passes over at most three candidates, so no `O(n log n)` or `O(n^2)` path is
+  introduced.
+
+No, there is no performance issue that needs to be addressed for Step 3.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Context derivation**: tests cover requirement, design, and plan mapping,
+  standalone and umbrella drafts, invalid umbrella markers, missing or outside
+  umbrellas, and topic mismatches.
+- **State routing**: tests cover current, abandoned, escalated, and
+  owning-action states, marker absence, live precedence, forced selection, and
+  all ambiguity branches.
+- **Integration contracts**: tests cover forced and ordinary `pw` commands,
+  unchanged fallback, exact error propagation, and both question instructions.
+- **Coverage evidence**: the new routing module and the full project report
+  100% coverage in the final Groundhog walk.
+
+No, there is no unit-tested class below 100% that needs completing for Step 3.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Ordinary routing**: marker absence or no live exchange returns the exact
+  pre-existing disk-derived command.
+- **Question workflow behavior**: no-question passes, direct holds, and absent
+  review mode retain their existing human or settled-document handoffs.
+- **Durable resumption**: all non-idle states, including escalation and
+  owning-action replay, return to the one specialized role rather than being
+  bypassed by document phase routing.
+- **Regression evidence**: all 1,515 tests pass with no warning, exclusion, or
+  duration finding.
+
+No, no existing feature or reporting capability appears impaired by Step 3.
 
 ---
 
