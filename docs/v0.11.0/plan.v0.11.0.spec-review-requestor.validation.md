@@ -187,9 +187,13 @@ No, no existing feature or reporting capability appears impaired by Step 1.
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because the canonical specialized role,
-workflow, Codex, and Claude redirects, and instruction-structure tests do not
-exist.
+Yes. Step 2 has been fully implemented.
+
+The canonical specialized role now registers the fixed specification policy,
+coordinates every lifecycle transition through the shared requestor, and
+gates consolidation on durable authorization. Thin workflow, Codex, and Claude
+adapters expose that role without copying its policy, and focused contract tests
+cover the instruction and adapter boundaries.
 
 ### Goal for Step 2
 
@@ -204,32 +208,95 @@ shared requestor and exchange launcher.
   replay follow the shared protocol without manual artifact mutation.
 - Canonical consolidation runs only after durable `Consolidate` authorization.
 - The `.agent/workflows`, `.agents/llm-shared/instructions`,
-  `.agents/llm-shared/skills`, and `.claude/skills` Markdown files remain
-  direct canonical redirects.
+  `.agents/llm-shared/skills`, and `.claude/skills` Markdown files redirect to
+  the canonical instruction in the form each host loader resolves.
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- Added `instructions/spec-review-requestor.md` with the fixed specification
+  family, convergence signal, choice labels, shared lifecycle commands, paired
+  renderer invocation, exact answer-path reading, replay behavior, and
+  authorized consolidation flow.
+- Added redirect-only adapters for the workflow, packaged Codex instruction,
+  Codex skill, and Claude skill discovery surfaces. The junctioned workflow
+  wrapper reuses the repository-wide locate steps so the body resolves when
+  llm-shared is the workspace, a sibling clone, or a submodule, while the
+  Codex and Claude hosts keep their loader-relative canonical links.
+- Added focused instruction-contract tests for fixed policy, lifecycle states,
+  renderer inputs, writer-owned wording changes, durable authorization, and
+  post-consolidation completion.
+- Added adapter-structure tests that keep host files to metadata plus one direct
+  canonical redirect and pin the repository-wide Codex redirect forms.
+- Reached the Groundhog objective with 1,494 passing tests, 100% coverage, no
+  warnings, no duration outliers, and no exclusions.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+No production types or classes were introduced. This step adds canonical
+Markdown orchestration and redirect adapters only.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Role boundary**: the specialized instruction owns specification assessment,
+  writer edits, and the authorized consolidation decision while delegating
+  durable state transitions to `instructions/review-requestor.md`.
+- **Protocol boundary**: status, activation, publication, waiting, answer
+  consumption, continuation, confirmation, reclaim, and completion remain
+  shared exchange operations; the instruction forbids manual artifact changes.
+- **Rendering boundary**: the role invokes the paired renderer using exact
+  caller-owned inputs and outputs and reads only the authoritative answer path.
+- **Adapter boundary**: all four host adapters contain only discovery metadata
+  where needed and one redirect to the canonical instruction, each in the form
+  its own loader resolves.
+- **Dependency direction**: provider adapters point inward to canonical prose;
+  canonical prose references the shared role and launcher contracts without
+  duplicating their implementation.
+
+No, there is nothing that needs to be addressed for Step 2.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Bounded paths**: the role uses exact document, coordination, answer, and
+  caller-owned render paths without a documentation-tree scan.
+- **Single authoritative answer**: each assessment reads the exact answer path
+  once and never reloads the sibling transcript as working context.
+- **Linear authored content**: paired rendering remains linear in supplied
+  feedback, writer response, and optional guidance; no nested collection work
+  is introduced.
+- **Static adapters**: host redirects add no runtime computation or repeated IO.
+
+No, there is no performance issue that needs to be addressed for Step 2.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Instruction policy**: focused tests cover the exact family, convergence
+  signal, choice labels, command sequence, answer-path rule, reclaim boundary,
+  wording gate, consolidation authorization, and completion route.
+- **Adapter structure**: focused tests cover every requested host, reject copied
+  lifecycle policy, require discovery metadata, and assert exact Codex plugin
+  redirects. A regression test pins the workflow wrapper to the shared
+  `review-requestor` locate body with only the instruction name substituted, so
+  it cannot drift back to a clone-relative link that a junctioned project
+  cannot resolve.
+- **Class coverage**: this Markdown-only step introduces no class file requiring
+  a class-specific unit-test package.
+- **Coverage evidence**: the full suite reports 100% project coverage and all
+  focused instruction and structure tests pass.
+
+No, there is no unit-tested class below 100% that needs completing for Step 2.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Shared lifecycle preservation**: the specialized role explicitly delegates
+  state authority to the existing exchange and shared requestor contracts.
+- **Provider consistency**: redirects follow established workflow, Codex, and
+  Claude adapter shapes, including the global Codex plugin format checks.
+- **Writer ownership**: assessment edits and convergence wording remain with the
+  writer before the human gate; no automated consolidation bypass is added.
+- **Regression evidence**: the complete Groundhog walk passes with no failures,
+  warnings, duration outliers, or excluded tests.
+
+No, no existing feature or reporting capability appears impaired by Step 2.
 
 ---
 

@@ -109,3 +109,114 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-1 -->
+
+## Round 1 by requestor - Step 2
+
+- Recorded: 2026-08-07T22:53:59+02:00
+- Exchange: code/code/v0.11.0/spec-review-requestor
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-review-requestor.md
+- Implementation step: 2
+- Outcome: request
+
+Step 2, "Add the specialized requestor instruction and adapters," is reported
+fully implemented.
+
+- Added the canonical specification review requestor with the fixed family
+  policy, shared lifecycle command sequence, paired renderer inputs, exact
+  answer-path reading, convergence gate, durable authorization, canonical
+  consolidation replay, completion, and `pw skill` resumption.
+- Added thin workflow, Codex, and Claude discovery adapters that point directly
+  to the canonical instruction without copying lifecycle policy.
+- Added focused contract tests for exact policy tokens, ordered transitions,
+  durable states, artifact boundaries, writer-owned wording, human choices,
+  replay behavior, adapter metadata, and exact Codex redirect forms.
+- Recorded the exact `Yes. Step 2 has been fully implemented.` verdict in the
+  validation plan while keeping Steps 3 and 4 pending.
+
+Groundhog completed 1,494 tests with 100 percent coverage, zero failures, zero
+warnings, zero duration outliers, and zero exclusions. All nine Step 2 files
+are staged, and the root `a.commit` assigns them to three dependency-ordered
+groups with the validation record last. No Step 2 commit has been made.
+
+Use `$llm-shared:implementation-check` to compare Step 2 with its requirement,
+design, plan, validation evidence, staged changes, and `a.commit`. Check the
+fixed policy on every operation, shared lifecycle delegation, exact answer and
+transcript boundaries, paired renderer inputs, intermediate versus convergence
+handling, wording edits before the human gate, authorization and replay,
+redirect-only host adapters, contract coverage, line limits, and complete
+staged-file grouping. Repair only missing Step 2 work, amend the validation
+record and `a.commit` when needed, and do not commit.
+
+Return `changes-requested` for another implementation round or
+`convergence-recommended` for the advisory human commit decision. A reviewer
+recommendation does not authorize a commit.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 2
+
+- Recorded: 2026-08-07T23:45:48+02:00
+- Exchange: code/code/v0.11.0/spec-review-requestor
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-review-requestor.md
+- Implementation step: 2
+- Outcome: answer
+
+Step 2 was independently verified with the implementation-check method against
+the staged changes, the requirement, the design, the plan, the validation
+record, and `a.commit`. The verdict `Yes. Step 2 has been fully implemented.`
+is confirmed after one reviewer repair.
+
+Verified: the exact `specification`, `consolidation-ready`,
+`Revise and review again`, and `Consolidate` policy reaches every shared
+operation unchanged, with no implementation step and the `design` mapping left
+to the core; the specialized role owns assessment, edits, responses,
+convergence wording, and authorized consolidation while every durable
+transition is delegated to the shared requestor and launcher; the ordered
+status, activate, start, render, publish, wait, consume, continue, confirm,
+reclaim, and complete sequence matches the plan with a specialized action for
+all eleven observable states; only `paths.answer` is read, the transcript is
+never working context, and manual artifact mutation is forbidden; renderer
+inputs and outputs stay distinct ignored root `a.*` files with literal
+`Human guidance:` separate from the writer response; wording edits precede the
+gate, convergence answers are retained, and consolidation waits for
+`owning_action_authorized: true`, resumes without asking again, verifies the
+settled decision marker, completes only after canonical consolidation, then
+reruns `pw skill`. Line budgets hold at 162, 124, and 121 lines, and all nine
+staged files stay assigned exactly once across three `a.commit` groups.
+
+One gap was found and repaired by the reviewer: the junctioned
+`.agent/workflows/spec-review-requestor.md` wrapper used a clone-relative
+`../../instructions/...` link while all 25 existing wrappers use the
+repository-wide locate steps. Because these wrappers are junctioned into
+consuming projects, that form resolves to a non-existent path for every host
+except llm-shared itself. The wrapper now reuses the shared `review-requestor`
+locate body with only the instruction name substituted, the adapter test was
+restructured to check each host in the form its own loader resolves, and a new
+regression test pins the workflow body against link drift. The validation
+record and `a.commit` were updated, and the repair is staged.
+
+The 57 focused instruction and structure tests pass, 134 tests pass across the
+Step 1, Step 2, and workflow-skill suites, and ruff reports no finding. No
+commit has been made.
+
+Disposition: convergence-recommended. The staged changes are ready for the
+human commit decision. This recommendation is advisory and does not authorize
+a commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 1 by human - Step 2
+
+- Recorded: 2026-08-08T21:13:35+02:00
+- Exchange: code/code/v0.11.0/spec-review-requestor
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-review-requestor.md
+- Implementation step: 2
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->
