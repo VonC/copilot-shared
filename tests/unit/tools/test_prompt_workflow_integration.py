@@ -9,8 +9,8 @@ vars on every git call and drop the two `git config` subprocess calls from
 `_init_repo`. Each git spawn costs a few hundred milliseconds on Windows, so
 removing the redundant config processes cuts the test's setup wall time.
 
-Fix: The real working-tree workflow run is prepared by a fixture, keeping the
-measured assertion call focused on its persisted prompt and memory outcomes.
+Fix: Both real workflow runs are prepared by fixtures, keeping their measured
+assertion calls focused on persisted prompt and memory outcomes.
 """
 
 from __future__ import annotations
@@ -101,6 +101,21 @@ def completed_working_tree_run(
     return working_tree_repo, prompt_workflow.run(working_tree_repo)
 
 
+@pytest.fixture
+def completed_branch_draft_run(
+    monkeypatch: pytest.MonkeyPatch,
+    branch_draft_repo: Path,
+) -> tuple[Path, int]:
+    """Run branch-draft discovery outside the measured assertion call."""
+    monkeypatch.setattr(
+        prompt_workflow.menu,
+        "select",
+        lambda _message, options: options[0][1],
+    )
+    monkeypatch.setattr(prompt_workflow, "set_clipboard_text", lambda _text: None)
+    return branch_draft_repo, prompt_workflow.run(branch_draft_repo)
+
+
 def test_run_end_to_end_with_real_git(
     completed_working_tree_run: tuple[Path, int],
 ) -> None:
@@ -121,18 +136,12 @@ def test_run_end_to_end_with_real_git(
 
 
 def test_run_detects_draft_committed_on_branch(
-    monkeypatch: pytest.MonkeyPatch,
-    branch_draft_repo: Path,
+    completed_branch_draft_run: tuple[Path, int],
 ) -> None:
     """A draft committed on a feature branch is found via the fork-point diff."""
-    monkeypatch.setattr(
-        prompt_workflow.menu,
-        "select",
-        lambda _message, options: options[0][1],
-    )
-    monkeypatch.setattr(prompt_workflow, "set_clipboard_text", lambda _text: None)
+    branch_draft_repo, status = completed_branch_draft_run
 
-    assert prompt_workflow.run(branch_draft_repo) == 0
+    assert status == 0
     prompt = (branch_draft_repo / "a.prompt.txt").read_text(encoding="utf-8")
     assert "docs/draft.v9.8.0.iso.md" in prompt
 
