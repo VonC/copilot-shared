@@ -269,16 +269,17 @@ def test_transcript_initialization_reports_invalid_template_and_commit_states(
     "content",
     [
         "{}",
-        "```json\n{}",
-        "```json\n{}\n```\ntrailing",
-        "```json\n{invalid}\n```\n",
+        "# Coordination\n\n```json\n{}\n```\n",
+        "# Coordination\n\n## JSON\n\n```json\n{}",
+        "# Coordination\n\n## JSON\n\n```json\n{}\n```\n\ntrailing",
+        "# Coordination\n\n## JSON\n\n```json\n{invalid}\n```\n",
     ],
 )
 def test_coordination_json_rejects_each_invalid_fence_shape(
     tmp_path: Path,
     content: str,
 ) -> None:
-    """Coordination parsing accepts only one complete first fenced JSON block."""
+    """Coordination parsing requires a title and complete first JSON section."""
     store, _ = _store(tmp_path)
 
     with pytest.raises(ReviewExchangeError):

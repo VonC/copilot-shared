@@ -1,4 +1,4 @@
-"""Lifecycle-transition tests for the v0.11.0 review-exchange core."""
+"""Lifecycle-transition and recovery tests for the review-exchange core."""
 
 
 # eof

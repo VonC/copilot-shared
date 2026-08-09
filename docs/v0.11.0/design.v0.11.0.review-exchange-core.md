@@ -147,7 +147,7 @@ Every derived transient coordination path uses the `a.review-` prefix. Review-mo
 
 For the code family, the family and fixed type token intentionally repeat, for example `a.review-active.code.code.v0.11.0.review-exchange-core.md`. Archive `<artifact-kind>` is exactly `request`, `answer`, `consumed`, or `coordination`. The consumed-request tombstone has one stable name per identity and therefore has no timestamp.
 
-The durable coordination record is a coordination primitive, not a fifth review-content artifact. Its first fenced JSON block records:
+The durable coordination record is a coordination primitive, not a fifth review-content artifact. It starts with an H1 identity title followed by a first `## JSON` section. That section's fenced JSON block records:
 
 - `status`: `active`, `awaiting-human-confirmation`, or `escalated`, with an escalation reason when applicable.
 - Lease owner, expected next actor (`requestor`, `reviewer`, or `human`), round number, and lease-renewed local timestamp with numeric UTC offset.
@@ -167,7 +167,7 @@ Short operating-system locks protect only individual read, validate, and write t
 
 ### Review-content envelope
 
-Request and answer templates produce UTF-8 Markdown with a fenced JSON metadata block followed by role-authored content. The metadata identifies the exchange identity, optional umbrella path, exact reviewed-document path, implementation step when applicable, role, round number, and creation time. Answer metadata also declares `changes-requested` or `convergence-recommended` through the convergence signal registered by the specialized family. The metadata block must be the first fenced block in the file, exactly one such block is parsed, and any later fenced block belongs to role-authored content. Specialized requirements own the feedback headings and conclusions after that envelope.
+Request and answer templates produce UTF-8 Markdown that starts with one H1 title. The first section is `## JSON`, and its fenced JSON metadata identifies the exchange identity, optional umbrella path, exact reviewed-document path, implementation step when applicable, role, round number, and creation time. Answer metadata also declares `changes-requested` or `convergence-recommended` through the convergence signal registered by the specialized family. Exactly that first JSON section is parsed; later fenced blocks belong to role-authored content. Specialized requirements own the H2 feedback sections and conclusions after the metadata section.
 
 Every request's human-readable summary repeats the umbrella or `none`, exact specification or plan, implementation step when applicable, and round. The core validates those values against the JSON envelope and coordination context before publication and fails closed on mismatch.
 
@@ -186,14 +186,14 @@ Fixed template conclusions and file-handling instructions are coordination boile
 | Absent | Present | Absent | `awaiting-human-confirmation` with no confirmed outcome | Suspended | Convergence gate | Retain the answer and re-present the human choices across sessions. |
 | Absent | Present | Absent | `awaiting-human-confirmation` with confirmed `continue-owning-workflow` | Suspended | Owning action pending | Retain the answer and re-report the confirmed authorization idempotently without asking the human again. |
 | Any | Any | Any | `escalated` with reason | None | Escalated, awaiting human resolution | Preserve everything, append no duplicate escalation, and wait for human resolution. |
-| Absent | Absent | Absent | `active` | Expired or absent | Abandoned mid-round | Preserve coordination state and escalate, attributing inaction to the expected actor. |
+| Absent | Absent | Absent | `active` | Expired or absent | Abandoned mid-round | Preserve coordination state; the expected actor may reclaim by lease renewal, otherwise escalate attributing inaction to the expected actor. |
 | Absent | Absent | Present | `active` or missing | Expired or absent | Interrupted answer publication | Preserve the tombstone and escalate for human recovery. |
 | Absent | Present | Present | `active` with incomplete marker | Expired or absent | Interrupted transcript append | Preserve both artifacts and repair the exact identity before continuation. |
-| Present | Absent | Absent | `active` or missing | Expired or absent | Abandoned request | Preserve state, append escalation, and require human resolution. |
-| Absent | Present | Absent | `active` or missing | Expired or absent | Abandoned answer | Preserve state, append escalation, and require human resolution. |
+| Present | Absent | Absent | `active` or missing | Expired or absent | Abandoned request | Preserve state; with active coordination the expected actor may reclaim by lease renewal, otherwise append escalation and require human resolution. |
+| Absent | Present | Absent | `active` or missing | Expired or absent | Abandoned answer | Preserve state; with active coordination the expected actor may reclaim by lease renewal, otherwise append escalation and require human resolution. |
 | Present | Present | Any | Any non-escalated value | Any | Inconsistent | Fail closed and escalate without deleting evidence. |
 
-Any artifact shape not listed in the table is inconsistent, fails closed, and escalates with all evidence preserved. An incomplete-transition marker overlays any listed row and blocks that exchange identity until its idempotent transcript repair succeeds, so no underlying row permits consumption past a pending append. Lease validity is computed from the persisted renewal timestamp plus the effective wait limit. An active wait that reaches its own monotonic deadline records a timed-out outcome in the waiting flow. A later operation that discovers an expired active lease detects abandonment. The expected-next-actor field identifies whose inaction ended the round. A retained convergence answer is never abandoned while coordination status is `awaiting-human-confirmation`.
+Any artifact shape not listed in the table is inconsistent, fails closed, and escalates with all evidence preserved. An incomplete-transition marker overlays any listed row and blocks that exchange identity until its idempotent transcript repair succeeds, so no underlying row permits consumption past a pending append. Lease validity is computed from the persisted renewal timestamp plus the effective wait limit. An active wait that reaches its own monotonic deadline records a timed-out outcome in the waiting flow. A later operation that discovers an expired active lease detects abandonment. Before any escalation is recorded, the returning expected actor may reclaim an intact abandoned round through the reclaim operation, which renews the lease in place and changes no artifact or transcript content; once escalation is durable, only human resolution starts a fresh round. The expected-next-actor field identifies whose inaction ended the round. A retained convergence answer is never abandoned while coordination status is `awaiting-human-confirmation`.
 
 ### Safe publication transitions
 
@@ -209,6 +209,7 @@ The state transitions are:
 6. Record escalation: under the short lock, set the escalation-transcript incomplete marker before changing status, set status to `escalated` with its reason, append the escalation entry idempotently, clear the marker, and stop renewing the lease. Observing an already-escalated exchange appends nothing new.
 7. Record human confirmation or resolution: under the short lock, set the human-transcript incomplete marker before persisting the human choice or resolution, append its transcript entry idempotently, then clear the marker. Confirmation handling follows the convergence transitions below; escalation resolution follows the fresh-round recovery flow.
 8. Complete exchange: remove the coordination record only after the human-authorized owning action succeeds and no incomplete transition remains.
+9. Reclaim abandoned round: under the short lock, verify the round is abandoned or still live with active coordination and no incomplete marker, then renew the lease in place and change nothing else. Escalated, confirming, interrupted, and inconsistent exchanges cannot be reclaimed.
 
 Renaming the matching request path to the tombstone satisfies the delete-before-answer rule because the matching request path disappears before the answer becomes visible. The tombstone preserves the exact consumed evidence until answer publication and transcript append are durable.
 
@@ -256,7 +257,7 @@ check.
 
 Waiting polls only the fully derived counterpart path and validates its embedded identity before reporting success. The active process uses a monotonic clock for its deadline. It reports `active` while the effective deadline remains and `timed-out` once the configured duration expires with the counterpart absent.
 
-Only state-changing core operations renew the coordination lease for the full effective wait limit and record the renewal in local system time as ISO-8601 with a numeric UTC offset. Waiting polls do not renew. No heartbeat is required while an LLM is authoring. A later operation reports `abandoned` when it finds matching transient state with expired active coordination; already-escalated and awaiting-confirmation states are excluded.
+Only state-changing core operations renew the coordination lease for the full effective wait limit and record the renewal in local system time as ISO-8601 with a numeric UTC offset. Waiting polls do not renew. No heartbeat is required while an LLM is authoring. A later operation reports `abandoned` when it finds matching transient state with expired active coordination; already-escalated and awaiting-confirmation states are excluded. The returning expected actor may renew such an expired lease in place through the reclaim operation while the round's evidence remains intact and no escalation has been recorded.
 
 The wait operation exposes short progress intervals to the host so an agent can remain communicative during a long review. It never replaces a bounded wait with an indefinite shell or terminal prompt.
 
@@ -278,7 +279,7 @@ For `another-round`, the core records the override, resets no-progress counters,
 
 ### Human escalation and fresh resumption
 
-Timeout, abandonment, no-progress, persistent disagreement, and inconsistent state all preserve matching transient evidence and append an escalation entry. The coordination record retains the escalation and no longer grants an active lease after that record is durable.
+An abandoned round whose evidence is intact may first be reclaimed by the returning expected actor through in-place lease renewal; escalation is recorded only when nobody reclaims the round. Timeout, abandonment, no-progress, persistent disagreement, and inconsistent state all preserve matching transient evidence and append an escalation entry. The coordination record retains the escalation and no longer grants an active lease after that record is durable.
 
 A human resolves which evidence is authoritative and moves stopped transient evidence to identity-and-timestamp-named `a.review-archive.*` paths or explicitly clears it. Archive names use compact local `YYYYMMDD-HHMMSS` timestamps because Windows file names cannot contain colons. The transcript records the exact archive names with an unambiguous local timestamp and numeric UTC offset.
 
@@ -313,7 +314,7 @@ The later `review-ask-questions`, `consolidate-then-review-ask-questions`, and `
 | Q01 | Store durable lease metadata in the coordination record and use short operating-system locks only for transitions. | Separate LLM processes need shared ownership state; lease TTL equals the wait limit and only state-changing operations renew it. | Identity and configuration; artifact and state; waiting | Whole-exchange OS lock; artifact-only ownership inference |
 | Q02 | Key coordination by the complete readable identity tuple, including document type token. | It matches request and answer identities and keeps recovery state human-diagnosable. | Derived path contract | Canonical-path hash; sibling coordination record |
 | Q03 | Rename the request atomically to a consumed-request tombstone before answer publication. | The matching path disappears in the required order while exact evidence survives a crash. | Derived path contract; observable states; publication transitions | Direct deletion; copy request content into the coordination record |
-| Q04 | Put strict JSON metadata in the first fenced block and parse exactly that block. | Standard-library parsing is unambiguous and later fences remain role-authored Markdown. | Review-content envelope | Markdown bullets; YAML front matter |
+| Q04 | Start machine-readable Markdown with an H1 title, put strict metadata in the first `## JSON` section, and parse exactly that section. | The document remains valid Markdown, standard-library JSON parsing stays unambiguous, and later fences remain role-authored content. | Review-content envelope | Leading fenced block; Markdown bullets; YAML front matter |
 | Q05 | Use monotonic time for active deadlines and local ISO-8601 timestamps with numeric offsets for persisted records. | Deadline behavior resists clock corrections while humans read familiar unambiguous local time. | Transcript; waiting; recovery | UTC everywhere; no time-based state |
 | Q06 | Preserve published artifacts, mark transcript append incomplete for that identity, and repair idempotently before it advances. | Feedback is not rolled back and audit completeness remains mandatory without blocking unrelated exchanges. | Observable states; transitions; transcript | Warning-only append failure; artifact rollback |
 | Q07 | Fail activation outside Git or when any derived transient path is not effectively ignored. | Complete substantive feedback must not become commit-visible through a missing protection rule. | Derived path contract | Warning only; assume ignore coverage |
@@ -348,6 +349,7 @@ The later `review-ask-questions`, `consolidate-then-review-ask-questions`, and `
 | Answer applied before deletion | Application occurs outside any lock; a crash leaves the answer pending for safe re-consumption. | Long-running role work must not hold a transition lock. |
 | Both request and answer present | Evidence is preserved and automation escalates. | The core must fail closed on contradictory state. |
 | Writer or reviewer session interrupted | The durable lease expires and the next core operation reports the expected actor's round as abandoned. | Separate processes require persisted abandonment evidence. |
+| Abandoned round reclaimed before escalation | The returning expected actor renews the lease in place and the live round continues with all evidence unchanged. | A slow authoring session must not force a fresh round while its evidence is intact. |
 | Counterpart absent past deadline | State is timed out, preserved, and recorded. | Automated waiting is bounded. |
 | Waiting poll | The poll does not renew the lease. | A dead expected actor must become abandoned within one effective wait window. |
 | Two unchanged change-request rounds | No-progress escalation stops the exchange. | Stagnant automated dialogue must terminate. |

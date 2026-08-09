@@ -39,6 +39,9 @@ from tools.review_exchange_models_coordination import CoordinationRecord
 from tools.review_exchange_models_envelope import (
     Envelope,
     parse_envelope_markdown,
+    parse_json_markdown,
+    render_envelope_markdown,
+    render_json_markdown,
     validate_summary_identity,
 )
 
@@ -281,9 +284,15 @@ def test_envelope_rejects_role_family_and_serialized_time_conflicts(
 @pytest.mark.parametrize(
     ("markdown", "message"),
     [
-        ("No metadata\n", "no fenced metadata"),
-        ("```json\n{}\n", "not closed"),
-        ("```json\n{bad}\n```\n", "invalid envelope JSON"),
+        ("No metadata\n", "start with an H1 title"),
+        (
+            "# Review request\n\n## JSON\n\n```json\n{}\n",
+            "not closed",
+        ),
+        (
+            "# Review request\n\n## JSON\n\n```json\n{bad}\n```\n",
+            "invalid envelope JSON",
+        ),
     ],
 )
 def test_envelope_parser_rejects_missing_unclosed_or_invalid_json(
@@ -293,6 +302,47 @@ def test_envelope_parser_rejects_missing_unclosed_or_invalid_json(
     """Every malformed first-fence shape fails with a stable diagnostic."""
     with pytest.raises(ReviewExchangeError, match=message):
         parse_envelope_markdown(markdown)
+
+
+def test_envelope_parser_rejects_authored_sections_that_start_at_h3(
+    tmp_path: Path,
+) -> None:
+    """Authored sections cannot skip H2 after the document title and JSON."""
+    context = _context(tmp_path)
+    envelope = Envelope(
+        context.identity,
+        context.umbrella_path,
+        context.document_path,
+        None,
+        ReviewRole.REQUESTOR,
+        1,
+        _TIMESTAMP,
+    )
+    markdown = render_envelope_markdown(envelope, "### Skipped level\n")
+
+    with pytest.raises(ReviewExchangeError, match="sections must start at H2"):
+        parse_envelope_markdown(markdown)
+
+
+def test_json_markdown_rejects_a_multiline_title() -> None:
+    """A serializer cannot create Markdown whose H1 spills onto another line."""
+    with pytest.raises(ReviewExchangeError, match="title must be one non-empty line"):
+        render_json_markdown("Broken\ntitle", {}, "")
+
+
+def test_json_markdown_parses_crlf_before_authored_content() -> None:
+    """Windows newlines keep later authored Markdown free of a blank prefix."""
+    markdown = (
+        "# Review request\r\n\r\n"
+        "## JSON\r\n\r\n"
+        "```json\r\n{}\r\n```\r\n\r\n"
+        "## Review scope\r\n"
+    )
+
+    data, content = parse_json_markdown(markdown)
+
+    assert data == {}
+    assert content == "## Review scope\r\n"
 
 
 def test_summary_requires_each_identity_field_once(tmp_path: Path) -> None:

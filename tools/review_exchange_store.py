@@ -10,7 +10,6 @@ by scanning directories or keeps a transition lock across counterpart work.
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import tempfile
@@ -32,7 +31,11 @@ from tools.review_exchange_models import (
     validate_local_timestamp,
 )
 from tools.review_exchange_models_coordination import CoordinationRecord
-from tools.review_exchange_models_envelope import parse_envelope_markdown
+from tools.review_exchange_models_envelope import (
+    parse_envelope_markdown,
+    parse_json_markdown,
+    render_json_markdown,
+)
 from tools.review_exchange_paths import archive_path
 
 if TYPE_CHECKING:
@@ -55,8 +58,6 @@ _TRANSCRIPT_OUTCOMES: Final[frozenset[str]] = frozenset(
         "human-resolution",
     },
 )
-_COORDINATION_OPEN: Final[str] = "```json\n"
-_COORDINATION_CLOSE: Final[str] = "\n```\n"
 _ENTRY_FOOTER_PREFIX: Final[str] = "<!-- review-entry-id:"
 _ATOMIC_REPLACE_ATTEMPTS: Final[int] = 3
 
@@ -246,10 +247,10 @@ class ReviewExchangeStore:
     def write_coordination(self, record: CoordinationRecord) -> None:
         """Atomically persist a strict coordination record for this identity."""
         self._validate_context(record.context)
-        payload = json.dumps(record.to_dict(), indent=2, sort_keys=True)
+        title = f"Review exchange coordination for {record.context.identity.key}"
         self.publish_atomic(
             self.paths.coordination,
-            f"{_COORDINATION_OPEN}{payload}{_COORDINATION_CLOSE}",
+            render_json_markdown(title, record.to_dict(), ""),
         )
 
     def read_coordination(
@@ -391,19 +392,11 @@ class ReviewExchangeStore:
 
     @staticmethod
     def _coordination_json(content: str) -> object:
-        """Parse the coordination record's required first fenced JSON block."""
-        if not content.startswith(_COORDINATION_OPEN):
-            raise ReviewExchangeError("coordination record must start with fenced JSON")
-        closing = content.find(_COORDINATION_CLOSE, len(_COORDINATION_OPEN))
-        if closing < 0:
-            raise ReviewExchangeError("coordination JSON fence is not closed")
-        if content[closing + len(_COORDINATION_CLOSE) :].strip():
+        """Parse a titled coordination record with JSON as its first section."""
+        data, trailing = parse_json_markdown(content)
+        if trailing.strip():
             raise ReviewExchangeError("coordination record has unexpected trailing content")
-        payload = content[len(_COORDINATION_OPEN) : closing]
-        try:
-            return json.loads(payload)
-        except json.JSONDecodeError as error:
-            raise ReviewExchangeError(f"invalid coordination JSON: {error.msg}") from error
+        return data
 
     def _ensure_transcript_marker(
         self,

@@ -36,7 +36,7 @@ The following are in scope:
 - Family-neutral requestor/reviewer transport and metadata.
 - The generic outcomes `another-round` and `continue-owning-workflow`.
 - Registered family convergence signals and display labels.
-- Exact status, wait, transition, confirmation, resolution, archive, and completion operations.
+- Exact status, wait, transition, reclaim, confirmation, resolution, archive, and completion operations.
 
 The following remain deferred to later rows of `docs/v0.11.0/draft.v0.11.0.review-mode.md`:
 
@@ -215,7 +215,8 @@ Step framing:
 - Cover family/type/version/slug validation, optional umbrella validation, exact document and step context, local-offset timestamps, and JSON round trips.
 - Property-test that valid identities produce distinct, stable path sets and parse back without cross-family or cross-slug collisions.
 - Cover empty/positive/invalid marker content, non-Git activation, and every derived transient passed through one effective `git check-ignore` validation.
-- Cover first-fenced-block parsing and machine/human summary mismatch rejection.
+- Cover the required H1 title, first `## JSON` section parsing, H2 authored
+  sections, and machine/human summary mismatch rejection.
 
 **Classes and behavior**:
 
@@ -374,7 +375,7 @@ Step framing:
 
 - Table-test every listed state and property-test that all remaining artifact/status/lease shapes fail closed as inconsistent.
 - Cover current and expired coordination-only states, marker overlays, request-publication regeneration, envelope-authoritative convergence recovery, and identity-scoped transcript repair from the marker's pre-append offset.
-- Cover transitions start, request, answer, consume, continue, escalate, confirm/resolve, archive, and complete with failures at each boundary.
+- Cover transitions start, request, answer, consume, continue, reclaim, escalate, confirm/resolve, archive, and complete with failures at each boundary.
 - Use injected monotonic time to cover timeout versus abandonment, TTL renewal only on state change, no renewal on poll, suspension only at the gate, and periodic progress callbacks within one bounded in-process wait.
 - Verify request, answer, escalation, and human-entry repairs reconstruct the target content, truncate a torn suffix to the persisted offset, and append exactly one complete footer-bearing entry.
 - Cover two unchanged change-request rounds, one clarification round, human override guidance/reset, cancellation, escalation idempotence, and owning-action authorization replay.
@@ -385,6 +386,7 @@ Step framing:
 - State-changing operations renew the effective-limit lease; `wait_for_exact` runs once against one monotonic deadline, never renews, and exposes periodic progress callbacks without converting the wait into host-managed slices.
 - `confirm` validates registered labels and stores their generic outcome; persisted `continue-owning-workflow` is re-reported until `complete` succeeds.
 - `resolve_escalation` archives or clears stopped evidence, records human resolution, and starts a fresh lease rather than resuming the failed transition.
+- `reclaim` renews an expired lease in place for an abandoned round with active coordination and intact evidence, changes no artifact or transcript content, stays idempotent on live rounds, and rejects escalated, confirming, interrupted, and inconsistent exchanges.
 
 **Completion criteria**:
 
@@ -456,7 +458,7 @@ Step framing:
 
 **Tests first**:
 
-- Cover CLI argument validation and stable machine-readable output for activate, status, start, publish/wait/consume, escalate, confirm, resolve, archive, and complete operations.
+- Cover CLI argument validation and stable machine-readable output for activate, status, start, publish/wait/consume, reclaim, escalate, confirm, resolve, archive, and complete operations.
 - Cover exit codes for disabled mode, timeout, abandoned, inconsistent, repair-required, awaiting-confirmation, and fatal input.
 - Cover a wait that emits periodic progress diagnostics only to standard error and exactly one final JSON object to standard output.
 - Assert all summary fields are required and validated before request publication.

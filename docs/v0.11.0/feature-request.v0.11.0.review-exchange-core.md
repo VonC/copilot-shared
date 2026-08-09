@@ -42,6 +42,12 @@ The core must support both artifact families without embedding the specialized f
 | Specification | `type.vX.Y.Z.slug.md` | `review.type.vX.Y.Z.slug.md` | `a.review-requested.type.vX.Y.Z.slug.md` | `a.review-answer.type.vX.Y.Z.slug.md` |
 | Implementation code | `plan.vX.Y.Z.slug.md` | `review.code.vX.Y.Z.slug.md` | `a.review-requested.code.vX.Y.Z.slug.md` | `a.review-answer.code.vX.Y.Z.slug.md` |
 
+Every Markdown artifact carrying machine-readable JSON starts with one `#`
+title. Its first section is `## JSON`, containing the fenced JSON metadata.
+Later role-authored top-level sections start at `##`, so no document jumps from
+its H1 title directly to H3 content. The durable coordination record follows the
+same title-then-JSON-section structure and has no authored trailing content.
+
 For specification review, `type` is `feature-request`, `issue`, `design-specification`, or `plan`.
 
 The reviewed document and transcript may be directly under `docs`, under `docs/vX.Y`, or under `docs/vX.Y/vX.Y.Z`. Artifact derivation must preserve the reviewed document's actual parent folder rather than assuming one fixed documentation layout.
@@ -100,7 +106,7 @@ Every review dialogue must have explicit, observable termination criteria. The e
 
 The content of `a.review-mode` holds the per-project wait override; when it does not provide one, the documented default applies. A wait is timed out when the current bounded wait exceeds that effective limit while the counterpart artifact is still absent. An exchange is abandoned when matching transient artifacts or an unresolved escalation record exist but no active round is progressing them, including state discovered after an interrupted session, except while the exchange is in `awaiting-human-confirmation`.
 
-On timeout or abandonment, the core preserves the current matching transient artifacts and appends an escalation record to the transcript. After human intervention, the human resolves the preserved evidence and clears or archives the stopped transient state. Automation resumes with a fresh review round whose response summary and human resolution are appended to the transcript escalation record.
+A round abandoned only by lease expiry, with intact matching evidence and no recorded escalation, can be reclaimed in place by the returning expected actor; reclaiming renews the durable lease and changes no artifact or transcript content. On timeout or abandonment, the core preserves the current matching transient artifacts and appends an escalation record to the transcript. After human intervention, the human resolves the preserved evidence and clears or archives the stopped transient state. Automation resumes with a fresh review round whose response summary and human resolution are appended to the transcript escalation record.
 
 ## File-based IO cost clarification
 
@@ -138,6 +144,9 @@ The core receives an exact reviewed-document path and derives a constant set of 
 15. On timeout or abandonment, matching transient artifacts remain available and the transcript records the escalation, authoring role, and round.
 16. After human intervention, automation resumes only through a fresh round after the stopped state is resolved and cleared or archived, and the human resolution is recorded in the transcript.
 17. Different documents can be reviewed concurrently, but a second active exchange for the same reviewed document is rejected by the core contract.
+18. Request, answer, tombstone, archive, and coordination Markdown starts with
+    an H1 title followed by a first `## JSON` section; later authored top-level
+    request or answer sections use H2 headings.
 18. The core does not implement the specialized specification request text, specification reviewer decisions, implementation report text, code fixes, or owning-workflow continuation decisions assigned to later umbrella items.
 19. An intermediate change-request answer is consumed and followed by another automated round without entering a human-wait state.
 20. A convergence recommendation enters `awaiting-human-confirmation`, retains the answer as evidence, and cannot continue the owning workflow without an explicit human choice.
@@ -147,3 +156,4 @@ The core receives an exact reviewed-document path and derives a constant set of 
 24. `awaiting-human-confirmation` survives process exit, suspends automated lease expiry, and is re-presented by a later workflow session.
 25. Every requestor summary names its umbrella or `none`, exact reviewed specification or plan, round, and code step when applicable.
 26. A mismatch between summary identity and machine-readable exchange identity fails closed before the request is published.
+27. Reclaiming an abandoned round with intact evidence and active coordination restores its pending state in place by lease renewal without changing artifacts or the transcript; reclaim is rejected once the exchange is escalated, awaiting confirmation, interrupted, or inconsistent.
