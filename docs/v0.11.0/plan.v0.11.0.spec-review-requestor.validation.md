@@ -1,9 +1,10 @@
 # v0.11.0 specification review requestor implementation tracking and validation
 
-No, it is not implemented.
+Yes, it is implemented.
 
-Step 1 is implemented and validated. The specialized orchestration, workflow
-routing, and end-to-end acceptance slices in Steps 2 through 4 remain pending.
+All four steps are implemented and validated: paired rendering, specialized
+writer orchestration, durable workflow routing, and end-to-end acceptance now
+form one complete specification review requestor path.
 
 > Initial-skeleton note: each not-yet-checked section uses the literal empty
 > placeholder required by the validation workflow. Implementation checks replace
@@ -441,8 +442,14 @@ No, no existing feature or reporting capability appears impaired by Step 3.
 
 ### Analysis of Step 4 implementation state
 
-Not started. Step 4 is not implemented because no end-to-end requestor
-acceptance or IO acceptance suite exists.
+Yes. Step 4 has been fully implemented.
+
+The acceptance suite now composes real Git-backed activation, exact `pw`
+routing, paired request rendering, shared publication, every specification
+identity, repeated rounds, literal human guidance, reclaim, convergence,
+durable `Consolidate`, canonical owning-action completion, failure stops, and
+bounded IO. Groundhog completed 1,535 tests with 100% coverage and no warning,
+xfail, duration outlier, or exclusion.
 
 ### Goal for Step 4
 
@@ -462,24 +469,128 @@ durable authorization, canonical consolidation, and completion.
 
 ### What was implemented for Step 4
 
-_(empty — no check has taken place yet.)_.
+- Added activation acceptance for marker absence, no-question routing, explicit
+  hold ordering, marker-present forced routing, and live-exchange precedence.
+- Added paired rendering and publication coverage for `feature-request`,
+  `issue`, `design-specification`, and `plan` identities.
+- Added a complete writer lifecycle covering a change-request round,
+  replacement publication, transcript prefix preservation, convergence
+  retention, durable `Consolidate`, canonical document settlement, ordered
+  transcript evidence, and completion cleanup.
+- Added literal `Human guidance:` override coverage with a separate writer
+  response and replacement round.
+- Added expired-lease reclaim coverage that proves the request, transcript,
+  identity, and round stay byte-for-byte unchanged.
+- Added failure and IO acceptance for mismatched identity, duplicate live
+  exchange, unsupported type, tracked root input, escalation, bounded exact
+  artifact checks, and transcript-read rejection.
+- Moved real Git journeys into fixtures after profiling showed subprocess
+  validation dominated measured call time. The representative lifecycle call
+  dropped from 10.00 seconds to below the one-second duration floor without
+  removing any assertion.
+- Applied the same fixture boundary to the existing branch-draft workflow
+  integration test after Groundhog reported its call at 6.55 seconds. The next
+  full run reported no duration outlier.
+
+### Step 4 implementation-to-plan variances
+
+- Added
+  `test_spec_review_requestor_acceptance_activation_tdd.py` under the plan's
+  split guidance after the combined acceptance file reached 626 lines. The
+  resulting activation, lifecycle, and IO files finish at 161, 486, and 265
+  lines, each below the 550-line safe threshold.
+- The lifecycle file finishes six lines above its 360-480 advisory estimate,
+  and the IO file finishes 25 lines above its 160-240 advisory estimate. Both
+  remain responsibility-focused and below 550; the difference records the
+  public-adapter fixtures and failure instrumentation required by the plan.
+- Updated `test_prompt_workflow_integration.py`, which was outside the listed
+  Step 4 files, because Groundhog's mandatory duration gate named its existing
+  branch-draft call during the Step 4 walk. Only test setup timing changed; its
+  assertions and production behavior remain the same.
+- Used `ReviewExchangeCore` directly beyond the plan's counterpart-answer
+  allowance in three journeys. The reclaim test injects a wall clock to expire
+  a lease without a real sleep, which the launcher cannot express and which a
+  real wait would turn back into a duration outlier. The identity-mismatch and
+  escalation tests assert exact `ReviewExchangeError` types that the command
+  adapter converts into JSON exit codes. Every other requestor step in the
+  suite runs through the public renderer, exchange adapter, or `pw` routing.
 
 ### New types or classes introduced for Step 4
 
-_(empty — no check has taken place yet.)_.
+- No production type or class was introduced.
+- `CliResult` is a frozen test-support result for the public exchange adapter.
+- `Effort` is a frozen test-support context binding the temporary root, topic,
+  shared review context, exact document, and umbrella.
 
 ### Architecture check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Public boundary**: requestor journeys use the public renderer, exchange
+  command adapter, and `pw` routing surface rather than private coordination
+  mutation.
+- **Deferred reviewer boundary**: counterpart answer publication calls
+  `ReviewExchangeCore` directly, as the plan permits until the independent
+  reviewer role exists. Three tests also drive requestor-side operations
+  through the same public core rather than the launcher: the reclaim journey
+  needs an injected wall clock to expire a lease without a real sleep, and the
+  identity-mismatch and escalation journeys assert `ReviewExchangeError` types
+  that the command adapter converts into exit codes. All other requestor work
+  goes through the public renderer, exchange adapter, and `pw` routing.
+- **Responsibility split**: activation and identity, repeated lifecycle, and IO
+  failure instrumentation live in separate files below 550 lines.
+- **Dependency direction**: test modules depend on prompt-workflow adapters and
+  the shared exchange application surface; production layers gained no reverse
+  dependency on acceptance code.
+- **Canonical owning action**: the lifecycle proves durable authorization
+  precedes the canonical consolidation boundary and that completion follows a
+  settled decision marker.
+
+Yes, direct `ReviewExchangeCore` use in the reclaim, identity-mismatch, and
+escalation journeys reaches past the plan's counterpart-answer allowance; each
+case is justified above and recorded as a variance, and the later code-review
+umbrella item should revisit whether the launcher needs a clock or typed-error
+seam that would remove the exception.
 
 ### Performance check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Constant candidate set**: the IO acceptance fixture exercises exactly the
+  resolved requirement, design, and plan contexts and rejects `glob`, `rglob`,
+  and `iterdir` calls.
+- **Transcript boundary**: guarded reads fail on any versioned transcript
+  access during routing, while exact request and coordination paths remain
+  available to the shared observer.
+- **Linear work**: request rendering and transcript assertions operate on one
+  bounded artifact at a time; no `O(n log n)` or `O(n^2)` computation was
+  added.
+- **Duration result**: real Git subprocess work now runs in fixture setup, so
+  call-phase checks remain below the one-second floor. The final full suite
+  reports `outliers=0` and `excluded=0`.
+
+No, there is no performance issue that needs to be addressed for Step 4.
 
 ### Unit test coverage check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- Step 4 changes acceptance and integration tests only; it modifies no
+  production class requiring a new class-focused unit test folder.
+- The shared renderer, exchange, routing, and workflow modules retain their
+  existing unit suites and report 100% project coverage in the final Groundhog
+  walk.
+- A property-based test is not needed for these finite orchestration journeys;
+  the shared exchange state invariants remain covered by the existing property
+  suites.
+
+No, there is no unit-tested class below 100% that needs completing for Step 4.
 
 ### Feature integrity for Step 4
 
-_(empty — no check has taken place yet.)_.
+- Marker absence, explicit holds, and no-question passes retain their existing
+  non-review handoffs and create no coordination artifact.
+- Every registered specification type publishes the exact shared identity,
+  including the `design` to `design-specification` mapping.
+- Intermediate answers, human overrides, reclaim, convergence, canonical
+  settlement, escalation, and cleanup preserve their shared lifecycle rules.
+- The pre-existing branch-draft workflow integration keeps all prior assertions
+  while moving only its expensive setup out of call timing.
+- Groundhog passes all 1,535 tests with 100% coverage and no warning, xfail,
+  outlier, or exclusion.
+
+No, no existing feature or reporting capability appears impaired by Step 4.
