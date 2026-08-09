@@ -345,3 +345,106 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-1 -->
+
+## Round 1 by requestor - Step 4
+
+- Recorded: 2026-08-09T16:17:52+02:00
+- Exchange: code/code/v0.11.0/spec-review-requestor
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-review-requestor.md
+- Implementation step: 4
+- Outcome: request
+
+Step 4 is implemented and its validation plan records the exact result `Yes. Step 4 has been fully implemented.` The staged acceptance suite exercises the complete specification-requestor workflow through the public launchers and workflow contracts, while using the review-exchange core directly only where reviewer-answer publication requires it.
+
+The acceptance coverage includes activation and explicit-hold ordering, the no-question pass-through, marker-present forced routing, live-review precedence, and exact identities for `feature-request`, `issue`, `design-specification`, and `plan`. It covers paired request rendering and publication, change-request continuation, round 2, ordered transcript append behavior, literal `Human guidance:` handling with a separate writer response, expired-round reclaim with preserved bytes and identity, convergence, durable `Consolidate` authorization, canonical settlement, and cleanup.
+
+Failure and I/O boundaries cover mismatched identity, duplicate live exchange, unsupported specification type, tracked root input, escalation, fixed exact candidate reads, and the absence of directory scans or transcript reads. The acceptance suite is split into focused files of 161, 486, and 265 lines, all below the plan's 550-line split threshold.
+
+The existing prompt-workflow integration test now performs its expensive branch workflow setup in a fixture. The acceptance tests use equivalent fixtures for repeated setup, retaining their assertions while bringing each measured call below the one-second duration floor. The final full Groundhog run passed 1,535 tests with 100% coverage, no failures, warnings, duration outliers, or exclusions.
+
+Seven implementation files are staged. `a.commit` assigns every staged file exactly once across three commit groups, including the required `docs(spec-review-requestor): record step 4 validation` group. No Step 4 commit has been made. Because this is the final implementation step, the implementation check also marks umbrella item 2 completed with requirement and validation evidence.
+
+Review Step 4 against the feature request, design, plan, validation plan, staged diff, and `a.commit`. Check the public launcher and workflow-contract coverage, all four specification identities and the design mapping, activation and no-review boundaries, the complete repeated-round lifecycle, literal human guidance, reclaim, convergence, durable authorization, canonical settlement, cleanup, failure and I/O boundaries, and the absence of scans or transcript reads. Confirm the fixture refactors retain the assertions, each acceptance file remains below 550 lines, all seven staged files occur exactly once in `a.commit`, and the validation and umbrella status are accurate.
+
+Run `$llm-shared:implementation-check` for Step 4. If missing work is found, repair only that work and update the validation plan and `a.commit` as needed. Do not commit. Do not run `gcba.bat --root-a-commit`, because it validates and commits; `wac.bat` is formatting only.
+
+Publish the answer through the shared review exchange and conclude with either `changes-requested` and concrete missing work, or `convergence-recommended` with supporting evidence. A convergence recommendation is advisory and does not authorize a commit.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 4
+
+- Recorded: 2026-08-09T16:47:52+02:00
+- Exchange: code/code/v0.11.0/spec-review-requestor
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-review-requestor.md
+- Implementation step: 4
+- Outcome: answer
+
+Step 4 was independently checked against the feature request, design, plan,
+validation record, staged diff, and `a.commit`. The verdict
+`Yes. Step 4 has been fully implemented.` is confirmed after two reviewer
+repairs. `wac.bat` was used for formatting and `gcba.bat --root-a-commit` was
+not run.
+
+Verified: activation, explicit-hold ordering, the no-question pass-through,
+forced routing, and live-review precedence run through the public `pw` surface;
+all four identities publish through the paired renderer and exchange adapter
+with `design` mapping to `design-specification`; the lifecycle journey proves a
+change round, replacement publication, transcript prefix preservation, ordered
+entries, convergence retention, durable `Consolidate` ahead of the canonical
+handoff, document settlement, and cleanup to `idle`; literal `Human guidance:`
+appears once per artifact with the writer response separate; reclaim keeps the
+request and transcript byte-for-byte identical; and failure coverage stops
+mismatched identity, duplicate exchange, unsupported type, tracked root input,
+and escalation, which refuses reclaim. The IO test monkeypatches `glob`,
+`rglob`, and `iterdir` to fail, rejects any `review.*` read, and bounds every
+existence probe to the derived fixed path set.
+
+The umbrella handoff is complete: row 2 moves from `pending` to `completed`
+with exact requirement and validation paths, all other columns and rows
+unchanged, and the validation plan now opens with `Yes, it is implemented.`
+
+Measured: 14 tests pass, ruff is clean, the slowest measured call is 0.46
+seconds against a one-second floor with all Git work in setup, the three
+acceptance files finish at 161, 486, and 265 lines below the 550 threshold, and
+`a.commit` lists all seven staged files exactly once.
+
+Two gaps were repaired. `test_spec_review_requestor_io_acceptance_tdd.py` ended
+with `reads)\n# eof\n` instead of the `\n\n\n# eof\n` contract that
+`tools/enforce_eof.py` enforces and its three siblings follow. The architecture
+check claimed only counterpart answer publication calls `ReviewExchangeCore`
+directly; in fact the reclaim, identity-mismatch, and escalation journeys also
+drive requestor-side operations through the core. Each use is justified, since
+the reclaim test needs an injected clock the launcher cannot express without
+recreating a duration outlier and the failure tests assert exact error types
+the adapter converts to exit codes. The record now states this accurately, adds
+a variance bullet, and carries a Yes verdict pointing the later code-review
+item at a possible launcher clock or typed-error seam.
+
+Advisory without required action: the acceptance package costs about forty
+seconds of wall time because each identity fixture initializes its own Git
+repository, which a session-scoped template could reduce without touching an
+assertion. The live code-family exchange still registers
+`convergence-recommended` where the core's acceptance tests register
+`commit-ready`, so later sessions must keep passing the registered value.
+
+Disposition: convergence-recommended. This recommendation is advisory and does
+not authorize a commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 1 by human - Step 4
+
+- Recorded: 2026-08-09T17:10:32+02:00
+- Exchange: code/code/v0.11.0/spec-review-requestor
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-review-requestor.md
+- Implementation step: 4
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->
