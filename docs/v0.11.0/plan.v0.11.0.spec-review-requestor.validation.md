@@ -345,6 +345,24 @@ growing the at-risk workflow module beyond 650 lines.
 - Reached the Groundhog objective with 1,515 passing tests, 100% coverage, no
   warnings, no duration outliers, and no exclusions.
 
+### Step 3 implementation-to-plan variances
+
+`tools/prompt_workflow_skill.py` finished at exactly 650 lines rather than the
+advisory count at or below 645. It remains at, not above, the repository
+ceiling, so the plan's split guidance was not triggered. The module now has no
+headroom: the single blank line between `SPEC_REVIEW_REQUESTOR` and
+`next_command` cannot be restored to the two-blank-line form used by the other
+eighteen top-level definitions without exceeding 650 lines. Move the existing
+forced-skill resolution into a responsibility-focused sibling before any later
+change adds a line to this module.
+
+`test_prompt_workflow_skill_spec_review_tdd.py` finished at 128 lines rather
+than the advisory 180-280 estimate. Its four cases replace the focused adapter
+calls directly, so the smaller count reflects delegation to
+`test_prompt_workflow_review_tdd.py` rather than missing coverage.
+`tools/prompt_workflow_review.py` at 192 lines and its focused test at 298
+lines both land inside their advisory ranges.
+
 ### New types or classes introduced for Step 3
 
 - `SpecificationReviewRoutingError`: prompt-workflow error that carries exact
@@ -365,10 +383,13 @@ growing the at-risk workflow module beyond 650 lines.
   work to the specialized role.
 - **Dependency direction**: the adapter depends inward on prompt state and the
   shared exchange surface; the shared exchange has no dependency on `pw`.
-- **File size**: the focused adapter remains below 550 lines, and
-  `prompt_workflow_skill.py` remains at the 650-line repository ceiling.
+- **File size**: the focused adapter remains below 550 lines, while
+  `prompt_workflow_skill.py` sits at exactly the 650-line repository ceiling
+  with no remaining headroom.
 
-No, there is nothing that needs to be addressed for Step 3.
+Yes, `tools/prompt_workflow_skill.py` sits at the 650-line ceiling with no
+headroom; run the plan's split guidance for that module before any later change
+adds a line to it.
 
 ### Performance check for Step 3
 
