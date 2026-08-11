@@ -43,8 +43,10 @@ that launcher instead of reconstructing nearby names.
    distinct ignored root output paths.
 4. Pass the renderer's complete request output and substantive summary output
    to `publish-request`. Do not edit the published request or transcript.
-5. Run `wait-answer` once through the shared requestor. Read its one final JSON
-   result after the bounded wait returns.
+5. Run `wait-answer` once through the shared requestor.
+   Do not pass `--timeout-seconds` to `wait-answer`; use the complete timeout
+   configured by `a.review-mode`. Read its one final JSON result after the
+   bounded wait returns.
 6. When an intermediate answer requests substantive changes, apply accepted
    edits, assess disagreement, then call `consume-answer` with the truthful
    `reviewed-work-changed` value and the `disagreement` flag only when the
