@@ -132,3 +132,240 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-1 -->
+
+## Round 1 by requestor - Step 2
+
+- Recorded: 2026-08-11T17:07:56+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 2
+- Outcome: request
+
+Step 2, "Render paired specification review answers," is reported fully
+implemented and committed in range `2dfc7c6^..0f059e7`.
+
+- Added immutable assessment and paired-result models plus one pure renderer for
+  the complete answer and substantive transcript summary.
+- Added a specialized round-bearing answer template, disposition-specific
+  evidence, guidance-response pairing, and repository-relative human identity.
+- Added a fixed-path CLI for UTF-8, root, ignore, SHA-256, retained-manifest,
+  collision, and rollback-safe paired-write validation.
+- Added public exports, a self-locating launcher, and focused tests for all four
+  specification identities and every defensive IO branch.
+- Recorded Step 2 as fully implemented in the validation plan.
+
+The review range contains four dependency-ordered commits: `2dfc7c6`,
+`c3593f1`, `1c3573a`, and `0f059e7`. The full suite passed 1,584 tests;
+`ghog affected` reported 100% coverage; and the final static check recorded
+`state=done exit=0`.
+
+Use the implementation-check method against the requirement, design, plan,
+validation record, and committed range. Check the pure renderer boundary,
+Markdown and identity contract, disposition and guidance rules, paired content,
+exact input and drift validation, retained context, rollback, launcher and
+exports, complexity, and line budgets. The 323-line CLI exceeds the advisory
+150-240 estimate but remains below the 650-line ceiling, so assess whether its
+trust and rollback responsibilities remain cohesive.
+
+This request follows the approved commits. Inspect the named range, do not amend
+or create commits, and leave any required repairs in the working tree with exact
+follow-up commit guidance.
+
+Return `changes-requested` for another implementation round or
+`convergence-recommended` for the advisory human decision. A reviewer
+recommendation does not authorize another commit.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 2
+
+- Recorded: 2026-08-11T17:31:12+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 2
+- Outcome: answer
+
+Step 2 was checked against the requirement, design, plan, validation record,
+and the committed range `2dfc7c6^..0f059e7`. The verdict
+`Yes. Step 2 has been fully implemented.` is confirmed after two reviewer
+repairs. No commit was created, amended, or rewritten.
+
+The renderer and adapter boundary matches the design: the renderer owns typed
+models and pure composition with no caller path, Git, or exchange input, while
+the CLI owns parsing, ignore checks, path validation, single-read UTF-8 input,
+digest comparison, manifest validation, and rollback-safe paired replacement
+before one render call. Neither module imports the exchange core, so
+publication and manifest retirement correctly remain for Step 3. Disposition
+evidence is enforced as designed, guidance and its response are required as a
+pair, the envelope keeps exact paths while the readable identity is
+repository-relative, all four identities work including `design` to
+`design-specification`, and the transcript summary comes from the same typed
+source rather than reparsing the answer. `_write_pair` restores the exact prior
+state, including deleting files that did not exist, when either replacement
+fails. The reported 291, 323, and 91 line counts are exact and the range holds
+exactly the nine planned files. On the question the report raised, the CLI does
+not need a split: one responsibility, below the 550 safe threshold, and the
+plan treats advisory variance at or below 650 as evidence.
+
+Two defects were repaired in the working tree. `_validate_manifest` accepted a
+JSON boolean as `original_round_number`, since Python treats `True` as an
+`int`, so a manifest with `true` validated as round 1; this was confirmed by
+calling the validator directly. The CLI now uses the repository's
+`positive_integer` helper, which exists to exclude bools, and a regression test
+rejects a boolean round. The answer template also emitted three consecutive
+blank lines when no human guidance existed, because the optional section
+substituted as an empty string between two literal template blank lines; the
+disposition and guidance sections are now joined in the renderer only when
+present, with a regression test asserting no blank-line run in either output.
+Splitting the round check left the upper bound uncovered against the 100% gate,
+so a case now supplies a retained round greater than the current round. Both
+modules report 100% coverage, the focused suite passes 42 tests, a 249-test
+sweep passes, and ruff is clean.
+
+The validation record gained its missing variances section, recording the CLI
+at 327 lines against the advisory 150-240 with the reason no split is needed,
+the CLI test at exactly 500 rather than below 500, and both repairs.
+
+Follow-up commit work: one commit should carry `spec_review_answer.py`,
+`spec_review_answer_cli.py`, `spec-review-answer.template.md`, both
+`test_spec_review_answer` files, and the validation record, under a
+`fix(spec-reviewer)` subject. The versioned transcript is protocol output and
+not part of that decision.
+
+Disposition: convergence-recommended. This recommendation is advisory and does
+not authorize another commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 1 by human - Step 2
+
+- Recorded: 2026-08-11T17:47:42+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 2
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->
+
+## Round 1 by requestor - Step 3
+
+- Recorded: 2026-08-11T18:37:02.7860394+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 3
+- Outcome: request
+
+Step 3, "Add reviewer orchestration and host adapters," is reported fully
+implemented and remains uncommitted for review.
+
+- Added one canonical specification reviewer instruction covering exact policy,
+  bounded wait, assessment, paired rendering, shared publication, reclaim,
+  retained context, stopped states, and reviewer authority limits.
+- Clarified that requestor `wait-answer` uses the marker's complete configured
+  timeout without a shorter caller override.
+- Added the portable workflow wrapper and loader-relative packaged Codex and
+  Claude redirects without copied orchestration.
+- Added focused reviewer, adapter, and requestor timeout contracts, plus the
+  Pyright annotation required by the Step 2 boolean-round fixture.
+- Recorded a fully implemented Step 3 verdict and exact line-budget evidence.
+
+The focused set passed 17 tests. The final groundhog walk passed 1,600 tests
+with 100% coverage, no failures, warnings, expected failures, duration
+outliers, or exclusions, and `exit=0`. The root `a.commit` covers all 13 staged
+files in five dependency-ordered groups and ends with the mandated Step 3
+validation commit.
+
+Use the implementation-check method against the requirement, design, plan,
+validation record, staged changes, and `a.commit`. Check operation and authority
+boundaries, the reclaim split, retained evidence, requestor timeout authority,
+host-specific redirect forms, line budgets, and repository validation. Repair
+only missing Step 3 work, update the validation record and `a.commit` when
+needed, and do not commit.
+
+Return `changes-requested` or `convergence-recommended`. The recommendation is
+advisory and does not authorize a commit.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 3
+
+- Recorded: 2026-08-11T18:59:14+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 3
+- Outcome: answer
+
+Step 3 was checked against the requirement, design, plan, validation record,
+staged changes, and `a.commit`. The verdict
+`Yes. Step 3 has been fully implemented.` is confirmed after one reviewer
+correction. No commit was made.
+
+The host adapter contract is correct on every surface, which matters because
+this is the contract that broke in the sibling effort and that the plan was
+amended in round 2 to pin. The workflow wrapper carries the repository
+three-step locate body, so it still resolves when the folder is junctioned into
+a consuming project, and all 27 workflow adapters now share that form. The
+packaged Codex instruction matches the plugin contract string byte for byte,
+the Codex skill ends with the four-level link without a trailing period, and
+the Claude skill uses the three-level link with `user-invocable` and an
+argument hint. The adapter test is modelled on the repaired requestor test,
+including the workflow-wrapper regression guard that pins the body to its
+sibling with only the instruction name substituted.
+
+The canonical reviewer instruction implements the settled design: exact policy,
+no documentation search, the ordered status, bounded `wait-request`, exact
+`paths.request` read, full-document assessment, one renderer call,
+`publish-answer`, and manifest retirement sequence, with current document text
+authoritative and drift returned as `changes-requested`. The reclaim boundary
+matches the design exactly, allowing one in-session reclaim for the same
+identity, round, and reviewer ownership while sending a cold
+`abandoned-request` back to `spec-review-requestor`. Disposition criteria,
+advisory convergence, the literal `Human guidance:` response, the stopped-state
+table, and the closed list of permitted operations all match the authority
+matrix. Retained-context rules line up with the Step 2 code as committed, and
+retirement happens only after `publish-answer` returns exit `0`. The requestor
+instruction now omits `--timeout-seconds` on `wait-answer`, closing the
+operational cause of the repeated escalations seen earlier in this umbrella.
+
+Measurements are exact except one: the validation record said the Pyright
+annotation "raised its test file from 500 to 501 lines", but the diff replaces
+one existing line, so the file remains at exactly 500, unchanged from the Step
+2 count. The variance paragraph now states that correctly and keeps both the
+reason for the annotation and the standing guidance about a later new case.
+`a.commit` covers all 13 staged files exactly once across five
+dependency-ordered groups with validation last, and 113 focused tests pass.
+
+One wording edit rides along: sequence item 4 records the retained manifest on
+every round while item 5 and the retained-context section pass it only when
+republishing retained findings. Both are correct, since the manifest exists so
+a stopped round keeps recoverable evidence, but the instruction never says so.
+One sentence in item 4 would remove the apparent contradiction for an agent
+following the steps literally.
+
+Disposition: convergence-recommended. The staged changes are ready for the
+advisory human commit decision. This recommendation does not authorize a
+commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 1 by human - Step 3
+
+- Recorded: 2026-08-11T20:33:35+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 3
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->
