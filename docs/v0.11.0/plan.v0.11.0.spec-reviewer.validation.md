@@ -263,7 +263,12 @@ No existing feature or reporting capability appears impaired.
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because no implementation check has taken place yet.
+Yes. Step 3 has been fully implemented.
+
+The repository now contains one canonical specification reviewer instruction,
+four thin host adapters, focused instruction and adapter contracts, and the
+requestor timeout clarification required by the plan. The focused 17-test set
+and the 1,600-test groundhog walk are green with 100% coverage.
 
 ### Goal for Step 3
 
@@ -282,27 +287,113 @@ with the full configured timeout.
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Canonical reviewer orchestration**: `instructions/spec-reviewer.md`
+  registers the fixed specification policy, accepts only exact supplied
+  context, and orders `status`, one bounded `wait-request`, paired answer
+  rendering, and shared `publish-answer` without copying exchange transitions.
+- **Authority and recovery boundary**: the instruction limits reclaim to an
+  expired intact lease from the active reviewer session, returns cold
+  `abandoned-request` work to `spec-review-requestor`, stops on shared recovery
+  states, and forbids writer and human operations.
+- **Retained assessment contract**: SHA-256, identity, original round, and exact
+  assessment paths are revalidated through the paired renderer. The
+  single-use manifest remains after rendering or failed publication and is
+  retired only after `publish-answer` returns exit `0`.
+- **Requestor timeout authority**: `instructions/spec-review-requestor.md`
+  explicitly omits `--timeout-seconds` from `wait-answer` so the marker's full
+  configured review timeout remains authoritative.
+- **Per-host redirects**: `.agent/workflows/spec-reviewer.md` retains the
+  repository three-step locate body, while the packaged instruction, packaged
+  skill, and Claude skill point directly to the canonical root instruction
+  with loader-relative links.
+- **Focused contracts**: the new reviewer instruction and adapter tests cover
+  exact policy, ordered operations, cold and in-session reclaim, retained
+  evidence, stopped states, forbidden authority, workflow portability, direct
+  links, and absence of copied orchestration. The requestor instruction test
+  pins the complete marker timeout.
+- **Validation evidence**: the focused set passed 17 tests. The final groundhog
+  walk passed 1,600 tests with `fail=0`, `warn=0`, `xfail=0`, `cov=100`, no
+  duration outliers, no exclusions, and `exit=0`.
+
+### Step 3 implementation-to-plan variances
+
+`instructions/spec-review-requestor.md` moved from 162 to 164 lines, and its
+test moved from 124 to 133 lines, both inside the plan's advisory checkpoints.
+The new canonical reviewer instruction is 168 lines, its behavior test is 131
+lines, and its adapter test is 114 lines. Every Python test stays below the
+550-line safe threshold and 650-line ceiling, so no split is indicated.
+
+The groundhog compile gate exposed a partially unknown empty-list type in the
+Step 2 boolean-manifest regression fixture. Annotating that local as
+`dict[str, object]` made the committed repair pass Pyright. The change replaced
+one existing line rather than adding one, so the file stays at exactly 500
+lines, unchanged from the count Step 2 recorded. No test case or responsibility
+was added. A later new case should still use a trimmed fixture or a focused
+sibling, as recorded by Step 2.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+No production type or class was introduced. Step 3 adds canonical Markdown
+orchestration and provider discovery adapters; its Python changes are contract
+tests plus one local test-fixture annotation.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Canonical ownership**: reusable reviewer policy and orchestration live only
+  in `instructions/spec-reviewer.md`.
+- **Adapter isolation**: provider-specific files contain discovery metadata and
+  a direct canonical redirect. The portable workflow form and loader-relative
+  packaged forms are tested independently.
+- **Port boundary**: the instruction invokes only the public paired renderer
+  and `review_exchange.bat`; it does not reproduce state classification,
+  publication mutation, or filesystem trust logic.
+- **Authority separation**: reviewer, requestor, and human operations remain
+  distinct, including separate active-session and cold-route reclaim paths.
+
+No, there is nothing architectural that needs to be addressed.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Bounded orchestration**: one status, one exact wait, one render, and one
+  publication are named for a normal invocation; no polling or directory scan
+  is introduced.
+- **Linear retained evidence**: SHA-256 and renderer validation remain linear
+  in exact input bytes and compare one fixed ordered path list.
+- **No new expensive computation**: the implementation adds Markdown contracts
+  and tests, not an `O(n^2)` or `O(n log n)` production path.
+
+No, there is no performance issue that needs to be addressed.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Reviewer instruction**:
+  `tests/unit/tools/test_spec_reviewer_instruction/test_spec_reviewer_instruction_tdd.py`
+  covers the canonical policy, operation order, reclaim split, retained
+  manifest, stopped states, and authority prohibitions.
+- **Host adapters**:
+  `tests/unit/tools/test_instruction_structure/test_spec_reviewer_adapters_tdd.py`
+  covers all four hosts, exact packaged links, portable workflow location,
+  metadata, and absence of copied logic.
+- **Requestor timeout**: the existing requestor instruction test now proves
+  that `wait-answer` uses the complete marker timeout without a caller override.
+- **Measured result**: the focused 17-test set passed, and the full groundhog
+  walk retained project coverage at 100%.
+
+No, there is no unit-tested class below 100% that needs completing.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Requestor behavior**: all writer, intermediate-round, human-gate, and
+  consolidation actions remain in the existing requestor instruction; only its
+  answer-wait timeout wording changed.
+- **Exchange behavior**: no core, store, renderer, launcher, or routing
+  production code changed in this step.
+- **Host portability**: the repaired requestor workflow locate body is reused
+  as the structural model without copying reviewer orchestration into adapters.
+- **Repository gate**: all 1,600 tests passed with no warnings, expected
+  failures, duration outliers, or exclusions.
+
+No existing feature or reporting capability appears impaired.
 
 ---
 
