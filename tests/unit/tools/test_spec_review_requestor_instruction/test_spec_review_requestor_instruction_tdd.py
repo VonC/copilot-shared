@@ -1,9 +1,9 @@
 """Contract tests for the specification review requestor instruction.
 
-Step 2 adds a specification-owned orchestration layer without copying the
-role-neutral exchange state machine. These tests pin its fixed policy, shared
-command delegation, round behavior, human gate, and replay-safe consolidation
-handoff as observable Markdown contracts.
+Step 3 preserves the specification-owned orchestration layer while removing a
+short caller timeout from its answer wait. These tests pin its fixed policy,
+shared command delegation, round behavior, human gate, timeout authority, and
+replay-safe consolidation handoff as observable Markdown contracts.
 """
 
 from __future__ import annotations
@@ -64,6 +64,15 @@ def test_instruction_delegates_the_shared_requestor_sequence() -> None:
     )
     assert "`reclaim`" in content
     assert "`complete`" in content
+
+
+def test_wait_answer_uses_the_complete_marker_timeout() -> None:
+    """The requestor does not shorten the shared bounded answer wait."""
+    content = _content()
+    normalized = " ".join(content.split())
+
+    assert "Do not pass `--timeout-seconds` to `wait-answer`" in normalized
+    assert "complete timeout configured by `a.review-mode`" in normalized
 
 
 def test_instruction_handles_resumption_without_manual_artifact_edits() -> None:

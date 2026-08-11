@@ -250,7 +250,7 @@ def test_cli_rejects_a_boolean_manifest_round(
     """A JSON boolean cannot pass as a positive retained round number."""
     document = _document(tmp_path)
     files = _files(tmp_path)
-    manifest = {
+    manifest: dict[str, object] = {
         "document_sha256": _digest(document),
         "identity": {
             "family": "specification",
