@@ -9,7 +9,8 @@ payload (``projects``, ``by_project`` summing to the top-level series,
 survives), and the ``--no-open`` suppress flag. The ``uv`` markdown seam is
 stubbed by the package ``conftest`` so the test needs no ``uv``; the bundled
 template is used (no ``--template`` flag). The asserts are split across tests to
-keep each one within the complexity budget.
+keep each one within the complexity budget. The real render for the browser
+acceptance case runs in a fixture so subprocess time does not inflate its call.
 """
 
 from __future__ import annotations
@@ -98,6 +99,20 @@ def solo_repo(tmp_path: Path) -> Path:
     return repo
 
 
+@pytest.fixture
+def two_repo_render(
+    tmp_path: Path,
+    two_repo_base: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[Path, list[str]]:
+    """Render the combined page outside the measured assertion call."""
+    out = tmp_path / "report"
+    opened: list[str] = []
+    monkeypatch.setattr(cli.webbrowser, "open", opened.append)
+    cli.main([str(two_repo_base / "alpha"), str(two_repo_base / "beta"), "--out-dir", str(out), "--no-open"])
+    return out, opened
+
+
 def test_two_repo_run_writes_the_combined_payload(
     tmp_path: Path,
     two_repo_base: Path,
@@ -124,16 +139,10 @@ def test_two_repo_run_writes_the_combined_payload(
 
 
 def test_two_repo_render_fills_slots_and_suppresses_browser(
-    tmp_path: Path,
-    two_repo_base: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    two_repo_render: tuple[Path, list[str]],
 ) -> None:
     """The combined page fills the slots, drops my-project, and opens no browser."""
-    out = tmp_path / "report"
-    opened: list[str] = []
-    monkeypatch.setattr(cli.webbrowser, "open", opened.append)
-
-    cli.main([str(two_repo_base / "alpha"), str(two_repo_base / "beta"), "--out-dir", str(out), "--no-open"])
+    out, opened = two_repo_render
 
     html = (out / "dashboard.html").read_text(encoding="utf-8")
     assert "my-project" not in html

@@ -1,16 +1,14 @@
 """Branch-role and operation selection tests for the release planner.
 
-Fix: cover the remaining planning branches for the coverage gate: the
-boundary-less orphan branch, merges inside an explicit feature scope, the
-direct-merge conflict preview, explicit `--feature-parent` boundaries (a
-first-parent merge success and an underivable failure), an explicit base
-that is not a proper ancestor, rebase and reset reflog evidence, and the
+Fix: cover remaining planning branches: the boundary-less orphan branch,
+merges in explicit feature scope, direct-merge conflict preview, explicit
+`--feature-parent` boundaries (a first-parent merge success and an underivable failure),
+an explicit base that is not a proper ancestor, rebase and reset reflog evidence, and the
 ambiguity path where deduplicated parent candidates elect a unique nearest
 boundary with reflogs disabled.
 
-Fix: accepted-slow real-Git scenarios prepare plans in fixtures, leaving
-measured calls to verify the model. All such planning follows this boundary,
-so repository setup and planner Git subprocesses do not inflate assertions.
+Fix: real-Git scenarios prepare plans or captured errors in fixtures, leaving
+measured calls to verify the model without repository or planner subprocesses.
 """
 
 from __future__ import annotations
@@ -569,20 +567,22 @@ def test_plan_explicit_parent_without_a_boundary_fails(
     assert "Could not derive a boundary" in str(explicit_parent_boundary_error)
 
 
-def test_plan_explicit_base_must_be_a_proper_ancestor(tmp_path: Path) -> None:
-    """The branch tip itself is rejected as its own feature base."""
+@pytest.fixture
+def explicit_base_error(tmp_path: Path) -> ReleasePlanError:
+    """Capture the improper explicit-base error outside assertion time."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
     commit_file(repo, "feature.txt", "feature\n", "feat: feature change")
 
-    with pytest.raises(ReleasePlanError, match="not a proper ancestor of feature"):
-        build_release_plan(
-            repo,
-            branch="feature",
-            feature_base="feature",
-            preview_conflicts=False,
-        )
+    with pytest.raises(ReleasePlanError) as caught:
+        build_release_plan(repo, branch="feature", feature_base="feature", preview_conflicts=False)
+    return caught.value
+
+
+def test_plan_explicit_base_must_be_a_proper_ancestor(explicit_base_error: ReleasePlanError) -> None:
+    """The branch tip itself is rejected as its own feature base."""
+    assert "not a proper ancestor of feature" in str(explicit_base_error)
 
 
 def test_plan_rebased_feature_uses_the_reflog_onto_evidence(
