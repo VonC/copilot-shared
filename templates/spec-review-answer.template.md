@@ -10,9 +10,7 @@ $assessment
 
 $question_verdicts
 
-$disposition_section
-
-$guidance_section
+$decision_sections
 
 ## Writer instructions for $identity_label round $round_number
 

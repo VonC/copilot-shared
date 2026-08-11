@@ -19,6 +19,7 @@ from tools.review_exchange_models import (
     ReviewDisposition,
     ReviewExchangeError,
     format_local_timestamp,
+    positive_integer,
 )
 from tools.spec_review_answer import (
     SpecificationAssessment,
@@ -151,8 +152,11 @@ def _validate_manifest(
     manifest = cast("dict[str, object]", decoded)
     if set(manifest) != _MANIFEST_FIELDS:
         raise ReviewExchangeError("retained manifest has invalid fields")
-    original_round = manifest["original_round_number"]
-    if not isinstance(original_round, int) or not 0 < original_round <= round_number:
+    original_round = positive_integer(
+        manifest["original_round_number"],
+        "retained manifest original round",
+    )
+    if original_round > round_number:
         raise ReviewExchangeError("retained manifest has invalid original round")
     expected_paths = [path.as_posix() for path in input_paths]
     if (

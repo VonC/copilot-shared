@@ -242,6 +242,35 @@ def test_cli_rejects_stale_or_malformed_manifest_without_writing(
     assert not files["summary"].exists()
 
 
+def test_cli_rejects_a_boolean_manifest_round(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A JSON boolean cannot pass as a positive retained round number."""
+    document = _document(tmp_path)
+    files = _files(tmp_path)
+    manifest = {
+        "document_sha256": _digest(document),
+        "identity": {
+            "family": "specification",
+            "type_token": "plan",
+            "version": "v0.11.0",
+            "slug": "answer-cli",
+        },
+        "original_round_number": True,
+        "assessment_input_paths": [],
+    }
+    files["manifest"].write_text(json.dumps(manifest), encoding="utf-8")
+    args = [*_args(document, files), "--retained-manifest-file", str(files["manifest"])]
+    monkeypatch.setattr(answer_cli, "_is_effectively_ignored", _ignored)
+
+    assert answer_cli.main(args, project_root=tmp_path) == _FATAL_EXIT
+    assert "retained manifest original round" in capsys.readouterr().err
+    assert not files["answer"].exists()
+    assert not files["summary"].exists()
+
+
 def test_paired_write_rolls_back_when_second_publication_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -403,6 +432,17 @@ def test_paired_write_removes_new_first_output_when_second_replace_fails(
                     "document_sha256": "digest",
                     "identity": {},
                     "original_round_number": 0,
+                    "assessment_input_paths": [],
+                },
+            ),
+            "retained manifest original round",
+        ),
+        (
+            json.dumps(
+                {
+                    "document_sha256": "digest",
+                    "identity": {},
+                    "original_round_number": _ROUND + 1,
                     "assessment_input_paths": [],
                 },
             ),

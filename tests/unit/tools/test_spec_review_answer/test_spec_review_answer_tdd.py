@@ -289,3 +289,18 @@ def test_render_result_template_and_shared_validation_fail_closed(
     monkeypatch.setattr(answer_renderer, "parse_envelope_markdown", mismatched_envelope)
     with pytest.raises(ReviewExchangeError, match="shared envelope validation"):
         render_specification_answer(source)
+
+
+def test_absent_guidance_leaves_no_blank_section_gap(tmp_path: Path) -> None:
+    """An omitted guidance section cannot widen the spacing between sections."""
+    rendered = render_specification_answer(_assessment(tmp_path, "plan"))
+
+    for content in (rendered.answer_content, rendered.transcript_summary):
+        lines = content.splitlines()
+        runs = [
+            index
+            for index in range(len(lines) - 1)
+            if lines[index] == "" and lines[index + 1] == ""
+        ]
+        assert runs == [], content
+        assert "Human guidance response" not in content

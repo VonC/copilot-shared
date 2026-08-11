@@ -230,8 +230,14 @@ def _answer_authored_content(source: SpecificationAssessment) -> str:
         "identity_fields": _identity_fields(source),
         "assessment": source.assessment.strip(),
         "question_verdicts": source.question_verdicts.strip(),
-        "disposition_section": _disposition_section(source, 2),
-        "guidance_section": _guidance_section(source, 2),
+        "decision_sections": "\n\n".join(
+            section
+            for section in (
+                _disposition_section(source, 2),
+                _guidance_section(source, 2),
+            )
+            if section
+        ),
         "writer_instructions": source.writer_instructions.strip(),
         "final_decision": _final_decision(source),
     }

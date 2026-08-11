@@ -160,6 +160,35 @@ summary without publishing either.
   recorded `state=done exit=0` with Ty, Pyright, Ruff, Radon, Vulture, file-size,
   shell, and EOF checks green.
 
+### Step 2 implementation-to-plan variances
+
+`tools/spec_review_answer_cli.py` finished at 327 lines against the plan's
+advisory 150-240 estimate. It stays below the 550-line safe threshold and the
+650-line ceiling, so the shared checklist records the variance as evidence
+rather than missing work. The module keeps one responsibility, fixed-path trust
+and IO for the pure renderer, and its helpers cover argument parsing, ignore
+validation, path validation, single-read UTF-8 input, document digest, manifest
+validation, temporary output, rollback-safe paired replacement, and one render
+call. Splitting it would scatter one trust boundary across two modules for no
+gain, so no plan-consistent split is required. `tools/spec_review_answer.py` at
+297 lines stays inside its 260-360 advisory range. The renderer test finished
+at 306 lines, while the CLI test finished at exactly 500 rather than below the
+advisory 500; it remains far below the 550 safe threshold, but the next case
+added to that file should either fit a trimmed fixture or move to a focused
+sibling.
+
+Two reviewer repairs completed the step. `_validate_manifest` accepted a JSON
+boolean as `original_round_number`, because `isinstance(True, int)` is true in
+Python and the check did not exclude bools; it now uses the shared
+`positive_integer` helper that exists in `review_exchange_models` for exactly
+this hazard, and a regression test rejects a boolean round. The answer template
+also emitted three consecutive blank lines whenever no human guidance existed,
+because the optional section substituted as an empty string between two literal
+template blank lines; the disposition and guidance sections are now composed in
+the renderer and joined only when present, with a regression test asserting no
+blank-line run in either paired output. Both repairs keep the two production
+modules at 100% coverage.
+
 ### New types or classes introduced for Step 2
 
 - `SpecificationAssessment`: immutable exact context and authored findings for
