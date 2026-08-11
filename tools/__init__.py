@@ -37,6 +37,11 @@ from tools.review_exchange_models import (
 )
 from tools.review_exchange_models_coordination import CoordinationRecord
 from tools.review_exchange_models_envelope import Envelope
+from tools.spec_review_answer import (
+    SpecificationAnswerRender,
+    SpecificationAssessment,
+    render_specification_answer,
+)
 from tools.spec_review_request import (
     SpecificationRequestRender,
     SpecificationRoundInput,
@@ -67,11 +72,14 @@ __all__ = [
     "ReviewExchangeError",
     "ReviewFamily",
     "ReviewRole",
+    "SpecificationAnswerRender",
+    "SpecificationAssessment",
     "SpecificationRequestRender",
     "SpecificationRoundInput",
     "find_project_root",
     "infer_layer",
     "project_name",
+    "render_specification_answer",
     "render_specification_request",
     "resolve_paths",
     "safe_relative",
