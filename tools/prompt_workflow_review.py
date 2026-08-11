@@ -43,8 +43,8 @@ class SpecificationReviewRoutingError(PromptWorkflowError):
 
 
 @dataclass(frozen=True)
-class _LiveRoute:
-    """One exact non-idle specification exchange candidate."""
+class LiveSpecificationRoute:
+    """One immutable specification context and its coherently observed state."""
 
     context: ReviewContext
     state: ArtifactState
@@ -110,7 +110,7 @@ def _classify_context(
     return core.classify().state
 
 
-def _describe(root: Path, route: _LiveRoute) -> str:
+def _describe(root: Path, route: LiveSpecificationRoute) -> str:
     """Render one complete identity and repository-relative document path."""
     document = route.context.document_path.relative_to(root.resolve()).as_posix()
     return f"{route.context.identity.key} document={document} state={route.state.value}"
@@ -121,10 +121,10 @@ def _live_routes(
     topic: Topic,
     state: WorkflowState,
     configuration: ReviewConfiguration,
-) -> tuple[_LiveRoute, ...]:
+) -> tuple[LiveSpecificationRoute, ...]:
     """Observe the constant candidate set and return every non-idle route."""
     return tuple(
-        _LiveRoute(context, observed)
+        LiveSpecificationRoute(context, observed)
         for context in specification_contexts(root, topic, state)
         if (observed := _classify_context(root, context, configuration))
         is not ArtifactState.IDLE
@@ -136,7 +136,7 @@ def _one_live_route(
     topic: Topic,
     state: WorkflowState,
     configuration: ReviewConfiguration,
-) -> _LiveRoute | None:
+) -> LiveSpecificationRoute | None:
     """Return the sole live route or fail closed with every exact identity."""
     routes = _live_routes(root, topic, state, configuration)
     if len(routes) > 1:
@@ -147,16 +147,25 @@ def _one_live_route(
     return routes[0] if routes else None
 
 
+def live_specification_route(
+    root: Path,
+    topic: Topic,
+    state: WorkflowState,
+) -> LiveSpecificationRoute | None:
+    """Return one immutable live route from a single state observation."""
+    configuration = ReviewConfiguration.load(root)
+    if not configuration.enabled:
+        return None
+    return _one_live_route(root, topic, state, configuration)
+
+
 def live_specification_document(
     root: Path,
     topic: Topic,
     state: WorkflowState,
 ) -> Path | None:
-    """Return the exact sole live document when review mode is active."""
-    configuration = ReviewConfiguration.load(root)
-    if not configuration.enabled:
-        return None
-    route = _one_live_route(root, topic, state, configuration)
+    """Return the sole live document for callers that do not select a role."""
+    route = live_specification_route(root, topic, state)
     return route.context.document_path if route is not None else None
 
 
