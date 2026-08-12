@@ -233,14 +233,16 @@ def test_stopped_assessment_is_retained_and_revalidated_before_republication(
 
 
 def test_manifest_is_retired_only_after_successful_answer_publication() -> None:
-    """The canonical workflow places retirement after exit-zero publish."""
+    """The canonical workflow keys retirement on the published outcome."""
     content = Path("instructions/spec-reviewer.md").read_text(encoding="utf-8")
     retained = content.index("retained manifest")
     publication = content.index("publish-answer", retained)
     retirement = content.index("retire", publication)
 
     assert retained < publication < retirement
-    assert "exit `0`" in content[publication : retirement + 300]
+    assert "`outcome: published`" in content[publication : retirement + 300]
+    assert "retirement on exit `0` alone" in content
+    assert "leak the single-use manifest on every convergence" in content
 
 
 def test_escalation_requires_human_resolution_before_recovery(tmp_path: Path) -> None:

@@ -93,11 +93,13 @@ def test_instruction_revalidates_and_retires_retained_context_safely() -> None:
     _assert_in_order(
         content,
         (
-            "`publish-answer` returns exit `0`",
-            "remove the single-use retained manifest",
+            "`publish-answer` reports `outcome: published`",
+            "remove the single-use",
+            "retained manifest",
         ),
     )
     assert "Rendering or failed publication leaves the manifest intact" in content
+    assert "retirement on exit `0` alone" in content
 
 
 def test_instruction_stops_outside_reviewer_authority() -> None:

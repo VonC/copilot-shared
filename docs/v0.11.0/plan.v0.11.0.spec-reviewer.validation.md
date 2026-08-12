@@ -299,7 +299,10 @@ with the full configured timeout.
 - **Retained assessment contract**: SHA-256, identity, original round, and exact
   assessment paths are revalidated through the paired renderer. The
   single-use manifest remains after rendering or failed publication and is
-  retired only after `publish-answer` returns exit `0`.
+  retired only after `publish-answer` reports `outcome: published`. That
+  outcome accompanies exit `0` for a change request and exit `3` at the
+  convergence gate, matching the plan's Q03 decision to retire after a
+  successful publication rather than after one exit code.
 - **Requestor timeout authority**: `instructions/spec-review-requestor.md`
   explicitly omits `--timeout-seconds` from `wait-answer` so the marker's full
   configured review timeout remains authoritative.
