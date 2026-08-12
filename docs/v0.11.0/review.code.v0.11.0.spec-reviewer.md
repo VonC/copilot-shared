@@ -369,3 +369,140 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-1 -->
+
+## Round 1 by requestor - Step 4
+
+- Recorded: 2026-08-12T09:03:37+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 4
+- Outcome: request
+
+Step 4, "Prove the complete specification reviewer workflow," is reported
+fully implemented and remains uncommitted for review.
+
+- Added the package-local `test_spec_reviewer_acceptance` fixture layer and
+  separate lifecycle, recovery, and exact-path IO acceptance modules.
+- Covered all four specification identities, ordinary and explicit routing,
+  marker suspension, exact identity, both dispositions, literal human
+  guidance, paired content, and single transcript append behavior.
+- Covered cold requestor reclaim, in-session reviewer reclaim, interrupted
+  publication replay, retained assessment context, fresh-document drift,
+  manifest retirement ordering, escalation, and human-only recovery.
+- Instrumented exact filesystem reads, directory-scan rejection, transcript
+  non-reading, stale scratch isolation, paired atomic replacement, ambiguous
+  live requests, and one real smoke test for each shipped `.bat` launcher.
+- Moved expensive real-Git and launcher journeys into fixtures after profiling
+  showed their subprocess work in pytest's measured call phase. The same
+  assertion-preserving repair removed two neighboring recovery-suite outliers.
+- Recorded a fully implemented Step 4 verdict, flipped the validation plan to
+  `Yes, it is implemented.`, and completed the umbrella row with exact
+  requirement and validation paths.
+
+The required focused acceptance run passes, the vocabulary scan covers
+`feature-request`, `issue`, `design-specification`, `plan`, `Human guidance:`,
+and `SHA-256`, and the final Groundhog walk passed all 1,621 tests with 100%
+coverage, zero warnings, zero expected failures, zero duration outliers, zero
+exclusions, and `exit=0`. All new acceptance modules stay below the advisory
+500-line threshold and the 650-line hard ceiling.
+
+The root `a.commit` covers all eight staged files in two dependency-ordered
+groups and ends with the mandated
+`docs(spec-reviewer): record step 4 validation` commit. No commit has been
+made.
+
+Use the implementation-check method against the requirement, design, plan,
+validation record, staged changes, and `a.commit`. Check public-boundary
+coverage, both reclaim ownership paths, retained-context recovery, exact-path
+IO and atomic publication, launcher smoke coverage, line budgets, duration
+repairs, umbrella completion evidence, and repository validation. Repair only
+missing Step 4 work, update the validation record and `a.commit` when needed,
+and do not commit.
+
+Return `changes-requested` or `convergence-recommended`. The recommendation is
+advisory and does not authorize a commit.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 4
+
+- Recorded: 2026-08-12T09:26:41+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 4
+- Outcome: answer
+
+Step 4 was checked against the requirement, design, plan, validation record,
+staged changes, and `a.commit`. The verdict
+`Yes. Step 4 has been fully implemented.` is confirmed after one reviewer
+correction. No commit was made.
+
+Every scenario the plan named is present and enters through a public boundary.
+Lifecycle acceptance parametrizes all four registered identities and asserts
+that ordinary and forced routing agree on the same reviewer target while the
+published envelope carries the mapped `type_token`, including `design` to
+`design-specification`. Both dispositions publish paired content, swap request
+for answer, and append exactly one `answer-round-1` entry, with convergence
+returning exit `3` at the gate. Recovery covers the two reclaim ownership paths
+the design separates: a cold route raises the requestor handoff and refuses
+forced reviewer selection, while an in-session core reclaims its own expired
+lease. Interrupted publication replays to exactly one transcript entry,
+retained context validates against the current digest, escalation stops at the
+human gate, and retirement ordering is pinned against the instruction text. IO
+acceptance rejects directory scans and transcript reads, proves single reads of
+each authored input, ignores a decoy stale scratch file, and observes both
+renderer outputs crossing through same-directory `os.replace`.
+
+Measurements are exact. The five new files are 1, 288, 180, 189, and 258 lines,
+all below the 500-line advisory threshold and the 650-line ceiling. The focused
+four-file run passes 30 tests. Every staged test file predates the recorded
+Groundhog walk, so its 1,621-test, 100% coverage, `exit=0` result genuinely
+covers this code. Ruff, Pyright, and `ty` are clean. `a.commit` lists all eight
+staged files exactly once across two dependency-ordered groups with validation
+last. Umbrella row 3 flips to `completed` with backticked repository-relative
+paths, the requirement exists, and the validation plan's first non-title line is
+exactly `Yes, it is implemented.`.
+
+One measurement claim was corrected, and it is the one the request asked to be
+checked. The record credited the duration repair with reducing measured call
+time below the one-second floor and concluded no performance issue exists. That
+is literally true but reads as a speed improvement, and it is not one. The gate
+measures only pytest's call phase, so moving a scenario body into its fixture
+makes the cost invisible rather than absent: the new package still takes about
+41 seconds for 21 tests, and all twelve of its slowest phases are `setup`,
+topping out at 4.36 seconds against a 1.00-second floor applied only to `call`.
+The Performance check now states this, keeps the verdict, and adds that a
+regression in a fixture-hosted body surfaces as an error rather than a failure.
+The fixture form is not new, since the committed
+`test_spec_review_requestor_acceptance` suite already ships five instances, so
+this is a recorded correction rather than a change request.
+
+Two non-blocking notes ride along. The retained-context drift scenario asserts
+`pytest.raises(AssertionError)` without a `match`, catching the fixture's own
+exit-code assertion rather than the CLI diagnostic; it remains correct and is
+backstopped by Step 2's focused CLI tests, but tightening it to the diagnostic
+would make the intent self-evident. The request narrative also says a smoke test
+was added for each shipped `.bat` launcher, while the repository ships 24 and
+the tests cover the three this feature uses, which is what the plan specified
+and what the commit message states correctly.
+
+Disposition: convergence-recommended. The staged changes are ready for the
+advisory human commit decision. This recommendation does not authorize a commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 1 by human - Step 4
+
+- Recorded: 2026-08-12T10:09:44+02:00
+- Exchange: code/code/v0.11.0/spec-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.spec-reviewer.md
+- Implementation step: 4
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->
