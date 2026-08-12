@@ -14,6 +14,7 @@ import pytest
 from tools import prompt_workflow_review as review
 from tools import prompt_workflow_skill as skill
 from tools.prompt_workflow_models import Topic
+from tools.review_exchange_state import ArtifactState
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -34,6 +35,14 @@ def _topic(tmp_path: Path) -> Topic:
     design.write_text("## Design decisions\n\n| Q01 | x |\n", encoding="utf-8")
     plan.write_text("## Open questions\n", encoding="utf-8")
     return Topic("v1.0.0", "routing", draft)
+
+
+def _route(target: Path, state: ArtifactState) -> review.LiveSpecificationRoute:
+    """Build one immutable route for command-selection tests."""
+    return review.LiveSpecificationRoute(
+        review.specification_context(target, None),
+        state,
+    )
 
 
 def test_forced_spec_requestor_targets_the_current_question_document(
@@ -70,13 +79,13 @@ def test_normal_routing_prefers_one_live_specification_exchange(
     target = tmp_path / "docs/design.v1.0.0.routing.md"
     monkeypatch.setattr(
         review,
-        "live_specification_document",
-        lambda *_args: target,
+        "live_specification_route",
+        lambda *_args: _route(target, ArtifactState.REQUEST_PENDING),
     )
 
     command = skill.next_command(tmp_path, topic, "routing", {"CLAUDECODE": "1"})
 
-    assert command == "/spec-review-requestor on docs/design.v1.0.0.routing.md"
+    assert command == "/spec-reviewer on docs/design.v1.0.0.routing.md"
 
 
 def test_normal_routing_keeps_existing_command_without_live_exchange(
@@ -87,7 +96,7 @@ def test_normal_routing_keeps_existing_command_without_live_exchange(
     topic = _topic(tmp_path)
     monkeypatch.setattr(
         review,
-        "live_specification_document",
+        "live_specification_route",
         lambda *_args: None,
     )
 
@@ -113,7 +122,7 @@ def test_cli_reports_all_live_exchange_ambiguity(
     )
     monkeypatch.setattr(
         review,
-        "live_specification_document",
+        "live_specification_route",
         lambda *_args: (_ for _ in ()).throw(
             review.SpecificationReviewRoutingError("identity-a; identity-b"),
         ),

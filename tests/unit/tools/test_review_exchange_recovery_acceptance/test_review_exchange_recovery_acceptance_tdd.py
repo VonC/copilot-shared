@@ -195,11 +195,12 @@ def test_activation_outside_git_fails_without_artifact_mutation(tmp_path: Path) 
     assert not any(path.exists() for path in transient_paths_for_ignore(paths))
 
 
-def test_interrupted_request_and_torn_transcript_repair_once(
+@pytest.fixture
+def interrupted_request_journey(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A fresh session truncates a torn request entry and appends it once."""
+    """Run torn-request repair outside the measured call phase."""
     core, store, context, clock = _harness(tmp_path / "request")
     core.start()
     original_append = store.append_transcript_once
@@ -224,7 +225,16 @@ def test_interrupted_request_and_torn_transcript_repair_once(
     transcript = store.paths.transcript.read_text(encoding="utf-8")
     assert "torn acceptance suffix" not in transcript
     assert transcript.count("review-entry-id: request-round-1") == 1
-    assert _fresh(store, context, clock).classify().state is ArtifactState.REQUEST_PENDING
+    assert (
+        _fresh(store, context, clock).classify().state is ArtifactState.REQUEST_PENDING
+    )
+
+
+def test_interrupted_request_and_torn_transcript_repair_once(
+    interrupted_request_journey: None,
+) -> None:
+    """A fresh session truncates a torn request entry and appends it once."""
+    assert interrupted_request_journey is None
 
 
 def test_interrupted_answer_rename_and_visible_append_repair(
@@ -291,11 +301,12 @@ def test_interrupted_answer_rename_and_visible_append_repair(
     assert not second_store.paths.tombstone.exists()
 
 
-def test_consumed_answer_interruption_becomes_attributed_abandonment(
+@pytest.fixture
+def consumed_answer_interruption_journey(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A crash after answer removal retains coordination for later escalation."""
+    """Run consumed-answer interruption outside the measured call phase."""
     core, store, context, clock = _harness(tmp_path / "consumption")
     _start_request(core, context)
     _publish_answer(core, context, 1)
@@ -322,6 +333,13 @@ def test_consumed_answer_interruption_becomes_attributed_abandonment(
     assert observation.record.expected_next_actor is Actor.REQUESTOR
     later.escalate(observation.diagnostic)
     assert later.classify().state is ArtifactState.ESCALATED
+
+
+def test_consumed_answer_interruption_becomes_attributed_abandonment(
+    consumed_answer_interruption_journey: None,
+) -> None:
+    """A crash after answer removal retains coordination for later escalation."""
+    assert consumed_answer_interruption_journey is None
 
 
 def test_abandoned_request_is_reclaimed_by_a_fresh_session(tmp_path: Path) -> None:

@@ -19,89 +19,26 @@ from tools import prompt_workflow_git as git
 from tools import prompt_workflow_handoff as handoff
 from tools import prompt_workflow_memory as memory
 from tools import prompt_workflow_plan as plan
+from tools import prompt_workflow_post_commit as post_commit
+from tools import prompt_workflow_render as rendering
 from tools import prompt_workflow_review as review
 from tools import prompt_workflow_steps as steps
-from tools.prompt_workflow_models import (
-    VALIDATION_SUFFIX,
-    MemoryRecord,
-    Topic,
-)
+from tools.review_exchange_models import ArtifactState
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from tools.prompt_workflow_models import WorkflowState
+    from tools.prompt_workflow_models import Topic, WorkflowState
 
-# Host tokens used as the keys of the prefix lookup.
-HOST_CLAUDE = "claude"
-HOST_CODEX = "codex"
-# Environment markers that identify the host (confirmed live on a session, Q04).
-CLAUDE_ENV_VAR = "CLAUDECODE"
-CODEX_ENV_VAR = "CODEX_THREAD_ID"
-# Command prefix per host: a slash for Claude, a dollar for Codex.
-HOST_PREFIXES = {HOST_CLAUDE: "/", HOST_CODEX: "$"}
-# Host used when no marker and no override decide it, so a command always gets a prefix.
-DEFAULT_HOST = HOST_CLAUDE
 # Markdown suffix dropped from an instruction file name to form the skill name.
 MD_SUFFIX = ".md"
-# Installed Codex skills contributed by this plugin use this namespace.
-CODEX_SKILL_NAMESPACE = "llm-shared:"
-
-
-def detect_host(env: Mapping[str, str]) -> str:
-    """Return the host token read from the process environment (Q04).
-
-    Args:
-        env: The process environment mapping to read the host markers from.
-
-    Returns:
-        ``HOST_CLAUDE`` when the Claude marker is set, ``HOST_CODEX`` when the
-        Codex marker is set, otherwise ``DEFAULT_HOST``. The Claude marker is
-        checked first, so it wins if both are somehow present.
-    """
-    if env.get(CLAUDE_ENV_VAR):
-        return HOST_CLAUDE
-    if env.get(CODEX_ENV_VAR):
-        return HOST_CODEX
-    return DEFAULT_HOST
-
-
-def host_prefix(env: Mapping[str, str], override: str | None = None) -> str:
-    """Return the command prefix for the host, honoring an override (Q04).
-
-    Args:
-        env: The process environment mapping, read only when no override is given.
-        override: An explicit host token (``HOST_CLAUDE`` or ``HOST_CODEX``). When
-            present it short-circuits the environment read, so the caller can force
-            the prefix even where detection cannot decide.
-
-    Returns:
-        ``/`` for the Claude host and ``$`` for the Codex host.
-
-    Raises:
-        KeyError: When ``override`` is not a known host token.
-    """
-    host = override if override is not None else detect_host(env)
-    return HOST_PREFIXES[host]
-
-
-def render_command(prefix: str, instruction: str, document: str) -> str:
-    """Render one bare next-step command line (no wrapper, no backticks).
-
-    Args:
-        prefix: The host prefix (``/`` or ``$``) from ``host_prefix``.
-        instruction: The instruction file name, such as ``write-design.md``; its
-            ``.md`` suffix is dropped to form the emitted skill name.
-        document: The target document the skill runs on.
-
-    Returns:
-        A line of the form ``<prefix><name> on <document>``, which the LLM reads
-        as a command rather than as quoted text.
-    """
-    name = instruction.removesuffix(MD_SUFFIX)
-    if prefix == HOST_PREFIXES[HOST_CODEX] and ":" not in name:
-        name = f"{CODEX_SKILL_NAMESPACE}{name}"
-    return f"{prefix}{name} on {document}"
+# Public compatibility exports now implemented by the cohesive rendering module.
+HOST_CLAUDE = rendering.HOST_CLAUDE
+HOST_CODEX = rendering.HOST_CODEX
+DEFAULT_HOST = rendering.DEFAULT_HOST
+detect_host = rendering.detect_host
+host_prefix = rendering.host_prefix
+render_command = rendering.render_command
 
 
 # The instruction named before the workflow proper, when only a new draft exists.
@@ -140,6 +77,8 @@ PRODUCED_TYPE = {"requirement": "feature-request", "design": "design", "plan": "
 # Workflow step number that hands execution to the plan implementation cycle.
 IMPLEMENT_STEP = 10
 SPEC_REVIEW_REQUESTOR = "spec-review-requestor"
+SPEC_REVIEWER = "spec-reviewer"
+
 
 def next_command(
     root: Path,
@@ -169,12 +108,17 @@ def next_command(
         One bare ``<prefix><name> on <document>`` command line.
     """
     state = steps.compute_state(root, topic, None)
-    review_document = review.live_specification_document(root, topic, state)
-    if review_document is not None:
+    review_route = review.live_specification_route(root, topic, state)
+    if review_route is not None:
+        role = (
+            SPEC_REVIEWER
+            if review_route.state is ArtifactState.REQUEST_PENDING
+            else SPEC_REVIEW_REQUESTOR
+        )
         return render_command(
             host_prefix(env, override),
-            f"{SPEC_REVIEW_REQUESTOR}{MD_SUFFIX}",
-            _relpath(root, review_document),
+            f"{role}{MD_SUFFIX}",
+            _relpath(root, review_route.context.document_path),
         )
     step = _resolve_step(state)
     instruction, document = _instruction_and_document(step, root, topic, branch, state)
@@ -382,7 +326,7 @@ def run_skill(  # noqa: PLR0913
         )
     branch_slug = branch.rsplit("/", maxsplit=1)[-1]
     if (
-        _slug_key(branch_slug) == _slug_key(topic.slug)
+        post_commit.slug_key(branch_slug) == post_commit.slug_key(topic.slug)
         and docs.collection_items(topic.draft_path)
     ):
         umbrella = _relpath(root, topic.draft_path)
@@ -461,6 +405,8 @@ def forced_command(
         exists; None when the skill is unknown or its document is absent.
     """
     state = steps.compute_state(root, topic, None)
+    if skill_name == SPEC_REVIEWER:
+        return _forced_spec_reviewer_command(root, topic, state, env, override)
     if skill_name == SPEC_REVIEW_REQUESTOR:
         doc = review.forced_specification_document(root, topic, state)
         return (
@@ -488,6 +434,32 @@ def forced_command(
         return None
     instruction = f"{skill_name}{MD_SUFFIX}"
     return render_command(host_prefix(env, override), instruction, _relpath(root, doc))
+
+
+def _forced_spec_reviewer_command(
+    root: Path,
+    topic: Topic,
+    state: WorkflowState,
+    env: Mapping[str, str],
+    override: str | None,
+) -> str | None:
+    """Render only an exact pending reviewer route and diagnose cold reclaim."""
+    route = review.live_specification_route(root, topic, state)
+    if route is None:
+        return None
+    if route.state is ArtifactState.ABANDONED_REQUEST:
+        message = (
+            "forced spec-reviewer cannot enter an abandoned request cold; "
+            f"run {SPEC_REVIEW_REQUESTOR} reclaim for {route.context.identity.key}"
+        )
+        raise review.SpecificationReviewRoutingError(message)
+    if route.state is not ArtifactState.REQUEST_PENDING:
+        return None
+    return render_command(
+        host_prefix(env, override),
+        f"{SPEC_REVIEWER}{MD_SUFFIX}",
+        _relpath(root, route.context.document_path),
+    )
 
 
 def post_write_command(
@@ -555,7 +527,7 @@ def post_commit_command(
     record = memory.read_memory(root)
     topic = handoff.resolve_current_topic(root, branch, record)
     if topic is None:
-        topic = _resolve_post_commit_topic(root, record, branch)
+        topic = post_commit.resolve_post_commit_topic(root, record, branch)
     if topic is None:
         return None
     state = steps.compute_state(root, topic, None)
@@ -575,76 +547,6 @@ def post_commit_command(
         plan_doc = _document(root, topic, "plan", state)
         return f"{prefix}implement-step on {plan_doc} step {numbers[index + 1]}"
     return f"{prefix}prepare-release"
-
-
-def _resolve_post_commit_topic(
-    root: Path,
-    record: MemoryRecord | None,
-    branch: str,
-) -> Topic | None:
-    """Resolve a plan topic when the original draft is no longer discoverable."""
-    candidates = _plan_topics(root)
-    if not candidates:
-        return None
-    if record is not None:
-        matching = [
-            topic
-            for topic in candidates
-            if topic.version == record.version and topic.slug == record.topic
-        ]
-        if len(matching) == 1:
-            return matching[0]
-    branch_key = _slug_key(branch.rsplit("/", maxsplit=1)[-1])
-    branch_matches = [
-        topic for topic in candidates if branch_key.endswith(_slug_key(topic.slug))
-    ]
-    if len(branch_matches) == 1:
-        return branch_matches[0]
-    return None
-
-
-def _plan_topics(root: Path) -> list[Topic]:
-    """Return unique topics that have both a plan and a validation plan."""
-    topics: list[Topic] = []
-    seen: set[tuple[str, str]] = set()
-    for directory in docs.docs_dirs(root):
-        for entry in sorted(directory.iterdir()):
-            topic = _topic_from_validation_plan(entry)
-            if topic is None:
-                continue
-            key = (topic.version, topic.slug)
-            if key in seen or docs.select_document(root, topic, "plan") is None:
-                continue
-            seen.add(key)
-            topics.append(topic)
-    return topics
-
-
-def _topic_from_validation_plan(path: Path) -> Topic | None:
-    """Parse a Topic from ``plan.<version>.<slug>.validation.md``."""
-    name = path.name
-    if (
-        not path.is_file()
-        or not name.startswith("plan.")
-        or not name.endswith(VALIDATION_SUFFIX)
-    ):
-        return None
-    core = name[len("plan.") : -len(VALIDATION_SUFFIX)]
-    match = docs.VERSION_RE.match(core)
-    if match is None:
-        return None
-    version = match.group(0)
-    rest = core[len(version) :]
-    if not rest.startswith(".") or not rest[1:]:
-        return None
-    slug = rest[1:]
-    draft = path.parent / f"draft.{version}.{slug}{MD_SUFFIX}"
-    return Topic(version=version, slug=slug, draft_path=draft.resolve())
-
-
-def _slug_key(value: str) -> str:
-    """Canonicalize branch and topic slugs for fallback matching."""
-    return value.replace("-", "_")
 
 
 # eof

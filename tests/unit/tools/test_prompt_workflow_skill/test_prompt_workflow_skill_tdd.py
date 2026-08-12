@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from tools import prompt_workflow
 from tools import prompt_workflow_memory as memory
+from tools import prompt_workflow_post_commit as post_commit
 from tools import prompt_workflow_skill as skill
 from tools.prompt_workflow_models import MemoryRecord, Topic
 
@@ -409,7 +410,7 @@ def test_plan_topics_skip_invalid_and_unpaired_validation_plans(tmp_path: Path) 
         encoding="utf-8",
     )
 
-    topics = skill._plan_topics(tmp_path)
+    topics = post_commit.plan_topics(tmp_path)
 
     assert [(topic.version, topic.slug) for topic in topics] == [
         ("v0.9.0", "handoff_automation"),

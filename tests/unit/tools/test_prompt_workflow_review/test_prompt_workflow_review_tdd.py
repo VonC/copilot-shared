@@ -259,7 +259,10 @@ def test_forced_document_prefers_an_existing_live_exchange(
     monkeypatch.setattr(
         review,
         "_one_live_route",
-        lambda *_args: review._LiveRoute(context, ArtifactState.REQUEST_PENDING),
+        lambda *_args: review.LiveSpecificationRoute(
+            context,
+            ArtifactState.REQUEST_PENDING,
+        ),
     )
 
     assert review.forced_specification_document(tmp_path, topic, state) == context.document_path
