@@ -59,16 +59,31 @@ _TEMPLATE = ReleasePlan(
 )
 
 
-def test_main_renders_a_human_plan_for_a_repository(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """A real on-main repository renders the header, commits, and notes."""
+@pytest.fixture
+def repository_with_release_work(tmp_path: Path) -> Path:
+    """Build the real committed repository outside the measured call phase."""
     repo = tmp_path / "repo"
     initialize_repository(repo)
     commit_file(repo, "main.txt", "main\n", "feat: release work")
+    return repo
 
-    code = main(["--root", str(repo), "--no-conflict-preview"])
+
+@pytest.fixture
+def initialized_repository(tmp_path: Path) -> Path:
+    """Build the real base repository outside the measured call phase."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    return repo
+
+
+def test_main_renders_a_human_plan_for_a_repository(
+    repository_with_release_work: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A real on-main repository renders the header, commits, and notes."""
+    code = main(
+        ["--root", str(repository_with_release_work), "--no-conflict-preview"],
+    )
 
     out = capsys.readouterr().out
     assert code == 0
@@ -80,14 +95,13 @@ def test_main_renders_a_human_plan_for_a_repository(
 
 
 def test_main_emits_json_with_the_full_plan(
-    tmp_path: Path,
+    initialized_repository: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """--json serializes the complete plan through `ReleasePlan.to_dict`."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-
-    code = main(["--root", str(repo), "--json", "--no-conflict-preview"])
+    code = main(
+        ["--root", str(initialized_repository), "--json", "--no-conflict-preview"],
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert code == 0

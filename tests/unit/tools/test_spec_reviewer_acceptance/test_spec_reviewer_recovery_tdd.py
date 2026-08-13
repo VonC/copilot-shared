@@ -246,8 +246,13 @@ def test_manifest_is_retired_only_after_successful_answer_publication() -> None:
 
 
 def test_escalation_requires_human_resolution_before_recovery(tmp_path: Path) -> None:
-    """Protocol contradictions stop reviewer work at the human-only gate."""
-    effort = make_effort(tmp_path / "escalation", "plan", "escalation")
+    """Protocol contradictions stop at the human gate without needless Git I/O."""
+    effort = make_effort(
+        tmp_path / "escalation",
+        "plan",
+        "escalation",
+        initialize_git=False,
+    )
     active = core(effort)
     active.start()
 

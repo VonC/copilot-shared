@@ -6,12 +6,12 @@ import json
 import subprocess
 from typing import TYPE_CHECKING
 
+import pytest
+
 from tools.sensitive_history.sensitive_history_scan import main
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    import pytest
 
 ERROR_EXIT = 2
 SOURCE_SECTION_COUNT = 4
@@ -47,12 +47,18 @@ def _repo(tmp_path: Path) -> Path:
     return repo
 
 
+@pytest.fixture
+def sensitive_cli_repo(tmp_path: Path) -> Path:
+    """Build scanner history outside the measured CLI assertion call."""
+    return _repo(tmp_path)
+
+
 def test_cli_defaults_to_rules_and_writes_ignored_markdown(
-    tmp_path: Path,
+    sensitive_cli_repo: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """No explicit terms uses the conventional rules file."""
-    repo = _repo(tmp_path)
+    repo = sensitive_cli_repo
     output = repo / "a.scan.local.md"
 
     assert (

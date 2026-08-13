@@ -204,12 +204,19 @@ def test_current_branch_rejects_an_empty_symbolic_ref(
         repository.current_branch()
 
 
-def test_remote_default_branch_maps_origin_head_to_a_local_branch(
-    tmp_path: Path,
-) -> None:
-    """A remote HEAD symref yields the local branch, or None when absent."""
+@pytest.fixture
+def initialized_git_repository(tmp_path: Path) -> Path:
+    """Initialize one real GitRepository outside measured assertion calls."""
     repo_path = tmp_path / "repo"
     initialize_repository(repo_path)
+    return repo_path
+
+
+def test_remote_default_branch_maps_origin_head_to_a_local_branch(
+    initialized_git_repository: Path,
+) -> None:
+    """A remote HEAD symref yields the local branch, or None when absent."""
+    repo_path = initialized_git_repository
     repository = GitRepository(repo_path)
 
     git(repo_path, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
@@ -219,12 +226,21 @@ def test_remote_default_branch_maps_origin_head_to_a_local_branch(
     assert repository.remote_default_branch() is None
 
 
-def test_merge_base_supports_fork_point_and_absent_bases(tmp_path: Path) -> None:
-    """merge-base answers with and without fork-point, or None on failure."""
+@pytest.fixture
+def feature_git_repository(tmp_path: Path) -> tuple[Path, str]:
+    """Build a committed feature branch outside the measured assertion call."""
     repo_path = tmp_path / "repo"
     base = initialize_repository(repo_path)
     git(repo_path, "switch", "-c", "feature")
     commit_file(repo_path, "feature.txt", "feature\n", "feat: feature change")
+    return repo_path, base
+
+
+def test_merge_base_supports_fork_point_and_absent_bases(
+    feature_git_repository: tuple[Path, str],
+) -> None:
+    """merge-base answers with and without fork-point, or None on failure."""
+    repo_path, base = feature_git_repository
     repository = GitRepository(repo_path)
 
     assert repository.merge_base("main", "feature") == base
