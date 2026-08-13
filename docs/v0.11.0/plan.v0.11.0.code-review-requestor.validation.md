@@ -125,7 +125,10 @@ Existing shared requestor behavior remains canonical and unchanged; the new role
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because no implementation check has taken place.
+Yes. Step 3 has been fully implemented.
+
+The post-grouping marker sample, exact plan-step handoff, durable exchange
+routing, and authorized commit continuation are implemented and validated.
 
 ### Goal for Step 3
 
@@ -139,27 +142,65 @@ Connect post-grouping activation, explicit step transport, live exchange routing
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Added an exact-path code-review routing adapter with the settled family
+  policy, marker-gated cold entry, live-state precedence, and fail-closed
+  identity validation.
+- Added step-aware command rendering using the literal ` step <id>` suffix
+  while preserving ordinary rendering byte-for-byte.
+- Integrated the specialized requestor route and `code-review-commit` command
+  into `pw`, delegating successful authorization to the existing strict batch
+  commit boundary and retaining pending authorization after failure.
+- Updated implementation and grouping instructions so the marker is sampled
+  after grouping and the printed requestor command is run verbatim.
+- Added focused routing, rendering, CLI, continuation, and instruction contract
+  tests, plus duration-only fixture-boundary repairs required by Groundhog.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+- `CodeReviewRoute` is an immutable value carrying one exact review context and
+  its observed artifact state.
+- `CodeReviewRoutingError` reports absent or inconsistent specialized routes.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+The new module is a focused workflow adapter: it derives one fixed context,
+delegates protocol state to `ReviewExchangeCore`, rendering to the shared
+renderer, and side effects to the existing batch-commit subprocess boundary.
+That boundary resolves `gcba.bat` from `steps.llm_shared_dir()` while retaining
+the reviewed project as its working directory, so root, submodule, and sibling
+llm-shared deployments execute the same installed launcher against the correct
+staged tree.
+The skill and CLI layers remain thin and do not absorb exchange-domain logic.
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Routing examines only the derived request, answer, coordination, tombstone, and
+lock paths, so it is constant with repository size and performs no directory or
+transcript scan. Production files remain within their advisory bands: the
+router is 246 lines, renderer 57, skill router 583, and CLI 579. The focused
+routing test is 383 lines, three lines above its 260–380 advisory band, because
+it keeps all route, continuation, and external-boundary cases together; the
+instruction integration test is 48 lines, below its 120–200 band because token
+and ordering assertions cover the contract concisely. All remain below the
+hard 650-line ceiling. No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+The dedicated router suite covers disabled, cold, live, inconsistent,
+mismatched-step, rendering, authorization, subprocess-success, and
+subprocess-failure paths. Skill rendering and CLI suites cover the new routing
+and command surfaces, and the instruction integration test pins required tokens
+and ordering. Groundhog completed 1,671 tests with 100% coverage, no failures,
+warnings, xfails, or duration outliers. No unit-tested class below 100% needs
+completing.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+Marker absence keeps ordinary workflow routing unchanged, while durable exact
+exchange evidence remains resumable after marker removal. The full repository
+gate reports `state=done exit=0`, so no existing feature or reporting capability
+is impaired.
 
 ## Step 4. Prove the full code-review requestor workflow
 

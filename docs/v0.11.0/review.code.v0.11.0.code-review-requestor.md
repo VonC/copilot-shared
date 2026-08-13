@@ -345,3 +345,295 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-1 -->
+
+## Round 1 by requestor - Step 3
+
+- Recorded: 2026-08-13T17:58:41+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 code-review-requestor round 1
+
+Umbrella draft: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+Implementation step: 3
+Review round: 1
+
+### Requestor assessment for step 3 code-review-requestor round 1
+
+Yes. Step 3 has been fully implemented.
+
+The exact-path router, step-aware command, durable live-state precedence, and
+authorized batch-commit continuation match the plan. Groundhog finished with
+1,671 passing tests, 100% coverage, no warnings, xfails, or duration outliers;
+the static-check phase was clean. The implementation-check found no
+architecture, performance, coverage, or feature-integrity issue.
+
+### Implementation report for step 3 code-review-requestor round 1
+
+Step 3 adds `tools/prompt_workflow_code_review.py` as the bounded adapter over
+the shared exchange core. It derives one plan-step identity, checks only fixed
+artifact paths, preserves marker-off routing, resumes durable live state, and
+fails closed on identity or step disagreement.
+
+The shared renderer now provides the literal ` step <id>` suffix without
+changing ordinary rendering. The skill router and CLI expose the specialized
+requestor and `code-review-commit`; the latter delegates exactly once to the
+existing strict batch-commit command and completes the exchange only after a
+successful return. The two workflow instructions record post-grouping marker
+sampling and the no-second-choice authorized continuation.
+
+Focused tests cover cold, live, inconsistent, marker-off, mismatched-step,
+rendering, CLI, subprocess success, and replay failure paths. Groundhog-required
+fixture repairs move real Git setup outside measured call phases without
+removing assertions or changing production behavior.
+
+### Change summary for step 3 code-review-requestor round 1
+
+The staged tree contains 19 paths in three dependency-ordered `a.commit`
+groups:
+
+1. `test(groundhog): shorten duration-gated setup` — seven test and fixture
+   files that retain the same assertions while moving setup out of measured
+   call phases.
+2. `feat(code-review): route commit gate requests` — four production workflow
+   files, two instructions, and five focused test files for the Step 3 surface.
+3. `docs(code-review-requestor): record step 3 validation` — the validation
+   record, last.
+
+Every staged path appears exactly once. `a.commit` passes
+`bin/gcba.bat -n a.commit`.
+
+### Writer response for step 3 code-review-requestor round 1
+
+Writer response: This is round 1, so there is no earlier reviewer feedback or repair reversal.
+The writer requests review of the complete staged Step 3 result, including the
+Groundhog duration repairs that were required to reach `state=done exit=0`.
+
+### Reviewer focus for step 3 code-review-requestor round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 3
+
+- Recorded: 2026-08-13T19:11:07+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 3
+- Outcome: answer
+
+Step 3 was checked against the requirement, design, plan step, validation
+record, staged changes, and `a.commit`. The step is substantially correct, and
+one substantive defect was found and repaired, so another round is required. No
+commit was made.
+
+All four mandated completion greps pass. The step-token criterion added during
+plan review earns its place: `render_step_command` is literally
+`f"{render_command(...)} step {implementation_step}"`, and its test asserts
+`step_aware == f"{ordinary} step 4A"`, which is exactly the byte-identical
+strict-prefix property the design settled. Every line budget holds, with the
+router at 246 against 220-340 and both risk-band routers inside their bands
+without a split, which is the settled splitting answer applied literally.
+`a.commit` covers all twenty staged paths across three dependency-ordered groups,
+each exactly once, validation last.
+
+The seven duration repairs were checked across the whole group rather than
+sampled: ninety-one insertions, thirty-three deletions, and not one removed
+assertion. Skipping Git initialization for the escalation acceptance case is
+sound, because that test drives `start` and `escalate` without ever calling
+`activate`, and only `activate` requires a repository.
+
+One substantive repair was made. `run_batch_commit` located its launcher as
+`cwd / "bin" / "gcba.bat"`, deriving it from the reviewed project root. That was
+the only `bin/` path built anywhere in `tools/`, and the one place it should not
+be, because `gcba.bat` ships with llm-shared rather than with the project under
+review. The repository explicitly supports llm-shared as the root, under the
+root, or outside it, which is what `instruction_prefix` exists to resolve and
+what the workflow adapter's three-step locate body assumes. In a sibling-clone or
+submodule deployment the previous code would look for the launcher under the
+consuming project, failing after the human had already chosen `Commit`, and
+because a failed owning action retains its authorization for replay, every retry
+would fail identically. The launcher now resolves through `llm_shared_dir()`
+while the working directory stays the reviewed project, so behavior is unchanged
+where llm-shared is the root. The test previously pinned the temporary project
+path, encoding the assumption; it now pins the llm-shared launcher, asserts it
+exists, and asserts it is not under the temporary root. The module stays at 100%
+coverage, 91 focused tests pass, and pyright, ruff, and `ty` are clean. The
+validation record's two affected counts were corrected from 240 to 246 and from
+381 to 383 with the advisory variance restated.
+
+That repair changes production code and a test, so it is substantive, and a
+substantive repair cannot validly finish the workflow in the same round. That is
+the only reason for `changes-requested`; no other Step 3 work is missing.
+`a.commit` needed no amendment.
+
+Two items are returned as feedback. The request's change summary states nineteen
+staged paths and describes Group 3 as the validation record alone, while twenty
+are staged and Group 3 also holds the versioned transcript; `a.commit` itself is
+correct, so only the next summary needs to match. `resolve_code_review_route`
+also builds the plan-step context twice and reads the child draft each time;
+both are pure and constant-cost, but a single resolution reused by the probe and
+the observation would match the plan's stated resolve-once wording.
+
+Disposition: changes-requested. This answer does not authorize a commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 2 by requestor - Step 3
+
+- Recorded: 2026-08-13T19:26:19+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 code-review-requestor round 2
+
+Umbrella draft: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+Implementation step: 3
+Review round: 2
+
+### Requestor assessment for step 3 code-review-requestor round 2
+
+Yes. Step 3 has been fully implemented after accepting the round-1 repair.
+
+The batch launcher now comes from `steps.llm_shared_dir()` while `cwd` remains
+the reviewed project. This is the correct boundary for root, submodule, and
+sibling deployments and prevents an authorized replay from repeatedly looking
+under the consuming project. The focused Step 3 Groundhog run is green, the
+validation record names the boundary, and no other implementation gap remains.
+
+### Implementation report for step 3 code-review-requestor round 2
+
+Step 3 adds `tools/prompt_workflow_code_review.py` as the bounded adapter over
+the shared exchange core. It derives one plan-step identity, checks only fixed
+artifact paths, preserves marker-off routing, resumes durable live state, and
+fails closed on identity or step disagreement.
+
+The shared renderer now provides the literal ` step <id>` suffix without
+changing ordinary rendering. The skill router and CLI expose the specialized
+requestor and `code-review-commit`; the latter delegates exactly once to the
+existing strict batch-commit command and completes the exchange only after a
+successful return. The two workflow instructions record post-grouping marker
+sampling and the no-second-choice authorized continuation.
+
+Focused tests cover cold, live, inconsistent, marker-off, mismatched-step,
+rendering, CLI, subprocess success, and replay failure paths. Groundhog-required
+fixture repairs move real Git setup outside measured call phases without
+removing assertions or changing production behavior.
+
+Round 1 repaired `run_batch_commit` so the installed `gcba.bat` is located from
+llm-shared rather than the reviewed root. Its test asserts the launcher exists,
+is not under the temporary consuming root, and still runs with that consuming
+root as `cwd`. The router is 246 lines and its focused test is 383 lines; the
+recorded advisory variance remains below the hard ceiling.
+
+### Change summary for step 3 code-review-requestor round 2
+
+The staged tree contains 20 paths in three dependency-ordered `a.commit`
+groups:
+
+1. `test(groundhog): shorten duration-gated setup` — seven test and fixture
+   files that retain the same assertions while moving setup out of measured
+   call phases.
+2. `feat(code-review): route commit gate requests` — four production workflow
+   files, two instructions, and five focused test files for the Step 3 surface.
+3. `docs(code-review-requestor): record step 3 validation` — the validation
+   record and versioned review transcript, last.
+
+Every staged path appears exactly once. The three repaired paths remain in their
+existing groups, so `a.commit` is unchanged and passes
+`bin/gcba.bat -n a.commit`.
+
+### Writer response for step 3 code-review-requestor round 2
+
+Writer response: Round 1's launcher-resolution repair is accepted without disagreement. The
+writer verified that `gcba.bat` belongs to llm-shared while the reviewed project
+must remain the subprocess working directory, retained the reviewer edits, and
+added the deployment boundary to the validation record. The focused Step 3
+Groundhog run passes. `a.commit` needed no amendment.
+
+The replacement summary also corrects the earlier narrative from 19 to 20
+staged paths and names both files in Group 3. No repair was reversed.
+
+### Reviewer focus for step 3 code-review-requestor round 2
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-round-2 -->
+
+## Round 2 by reviewer - Step 3
+
+- Recorded: 2026-08-13T19:46:30+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 3
+- Outcome: answer
+
+The single outstanding item from round 1 was confirming the substantive
+launcher-resolution repair. It is confirmed, and the verdict
+`Yes. Step 3 has been fully implemented.` now holds with no reviewer repair in
+this round. No commit was made.
+
+The repair survived intact rather than being reworked or quietly reverted.
+`run_batch_commit` still resolves the launcher through `steps.llm_shared_dir()`
+while `cwd` remains the reviewed project, and the test still pins the llm-shared
+launcher, asserts the file exists, and asserts the resolved path is not under the
+temporary project root. That last assertion is what prevents the original
+project-root assumption from returning unnoticed.
+
+The validation record now names the deployment boundary in its architecture
+section and names it correctly: `gcba.bat` resolves from
+`steps.llm_shared_dir()` while the reviewed project remains the working
+directory, so root, submodule, and sibling llm-shared deployments execute the
+same installed launcher against the correct staged tree.
+
+Every measurement in the record is exact against the current tree: router 246,
+renderer 57, skill router 583, CLI 579, routing test 383, integration test 48.
+The two counts the repair shifted were carried through and the advisory-band
+variance is restated at three lines rather than one. Both risk-band routers
+remain inside their mandatory ceilings without a split.
+
+`a.commit` is unchanged and still covers all twenty staged paths across three
+dependency-ordered groups, each exactly once, with validation last. The request
+narrative now states twenty staged paths and names both Group 3 files, resolving
+the first feedback item.
+
+Ninety-one focused tests pass across the router, skill, and instruction
+integration suites; `tools/prompt_workflow_code_review.py` reports 100% coverage
+at ninety-two statements with none missed; pyright, ruff, and `ty` are clean.
+
+The second feedback item was correctly left alone. `resolve_code_review_route`
+still builds its plan-step context twice, which was raised as an observation
+rather than a requested change; acting on it would have been a substantive
+production edit forcing a third round over an advisory point. The observation
+stands for a later step if the resolve-once wording is ever tightened.
+
+This round contains no reviewer edit of any kind, which is what allows it to
+close. Disposition: commit-ready. The staged changes are ready for the advisory
+human commit decision. This recommendation does not authorize a commit.
+
+<!-- review-entry-id: answer-round-2 -->
+
+## Round 2 by human - Step 3
+
+- Recorded: 2026-08-13T19:57:06+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 3
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->
