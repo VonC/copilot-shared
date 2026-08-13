@@ -336,20 +336,28 @@ def test_preview_rebase_rejects_a_merge_commit_in_range(
     assert "select commits explicitly" in str(merge_commit_rebase_error)
 
 
-def test_preview_helpers_reject_unresolvable_objects(tmp_path: Path) -> None:
-    """Tree resolution and virtual commits fail with planner errors."""
+@pytest.fixture
+def unresolvable_preview_errors(tmp_path: Path) -> tuple[str, str]:
+    """Capture preview helper failures outside the measured assertion call."""
     repo_path = tmp_path / "repo"
     initialize_repository(repo_path)
     repository = GitRepository(repo_path)
 
     with repository.isolated_object_environment() as env:
-        with pytest.raises(ReleasePlanError, match="Unable to resolve preview tree"):
+        with pytest.raises(ReleasePlanError) as tree_error:
             repository._tree_oid("does-not-exist", env=env)
-        with pytest.raises(
-            ReleasePlanError,
-            match="Unable to create temporary preview commit",
-        ):
+        with pytest.raises(ReleasePlanError) as commit_error:
             repository._virtual_commit("0" * 40, "does-not-exist", env=env)
+    return str(tree_error.value), str(commit_error.value)
+
+
+def test_preview_helpers_reject_unresolvable_objects(
+    unresolvable_preview_errors: tuple[str, str],
+) -> None:
+    """Tree resolution and virtual commits fail with planner errors."""
+    tree_error, commit_error = unresolvable_preview_errors
+    assert "Unable to resolve preview tree" in tree_error
+    assert "Unable to create temporary preview commit" in commit_error
 
 
 def test_parse_merge_tree_rejects_malformed_conflict_records() -> None:
