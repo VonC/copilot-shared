@@ -2,7 +2,7 @@
 
 No, it is not implemented.
 
-This initial validation skeleton tracks four planned implementation steps; no implementation check has run.
+Step 1 is validated; Steps 2 through 4 remain pending.
 
 ## File-based IO cost clarification for v0.11.0 code-review-requestor (implementation)
 
@@ -21,7 +21,9 @@ This initial validation skeleton tracks four planned implementation steps; no im
 
 ### Analysis of Step 1 implementation state
 
-Not started. Step 1 is not implemented because no implementation check has taken place.
+Yes. Step 1 has been fully implemented.
+
+The exact code-family plan, step, round, umbrella, authored inputs, request content, and transcript summary now share one validated rendering path. The focused suite, repository checks, all 1,641 tests, coverage gate, and duration gate pass.
 
 ### Goal for Step 1
 
@@ -35,27 +37,39 @@ Add validated paired request and transcript-summary rendering for exact code-rev
 
 ### What was implemented for Step 1
 
-_(empty — no check has taken place yet.)_.
+- Added a pure code-review renderer that derives fixed `code` identity from an exact plan and implementation step.
+- Added a canonical request template covering implementation-check evidence, staged repairs, repaired-path reporting, `a.commit` assessment, and advisory commit readiness.
+- Added a self-locating launcher and an exact ignored UTF-8 CLI boundary with one read per authored input and one write per paired output.
+- Added focused unit coverage for valid rendering, optional guidance, invalid identity, malformed input, unsafe paths, Git-ignore failures, template failures, and envelope mismatches.
+- Moved expensive setup for two duration-gated tests into fixtures while keeping real Git setup and all assertions.
 
 ### New types or classes introduced for Step 1
 
-_(empty — no check has taken place yet.)_.
+- `CodeReviewRoundInput`: frozen, validated identity and authored input for one code-review round.
+- `CodeReviewRequestRender`: frozen paired request-content and substantive-summary result.
+- `_ArgumentParser`: CLI adapter that converts argument errors to the renderer's stable failure contract.
 
 ### Architecture check for Step 1
 
-_(empty — no check has taken place yet.)_.
+Rendering remains a deterministic transformation over immutable inputs. Git and filesystem concerns stay at the command adapter boundary, while the launcher contains no business rules. Shared exchange models and envelope validation are reused without importing requestor coordination or persistence responsibilities. No DDD-Hexagonal violation or layer inversion is present.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 1
 
-_(empty — no check has taken place yet.)_.
+The renderer performs constant exact-path validation, linear template substitution, and one linear read or write per caller-owned file. It adds no directory scan, transcript reread, sorting, nested input traversal, `O(n log n)`, or `O(n^2)` path. The renderer is 382 lines against the step's advisory 280-380 band, and its tests are 437 lines against the advisory 300-430 band. Both exceed their advisory upper bound by a small margin and both stay far below the 650-line ceiling, so the shared execution checklist records the variance as evidence rather than missing work. No split is required: the module keeps one responsibility, and the step's split guidance reserves the `code_review_request_cli.py` extraction for a renderer approaching the ceiling. Groundhog's duration gate passes after two setup-heavy calls were reduced below the one-second call floor.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 1
 
-_(empty — no check has taken place yet.)_.
+The focused `tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py` package covers the complete `tools/code_review_request.py` module, including defensive error paths. The repository full run reports 100% coverage. This repository does not use the `src/pdfss/tests/unit` layout named by the generic instruction; the colocated unit-test convention is followed here.
+
+No unit-tested class below 100% needs completing.
 
 ### Feature integrity for Step 1
 
-_(empty — no check has taken place yet.)_.
+Existing specification rendering and exchange behavior are unchanged. The new launcher and files are additive, all 1,641 tests pass, and the duration fixes preserve real Git setup and every assertion while moving setup outside measured call time. No existing feature or reporting capability is impaired.
 
 ## Step 2. Add the specialized code-review requestor role
 
