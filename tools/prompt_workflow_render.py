@@ -44,4 +44,14 @@ def render_command(prefix: str, instruction: str, document: str) -> str:
     return f"{prefix}{name} on {document}"
 
 
+def render_step_command(
+    prefix: str,
+    instruction: str,
+    document: str,
+    implementation_step: str,
+) -> str:
+    """Append the explicit implementation-step token to an ordinary command."""
+    return f"{render_command(prefix, instruction, document)} step {implementation_step}"
+
+
 # eof

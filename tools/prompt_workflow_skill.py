@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from tools import prompt_workflow_code_review as code_review
 from tools import prompt_workflow_collection as collection
 from tools import prompt_workflow_docs as docs
 from tools import prompt_workflow_git as git
@@ -39,6 +40,7 @@ DEFAULT_HOST = rendering.DEFAULT_HOST
 detect_host = rendering.detect_host
 host_prefix = rendering.host_prefix
 render_command = rendering.render_command
+render_step_command = rendering.render_step_command
 
 
 # The instruction named before the workflow proper, when only a new draft exists.
@@ -78,6 +80,7 @@ PRODUCED_TYPE = {"requirement": "feature-request", "design": "design", "plan": "
 IMPLEMENT_STEP = 10
 SPEC_REVIEW_REQUESTOR = "spec-review-requestor"
 SPEC_REVIEWER = "spec-reviewer"
+CODE_REVIEW_REQUESTOR = "code-review-requestor"
 
 
 def next_command(
@@ -108,6 +111,10 @@ def next_command(
         One bare ``<prefix><name> on <document>`` command line.
     """
     state = steps.compute_state(root, topic, None)
+    record = memory.read_memory(root)
+    code_route = code_review.resolve_code_review_route(root, topic, state, record)
+    if code_route is not None and code_route.state is not ArtifactState.IDLE:
+        return code_review.command_for_route(root, code_route, host_prefix(env, override), render_step_command)
     review_route = review.live_specification_route(root, topic, state)
     if review_route is not None:
         role = (
@@ -338,6 +345,18 @@ def run_skill(  # noqa: PLR0913
     return _emit(command, error)
 
 
+def run_authorized_code_review_commit(root: Path) -> int:
+    """Resume one durable code-review commit without displaying another gate."""
+    branch = git.current_branch(root)
+    record = memory.read_memory(root)
+    topic = handoff.resolve_current_topic(root, branch, record)
+    if topic is None:
+        message = "authorized code-review commit has no resolved workflow topic"
+        raise code_review.CodeReviewRoutingError(message)
+    state = steps.compute_state(root, topic, None)
+    return code_review.continue_authorized_commit(root, topic, state, record)
+
+
 def post_merge_command(
     root: Path,
     umbrella_document: str,
@@ -405,6 +424,18 @@ def forced_command(
         exists; None when the skill is unknown or its document is absent.
     """
     state = steps.compute_state(root, topic, None)
+    if skill_name == CODE_REVIEW_REQUESTOR:
+        route = code_review.resolve_code_review_route(
+            root,
+            topic,
+            state,
+            memory.read_memory(root),
+        )
+        return (
+            None
+            if route is None
+            else code_review.command_for_route(root, route, host_prefix(env, override), render_step_command)
+        )
     if skill_name == SPEC_REVIEWER:
         return _forced_spec_reviewer_command(root, topic, state, env, override)
     if skill_name == SPEC_REVIEW_REQUESTOR:

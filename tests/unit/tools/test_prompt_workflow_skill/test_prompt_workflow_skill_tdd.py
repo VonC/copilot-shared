@@ -365,6 +365,23 @@ def test_main_dispatches_the_skill_subcommand(
     )
 
 
+def test_main_dispatches_authorized_code_review_commit(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The dedicated CLI entry calls the owning continuation without a menu."""
+    continuation_exit = 6
+    monkeypatch.setattr(
+        prompt_workflow.skill,
+        "run_authorized_code_review_commit",
+        lambda _root: continuation_exit,
+    )
+
+    assert prompt_workflow.main(
+        ["--root", str(tmp_path), "code-review-commit"],
+    ) == continuation_exit
+
+
 _VALIDATION_TWO_STEPS = (
     "# v\n\n## Step 1.\n\n### Analysis of Step 1 implementation state\n\n"
     "Yes. Step 1 has been fully implemented.\n\n"

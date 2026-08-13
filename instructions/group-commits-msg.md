@@ -81,6 +81,17 @@ The context that can inform how you will group those files can be:
    batch commit tool above; bypassing it skips the parser/validator contract
    and risks committing a different grouping than the reviewed `a.commit`.
 
+## Authorized code-review continuation
+
+This is a dedicated entry used only after the code-review requestor observes
+`owning-action-pending` and verifies `owning_action_authorized: true`. Run
+`pw code-review-commit`; it runs the canonical batch entry with
+`--root-a-commit` and `--non-interactive`, reusing the root `a.commit`
+validation and batch execution above exactly once. In this route, do not present the commit
+choices again and do not issue private Git commands. The continuation calls the
+exchange `complete` only after the batch succeeds; on failure, authorization remains pending
+for a later replay.
+
 ## Commit message rules for groups
 
 Each commit message must follow the template provided in [`group-commits-msg.template.md`](../templates/group-commits-msg.template.md).

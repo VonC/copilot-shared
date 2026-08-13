@@ -249,14 +249,22 @@ def test_scan_reports_exact_context(history_report: ScanReport) -> None:
     assert blob_matches[0].to_dict()["kind"] == "blob"
 
 
-def test_scan_truncates_long_lines_and_validates_known_content(history_repo: Path) -> None:
-    """Long lines become centered excerpts while known content validates."""
+@pytest.fixture
+def history_repo_with_long_line(history_repo: Path) -> Path:
+    """Commit the long-line specimen outside the measured scan call."""
     long_file = history_repo / "long.txt"
     long_file.write_text(f"{'a' * 80}SecretCorp{'z' * 80}\n", encoding="utf-8")
     _git(history_repo, "add", "long.txt")
     _git(history_repo, "commit", "-m", "test: long line")
+    return history_repo
+
+
+def test_scan_truncates_long_lines_and_validates_known_content(
+    history_repo_with_long_line: Path,
+) -> None:
+    """Long lines become centered excerpts while known content validates."""
     report = scan_repository(
-        history_repo,
+        history_repo_with_long_line,
         patterns_from_terms(["secretcorp"]),
         max_line_chars=40,
         validation_term="SecretCorp",

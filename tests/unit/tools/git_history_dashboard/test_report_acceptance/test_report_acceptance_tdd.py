@@ -114,13 +114,10 @@ def two_repo_render(
 
 
 def test_two_repo_run_writes_the_combined_payload(
-    tmp_path: Path,
-    two_repo_base: Path,
+    two_repo_render: tuple[Path, list[str]],
 ) -> None:
     """Two repos build one payload: both projects, summed slices, both authors."""
-    out = tmp_path / "report"
-
-    cli.main([str(two_repo_base / "alpha"), str(two_repo_base / "beta"), "--out-dir", str(out), "--no-open"])
+    out, _opened = two_repo_render
 
     data = json.loads((out / "data.json").read_text(encoding="utf-8"))
     assert data["projects"] == ["alpha", "beta"]

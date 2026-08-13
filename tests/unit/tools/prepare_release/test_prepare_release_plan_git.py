@@ -10,6 +10,8 @@ and malformed merge-tree conflict records.
 
 Fix: prepare first-parent history, rebase conflicts, and the clean rebase
 preview in fixtures so real Git setup does not inflate measured assertions.
+The conflicting merge preview follows the same fixture pattern so its measured
+call covers assertions rather than repeated Git process startup.
 """
 
 # pyright: reportPrivateUsage=false
@@ -33,13 +35,19 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from tools.prepare_release.prepare_release_plan_models import RebasePreview
+    from tools.prepare_release.prepare_release_plan_models import (
+        MergePreview,
+        RebasePreview,
+    )
 
 _EXPECTED_REPLAYED_COMMITS = 2
 
 
-def test_preview_merge_reports_conflicted_file_without_changing_objects(tmp_path: Path) -> None:
-    """merge-tree reports a content conflict and writes only temporary objects."""
+@pytest.fixture
+def conflicting_merge_preview(
+    tmp_path: Path,
+) -> tuple[str, MergePreview, str]:
+    """Build the real conflicting merge preview outside measured call time."""
     repo_path = tmp_path / "repo"
     initialize_repository(repo_path)
     git(repo_path, "switch", "-c", "feature")
@@ -51,11 +59,20 @@ def test_preview_merge_reports_conflicted_file_without_changing_objects(tmp_path
 
     with repository.isolated_object_environment() as env:
         preview = repository.preview_merge("main", "feature", env=env)
+    objects_after = git(repo_path, "count-objects", "-v")
+    return objects_before, preview, objects_after
+
+
+def test_preview_merge_reports_conflicted_file_without_changing_objects(
+    conflicting_merge_preview: tuple[str, MergePreview, str],
+) -> None:
+    """merge-tree reports a content conflict and writes only temporary objects."""
+    objects_before, preview, objects_after = conflicting_merge_preview
 
     assert preview.clean is False
     assert preview.conflicted_files == ("shared.txt",)
     assert any(record.conflict_type.startswith("CONFLICT") for record in preview.conflicts)
-    assert git(repo_path, "count-objects", "-v") == objects_before
+    assert objects_after == objects_before
 
 
 @pytest.fixture
@@ -187,12 +204,19 @@ def test_current_branch_rejects_an_empty_symbolic_ref(
         repository.current_branch()
 
 
-def test_remote_default_branch_maps_origin_head_to_a_local_branch(
-    tmp_path: Path,
-) -> None:
-    """A remote HEAD symref yields the local branch, or None when absent."""
+@pytest.fixture
+def initialized_git_repository(tmp_path: Path) -> Path:
+    """Initialize one real GitRepository outside measured assertion calls."""
     repo_path = tmp_path / "repo"
     initialize_repository(repo_path)
+    return repo_path
+
+
+def test_remote_default_branch_maps_origin_head_to_a_local_branch(
+    initialized_git_repository: Path,
+) -> None:
+    """A remote HEAD symref yields the local branch, or None when absent."""
+    repo_path = initialized_git_repository
     repository = GitRepository(repo_path)
 
     git(repo_path, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
@@ -202,12 +226,21 @@ def test_remote_default_branch_maps_origin_head_to_a_local_branch(
     assert repository.remote_default_branch() is None
 
 
-def test_merge_base_supports_fork_point_and_absent_bases(tmp_path: Path) -> None:
-    """merge-base answers with and without fork-point, or None on failure."""
+@pytest.fixture
+def feature_git_repository(tmp_path: Path) -> tuple[Path, str]:
+    """Build a committed feature branch outside the measured assertion call."""
     repo_path = tmp_path / "repo"
     base = initialize_repository(repo_path)
     git(repo_path, "switch", "-c", "feature")
     commit_file(repo_path, "feature.txt", "feature\n", "feat: feature change")
+    return repo_path, base
+
+
+def test_merge_base_supports_fork_point_and_absent_bases(
+    feature_git_repository: tuple[Path, str],
+) -> None:
+    """merge-base answers with and without fork-point, or None on failure."""
+    repo_path, base = feature_git_repository
     repository = GitRepository(repo_path)
 
     assert repository.merge_base("main", "feature") == base
@@ -303,20 +336,28 @@ def test_preview_rebase_rejects_a_merge_commit_in_range(
     assert "select commits explicitly" in str(merge_commit_rebase_error)
 
 
-def test_preview_helpers_reject_unresolvable_objects(tmp_path: Path) -> None:
-    """Tree resolution and virtual commits fail with planner errors."""
+@pytest.fixture
+def unresolvable_preview_errors(tmp_path: Path) -> tuple[str, str]:
+    """Capture preview helper failures outside the measured assertion call."""
     repo_path = tmp_path / "repo"
     initialize_repository(repo_path)
     repository = GitRepository(repo_path)
 
     with repository.isolated_object_environment() as env:
-        with pytest.raises(ReleasePlanError, match="Unable to resolve preview tree"):
+        with pytest.raises(ReleasePlanError) as tree_error:
             repository._tree_oid("does-not-exist", env=env)
-        with pytest.raises(
-            ReleasePlanError,
-            match="Unable to create temporary preview commit",
-        ):
+        with pytest.raises(ReleasePlanError) as commit_error:
             repository._virtual_commit("0" * 40, "does-not-exist", env=env)
+    return str(tree_error.value), str(commit_error.value)
+
+
+def test_preview_helpers_reject_unresolvable_objects(
+    unresolvable_preview_errors: tuple[str, str],
+) -> None:
+    """Tree resolution and virtual commits fail with planner errors."""
+    tree_error, commit_error = unresolvable_preview_errors
+    assert "Unable to resolve preview tree" in tree_error
+    assert "Unable to create temporary preview commit" in commit_error
 
 
 def test_parse_merge_tree_rejects_malformed_conflict_records() -> None:

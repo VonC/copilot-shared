@@ -69,9 +69,21 @@ def init_repo(root: Path, *, marker: bool = True) -> None:
         (root / "a.review-mode").write_text("", encoding="utf-8")
 
 
-def make_effort(root: Path, prefix: str, slug: str, *, marker: bool = True) -> Effort:
-    """Create one supported specification document and its umbrella context."""
-    init_repo(root, marker=marker)
+def make_effort(
+    root: Path,
+    prefix: str,
+    slug: str,
+    *,
+    marker: bool = True,
+    initialize_git: bool = True,
+) -> Effort:
+    """Create one supported specification effort, optionally without Git setup."""
+    if initialize_git:
+        init_repo(root, marker=marker)
+    else:
+        root.mkdir(parents=True)
+        if marker:
+            (root / "a.review-mode").write_text("", encoding="utf-8")
     docs = root / "docs" / "v0.11.0"
     docs.mkdir(parents=True)
     umbrella = docs / "draft.v0.11.0.review-mode.md"

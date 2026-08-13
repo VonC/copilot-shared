@@ -56,9 +56,9 @@ overwrite, rename, or delete protocol artifacts by hand.
 6. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
    answer through `--content-file` and the paired substantive summary through
    `--summary-file`. Do not publish either output independently.
-7. When `publish-answer` returns exit `0`, remove the single-use retained manifest.
-   Keep every protocol artifact under shared-core ownership and stop after
-   reporting the publication result.
+7. When `publish-answer` reports `outcome: published`, remove the single-use
+   retained manifest. Keep every protocol artifact under shared-core ownership
+   and stop after reporting the publication result.
 
 Do not read the versioned transcript as assessment context. Do not use an old
 request summary when it differs from the current specification. Return
@@ -131,9 +131,15 @@ present, update the assessment and manifest before rendering. Never publish a
 cached answer carrying a stale round or digest.
 
 Rendering or failed publication leaves the manifest intact. Only after
-`publish-answer` returns exit `0` may the reviewer remove the single-use
-retained manifest. Other caller-owned assessment files remain available until
-the calling session intentionally retires them.
+`publish-answer` reports `outcome: published` may the reviewer remove the
+single-use retained manifest. That outcome accompanies exit `0` when the answer
+requests changes and exit `3` when the answer reaches the convergence gate,
+where the stop is the pending human confirmation rather than a failure. A
+failed publication never reports `published` and exits `2`. Do not key
+retirement on exit `0` alone: a convergence round always stops with exit `3`,
+so that reading would leak the single-use manifest on every convergence.
+Other caller-owned assessment files remain available until the calling session
+intentionally retires them.
 
 ## Stopped-state handling for specification reviewers
 
