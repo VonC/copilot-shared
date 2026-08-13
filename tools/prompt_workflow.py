@@ -526,6 +526,11 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         choices=docs.DOCUMENT_TYPES,
         help="Document type to resolve.",
     )
+    subparsers.add_parser(
+        "code-review-commit",
+        parents=[common],
+        help="Resume one durably authorized code-review batch commit.",
+    )
     return parser
 
 
@@ -552,6 +557,8 @@ def main(argv: list[str] | None = None) -> int:
             args.after_write,
             args.after_merge,
         )
+    if args.command == "code-review-commit":
+        return skill.run_authorized_code_review_commit(root)
     return run(root, pick=args.pick)
 
 

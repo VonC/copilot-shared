@@ -75,3 +75,18 @@ Run `pw` from a PowerShell shell — the `pw` alias when the project environment
 The call writes the `implementation-check.md` prompt for step `<x>` to `a.prompt.txt` at the project root, copies it to the clipboard, and records the step in `a.prompt_memory`. Confirm it took — the first line of `a.prompt.txt` now names `instructions/implementation-check.md` — then read `a.prompt.txt` and run the instructions of that returned prompt straight away to check what you just implemented. A handoff is the go-ahead to perform the next workflow step now: do not stop to ask the user whether to proceed, and do not compose the next prompt yourself. `pw` builds the prompt and the handoff authorises it, so every step the cycle reaches is executed without further confirmation — the commit-message step (`group-commits-msg.md`) included, where you write the commit messages rather than waiting to be told to.
 
 **Hard rule — run the chain straight through to a reviewable `a.commit`; the only stop is the commit gate.** After `pw handoff check <x>` you run the implementation check immediately, then its `pw handoff after-check <x>`, then the `group-commits-msg.md` run, all without pausing: the chain is implement -> check -> after-check -> group-commits -> `a.commit`. Do not stop between these to ask whether to run the next step, whether to proceed, or to let the user review mid-chain, and do not stop because the session has been long or the work large — those are not reasons to pause. The single stop is the commit gate at the end, where `a.commit` is prepared and presented and `group-commits-msg.md` shows its go-ahead choices before the actual commit. Pausing anywhere earlier is the mistake this rule forbids.
+
+### Optional implementation code-review handoff
+
+Immediately after `group-commits-msg` has successfully produced the reviewable
+root `a.commit`, sample the project-root `a.review-mode` marker exactly once.
+When it is absent, preserve the ordinary commit gate above. When it is present,
+the review path replaces that immediate human-review stop: run
+`pw skill code-review-requestor`, which prints a self-contained command carrying
+the exact plan and implementation step, then run the printed command verbatim.
+
+Read and follow `instructions/code-review-requestor.md`; do not reproduce that
+role's exchange lifecycle here. Its requestor feedback is appended to the
+versioned review transcript, but the transcript is never reread as working
+context. After activation, durable coordination governs resumption even when
+the marker later changes.

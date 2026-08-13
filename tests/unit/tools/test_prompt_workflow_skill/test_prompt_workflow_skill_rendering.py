@@ -51,6 +51,25 @@ def test_render_command_keeps_a_name_without_the_md_suffix() -> None:
     )
 
 
+def test_render_step_command_extends_both_hosts_without_changing_the_base() -> None:
+    """A step-aware command is the ordinary command plus one literal suffix."""
+    document = "docs/plan.v0.11.0.routing.md"
+    for prefix, expected_name in (
+        ("/", "code-review-requestor"),
+        ("$", "llm-shared:code-review-requestor"),
+    ):
+        ordinary = skill.render_command(prefix, "code-review-requestor.md", document)
+        step_aware = skill.render_step_command(
+            prefix,
+            "code-review-requestor.md",
+            document,
+            "4A",
+        )
+        assert ordinary == f"{prefix}{expected_name} on {document}"
+        assert step_aware == f"{ordinary} step 4A"
+        assert step_aware.startswith(ordinary)
+
+
 def test_render_command_property_invariants() -> None:
     """Rendered commands preserve their prefix and target document."""
     instructions = ["write-design.md", "review-ask-questions.md", "process-draft.md"]
