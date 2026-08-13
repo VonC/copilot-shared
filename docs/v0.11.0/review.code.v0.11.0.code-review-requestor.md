@@ -637,3 +637,157 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 4
+
+- Recorded: 2026-08-13T20:59:01+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 4
+- Outcome: request
+
+### Review identity for step 4 code-review-requestor round 1
+
+Umbrella draft: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+Implementation step: 4
+Review round: 1
+
+### Requestor assessment for step 4 code-review-requestor round 1
+
+Yes. Step 4 has been fully implemented.
+
+Ten repository-level acceptance tests prove the complete opt-in requestor
+lifecycle, bounded repair and disagreement paths, exact IO rules, human
+override, durable Commit replay, single execution, and cleanup. Groundhog
+finished 1,681 tests at 100% coverage with no failures, warnings, xfails, or
+duration outliers. The final implementation-check found no architecture,
+performance, coverage, or feature-integrity issue.
+
+### Implementation report for step 4 code-review-requestor round 1
+
+Step 4 adds a test-local `CodeAnswer` builder that emits strict code-family
+answers for the exact plan, step, round, umbrella, disposition, repaired paths,
+and recommendation while leaving the deferred reviewer renderer out of scope.
+
+The lifecycle suite composes marker routing, exact step rendering, public
+request rendering, shared answer publication, staged-path inventory, a.commit
+assessment, changes-requested continuation, explicit disagreement escalation,
+polishing and substantive convergence, human override, reclaim, durable Commit
+authorization, later-session replay, one batch call, and cleanup.
+
+The IO suite rejects plan, step, round, and umbrella mismatch; tracked scratch
+inputs; unrelated staged paths as identity; duplicate live exchange; scans;
+transcript reads; and reclaim after escalation. Duration-only fixture changes
+move real Git setup outside measured call phases without removing assertions.
+
+### Change summary for step 4 code-review-requestor round 1
+
+The staged tree contains seven paths in two dependency-ordered `a.commit`
+groups:
+
+1. `test(code-review): prove requestor lifecycle` — the four new acceptance
+   package files plus one duration fixture repair.
+2. `docs(code-review-requestor): record step 4 validation` — the completed
+   validation plan and umbrella evidence row, last.
+
+Every staged path appears exactly once. `a.commit` passes
+`bin/gcba.bat -n a.commit`.
+
+### Writer response for step 4 code-review-requestor round 1
+
+Writer response: This is Step 4 round 1, so there is no earlier Step 4 reviewer feedback or
+repair reversal. The writer requests review of the final acceptance slice, its
+duration-gate repair, the completed effort validation, and the umbrella status
+transition. No commit has been made.
+
+### Reviewer focus for step 4 code-review-requestor round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 4
+
+- Recorded: 2026-08-13T21:10:45+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 4
+- Outcome: answer
+
+Step 4 was checked against the requirement, design, plan step, validation
+record, umbrella draft, staged changes, and `a.commit`. The verdict
+`Yes. Step 4 has been fully implemented.` is confirmed after one polishing-only
+reviewer repair. No commit was made.
+
+The ten acceptance tests cover every surface Step 4 named. Six lifecycle
+journeys carry marker-absent and marker-present routing with exact step
+transport, substantive repair with disagreement and override, second recorded
+reversal, substantive commit-ready held at the gate, authorized replay with
+cleanup, and expired-request reclaim. Four IO journeys carry identity mismatch,
+tracked scratch rejection, scan and transcript-read rejection with unrelated
+staging, and duplicate live exchange with escalation staying stopped.
+
+Two prove decisions this umbrella settled late rather than merely exercising
+code. The second-reversal test makes the disagreement bound executable, with the
+first recorded reversal consuming the single clarification round and the second
+escalating. The substantive commit-ready test proves that such an answer stays
+at the legitimate gate instead of starting a round the requestor cannot start.
+
+The code-answer builder implements its settled answer correctly, composing the
+strict envelope through the shared `Envelope` and `render_envelope_markdown`
+rather than reimplementing it, and adding no production surface belonging to the
+deferred reviewer.
+
+The duration repair preserves every assertion despite showing two removed
+`pytest.raises` lines: both were inline `match=` forms converted to captured
+`.value` comparisons, so the exception type is still asserted in the fixture and
+both exact messages are still asserted in the test body.
+
+Umbrella completion is properly evidenced. Row 4 flips to `completed` with
+backticked repository-relative requirement and validation paths, the requirement
+exists, the validation plan opens with exactly `Yes, it is implemented.`, all
+four step analyses read `Yes`, no stale `Missing work` section remains, and every
+other row is untouched. `a.commit` covers all eight staged paths across two
+dependency-ordered groups, each once, with validation and umbrella evidence last.
+
+One repair was made to the validation record. The Performance check reported the
+lifecycle suite at 427 lines and the IO suite at 252; both files are 426 and 254,
+verified three ways including the `(Get-Content).Count` form the plan prescribes,
+so this was not a methodology difference. Neither correction changes a
+conclusion, since both suites stay inside their 400-540 and 170-260 advisory
+bands. The repair is documentation only and therefore polishing-only.
+`a.commit` needed no amendment.
+
+One item is returned as feedback. The change summary states seven staged paths
+and describes Group 2 as two files, while eight are staged and Group 2 holds
+three because the versioned transcript is grouped with them. `a.commit` itself is
+correct. This is the same miscount Step 3 round 1 carried, which suggests the
+sentence is written from the step summary rather than derived from `a.commit`.
+
+The builder's 76 lines fall below the 150-260 band this reviewer supplied during
+plan review. That is not omitted work: the builder delegates envelope
+construction to the shared models instead of restating the contract, so the band
+was too wide, and the record explains the variance correctly.
+
+Disposition: commit-ready. This completes the four-step effort. The staged
+changes are ready for the advisory human commit decision. This recommendation
+does not authorize a commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 1 by human - Step 4
+
+- Recorded: 2026-08-13T21:18:05+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 4
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->

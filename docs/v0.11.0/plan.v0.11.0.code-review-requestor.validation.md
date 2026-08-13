@@ -1,8 +1,9 @@
 # v0.11.0 code-review-requestor implementation tracking and validation
 
-No, it is not implemented.
+Yes, it is implemented.
 
-Step 1 is validated; Steps 2 through 4 remain pending.
+All four steps are validated. The implementation review requestor is opt-in,
+bounded, resumable, and guarded by durable human commit authority.
 
 ## File-based IO cost clarification for v0.11.0 code-review-requestor (implementation)
 
@@ -206,7 +207,11 @@ is impaired.
 
 ### Analysis of Step 4 implementation state
 
-Not started. Step 4 is not implemented because no implementation check has taken place.
+Yes. Step 4 has been fully implemented.
+
+Repository-level acceptance coverage now proves the complete requestor
+lifecycle, its bounded repair paths, exact IO constraints, human gate, and
+single authorized commit continuation.
 
 ### Goal for Step 4
 
@@ -220,24 +225,56 @@ Validate the complete opt-in requestor lifecycle, bounded repair paths, human ga
 
 ### What was implemented for Step 4
 
-_(empty — no check has taken place yet.)_.
+- Added a test-local code-answer builder that emits strict code-family envelopes
+  for the exact plan, step, round, umbrella, disposition, repaired paths, and
+  recommendation without pulling forward the deferred reviewer renderer.
+- Added lifecycle acceptance journeys for opt-in routing, step transport,
+  staged repair inventory, `a.commit` assessment, substantive re-review,
+  explicit disagreement, polishing convergence, human override, reclaim,
+  durable Commit replay, one batch execution, and cleanup.
+- Added IO and failure acceptance for plan, step, round, and umbrella mismatch;
+  tracked scratch inputs; unrelated staged paths; duplicate exchanges;
+  escalation; directory scans; and transcript reads.
+- Moved real Git setup for duration-gated acceptance and legacy preview tests
+  into fixtures while retaining every behavioral assertion.
 
 ### New types or classes introduced for Step 4
 
-_(empty — no check has taken place yet.)_.
+- `CodeAnswer` is an immutable test value carrying one complete deferred
+  reviewer answer and its substantive transcript summary.
+- `Effort` is an immutable acceptance fixture value carrying one temporary
+  reviewed project, workflow state, memory, and exact review context.
 
 ### Architecture check for Step 4
 
-_(empty — no check has taken place yet.)_.
+The new code is test-only and composes public production ports: the specialized
+renderer and router, shared exchange core and store, Git staging boundary, and
+the injected final batch subprocess seam. Reviewer simulation is isolated in a
+test-local builder rather than leaking deferred reviewer behavior into
+production. No architecture issue needs to be addressed.
 
 ### Performance check for Step 4
 
-_(empty — no check has taken place yet.)_.
+Acceptance routing asserts fixed-path behavior and fails any documentation-tree
+scan or versioned-transcript read. Each journey operates on one exact context;
+staged inventory is linear in staged paths, with no new `O(n log n)` or
+`O(n^2)` work. The builder is 76 lines, lifecycle suite 426, and IO suite 254;
+the builder is below its 150–260 advisory band because shared envelope rendering
+keeps it compact, while both suites remain within their advisory bands and all
+files are below 650. No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 4
 
-_(empty — no check has taken place yet.)_.
+Ten focused acceptance tests cover all planned normal, recovery, convergence,
+authorization, and failure surfaces. Groundhog completed 1,681 tests with 100%
+coverage, no failures, warnings, xfails, or duration outliers. The new builder
+is exercised through every answer-publication journey. No unit-tested class
+below 100% needs completing.
 
 ### Feature integrity for Step 4
 
-_(empty — no check has taken place yet.)_.
+Marker-off behavior retains the ordinary gate; marker-on and live-state paths
+carry exact identity; invalid inputs fail closed; and only durable `Commit`
+authority reaches the existing batch continuation once. The full repository
+gate reports `state=done exit=0`, so no existing feature or reporting capability
+is impaired.
