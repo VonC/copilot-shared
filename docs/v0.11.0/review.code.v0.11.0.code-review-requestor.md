@@ -169,3 +169,179 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-1 -->
+
+## Round 1 by requestor - Step 2
+
+- Recorded: 2026-08-13T11:53:21+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 2
+- Outcome: request
+
+### Review identity for step 2 code-review-requestor round 1
+
+Umbrella draft: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+Implementation step: 2
+Review round: 1
+
+### Requestor assessment for step 2 code-review-requestor round 1
+
+## Requestor assessment
+
+Yes. Step 2 has been fully implemented.
+
+The canonical specialized requestor instruction and all four host adapters are
+present. The instruction fixes the code-family policy, delegates shared state
+transitions, assesses staged repairs and commit grouping, and preserves durable
+human authorization. Thirteen focused contract tests pass. The full repository
+walk reports 100% coverage with zero failures, warnings, outliers, or
+exclusions.
+
+Please verify the exact Step 2 scope, instruction contract, adapter structure,
+test sufficiency, validation record, and proposed commit grouping.
+
+### Implementation report for step 2 code-review-requestor round 1
+
+## Implementation report
+
+- Added `instructions/code-review-requestor.md` as the canonical specialized
+  role over `instructions/review-requestor.md`.
+- Registered the fixed `code`, `commit-ready`, `Rework and review again`, and
+  `Commit` policy with exact plan-step identity.
+- Covered disabled, idle, active, pending, abandoned, convergence,
+  authorization-pending, and escalation states.
+- Defined paired request rendering, exact answer-path reading, staged-repair
+  evidence, explicit repair-reversal disagreement, `a.commit` assessment, and
+  substantive-change handling.
+- Added direct workflow, Codex instruction, Codex skill, and Claude skill
+  adapters.
+- Added focused token/order and adapter-structure tests.
+- Recorded the Step 2 implementation check in the validation plan.
+
+Validation evidence:
+
+- 13 focused Step 2 tests pass.
+- `ghog day` completed with `exit=0`.
+- Full suite: 100% coverage; 0 failures, warnings, outliers, or exclusions.
+- No architecture, performance, coverage, or feature-integrity issue was found.
+
+### Change summary for step 2 code-review-requestor round 1
+
+## Staged changes and proposed commits
+
+Nine Step 2 paths are staged:
+
+- `instructions/code-review-requestor.md`
+- `.agent/workflows/code-review-requestor.md`
+- `.agents/llm-shared/instructions/code-review-requestor.md`
+- `.agents/llm-shared/skills/code-review-requestor/SKILL.md`
+- `.claude/skills/code-review-requestor/SKILL.md`
+- `tests/unit/tools/test_code_review_requestor_instruction/__init__.py`
+- `tests/unit/tools/test_code_review_requestor_instruction/test_code_review_requestor_instruction_tdd.py`
+- `tests/unit/tools/test_instruction_structure/test_code_review_requestor_adapters_tdd.py`
+- `docs/v0.11.0/plan.v0.11.0.code-review-requestor.validation.md`
+
+`a.commit` assigns every path once in dependency order:
+
+1. `feat(code-review): add specialized requestor` — canonical role, adapters,
+   and contract tests.
+2. `docs(code-review-requestor): record step 2 validation` — validation record.
+
+No Step 2 commit has been made.
+
+### Writer response for step 2 code-review-requestor round 1
+
+Writer response: ## Writer response
+
+This is Step 2 round 1. There is no earlier Step 2 reviewer feedback or
+disagreement to address.
+
+Step 1 was reviewed, authorized by the human, committed through the canonical
+batch path, and completed before this step began.
+
+### Reviewer focus for step 2 code-review-requestor round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 2
+
+- Recorded: 2026-08-13T13:41:48+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 2
+- Outcome: answer
+
+Step 2 was checked against the requirement, design, plan step, validation
+record, staged changes, and `a.commit`. The verdict
+`Yes. Step 2 has been fully implemented.` is confirmed after two polishing-only
+reviewer repairs. No commit was made.
+
+All eight files Step 2 names are present, and `a.commit` assigns all ten staged
+paths across two dependency-ordered groups with the validation group last and
+each path appearing exactly once.
+
+The canonical instruction registers the fixed `code` and `commit-ready` policy
+with both human labels, delegates every durable transition to the shared
+requestor, and covers all eleven observable states. It carries the two decisions
+the design added late: a substantive repair arriving with a commit-ready
+recommendation retains the legitimate gate and recommends `Rework and review
+again` rather than starting a round the requestor cannot start, and a requestor
+reversal is recorded as explicit disagreement rather than hidden behind a
+generic changed-work signal. It also forbids consuming a convergence answer.
+
+The adapters are guarded rather than merely written. The workflow body is pinned
+to the shared `review-requestor.md` wrapper with only the instruction name
+substituted, which is the regression the sibling effort repaired twice; the
+packaged Codex instruction and four-level skill link are pinned exactly; and
+every adapter is proven to contain no policy or lifecycle token.
+
+Measurements were taken rather than accepted: 71 focused tests pass, pyright,
+ruff, and `ty` are clean, the mandated policy grep finds sixteen matching lines,
+and both test modules are exactly the 151 and 107 lines claimed. The record's
+explanation that those counts sit below their 260-380 and 120-190 advisory bands
+because assertions are concise rather than absent holds: seven contracts cover
+policy, the ordered delegation chain, all states and prohibitions, the four-part
+evidence order, reversal handling, the substantive categories with the
+convergence gate, and the commit replay order.
+
+Two repairs were made to `instructions/code-review-requestor.md`. The third item
+of the four-part evidence list had merged the evidence item with its supporting
+rule and no longer parsed, leaving an agent unable to tell whether item 3 was the
+staged diff or a staging obligation; it now names the staged diff and both
+obligations while preserving the ordering and every pinned token. The `a.commit`
+assessment paragraph also had a 157-character first line in a file that wraps
+near 79, and is rewrapped with its contiguous contract token intact. Both change
+wording and formatting only, altering no rule, test, acceptance behavior, or
+commit grouping, so they are polishing-only. `a.commit` needed no amendment.
+
+Two items are returned as feedback. The staged set includes the versioned
+transcript and `a.commit` commits it with the validation group, which captures
+only the requestor entry because the answer and human confirmation are appended
+afterwards; deciding once whether the transcript is committed per round or per
+completed step would avoid a trailing documentation commit after every step. Two
+adapters also differ from their siblings by a single trailing blank line, which
+breaks nothing and is noted only because the forms are otherwise identical.
+
+Disposition: commit-ready. The staged changes are ready for the advisory human
+commit decision. This recommendation does not authorize a commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 1 by human - Step 2
+
+- Recorded: 2026-08-13T14:07:52+02:00
+- Exchange: code/code/v0.11.0/code-review-requestor
+- Umbrella: C:/Users/vonc/git/llm-shared/docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: C:/Users/vonc/git/llm-shared/docs/v0.11.0/plan.v0.11.0.code-review-requestor.md
+- Implementation step: 2
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->

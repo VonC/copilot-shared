@@ -75,7 +75,9 @@ Existing specification rendering and exchange behavior are unchanged. The new la
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because no implementation check has taken place.
+Yes. Step 2 has been fully implemented.
+
+The canonical code-review requestor role now fixes the code-family policy, delegates the shared exchange lifecycle, assesses staged repairs and commit grouping, and exposes redirect-only adapters for every supported host. Its focused contract suite and the full repository gate pass.
 
 ### Goal for Step 2
 
@@ -89,27 +91,35 @@ Add the canonical specialized requestor instruction and redirect-only adapters o
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- Added `instructions/code-review-requestor.md` with the fixed `code` / `commit-ready` policy, exact plan-step identity, complete exchange-state routing, paired request rendering, exact answer-path consumption, repair and `a.commit` assessment, convergence handling, and durable commit continuation.
+- Added workflow, Codex instruction, Codex skill, and Claude skill adapters that redirect directly to the canonical role without copying lifecycle policy.
+- Added token-and-order contract tests for the role plus structural tests proving adapter metadata and direct canonical redirects.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+No production types or classes were introduced. Step 2 adds Markdown role contracts and their structural tests only.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+The canonical instruction owns only code-review-specific policy and delegates all coordination transitions to `instructions/review-requestor.md`, request construction to `bin/code_review_request.bat`, and exchange commands to `bin/review_exchange.bat`. Each host adapter is a direct redirect, so policy is not duplicated across integration surfaces. This preserves the intended ports-and-adapters boundary and introduces no cross-layer dependency or misplaced behavior.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+The implementation is static Markdown with constant-path redirects and no new runtime computation, traversal, or I/O loop. The two test modules are 151 and 107 lines respectively, below the repository ceiling; they are also below their advisory bands, which reflects concise token/order and redirect assertions rather than omitted coverage.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Thirteen focused instruction and adapter tests pass. They verify required tokens and their ordering rather than pinning full prose, and they prove every adapter contains the required metadata plus a direct canonical redirect without copied lifecycle logic. Step 2 introduces no production class file requiring a class-specific unit coverage target. The full repository walk also completed with 100% coverage, zero failures, warnings, outliers, or exclusions.
+
+No unit-tested class is below 100% or needs completing.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+Existing shared requestor behavior remains canonical and unchanged; the new role narrows policy through delegation instead of modifying shared transitions. The complete repository gate reports `exit=0`, so no existing feature or reporting capability is impaired.
 
 ## Step 3. Integrate commit-gate activation and durable pw routing
 
