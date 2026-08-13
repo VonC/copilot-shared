@@ -4,7 +4,9 @@ Fix: cover `prepare_release_plan.py` end to end for the coverage gate: the
 human-readable and JSON outputs against a real temporary repository, the
 exit-2 planner-error path, every rendering branch (boundary evidence and
 candidates, merge and rebase conflict previews), and the `__main__` guard
-through `runpy`, following the pattern of the groundhog acceptance suite.
+through `runpy`, following the pattern of the groundhog acceptance suite. The
+guard test injects an already-tested plan so it measures dispatch rather than
+repeating the real Git workflow covered by the CLI tests above.
 The error path uses a broken `.git` file so the test stays hermetic even
 when an ancestor of the pytest temp directory is a real Git repository.
 """
@@ -232,15 +234,55 @@ def test_render_plan_omits_the_preview_block_without_merge_data() -> None:
     assert "conflict preview" not in text
 
 
+@pytest.fixture
+def main_guard_repository(tmp_path: Path) -> Path:
+    """Build the main-guard repository outside measured call time."""
+    repo = tmp_path / "repo"
+    initialize_repository(repo)
+    return repo
+
+
+def _main_guard_plan(  # noqa: PLR0913 - mirrors the production seam exactly
+    _root: Path,
+    *,
+    main_branch: str,
+    integration_branch: str | None,
+    branch: str | None,
+    feature_base: str | None,
+    feature_parent: str | None,
+    feature_target: str,
+    preview_conflicts: bool,
+) -> ReleasePlan:
+    """Return an already-tested plan for the main-guard dispatch boundary."""
+    del (
+        main_branch,
+        integration_branch,
+        branch,
+        feature_base,
+        feature_parent,
+        feature_target,
+        preview_conflicts,
+    )
+    return _TEMPLATE
+
+
 def test_script_runs_through_its_main_guard(
-    tmp_path: Path,
+    main_guard_repository: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The planner script runs as __main__ and exits with the plan code."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
+    monkeypatch.setattr(
+        "tools.prepare_release.prepare_release_plan_workflow.build_release_plan",
+        _main_guard_plan,
+    )
     script_path = plan_cli.__file__
-    argv = [script_path, "--root", str(repo), "--no-conflict-preview", "--json"]
+    argv = [
+        script_path,
+        "--root",
+        str(main_guard_repository),
+        "--no-conflict-preview",
+        "--json",
+    ]
     monkeypatch.setattr(sys, "argv", argv)
 
     with pytest.raises(SystemExit) as excinfo:

@@ -10,6 +10,8 @@ and malformed merge-tree conflict records.
 
 Fix: prepare first-parent history, rebase conflicts, and the clean rebase
 preview in fixtures so real Git setup does not inflate measured assertions.
+The conflicting merge preview follows the same fixture pattern so its measured
+call covers assertions rather than repeated Git process startup.
 """
 
 # pyright: reportPrivateUsage=false
@@ -33,13 +35,19 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from tools.prepare_release.prepare_release_plan_models import RebasePreview
+    from tools.prepare_release.prepare_release_plan_models import (
+        MergePreview,
+        RebasePreview,
+    )
 
 _EXPECTED_REPLAYED_COMMITS = 2
 
 
-def test_preview_merge_reports_conflicted_file_without_changing_objects(tmp_path: Path) -> None:
-    """merge-tree reports a content conflict and writes only temporary objects."""
+@pytest.fixture
+def conflicting_merge_preview(
+    tmp_path: Path,
+) -> tuple[str, MergePreview, str]:
+    """Build the real conflicting merge preview outside measured call time."""
     repo_path = tmp_path / "repo"
     initialize_repository(repo_path)
     git(repo_path, "switch", "-c", "feature")
@@ -51,11 +59,20 @@ def test_preview_merge_reports_conflicted_file_without_changing_objects(tmp_path
 
     with repository.isolated_object_environment() as env:
         preview = repository.preview_merge("main", "feature", env=env)
+    objects_after = git(repo_path, "count-objects", "-v")
+    return objects_before, preview, objects_after
+
+
+def test_preview_merge_reports_conflicted_file_without_changing_objects(
+    conflicting_merge_preview: tuple[str, MergePreview, str],
+) -> None:
+    """merge-tree reports a content conflict and writes only temporary objects."""
+    objects_before, preview, objects_after = conflicting_merge_preview
 
     assert preview.clean is False
     assert preview.conflicted_files == ("shared.txt",)
     assert any(record.conflict_type.startswith("CONFLICT") for record in preview.conflicts)
-    assert git(repo_path, "count-objects", "-v") == objects_before
+    assert objects_after == objects_before
 
 
 @pytest.fixture
