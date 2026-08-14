@@ -174,6 +174,13 @@ A change to a tracked file is substantive except for `a.commit`, ignored caller 
 
 The first round with unavailable mandatory evidence requests rework. When the same evidence remains unavailable in the next round or a writer disputes its mandatory status, the reviewer publishes that finding but does not call `escalate`. The requestor and shared no-progress bound perform the escalation transition. Missing or disputed evidence always blocks readiness.
 
+## File-based IO cost clarification for the code-reviewer design
+
+- Derive request, answer, transcript, manifest, plan, and validation-plan paths from the exact exchange context; never enumerate a directory to select an artifact.
+- Read each caller-owned assessment input once and compare only explicitly named step files when recording repair or validation state.
+- Write retained evidence to one stable ignored manifest path, and use atomic paired writes for answer content and transcript summary.
+- Keep Git work proportional to the explicit staged set and repair paths rather than the repository's unrelated working tree.
+
 ## Paired code-review answer design for v0.11.0
 
 ### Two typed answer shapes and two renderings

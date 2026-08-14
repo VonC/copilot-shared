@@ -55,6 +55,10 @@ The reviewer may recommend commit-readiness only when every applicable item belo
 
 The project's validation entry point and coverage gate supply the default mandatory verification set. The plan step or review request may add stricter evidence but may not remove an item from that default set.
 
+## File-based IO cost clarification for the code reviewer
+
+The reviewer resolves exact request, plan, validation-plan, manifest, and answer paths from the exchange identity. It does not scan directories to discover nearby artifacts. Each explicit input is read once per assessment phase, retained evidence uses one stable ignored path, and paired answer outputs are written together before publication.
+
 ## Review artifacts and transcript rules
 
 - The shared `review-exchange-core` derives the exact request, answer, and transcript names from the exchange identity, and every artifact must agree with that identity.
