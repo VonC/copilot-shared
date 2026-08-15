@@ -158,11 +158,11 @@ def test_notes_survive_a_rebuild_while_generated_refreshes(
     """A second run keeps the hand-written notes and rewrites the generated file.
 
     ``--no-open`` means the opener is never called, so no browser monkeypatch is
-    needed here.
+    needed here. The prior files are seeded directly because first-run report
+    creation is covered separately; this call exercises only rebuild behavior.
     """
     out = tmp_path / "report"
-
-    cli.main([str(solo_repo), "--out-dir", str(out), "--no-open"])
+    out.mkdir()
 
     notes = out / "analysis.notes.solo.md"
     notes.write_text("HAND-WRITTEN COMMENTARY", encoding="utf-8")

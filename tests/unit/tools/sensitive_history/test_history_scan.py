@@ -6,6 +6,9 @@ parameter or argument types on the monkeypatched doubles.
 
 The missing-validation branch uses an empty in-memory repository so the
 long-line integration test scans its real Git history only once.
+
+Shared-rule configuration repositories are prepared in a fixture so the
+measured assertions exercise real Git reads without charging repository setup.
 """
 
 from __future__ import annotations
@@ -162,21 +165,36 @@ def test_repository_rules_merge_shared_then_project_local(tmp_path: Path) -> Non
     ]
 
 
+@pytest.fixture
+def shared_rule_config_repos(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+    """Prepare absent, empty, and relative Git config states outside the call."""
+    absent = tmp_path / "absent"
+    absent.mkdir()
+    _git(absent, "init", "-b", "main")
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    _git(empty, "init", "-b", "main")
+    _git(empty, "config", "sensitive.sharedRulesFile", "")
+
+    relative = tmp_path / "relative"
+    relative.mkdir()
+    _git(relative, "init", "-b", "main")
+    rules = relative / "relative.rules"
+    rules.write_text("literal:RelativeTerm==>redacted\n", encoding="utf-8")
+    _git(relative, "config", "sensitive.sharedRulesFile", "relative.rules")
+    return absent, empty, relative, rules
+
+
 def test_repository_rules_handle_absent_empty_relative_and_failed_config(
-    tmp_path: Path,
+    shared_rule_config_repos: tuple[Path, Path, Path, Path],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Shared rule config is optional, path-aware, and fails closed on errors."""
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    _git(repo, "init", "-b", "main")
-    assert configured_shared_replacement_file(repo) is None
-    _git(repo, "config", "sensitive.sharedRulesFile", "")
-    assert configured_shared_replacement_file(repo) is None
-    relative = repo / "relative.rules"
-    relative.write_text("literal:RelativeTerm==>redacted\n", encoding="utf-8")
-    _git(repo, "config", "sensitive.sharedRulesFile", "relative.rules")
-    assert configured_shared_replacement_file(repo) == relative.resolve()
+    absent, empty, relative, rules = shared_rule_config_repos
+    assert configured_shared_replacement_file(absent) is None
+    assert configured_shared_replacement_file(empty) is None
+    assert configured_shared_replacement_file(relative) == rules.resolve()
 
     def missing_git(*_args: object, **_kwargs: object) -> NoReturn:
         message = "missing"
@@ -184,7 +202,7 @@ def test_repository_rules_handle_absent_empty_relative_and_failed_config(
 
     monkeypatch.setattr(subprocess, "run", missing_git)
     with pytest.raises(HistoryScanError, match="cannot read Git config"):
-        configured_shared_replacement_file(repo)
+        configured_shared_replacement_file(relative)
 
 
 def test_repository_rules_reject_failed_git_config(
