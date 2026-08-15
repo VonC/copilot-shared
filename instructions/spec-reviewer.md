@@ -64,6 +64,14 @@ Do not read the versioned transcript as assessment context. Do not use an old
 request summary when it differs from the current specification. Return
 `changes-requested` with a precise drift report instead.
 
+Author every heading in the answer and in the transcript summary under the
+heading rules in `instructions/review-requestor.md`: one top-level heading per
+transcript, unique heading text, well-formed titles. The summary is appended to
+a transcript that already holds the earlier rounds, so a bare `## Findings` or
+`### Repairs made by the reviewer` collides with the same heading from the round
+before. Qualify it with the step and round, or with the exchange where rounds
+restart, and never author a `#` heading inside appended content.
+
 ## Pending request and reclaim boundary for specification reviewers
 
 A normal invocation starts from `request-pending`. The shared wait validates

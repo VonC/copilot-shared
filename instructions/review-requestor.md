@@ -50,6 +50,36 @@ The envelope and these fields must agree with the command context and current
 coordination round. Leave specialized findings, repair reports, assessments,
 and recommendations to the calling workflow.
 
+### Heading rules for authored review content
+
+Every round is appended to a transcript that already holds the earlier rounds,
+so a heading is written once but read inside a growing document. Two rules
+follow, and they bind requestor and reviewer content alike:
+
+- **Exactly one top-level heading per transcript, which is its title.** Author a
+  round's own title at `##` or deeper, never at `#`. A `#` inside appended
+  content gives the transcript a second top-level heading and breaks its
+  outline.
+- **Every heading text must be unique within the transcript.** A bare
+  `## Evidence` or `### Findings` is unique in the round that writes it and
+  duplicated the moment the next round appends the same word.
+
+Qualify each authored heading with what actually makes it unique, choosing the
+discriminator that explains the repetition rather than a counter:
+
+- the step and round, for content inside one exchange, as in
+  `## Evidence for reviewer step 5 round 2`;
+- the exchange, where a transcript accumulates several exchanges over one
+  document and each restarts at round 1, as in
+  `## Round 1 by requestor (exchange 2)`.
+
+Titles must also be well formed: no doubled word from interpolation, so
+`step 5` and never `step step 5`, and no trailing punctuation.
+
+A transcript a Markdown linter reports `MD024` or `MD025` on is a defect in the
+round that appended to it, not in the linter configuration. Neither rule may be
+disabled to make a transcript pass.
+
 ## Automated requestor sequence
 
 1. Call `status` with the exact context. Exit `3` with outcome `disabled` means
