@@ -28,7 +28,13 @@ This skeleton tracks the six planned responder slices; no implementation check h
 
 ### Analysis of Step 1 implementation state
 
-Not started. Step 1 is not implemented because its request evidence fields, resolver, and tests have not been created.
+Yes. Step 1 has been fully implemented.
+
+The requestor now captures the exact Git index tree, resolves the mandatory
+default-plus-addition validation set with source attribution, and renders both
+values from one typed evidence object in the paired request artifacts. Focused
+checks and the final post-review Groundhog walk pass with 1,707 tests, 100%
+coverage, and no duration outliers or exclusion regressions.
 
 ### Goal for Step 1
 
@@ -42,27 +48,68 @@ Publish the request-time Git index tree and the resolved validation set with sou
 
 ### What was implemented for Step 1
 
-_(empty — no check has taken place yet.)_.
+- Added `capture_index_tree` as the single capture-only Git index-tree helper.
+- Added deterministic, additive validation resolution that preserves project
+  defaults and merges project, plan, and request source labels.
+- Extended `CodeReviewRoundInput` and its CLI boundary with mandatory request
+  evidence, repeatable additive validation flags, and publication-time capture.
+- Added one canonical fenced JSON object under `## Code review evidence` and a
+  human-readable transcript section derived from the same typed evidence.
+- Updated the canonical requestor instruction and template without changing the
+  shared exchange envelope or paired publication lifecycle.
+- Added real temporary-repository, resolver, renderer, instruction, IO, and
+  requestor acceptance coverage for the completed surface.
 
 ### New types or classes introduced for Step 1
 
-_(empty — no check has taken place yet.)_.
+- `ResolvedValidationCommand`: one immutable command with ordered source labels.
+- `ResolvedValidationSet`: one immutable, unique, deterministically ordered set
+  of mandatory commands.
+- `_CodeReviewEvidence`: the renderer-internal typed source for canonical JSON
+  and its paired human-readable summary.
 
 ### Architecture check for Step 1
 
-_(empty — no check has taken place yet.)_.
+The capture-only Git adapter delegates subprocess portability to the existing
+Git command helper. Validation resolution remains side-effect free, while the
+request renderer composes those two boundaries and retains exchange-envelope
+ownership in the existing shared model. Dependencies point from the request
+adapter toward focused evidence and validation modules; no business-only layer
+imports a new technical concern, and no DDD-Hexagonal boundary is inverted.
+
+No architecture smell or violation needs to be addressed.
 
 ### Performance check for Step 1
 
-_(empty — no check has taken place yet.)_.
+Index capture delegates one `git write-tree` operation. Validation resolution is
+O(n) over explicit command inputs with insertion-ordered dictionary lookup, and
+rendering is O(n) over the resolved commands. No directory enumeration,
+repository-wide nested comparison, O(n log n), or O(n^2) computation was added.
+The real-Git tests moved process setup outside measured calls and the final full
+suite reported zero duration outliers.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 1
 
-_(empty — no check has taken place yet.)_.
+The dedicated `test_code_review_evidence` and `test_code_review_validation`
+leaves exercise every branch in the two new production modules. The existing
+request renderer, requestor instruction, and requestor acceptance leaves cover
+mandatory evidence validation, canonical dual-JSON rendering, envelope
+round-trip behavior, source summaries, publication-time capture, additive CLI
+inputs, read-once IO, and unchanged exchange transitions. The final Groundhog
+walk reports 100% project coverage across 1,707 passing tests.
+
+No unit-tested class or module is below 100% coverage or needs completing.
 
 ### Feature integrity for Step 1
 
-_(empty — no check has taken place yet.)_.
+Existing request identity, staged-repair policy, optional human guidance,
+caller-owned ignored-file validation, exact-path access, paired output, and
+shared envelope parsing remain covered. Requests now fail closed when tree or
+validation evidence is absent or malformed, while both evidence headings
+round-trip without changing shared exchange mechanics. No existing reporting
+or requestor capability is impaired.
 
 ---
 
