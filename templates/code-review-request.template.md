@@ -2,6 +2,12 @@
 
 $identity_fields
 
+## Code review evidence for $identity_label round $round_number
+
+```json
+$code_review_evidence
+```
+
 ## Review scope for $identity_label round $round_number
 
 Apply `implementation-check` to the exact implementation plan step and inspect

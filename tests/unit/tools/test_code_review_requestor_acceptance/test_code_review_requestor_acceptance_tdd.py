@@ -3,7 +3,9 @@
 Step 4 composes marker routing, exact step rendering, staged repair evidence,
 shared exchange rounds, human override, durable commit authorization, replay,
 and cleanup. Deferred reviewer answers come from the test-local strict builder;
-only the final batch subprocess boundary is replaced.
+only the final batch subprocess boundary is replaced. Renderer-only journeys
+use one deterministic valid tree object; the real Git capture boundary has its
+own temporary-repository tests.
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ import pytest
 from tools import code_review_request as request_renderer
 from tools import prompt_workflow_code_review as code_review
 from tools import prompt_workflow_skill as skill
+from tools.code_review_validation import resolve_code_review_validation
 from tools.prompt_workflow_models import MemoryRecord, Topic, WorkflowState
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
@@ -39,6 +42,7 @@ if TYPE_CHECKING:
 
 _ROUND_TWO = 2
 _ROUND_THREE = 3
+_REQUEST_INDEX_TREE = "a" * 40
 
 
 @dataclass(frozen=True)
@@ -145,14 +149,19 @@ def _request(
     """Render one complete request from separate authored round inputs."""
     return request_renderer.render_code_review_request(
         request_renderer.CodeReviewRoundInput(
-            effort.context,
-            round_number,
-            "2026-08-13T20:00:00+02:00",
-            "implementation-check reports the exact step complete.",
-            "Implemented and tested the declared plan step.",
-            change_summary,
-            writer_response,
-            guidance,
+            context=effort.context,
+            round_number=round_number,
+            created_at="2026-08-13T20:00:00+02:00",
+            assessment="implementation-check reports the exact step complete.",
+            implementation_report="Implemented and tested the declared plan step.",
+            change_summary=change_summary,
+            writer_response=writer_response,
+            request_index_tree=_REQUEST_INDEX_TREE,
+            resolved_validation_set=resolve_code_review_validation(
+                ("ghog day",),
+                ("focused acceptance tests",),
+            ),
+            human_guidance=guidance,
         ),
     )
 
@@ -185,11 +194,17 @@ def _publish_answer(
     _core(effort).publish_answer(answer.content, answer.summary)
 
 
+@pytest.fixture
+def marker_efforts(tmp_path: Path) -> tuple[Effort, Effort]:
+    """Create opted-out and opted-in repositories outside the measured call."""
+    return _effort(tmp_path / "ordinary", marker=False), _effort(tmp_path / "reviewed")
+
+
 def test_marker_absent_preserves_gate_and_marker_present_carries_exact_step(
-    tmp_path: Path,
+    marker_efforts: tuple[Effort, Effort],
 ) -> None:
     """Review mode alone replaces the ordinary gate with a self-contained route."""
-    ordinary = _effort(tmp_path / "ordinary", marker=False)
+    ordinary, reviewed = marker_efforts
     assert (
         code_review.resolve_code_review_route(
             ordinary.root,
@@ -201,7 +216,6 @@ def test_marker_absent_preserves_gate_and_marker_present_carries_exact_step(
     )
     assert not tuple(ordinary.root.glob("a.review-*"))
 
-    reviewed = _effort(tmp_path / "reviewed")
     route = code_review.resolve_code_review_route(
         reviewed.root,
         reviewed.topic,
@@ -333,10 +347,9 @@ def test_second_recorded_reversal_escalates_instead_of_looping(
     assert state is ArtifactState.ESCALATED
 
 
-def test_substantive_commit_ready_stays_at_gate_for_human_override(
-    tmp_path: Path,
-) -> None:
-    """A repaired commit-ready answer cannot be consumed into a private round."""
+@pytest.fixture
+def substantive_gate_core(tmp_path: Path) -> ReviewExchangeCore:
+    """Publish a substantive commit-ready answer outside the measured call."""
     effort = _effort(tmp_path / "substantive-gate")
     core = _core(effort)
     core.start()
@@ -348,16 +361,22 @@ def test_substantive_commit_ready_stays_at_gate_for_human_override(
         repaired_paths=("tests/test_repair.py",),
         recommendation="Rework and review again because the repair is substantive.",
     )
+    return core
+
+
+def test_substantive_commit_ready_stays_at_gate_for_human_override(
+    substantive_gate_core: ReviewExchangeCore,
+) -> None:
+    """A repaired commit-ready answer cannot be consumed into a private round."""
+    core = substantive_gate_core
     restored = core.consume_answer(reviewed_work_changed=True)
     assert restored.status.value == "awaiting-human-confirmation"
     assert core.classify().state is ArtifactState.CONVERGENCE_GATE
 
 
-def test_commit_authorization_replays_once_then_cleans_live_state(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A later requestor session consumes durable Commit authority exactly once."""
+@pytest.fixture
+def authorized_commit_effort(tmp_path: Path) -> Effort:
+    """Build durable Commit authority outside the measured continuation call."""
     effort = _effort(tmp_path / "commit")
     core = _core(effort)
     core.start()
@@ -372,6 +391,15 @@ def test_commit_authorization_replays_once_then_cleans_live_state(
     assert decision.owning_action_authorized
     assert core.classify().state is ArtifactState.OWNING_ACTION_PENDING
     (effort.root / "a.review-mode").unlink()
+    return effort
+
+
+def test_commit_authorization_replays_once_then_cleans_live_state(
+    authorized_commit_effort: Effort,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A later requestor session consumes durable Commit authority exactly once."""
+    effort = authorized_commit_effort
     calls: list[tuple[tuple[str, ...], Path]] = []
 
     def successful(

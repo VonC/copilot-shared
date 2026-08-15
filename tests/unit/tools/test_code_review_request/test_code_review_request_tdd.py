@@ -6,6 +6,7 @@ exercise the caller-owned UTF-8 file boundary without involving the exchange.
 
 from __future__ import annotations
 
+import json
 import subprocess
 from dataclasses import FrozenInstanceError, replace
 from typing import TYPE_CHECKING
@@ -13,6 +14,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from tools import code_review_request as requestor
+from tools.code_review_validation import resolve_code_review_validation
 from tools.review_exchange_models import (
     ExchangeIdentity,
     ReviewContext,
@@ -31,6 +33,12 @@ _SLUG = "code-review-requestor"
 _TIMESTAMP = "2026-08-13T10:15:00+02:00"
 _RENDER_ROUND = 2
 _FATAL_EXIT = 2
+_TREE = "1" * 40
+
+
+def _validation_set() -> requestor.ResolvedValidationSet:
+    """Return one resolved default-plus-plan validation set."""
+    return resolve_code_review_validation(("ghog day",), ("focused Step 1 tests",))
 
 
 def _plan(tmp_path: Path, name: str = f"plan.{_VERSION}.{_SLUG}.md") -> Path:
@@ -59,6 +67,8 @@ def _round_input(
         implementation_report="Added the renderer, launcher, template, and tests.",
         change_summary="Five Step 1 paths are staged for review.",
         writer_response="No earlier reviewer feedback exists for round 1.",
+        request_index_tree=_TREE,
+        resolved_validation_set=_validation_set(),
         human_guidance=guidance,
     )
 
@@ -105,7 +115,33 @@ def _assert_request_shape(
     assert envelope.round_number == _RENDER_ROUND
     assert rendered.request_content.startswith("# Review request for code/code/")
     assert "\n\n## JSON\n\n```json\n" in rendered.request_content
+    assert "\n\n## Code review evidence " in authored
     assert authored.startswith("## Review identity")
+
+
+def test_render_carries_one_canonical_evidence_object_and_round_trips(
+    tmp_path: Path,
+) -> None:
+    """Authored evidence remains distinct from and transparent to the envelope JSON."""
+    source = _round_input(tmp_path)
+    rendered = requestor.render_code_review_request(source)
+    envelope, authored = parse_envelope_markdown(rendered.request_content)
+    evidence_text = authored.split("```json\n", 1)[1].split("\n```", 1)[0]
+
+    assert json.loads(evidence_text) == {
+        "request_index_tree": _TREE,
+        "resolved_validation_set": {
+            "commands": [
+                {"command": "ghog day", "sources": ["project"]},
+                {"command": "focused Step 1 tests", "sources": ["plan"]},
+            ],
+        },
+    }
+    assert json.dumps(json.loads(evidence_text), indent=2, sort_keys=True) == evidence_text
+    assert parse_envelope_markdown(rendered.request_content) == (envelope, authored)
+    assert f"request_index_tree: {_TREE}" in rendered.transcript_summary
+    assert "resolved_validation_set:" in rendered.transcript_summary
+    assert "ghog day (sources: project)" in rendered.transcript_summary
 
 
 def _assert_visible_identity(
@@ -167,6 +203,7 @@ def test_render_carries_review_scope_staged_repairs_and_optional_guidance(
         ("change_summary", "\n", "change summary must be non-empty"),
         ("writer_response", "", "writer response must be non-empty"),
         ("human_guidance", " ", "human guidance must be non-empty"),
+        ("request_index_tree", "missing", "request index tree must be a Git tree object"),
     ],
 )
 def test_round_input_is_frozen_and_rejects_empty_authored_content(
@@ -194,6 +231,8 @@ def test_context_and_round_reject_invalid_identity(tmp_path: Path) -> None:
         replace(source, round_number=0)
     with pytest.raises(ReviewExchangeError, match="paired request rendering"):
         requestor.CodeReviewRequestRender("", "summary")
+    with pytest.raises(ReviewExchangeError, match="resolved validation set"):
+        replace(source, resolved_validation_set=None)  # type: ignore[arg-type]
 
 
 def test_round_rejects_non_code_context(tmp_path: Path) -> None:
@@ -257,6 +296,8 @@ def _cli_args(plan: Path, files: dict[str, Path]) -> list[str]:
         "--change-summary-file", str(files["changes"]),
         "--writer-response-file", str(files["response"]),
         "--guidance-file", str(files["guidance"]),
+        "--plan-validation-command", "focused Step 1 tests",
+        "--request-validation-command", "request audit",
         "--request-content-output", str(files["content"]),
         "--transcript-summary-output", str(files["summary"]),
     ]
@@ -270,6 +311,11 @@ def _always_ignored(_root: Path, _path: Path) -> bool:
 def _git_path(_name: str) -> str:
     """Return a deterministic Git executable for subprocess seams."""
     return "git"
+
+
+def _captured_tree(_root: Path) -> str:
+    """Return a deterministic request-time index identity."""
+    return _TREE
 
 
 def _no_git(_name: str) -> None:
@@ -336,6 +382,7 @@ def test_cli_reads_and_writes_every_explicit_path_once(
 
     monkeypatch.setattr(requestor, "_is_effectively_ignored", _always_ignored)
     monkeypatch.setattr(requestor, "format_local_timestamp", lambda: _TIMESTAMP)
+    monkeypatch.setattr(requestor, "capture_index_tree", _captured_tree)
     monkeypatch.setattr(requestor, "_read_utf8", counted_read)
     monkeypatch.setattr(requestor, "_write_utf8", counted_write)
 
@@ -343,6 +390,8 @@ def test_cli_reads_and_writes_every_explicit_path_once(
     assert reads == [files[key] for key in ("assessment", "report", "changes", "response", "guidance")]
     assert writes == [files["content"], files["summary"]]
     assert "Implementation step: 1" in files["summary"].read_text(encoding="utf-8")
+    assert f"request_index_tree: {_TREE}" in files["summary"].read_text(encoding="utf-8")
+    assert "request audit (sources: request)" in files["summary"].read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize(
@@ -430,6 +479,10 @@ def test_root_and_io_helpers_cover_defensive_failures(
         )
     with pytest.raises(ReviewExchangeError, match="cannot read assessment file"):
         requestor._read_utf8(directory, "assessment file")
+    malformed = tmp_path / "a.malformed.md"
+    malformed.write_bytes(b"\xff")
+    with pytest.raises(ReviewExchangeError, match="assessment file is not valid UTF-8"):
+        requestor._read_utf8(malformed, "assessment file")
     with pytest.raises(ReviewExchangeError, match="cannot write request output"):
         requestor._write_utf8(directory, "content", "request output")
 
