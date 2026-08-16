@@ -1,8 +1,9 @@
 """Capture and retain executable Git evidence shared by code-review actors.
 
 Step 2 extends immutable index capture with exact pre-repair blobs, reviewer
-patch attribution, umbrella and validation-state comparisons, and one stable
-identity-derived retained manifest.
+patch attribution, umbrella comparisons, and one stable identity-derived
+retained manifest. Explicit-path validation snapshots live in the dedicated
+validation-state module and remain re-exported here for callers.
 """
 
 # ruff: noqa: EM101, EM102, TRY003
@@ -16,12 +17,42 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
+from tools.code_review_evidence_common import (
+    SHA256_RE as _SHA256_RE,
+)
+from tools.code_review_evidence_common import (
+    TREE_OBJECT_RE as _TREE_OBJECT_RE,
+)
+from tools.code_review_evidence_common import (
+    payload_path as _payload_path,
+)
+from tools.code_review_evidence_common import (
+    relative_path as _relative_path,
+)
+from tools.code_review_evidence_common import (
+    repository_root as _repository_root,
+)
+from tools.code_review_evidence_common import (
+    run_git_evidence as _git,
+)
+from tools.code_review_evidence_common import (
+    unique_paths as _unique_paths,
+)
+from tools.code_review_evidence_validation_state import (
+    FileDigest,
+    ValidationState,
+    ValidationStateComparison,
+    capture_validation_paths,
+    compare_validation_state,
+)
 from tools.git_command import GitCommandOptions, run_cross_platform_git_command
 from tools.review_exchange_models import ReviewExchangeError
 
-_TREE_OBJECT_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 _OBJECT_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _MANIFEST_SCHEMA = 1
@@ -46,47 +77,6 @@ def _tree_field(payload: dict[str, object], name: str) -> str:
     if _TREE_OBJECT_RE.fullmatch(value) is None:
         raise ReviewExchangeError("retained evidence tree identity is invalid")
     return value
-
-
-def _repository_root(repository: str | Path) -> Path:
-    root = Path(repository).expanduser().resolve()
-    if not root.is_dir():
-        raise ReviewExchangeError("repository is not a directory")
-    return root
-
-
-def _git(
-    root: Path,
-    arguments: tuple[str, ...],
-    *,
-    check: bool = True,
-) -> subprocess.CompletedProcess[str]:
-    try:
-        return run_cross_platform_git_command(
-            arguments,
-            cwd=root,
-            options=GitCommandOptions(
-                check=check,
-                capture_output=True,
-                encoding="utf-8",
-            ),
-        )
-    except (OSError, subprocess.CalledProcessError) as error:
-        raise ReviewExchangeError(f"Git evidence command failed: {error}") from error
-
-
-def _relative_path(root: Path, value: str | Path) -> tuple[str, Path]:
-    supplied = Path(value)
-    if supplied.is_absolute():
-        raise ReviewExchangeError("evidence path must be repository-relative")
-    candidate = (root / supplied).resolve()
-    try:
-        relative = candidate.relative_to(root)
-    except ValueError as error:
-        raise ReviewExchangeError("evidence path must be repository-relative") from error
-    if not relative.parts:
-        raise ReviewExchangeError("evidence path must name a file")
-    return relative.as_posix(), candidate
 
 
 def capture_index_tree(repository: str | Path) -> str:
@@ -128,7 +118,7 @@ class RecordedBlob:
     def from_payload(cls, payload: object) -> RecordedBlob:
         """Build a recorded blob from validated JSON-safe data."""
         data = _object_map(payload, "recorded blob")
-        path = _required_string(data, "path", "recorded blob path")
+        path = _payload_path(data.get("path"), "recorded blob path")
         object_id = data.get("object_id")
         writer_deleted = data.get("writer_deleted", False)
         if object_id is not None and (
@@ -243,9 +233,12 @@ class UmbrellaDigest:
         digest = data.get("digest")
         if not isinstance(applicable, bool):
             raise ReviewExchangeError("umbrella digest applicability is invalid")
-        if digest is not None and not isinstance(digest, str):
+        valid_digest = isinstance(digest, str) and _SHA256_RE.fullmatch(digest) is not None
+        if (applicable and not valid_digest) or (
+            not applicable and digest is not None
+        ):
             raise ReviewExchangeError("umbrella digest value is invalid")
-        return cls(applicable=applicable, digest=digest)
+        return cls(applicable=applicable, digest=cast("str | None", digest))
 
 
 @dataclass(frozen=True)
@@ -296,135 +289,13 @@ def compare_umbrella_digest(
     )
 
 
-@dataclass(frozen=True)
-class FileDigest:
-    """Content identity for one repository-relative path."""
-
-    path: str
-    digest: str | None
-
-    def to_payload(self) -> dict[str, object]:
-        """Return the JSON-safe file digest representation."""
-        return {"path": self.path, "digest": self.digest}
-
-    @classmethod
-    def from_payload(cls, payload: object) -> FileDigest:
-        """Build one file digest from validated JSON-safe data."""
-        data = _object_map(payload, "file digest")
-        path = _required_string(data, "path", "file digest path")
-        digest = data.get("digest")
-        if digest is not None and not isinstance(digest, str):
-            raise ReviewExchangeError("file digest value is invalid")
-        return cls(path, digest)
-
-
-@dataclass(frozen=True)
-class ValidationState:
-    """Index and worktree content identities around mandatory validation."""
-
-    index_tree: str
-    tracked_files: tuple[FileDigest, ...]
-    ignored_files: tuple[FileDigest, ...]
-    untracked_files: tuple[FileDigest, ...]
-
-    def to_payload(self) -> dict[str, object]:
-        """Return the JSON-safe validation-state representation."""
-        return {
-            "index_tree": self.index_tree,
-            "tracked_files": [item.to_payload() for item in self.tracked_files],
-            "ignored_files": [item.to_payload() for item in self.ignored_files],
-            "untracked_files": [item.to_payload() for item in self.untracked_files],
-        }
-
-    @classmethod
-    def from_payload(cls, payload: object) -> ValidationState:
-        """Build a validation state from validated JSON-safe data."""
-        data = _object_map(payload, "validation state")
-        tree = data.get("index_tree")
-        if not isinstance(tree, str) or _TREE_OBJECT_RE.fullmatch(tree) is None:
-            raise ReviewExchangeError("validation state index tree is invalid")
-        values: list[tuple[FileDigest, ...]] = []
-        for name in ("tracked_files", "ignored_files", "untracked_files"):
-            items = data.get(name)
-            if not isinstance(items, list):
-                raise ReviewExchangeError(f"validation state {name} is invalid")
-            typed_items = cast("list[object]", items)
-            values.append(tuple(FileDigest.from_payload(item) for item in typed_items))
-        return cls(tree, *values)
-
-
-@dataclass(frozen=True)
-class ValidationStateComparison:
-    """Classified repository differences produced by validation commands."""
-
-    tracked_paths: tuple[str, ...]
-    ignored_paths: tuple[str, ...]
-    untracked_paths: tuple[str, ...]
-
-    @property
-    def acceptable(self) -> bool:
-        """Return whether differences are confined to ignored artifacts."""
-        return not self.tracked_paths and not self.untracked_paths
-
-    def to_payload(self) -> dict[str, object]:
-        """Return the JSON-safe validation comparison representation."""
-        return {
-            "acceptable": self.acceptable,
-            "tracked_paths": list(self.tracked_paths),
-            "ignored_paths": list(self.ignored_paths),
-            "untracked_paths": list(self.untracked_paths),
-        }
-
-
-def _digest_path(root: Path, relative: str) -> FileDigest:
-    path = root / Path(relative)
-    digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
-    return FileDigest(relative, digest)
-
-
-def _listed_paths(root: Path, arguments: tuple[str, ...]) -> tuple[str, ...]:
-    output = _git(root, arguments).stdout
-    return tuple(sorted(path for path in output.split("\0") if path))
-
-
-def capture_validation_state(repository: str | Path) -> ValidationState:
-    """Capture exact index, tracked, ignored, and other untracked state."""
+def capture_validation_state(
+    repository: str | Path,
+    paths: Iterable[str | Path],
+) -> ValidationState:
+    """Capture index and content identities for explicit validation paths."""
     root = _repository_root(repository)
-    tracked = _listed_paths(root, ("ls-files", "-z"))
-    ignored = _listed_paths(
-        root,
-        ("ls-files", "--others", "--ignored", "--exclude-standard", "-z"),
-    )
-    untracked = _listed_paths(root, ("ls-files", "--others", "--exclude-standard", "-z"))
-    return ValidationState(
-        capture_index_tree(root),
-        tuple(_digest_path(root, path) for path in tracked),
-        tuple(_digest_path(root, path) for path in ignored),
-        tuple(_digest_path(root, path) for path in untracked),
-    )
-
-
-def _changed_paths(before: tuple[FileDigest, ...], after: tuple[FileDigest, ...]) -> tuple[str, ...]:
-    before_map = {item.path: item.digest for item in before}
-    after_map = {item.path: item.digest for item in after}
-    return tuple(
-        sorted(path for path in before_map.keys() | after_map.keys() if before_map.get(path) != after_map.get(path)),
-    )
-
-
-def compare_validation_state(
-    before: ValidationState,
-    after: ValidationState,
-) -> ValidationStateComparison:
-    """Classify validation side effects without staging, reverting, or relabeling."""
-    tracked = set(_changed_paths(before.tracked_files, after.tracked_files))
-    if before.index_tree != after.index_tree:
-        tracked.add("<index>")
-    return ValidationStateComparison(
-        tuple(sorted(tracked)),
-        _changed_paths(before.ignored_files, after.ignored_files),
-        _changed_paths(before.untracked_files, after.untracked_files),
-    )
+    return capture_validation_paths(root, paths, capture_index_tree(root))
 
 
 @dataclass(frozen=True)
@@ -490,8 +361,11 @@ class CodeReviewEvidence:
             raise ReviewExchangeError("retained repair evidence is invalid")
         typed_blobs = cast("list[object]", blobs)
         typed_repairs = cast("list[object]", repairs)
-        if not all(isinstance(item, str) for item in typed_repairs):
-            raise ReviewExchangeError("retained repair evidence is invalid")
+        recorded_blobs = tuple(RecordedBlob.from_payload(item) for item in typed_blobs)
+        recorded_paths = tuple(item.path for item in recorded_blobs)
+        if len(set(recorded_paths)) != len(recorded_paths):
+            raise ReviewExchangeError("retained repair evidence contains duplicate paths")
+        repair_paths = _unique_paths(typed_repairs, "retained repair path")
         family, type_token, version, slug, step = values
         before = data.get("validation_before")
         after = data.get("validation_after")
@@ -503,8 +377,8 @@ class CodeReviewEvidence:
             implementation_step=step,
             baseline_index_tree=_tree_field(data, "baseline_index_tree"),
             assessed_index_tree=_tree_field(data, "assessed_index_tree"),
-            recorded_blobs=tuple(RecordedBlob.from_payload(item) for item in typed_blobs),
-            repair_paths=cast("tuple[str, ...]", tuple(typed_repairs)),
+            recorded_blobs=recorded_blobs,
+            repair_paths=repair_paths,
             validation_before=(
                 None if before is None else ValidationState.from_payload(before)
             ),
@@ -521,7 +395,8 @@ def manifest_path(
     """Derive one stable ignored manifest path from exact identity and step."""
     root = _repository_root(repository)
     family, type_token, version, slug, step = identity
-    del family, type_token
+    if (family, type_token) != ("code", "code"):
+        raise ReviewExchangeError("retained evidence identity must use code/code")
     if any(_TOKEN_RE.fullmatch(value) is None for value in (version, slug, step)):
         raise ReviewExchangeError("retained evidence identity contains an unsafe token")
     return root / f"a.code-review-evidence.{version}.{slug}.step-{step}.json"
@@ -530,6 +405,7 @@ def manifest_path(
 def write_manifest(repository: str | Path, retained: CodeReviewEvidence) -> Path:
     """Atomically write retained evidence to its stable ignored path."""
     root = _repository_root(repository)
+    retained = CodeReviewEvidence.from_payload(retained.to_payload())
     path = manifest_path(root, retained.identity)
     relative = path.relative_to(root).as_posix()
     ignored = _git(root, ("check-ignore", "-q", "--", relative), check=False)
@@ -575,6 +451,29 @@ def retire_manifest(
     except OSError as error:
         raise ReviewExchangeError(f"cannot retire retained evidence manifest: {error}") from error
     return True
+
+
+__all__ = [
+    "CodeReviewEvidence",
+    "FileDigest",
+    "RecordedBlob",
+    "RepairAttribution",
+    "UmbrellaComparison",
+    "UmbrellaDigest",
+    "ValidationState",
+    "ValidationStateComparison",
+    "attribute_reviewer_patch",
+    "capture_index_tree",
+    "capture_umbrella_digest",
+    "capture_validation_state",
+    "compare_umbrella_digest",
+    "compare_validation_state",
+    "manifest_path",
+    "read_manifest",
+    "record_pre_repair_blob",
+    "retire_manifest",
+    "write_manifest",
+]
 
 
 # eof

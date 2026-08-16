@@ -52,16 +52,32 @@ def _identity(args: argparse.Namespace) -> tuple[str, str, str, str, str]:
     return (args.family, args.type_token, args.version, args.slug, args.implementation_step)
 
 
-def _read_json(path: str | Path) -> object:
-    """Read one explicit UTF-8 JSON input without selecting nearby files."""
+def _repository_file(root: Path, value: str | Path, label: str) -> Path:
+    """Resolve one caller-named file without escaping the selected repository."""
+    supplied = Path(value)
+    if supplied.is_absolute():
+        raise ReviewExchangeError(f"{label} must be repository-relative")
+    candidate = (root / supplied).resolve()
     try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
+        relative = candidate.relative_to(root)
+    except ValueError as error:
+        raise ReviewExchangeError(f"{label} must be repository-relative") from error
+    if not relative.parts:
+        raise ReviewExchangeError(f"{label} must name a file")
+    return candidate
+
+
+def _read_json(root: Path, path: str | Path) -> object:
+    """Read one repository-contained UTF-8 JSON input by explicit path."""
+    source = _repository_file(root, path, "evidence JSON path")
+    try:
+        return json.loads(source.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ReviewExchangeError(f"cannot read evidence JSON: {error}") from error
 
 
 class CodeReviewEvidenceCli:
-    """Typed subcommand dispatcher with no prompt or implicit path selection."""
+    """Typed dispatcher with no prompt, path escape, or implicit selection."""
 
     def __init__(self) -> None:
         """Build the complete non-interactive parser once."""
@@ -86,7 +102,8 @@ class CodeReviewEvidenceCli:
         umbrella_compare.add_argument("path", nargs="?")
         validation = commands.add_parser("validation-state")
         validation_commands = validation.add_subparsers(dest="validation_operation", required=True)
-        validation_commands.add_parser("capture")
+        validation_capture = validation_commands.add_parser("capture")
+        validation_capture.add_argument("paths", nargs="+")
         validation_compare = validation_commands.add_parser("compare")
         validation_compare.add_argument("before_json")
         validation_compare.add_argument("after_json")
@@ -125,28 +142,32 @@ class CodeReviewEvidenceCli:
 
     @staticmethod
     def _attribute_patch(root: Path, args: argparse.Namespace) -> object:
-        baseline = RecordedBlob.from_payload(_read_json(args.baseline_json))
+        baseline = RecordedBlob.from_payload(_read_json(root, args.baseline_json))
         return attribute_reviewer_patch(root, baseline).to_payload()
 
     @staticmethod
     def _umbrella_digest(root: Path, args: argparse.Namespace) -> object:
-        path = None if args.path is None else root / args.path
+        path = (
+            None
+            if args.path is None
+            else _repository_file(root, args.path, "umbrella path")
+        )
         if args.umbrella_operation == "capture":
             return capture_umbrella_digest(path).to_payload()
-        baseline = UmbrellaDigest.from_payload(_read_json(args.baseline_json))
+        baseline = UmbrellaDigest.from_payload(_read_json(root, args.baseline_json))
         return compare_umbrella_digest(baseline, path).to_payload()
 
     @staticmethod
     def _validation_state(root: Path, args: argparse.Namespace) -> object:
         if args.validation_operation == "capture":
-            return capture_validation_state(root).to_payload()
-        before = ValidationState.from_payload(_read_json(args.before_json))
-        after = ValidationState.from_payload(_read_json(args.after_json))
+            return capture_validation_state(root, args.paths).to_payload()
+        before = ValidationState.from_payload(_read_json(root, args.before_json))
+        after = ValidationState.from_payload(_read_json(root, args.after_json))
         return compare_validation_state(before, after).to_payload()
 
     @staticmethod
     def _write_manifest(root: Path, args: argparse.Namespace) -> object:
-        retained = CodeReviewEvidence.from_payload(_read_json(args.evidence_json))
+        retained = CodeReviewEvidence.from_payload(_read_json(root, args.evidence_json))
         return {"manifest": write_manifest(root, retained).as_posix()}
 
     @staticmethod

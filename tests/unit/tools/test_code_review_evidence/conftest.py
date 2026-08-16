@@ -93,9 +93,20 @@ def _completed(
     return subprocess.CompletedProcess(list(argv), returncode, stdout, stderr)
 
 
+@pytest.fixture
+def real_git_commands() -> bool:
+    """Select real Git subprocesses for one explicit boundary contract."""
+    return True
+
+
 @pytest.fixture(autouse=True)
-def fast_git_commands(monkeypatch: pytest.MonkeyPatch) -> None:
+def fast_git_commands(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Serve evidence Git commands in memory instead of spawning processes."""
+    if "real_git_commands" in request.fixturenames:
+        return
     repositories: dict[Path, _Repository] = {}
     real_run = subprocess.run
 

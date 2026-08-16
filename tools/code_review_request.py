@@ -126,6 +126,7 @@ class _CodeReviewEvidence:
         lines = [
             f"request_index_tree: {self.request_index_tree}",
             "resolved_validation_set:",
+            "",
         ]
         for entry in self.resolved_validation_set.commands:
             sources = ", ".join(entry.sources)

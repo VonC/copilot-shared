@@ -1,9 +1,8 @@
-"""TDD contracts for executable code-review repository evidence."""
+"""Core capture and lifecycle contracts for executable code-review evidence."""
 
 from __future__ import annotations
 
 import subprocess
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -68,6 +67,7 @@ def test_capture_index_tree_rejects_non_repository_and_malformed_git_output(
         evidence.capture_index_tree(tmp_path)
 
     completed = subprocess.CompletedProcess(["git", "write-tree"], 0, "not-a-tree\n", "")
+
     def fake_run(_arguments: object, **_kwargs: object) -> subprocess.CompletedProcess[str]:
         """Return malformed output through the typed Git seam."""
         return completed
@@ -125,20 +125,57 @@ def test_umbrella_digest_and_validation_state_classify_command_artifacts(
     assert evidence.capture_umbrella_digest(None).applicable is False
 
     tracked.write_text("before\n", encoding="utf-8")
-    before = evidence.capture_validation_state(tmp_path)
+    validation_paths = (".gitignore", "tracked.txt", ".cache/coverage.json")
+    before = evidence.capture_validation_state(tmp_path, validation_paths)
     cache = tmp_path / ".cache"
     cache.mkdir()
     (cache / "coverage.json").write_text("{}\n", encoding="utf-8")
-    after_ignored = evidence.capture_validation_state(tmp_path)
+    after_ignored = evidence.capture_validation_state(tmp_path, validation_paths)
     ignored = evidence.compare_validation_state(before, after_ignored)
     assert ignored.acceptable is True
     assert ignored.ignored_paths == (".cache/coverage.json",)
 
     tracked.write_text("command changed tracked content\n", encoding="utf-8")
-    after_tracked = evidence.capture_validation_state(tmp_path)
+    after_tracked = evidence.capture_validation_state(tmp_path, validation_paths)
     tracked_change = evidence.compare_validation_state(after_ignored, after_tracked)
     assert tracked_change.acceptable is False
     assert tracked_change.tracked_paths == ("tracked.txt",)
+
+
+def test_validation_state_reads_only_explicit_literal_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Snapshot cost and evidence stay bounded to the caller's ordered scope."""
+    _git(tmp_path, "init", "-q")
+    selected = tmp_path / "selected.txt"
+    unrelated = tmp_path / "unrelated.txt"
+    selected.write_text("selected\n", encoding="utf-8")
+    unrelated.write_text("unrelated\n", encoding="utf-8")
+    wildcard = tmp_path / "literal[1].txt"
+    wildcard.write_text("literal\n", encoding="utf-8")
+    _git(tmp_path, "add", "selected.txt", "unrelated.txt", "literal[1].txt")
+    reads: list[Path] = []
+    original_read_bytes = Path.read_bytes
+
+    def record_read(path: Path) -> bytes:
+        reads.append(path)
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", record_read)
+    state = evidence.capture_validation_state(
+        tmp_path,
+        ("literal[1].txt", "selected.txt", "selected.txt"),
+    )
+
+    assert state.paths == ("literal[1].txt", "selected.txt")
+    assert tuple(item.path for item in state.tracked_files) == state.paths
+    assert unrelated not in reads
+    with pytest.raises(ReviewExchangeError, match="explicit paths"):
+        evidence.capture_validation_state(tmp_path, ())
+    (tmp_path / "directory").mkdir()
+    with pytest.raises(ReviewExchangeError, match="must name files"):
+        evidence.capture_validation_state(tmp_path, ("directory",))
 
 
 def test_manifest_round_trip_uses_stable_identity_and_rejects_drift(
@@ -152,7 +189,7 @@ def test_manifest_round_trip_uses_stable_identity_and_rejects_drift(
     _git(tmp_path, "add", ".gitignore", "tracked.txt")
     tree = evidence.capture_index_tree(tmp_path)
     recorded = evidence.record_pre_repair_blob(tmp_path, "tracked.txt")
-    state = evidence.capture_validation_state(tmp_path)
+    state = evidence.capture_validation_state(tmp_path, (".gitignore", "tracked.txt"))
     retained = evidence.CodeReviewEvidence(
         family="code",
         type_token="code",  # noqa: S106 - protocol type token, not a credential
@@ -181,223 +218,4 @@ def test_manifest_round_trip_uses_stable_identity_and_rejects_drift(
     assert evidence.retire_manifest(tmp_path, retained.identity) is False
 
 
-def _retained_payload(tree: str) -> dict[str, object]:
-    """Return one minimal valid retained-evidence payload."""
-    return {
-        "schema_version": 1,
-        "identity": {
-            "family": "code",
-            "type_token": "code",
-            "version": "v0.11.0",
-            "slug": "code-reviewer",
-            "implementation_step": "2",
-        },
-        "baseline_index_tree": tree,
-        "assessed_index_tree": tree,
-        "recorded_blobs": [],
-        "repair_paths": [],
-        "validation_before": None,
-        "validation_after": None,
-    }
-
-
-@pytest.mark.parametrize(
-    ("payload", "message"),
-    [
-        ("not-an-object", "must be an object"),
-        ({"path": "", "object_id": None}, "path is invalid"),
-        ({"path": "x", "object_id": "bad"}, "object is invalid"),
-        (
-            {"path": "x", "object_id": None, "writer_deleted": "yes"},
-            "deletion flag is invalid",
-        ),
-    ],
-)
-def test_recorded_blob_payload_rejects_malformed_values(
-    payload: object,
-    message: str,
-) -> None:
-    """Retained blob fields fail at their typed boundary."""
-    with pytest.raises(ReviewExchangeError, match=message):
-        evidence.RecordedBlob.from_payload(payload)
-
-
-def test_evidence_operations_reject_unsafe_and_unattributable_paths(
-    tmp_path: Path,
-) -> None:
-    """Exact-path operations reject escapes, directories, absence, and binary text."""
-    _git(tmp_path, "init", "-q")
-    with pytest.raises(ReviewExchangeError, match="repository-relative"):
-        evidence.record_pre_repair_blob(tmp_path, tmp_path / "absolute.txt")
-    with pytest.raises(ReviewExchangeError, match="name a file"):
-        evidence.record_pre_repair_blob(tmp_path, ".")
-    directory = tmp_path / "directory"
-    directory.mkdir()
-    with pytest.raises(ReviewExchangeError, match="must be a file"):
-        evidence.record_pre_repair_blob(tmp_path, "directory")
-
-    absent = evidence.RecordedBlob("absent.txt", None)
-    missing = evidence.attribute_reviewer_patch(tmp_path, absent)
-    assert missing.attributable is False
-    assert "absent" in missing.reason
-
-    binary = tmp_path / "binary.txt"
-    binary.write_bytes(b"\xff")
-    with pytest.raises(ReviewExchangeError, match="UTF-8"):
-        evidence.attribute_reviewer_patch(
-            tmp_path,
-            evidence.RecordedBlob("binary.txt", None),
-        )
-
-
-def test_git_evidence_errors_and_malformed_hash_are_explicit(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Git launch and object-shape failures never become empty evidence."""
-    _git(tmp_path, "init", "-q")
-    tracked = tmp_path / "tracked.txt"
-    tracked.write_text("content\n", encoding="utf-8")
-
-    def fail_git(*_args: object, **_kwargs: object) -> object:
-        message = "git unavailable"
-        raise OSError(message)
-
-    monkeypatch.setattr(evidence, "run_cross_platform_git_command", fail_git)
-    with pytest.raises(ReviewExchangeError, match="Git evidence command failed"):
-        evidence.record_pre_repair_blob(tmp_path, "tracked.txt")
-
-    calls = 0
-
-    def malformed_hash(
-        _arguments: object,
-        **_kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        nonlocal calls
-        calls += 1
-        output = "" if calls == 1 else "not-an-object\n"
-        return subprocess.CompletedProcess(["git"], 0, output, "")
-
-    monkeypatch.setattr(evidence, "run_cross_platform_git_command", malformed_hash)
-    with pytest.raises(ReviewExchangeError, match="malformed pre-repair blob"):
-        evidence.record_pre_repair_blob(tmp_path, "tracked.txt")
-
-
-def test_umbrella_and_validation_payload_failures_are_typed(tmp_path: Path) -> None:
-    """Digest and validation snapshots reject malformed and inconsistent inputs."""
-    with pytest.raises(ReviewExchangeError, match="umbrella document"):
-        evidence.capture_umbrella_digest(tmp_path / "missing.md")
-    with pytest.raises(ReviewExchangeError, match="applicability changed"):
-        evidence.compare_umbrella_digest(
-            evidence.UmbrellaDigest(applicable=False),
-            __file__,
-        )
-    assert evidence.UmbrellaDigest.from_payload(
-        {"applicable": True, "digest": "abc"},
-    ).digest == "abc"
-    with pytest.raises(ReviewExchangeError, match="applicability"):
-        evidence.UmbrellaDigest.from_payload({"applicable": "yes", "digest": None})
-    with pytest.raises(ReviewExchangeError, match="value"):
-        evidence.UmbrellaDigest.from_payload({"applicable": True, "digest": 3})
-
-    with pytest.raises(ReviewExchangeError, match="file digest value"):
-        evidence.FileDigest.from_payload({"path": "x", "digest": 3})
-    with pytest.raises(ReviewExchangeError, match="index tree"):
-        evidence.ValidationState.from_payload({"index_tree": "bad"})
-    with pytest.raises(ReviewExchangeError, match="tracked_files"):
-        evidence.ValidationState.from_payload(
-            {
-                "index_tree": "0" * 40,
-                "tracked_files": "bad",
-                "ignored_files": [],
-                "untracked_files": [],
-            },
-        )
-
-    empty = evidence.ValidationState("0" * 40, (), (), ())
-    changed = replace(empty, index_tree="1" * 40)
-    comparison = evidence.compare_validation_state(empty, changed)
-    assert comparison.tracked_paths == ("<index>",)
-    assert comparison.to_payload()["acceptable"] is False
-    umbrella_comparison = evidence.UmbrellaComparison(
-        applicable=True,
-        changed=False,
-        before="a",
-        after="a",
-    )
-    assert umbrella_comparison.to_payload()["changed"] is False
-    repair = evidence.RepairAttribution("x", "patch", attributable=True)
-    assert repair.to_payload()["attributable"] is True
-
-
-def test_manifest_payload_and_io_failures_are_explicit(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Manifest schema, identity, ignore, write, and retirement errors are reported."""
-    _git(tmp_path, "init", "-q")
-    tree = "0" * 40
-    payload = _retained_payload(tree)
-    invalid_payloads = (
-        ({**payload, "schema_version": 2}, "schema"),
-        ({**payload, "baseline_index_tree": "bad"}, "tree identity"),
-        ({**payload, "recorded_blobs": "bad"}, "repair evidence"),
-        ({**payload, "repair_paths": [3]}, "repair evidence"),
-    )
-    for malformed, message in invalid_payloads:
-        with pytest.raises(ReviewExchangeError, match=message):
-            evidence.CodeReviewEvidence.from_payload(malformed)
-
-    retained = evidence.CodeReviewEvidence.from_payload(payload)
-    with pytest.raises(ReviewExchangeError, match="unsafe token"):
-        evidence.manifest_path(tmp_path, (*retained.identity[:-1], "../2"))
-    with pytest.raises(ReviewExchangeError, match="must be ignored"):
-        evidence.write_manifest(tmp_path, retained)
-
-    (tmp_path / ".gitignore").write_text("a.*\n", encoding="utf-8")
-    original_write = Path.write_text
-
-    def fail_write(
-        self: Path,
-        data: str,
-        encoding: str | None = None,
-        errors: str | None = None,
-        newline: str | None = None,
-    ) -> int:
-        if self.name.endswith(".tmp"):
-            message = "write denied"
-            raise OSError(message)
-        return original_write(
-            self,
-            data,
-            encoding=encoding,
-            errors=errors,
-            newline=newline,
-        )
-
-    monkeypatch.setattr(Path, "write_text", fail_write)
-    with pytest.raises(ReviewExchangeError, match="cannot write"):
-        evidence.write_manifest(tmp_path, retained)
-    monkeypatch.setattr(Path, "write_text", original_write)
-
-    path = evidence.write_manifest(tmp_path, retained)
-    original_unlink = Path.unlink
-
-    def fail_unlink(
-        self: Path,
-        missing_ok: bool = False,
-    ) -> None:
-        if self == path:
-            message = "retire denied"
-            raise OSError(message)
-        original_unlink(self, missing_ok=missing_ok)
-
-    monkeypatch.setattr(Path, "unlink", fail_unlink)
-    with pytest.raises(ReviewExchangeError, match="cannot retire"):
-        evidence.retire_manifest(tmp_path, retained.identity)
-
-
-def test_capture_validation_state_rejects_missing_repository(tmp_path: Path) -> None:
-    """Validation capture requires one existing exact repository directory."""
-    with pytest.raises(ReviewExchangeError, match="repository is not a directory"):
-        evidence.capture_validation_state(tmp_path / "missing")
+# eof

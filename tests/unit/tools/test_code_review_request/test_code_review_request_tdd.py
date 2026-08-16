@@ -140,7 +140,7 @@ def test_render_carries_one_canonical_evidence_object_and_round_trips(
     assert json.dumps(json.loads(evidence_text), indent=2, sort_keys=True) == evidence_text
     assert parse_envelope_markdown(rendered.request_content) == (envelope, authored)
     assert f"request_index_tree: {_TREE}" in rendered.transcript_summary
-    assert "resolved_validation_set:" in rendered.transcript_summary
+    assert "resolved_validation_set:\n\n- ghog day" in rendered.transcript_summary
     assert "ghog day (sources: project)" in rendered.transcript_summary
 
 

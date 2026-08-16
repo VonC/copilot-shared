@@ -92,6 +92,31 @@ def test_cli_rejects_unsafe_paths_and_malformed_retained_evidence(
     assert "manifest" in capsys.readouterr().err
 
 
+def test_cli_rejects_repository_path_escapes(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Every caller-owned file operand remains inside the selected repository."""
+    _git(tmp_path, "init", "-q")
+    assert cli.main(
+        ["--repository", str(tmp_path), "umbrella-digest", "capture", "../outside.md"],
+    ) == _FATAL_EXIT
+    assert "repository-relative" in capsys.readouterr().err
+    assert cli.main(
+        [
+            "--repository",
+            str(tmp_path),
+            "attribute-reviewer-patch",
+            str(tmp_path / "absolute.json"),
+        ],
+    ) == _FATAL_EXIT
+    assert "repository-relative" in capsys.readouterr().err
+    assert cli.main(
+        ["--repository", str(tmp_path), "attribute-reviewer-patch", "."],
+    ) == _FATAL_EXIT
+    assert "must name a file" in capsys.readouterr().err
+
+
 def test_cli_rejects_manifest_identity_mixture(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -178,7 +203,7 @@ def test_cli_executes_patch_and_umbrella_comparison(
             "--repository",
             str(tmp_path),
             "attribute-reviewer-patch",
-            str(baseline_path),
+            baseline_path.name,
         ],
     ) == 0
     assert json.loads(capsys.readouterr().out)["attributable"] is True
@@ -194,7 +219,7 @@ def test_cli_executes_patch_and_umbrella_comparison(
             str(tmp_path),
             "umbrella-digest",
             "compare",
-            str(digest_path),
+            digest_path.name,
             "tracked.txt",
         ],
     ) == 0
@@ -212,7 +237,14 @@ def test_cli_executes_validation_and_manifest_lifecycle(
     _git(tmp_path, "add", ".gitignore", "tracked.txt")
 
     assert cli.main(
-        ["--repository", str(tmp_path), "validation-state", "capture"],
+        [
+            "--repository",
+            str(tmp_path),
+            "validation-state",
+            "capture",
+            ".gitignore",
+            "tracked.txt",
+        ],
     ) == 0
     before_path = tmp_path / "a.before.json"
     before_path.write_text(capsys.readouterr().out, encoding="utf-8")
@@ -224,8 +256,8 @@ def test_cli_executes_validation_and_manifest_lifecycle(
             str(tmp_path),
             "validation-state",
             "compare",
-            str(before_path),
-            str(after_path),
+            before_path.name,
+            after_path.name,
         ],
     ) == 0
     assert json.loads(capsys.readouterr().out)["acceptable"] is True
@@ -254,9 +286,16 @@ def test_cli_executes_validation_and_manifest_lifecycle(
         encoding="utf-8",
     )
     assert cli.main(
-        ["--repository", str(tmp_path), "write-manifest", str(manifest_input)],
+        ["--repository", str(tmp_path), "write-manifest", manifest_input.name],
     ) == 0
     capsys.readouterr()
+    mixed = json.loads(manifest_input.read_text(encoding="utf-8"))
+    mixed["identity"]["family"] = "spec"
+    manifest_input.write_text(json.dumps(mixed), encoding="utf-8")
+    assert cli.main(
+        ["--repository", str(tmp_path), "write-manifest", manifest_input.name],
+    ) == _FATAL_EXIT
+    assert "code/code" in capsys.readouterr().err
     assert cli.main(
         ["--repository", str(tmp_path), "retire-manifest", *_identity_args()],
     ) == 0
@@ -276,7 +315,7 @@ def test_cli_reports_parser_json_and_dispatch_failures(
             "--repository",
             str(tmp_path),
             "attribute-reviewer-patch",
-            str(tmp_path / "missing.json"),
+            "missing.json",
         ],
     ) == _FATAL_EXIT
     assert "cannot read evidence JSON" in capsys.readouterr().err
