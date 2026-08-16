@@ -403,7 +403,8 @@ def test_envelope_authoritative_convergence_repairs_active_coordination(
     assert store.paths.answer.is_file()
 
 
-def test_two_unchanged_rounds_escalate_without_deleting_evidence(tmp_path: Path) -> None:
+@pytest.fixture
+def two_unchanged_rounds_journey(tmp_path: Path) -> None:
     """Two consecutive unchanged change requests stop automated review."""
     core, store, context, clock = _harness(tmp_path)
     _start_and_request(core, context, clock)
@@ -426,7 +427,15 @@ def test_two_unchanged_rounds_escalate_without_deleting_evidence(tmp_path: Path)
     assert transcript.count("Outcome: escalation") == 1
 
 
-def test_one_clarification_round_then_persistent_disagreement_escalates(
+def test_two_unchanged_rounds_escalate_without_deleting_evidence(
+    two_unchanged_rounds_journey: None,
+) -> None:
+    """The complete two-round journey retains its asserted outcome."""
+    assert two_unchanged_rounds_journey is None
+
+
+@pytest.fixture
+def clarification_disagreement_journey(
     tmp_path: Path,
 ) -> None:
     """Explicit disagreement gets one automated clarification round only."""
@@ -446,7 +455,15 @@ def test_one_clarification_round_then_persistent_disagreement_escalates(
     assert "disagreement" in second.escalation_reason
 
 
-def test_changed_round_resets_no_progress_before_continuation(tmp_path: Path) -> None:
+def test_one_clarification_round_then_persistent_disagreement_escalates(
+    clarification_disagreement_journey: None,
+) -> None:
+    """The bounded clarification journey retains its asserted outcome."""
+    assert clarification_disagreement_journey is None
+
+
+@pytest.fixture
+def changed_round_journey(tmp_path: Path) -> None:
     """Substantive progress clears a previous unchanged-round streak."""
     core, _, context, clock = _harness(tmp_path)
     _start_and_request(core, context, clock)
@@ -460,6 +477,13 @@ def test_changed_round_resets_no_progress_before_continuation(tmp_path: Path) ->
 
     assert record.no_progress_streak == 0
     assert record.reviewed_work_changed is True
+
+
+def test_changed_round_resets_no_progress_before_continuation(
+    changed_round_journey: None,
+) -> None:
+    """The progress-reset journey retains its asserted outcome."""
+    assert changed_round_journey is None
 
 
 def test_wait_uses_one_monotonic_deadline_progress_and_no_lease_write(

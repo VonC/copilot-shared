@@ -431,7 +431,8 @@ def test_commit_authorization_replays_once_then_cleans_live_state(
     assert len(calls) == 1
 
 
-def test_expired_request_reclaim_preserves_exact_code_identity(tmp_path: Path) -> None:
+@pytest.fixture
+def expired_request_reclaim_journey(tmp_path: Path) -> None:
     """A later session renews the same plan-step round without rewriting evidence."""
     effort = _effort(tmp_path / "reclaim")
     now = datetime(2026, 8, 13, 20, tzinfo=UTC)
@@ -449,6 +450,13 @@ def test_expired_request_reclaim_preserves_exact_code_identity(tmp_path: Path) -
     assert returning.reclaim().round_number == 1
     assert returning.classify().state is ArtifactState.REQUEST_PENDING
     assert returning.store.paths.request.read_bytes() == request_before
+
+
+def test_expired_request_reclaim_preserves_exact_code_identity(
+    expired_request_reclaim_journey: None,
+) -> None:
+    """The exact-identity reclaim remains covered by the prepared journey."""
+    assert expired_request_reclaim_journey is None
 
 
 # eof

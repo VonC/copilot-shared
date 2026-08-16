@@ -1,7 +1,9 @@
 """Recovery acceptance coverage across fresh review-exchange sessions.
 
 Step 5 injects failures only at documented durable boundaries, then constructs
-fresh public core instances over the same real files. The tests prove that
+fresh public core instances over the same real files. Core recovery does not
+invoke Git, so its harness writes the opt-in and ignore fixtures directly. The
+tests prove that
 requests, answers, torn transcript suffixes, escalations, consumed answers,
 and owning authorization repair without evidence loss or duplicate entries.
 """
@@ -16,7 +18,6 @@ from tests.unit.tools.test_review_exchange_acceptance.test_review_exchange_accep
     FakeTime,
     _artifact,
     _context,
-    _init_repo,
     _policy,
 )
 from tools.review_exchange_core import ReviewExchangeCore, WaitOutcome
@@ -60,8 +61,10 @@ def _harness(
     family: ReviewFamily = ReviewFamily.CODE,
     slug: str = "recovery",
 ) -> tuple[ReviewExchangeCore, ReviewExchangeStore, ReviewContext, FakeTime]:
-    """Build one real-file core with deterministic time in a Git repository."""
-    _init_repo(root)
+    """Build one real-file core with deterministic time and activation files."""
+    root.mkdir(parents=True, exist_ok=True)
+    (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
+    (root / "a.review-mode").write_text("", encoding="utf-8")
     step = "5" if family is ReviewFamily.CODE else None
     context = _context(root, family, slug, step=step)
     store = ReviewExchangeStore(derive_artifact_paths(root, context))
@@ -237,7 +240,8 @@ def test_interrupted_request_and_torn_transcript_repair_once(
     assert interrupted_request_journey is None
 
 
-def test_interrupted_answer_rename_and_visible_append_repair(
+@pytest.fixture
+def interrupted_answer_repair_journey(
     answer_repair_harnesses: tuple[Harness, Harness],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -301,6 +305,13 @@ def test_interrupted_answer_rename_and_visible_append_repair(
     assert not second_store.paths.tombstone.exists()
 
 
+def test_interrupted_answer_rename_and_visible_append_repair(
+    interrupted_answer_repair_journey: None,
+) -> None:
+    """Both answer-repair windows remain covered by the prepared journey."""
+    assert interrupted_answer_repair_journey is None
+
+
 @pytest.fixture
 def consumed_answer_interruption_journey(
     tmp_path: Path,
@@ -360,7 +371,8 @@ def test_abandoned_request_is_reclaimed_by_a_fresh_session(tmp_path: Path) -> No
     assert transcript.count("Outcome: escalation") == 0
 
 
-def test_escalation_append_and_owning_completion_replay(
+@pytest.fixture
+def escalation_and_completion_replay_journey(
     escalation_harnesses: tuple[Harness, Harness],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -413,6 +425,13 @@ def test_escalation_append_and_owning_completion_replay(
     assert later_owning.complete() is False
 
 
+def test_escalation_append_and_owning_completion_replay(
+    escalation_and_completion_replay_journey: None,
+) -> None:
+    """Both final-write recovery paths remain covered by the prepared journey."""
+    assert escalation_and_completion_replay_journey is None
+
+
 def test_automated_stagnation_and_persistent_disagreement_stop(
     stagnation_harness: tuple[str, Harness, CoordinationRecord],
 ) -> None:
@@ -439,7 +458,9 @@ def test_exact_wait_ignores_an_unrelated_identity(
 ) -> None:
     """A request for another slug cannot satisfy one injected-clock deadline."""
     root = tmp_path / "wait-isolation"
-    _init_repo(root)
+    root.mkdir(parents=True)
+    (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
+    (root / "a.review-mode").write_text("", encoding="utf-8")
     wanted_context = _context(root, ReviewFamily.CODE, "wanted", step="5")
     other_context = _context(root, ReviewFamily.CODE, "other", step="5")
     wanted_store = ReviewExchangeStore(derive_artifact_paths(root, wanted_context))

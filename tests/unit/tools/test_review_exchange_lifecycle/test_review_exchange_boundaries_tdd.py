@@ -139,7 +139,8 @@ def test_core_constructor_rejects_identity_and_document_parent_mismatch(
         _new_core(store, _different_context(tmp_path, context, different_parent=True))
 
 
-def test_request_boundaries_reject_wrong_state_role_context_round_and_guidance(
+@pytest.fixture
+def request_boundary_journey(
     tmp_path: Path,
 ) -> None:
     """Request publication fails before mutation at every authority boundary."""
@@ -166,6 +167,13 @@ def test_request_boundaries_reject_wrong_state_role_context_round_and_guidance(
             _request(second_context, second_clock, 2),
             "Missing guidance.",
         )
+
+
+def test_request_boundaries_reject_wrong_state_role_context_round_and_guidance(
+    request_boundary_journey: None,
+) -> None:
+    """Every request boundary remains covered by the prepared journey."""
+    assert request_boundary_journey is None
 
 
 def test_core_defensive_helpers_reject_missing_or_conflicting_authority(

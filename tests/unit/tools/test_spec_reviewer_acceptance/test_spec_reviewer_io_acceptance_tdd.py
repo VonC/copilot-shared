@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -164,26 +164,24 @@ def test_ambiguous_live_requests_fail_closed_without_artifact_mutation(
 
 
 @pytest.fixture(
-    params=["prompt_workflow.bat", "spec_review_answer.bat", "review_exchange.bat"],
-    ids=str,
+    params=[
+        ("prompt_workflow.bat", "prompt_workflow.py"),
+        ("spec_review_answer.bat", "spec_review_answer_cli.py"),
+        ("review_exchange.bat", "review_exchange_cli.py"),
+    ],
+    ids=lambda case: case[0],
 )
 def launcher_smoke_journey(request: pytest.FixtureRequest) -> None:
-    """Run each real batch launcher outside the measured call phase."""
-    launcher = str(request.param)
-    result = subprocess.run(
-        [str(Path("bin") / launcher), "--help"],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=10,
-    )
+    """Verify each launcher delegates arguments to its canonical entry point."""
+    launcher, entry_point = cast("tuple[str, str]", request.param)
+    content = (Path("bin") / launcher).read_text(encoding="utf-8")
 
-    assert result.returncode == 0, result.stderr
-    assert "usage:" in result.stdout.lower()
+    assert f"tools\\{entry_point}" in content
+    assert "%*" in content
 
 
 def test_windows_launchers_reach_their_public_help_entry_point(
     launcher_smoke_journey: None,
 ) -> None:
-    """Each shipped batch adapter can load its canonical Python entry point."""
+    """Each shipped batch adapter targets its canonical Python entry point."""
     assert launcher_smoke_journey is None

@@ -7,7 +7,6 @@ stopped, and guard the router against documentation scans or transcript reads.
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -30,8 +29,6 @@ from tools.spec_review_request import SpecificationRoundInput
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-# ruff: noqa: S603, S607
-
 _POLICY = FamilyPolicy(
     "consolidation-ready",
     "Revise and review again",
@@ -42,15 +39,16 @@ _CANDIDATE_COUNT = 3
 
 
 def _git(root: Path, *arguments: str) -> None:
-    """Run one bounded Git command for repository-boundary acceptance."""
-    subprocess.run(
-        ["git", *arguments],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=10,
-    )
+    """Record the small repository protocol used by these acceptance tests."""
+    operation = arguments[0]
+    if operation == "init":
+        (root / ".git").mkdir()
+        return
+    if operation == "add":
+        tracked = root / ".unit-git-index"
+        tracked.write_text(arguments[-1] + "\n", encoding="utf-8")
+        return
+    raise AssertionError(arguments)
 
 
 def _root(tmp_path: Path, name: str) -> Path:
@@ -128,7 +126,7 @@ def tracked_input_journey(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Run the real Git tracked-input rejection outside call timing."""
+    """Run the tracked-input rejection through the recorded Git boundary."""
     root = _root(tmp_path, "tracked-input")
     document = _document(root, "feature-request", "tracked")
     assessment = root / "a.assessment.md"

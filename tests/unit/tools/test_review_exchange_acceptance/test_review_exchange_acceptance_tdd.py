@@ -1,9 +1,9 @@
 """Integrated acceptance coverage for the public review-exchange boundaries.
 
-Step 5 composes the command adapter, real Git ignore resolution, exact artifact
+Step 5 composes the command adapter, recorded Git ignore resolution, exact artifact
 paths, multi-round lifecycle, convergence choices, archives, and deterministic
-wait reporting in temporary consuming repositories. Subprocess-heavy journeys
-run in fixtures so their assertions remain below the duration-call gate.
+wait reporting in temporary consuming repositories. Public commands run
+in-process while preserving their JSON and environment boundaries.
 """
 
 from __future__ import annotations
@@ -11,13 +11,13 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
-import subprocess
-import sys
+from contextlib import chdir, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 
@@ -41,17 +41,7 @@ if TYPE_CHECKING:
     from argparse import Namespace
     from collections.abc import Sequence
 
-# ruff: noqa: S603, S607
-
-pytestmark = pytest.mark.skipif(
-    shutil.which("git") is None,
-    reason="git is required for review-exchange acceptance tests",
-)
-
-_PROJECT_ROOT = Path(__file__).resolve().parents[4]
-_CLI = _PROJECT_ROOT / "tools" / "review_exchange_cli.py"
 _CREATED_AT = "2026-08-05T09:00:00+02:00"
-_SUBPROCESS_TIMEOUT = 20
 _EXPECTED_STOP = 3
 _SECOND_ROUND = 2
 _WAIT_LIMIT = 4
@@ -103,22 +93,10 @@ class ResolutionJourney:
     transcript: str
 
 
-def _git(repo: Path, *arguments: str) -> None:
-    """Run one real Git command in a temporary consuming repository."""
-    subprocess.run(
-        ["git", *arguments],
-        cwd=repo,
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=_SUBPROCESS_TIMEOUT,
-    )
-
-
 def _init_repo(root: Path, *, ignored: bool = True, marker: bool = True) -> None:
-    """Create one Git repository with explicit opt-in and ignore policy."""
+    """Create the filesystem shape consumed by the recorded Git boundary."""
     root.mkdir(parents=True, exist_ok=True)
-    _git(root, "init", "-q")
+    (root / ".git").mkdir()
     if ignored:
         (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
     if marker:
@@ -182,30 +160,18 @@ def _run_cli(
     operation: str,
     extra: Sequence[str] = (),
 ) -> CliResult:
-    """Invoke the real command adapter in a separate Python process."""
-    environment = {
-        **os.environ,
-        "PRJ_DIR": str(root),
-        "PYTHONPATH": os.pathsep.join(
-            filter(None, (str(_PROJECT_ROOT), os.environ.get("PYTHONPATH", ""))),
-        ),
-    }
-    completed = subprocess.run(
-        [sys.executable, str(_CLI), operation, *_common(context), *extra],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        env=environment,
-        timeout=_SUBPROCESS_TIMEOUT,
-    )
-    stdout_lines = tuple(completed.stdout.splitlines())
-    assert len(stdout_lines) == 1, completed
-    return CliResult(
-        completed.returncode,
-        json.loads(stdout_lines[0]),
-    )
+    """Invoke the public command adapter and preserve its JSON boundary."""
+    stdout, stderr = StringIO(), StringIO()
+    with (
+        chdir(root),
+        redirect_stdout(stdout),
+        redirect_stderr(stderr),
+        patch.dict(os.environ, {"PRJ_DIR": str(root)}),
+    ):
+        code = cli.main([operation, *_common(context), *extra])
+    stdout_lines = tuple(stdout.getvalue().splitlines())
+    assert len(stdout_lines) == 1, stderr.getvalue()
+    return CliResult(code, json.loads(stdout_lines[0]))
 
 
 def _summary(
@@ -302,7 +268,7 @@ def _publish(
 
 @pytest.fixture
 def isolation_journey(tmp_path: Path) -> IsolationJourney:
-    """Run activation failures and two independent exchanges through subprocesses."""
+    """Run activation failures and two independent public exchanges."""
     disabled_root = tmp_path / "disabled"
     _init_repo(disabled_root, marker=False)
     disabled_context = _context(disabled_root, ReviewFamily.CODE, "disabled", step="5")
@@ -334,10 +300,10 @@ def isolation_journey(tmp_path: Path) -> IsolationJourney:
     )
 
 
-def test_opt_in_real_git_and_exact_identity_isolation(
+def test_opt_in_git_protocol_and_exact_identity_isolation(
     isolation_journey: IsolationJourney,
 ) -> None:
-    """Activation is inert by default and isolates real Git-backed exchanges."""
+    """Activation is inert by default and isolates Git-backed exchanges."""
     _assert_activation_failures(isolation_journey)
     _assert_identity_isolation(isolation_journey)
 

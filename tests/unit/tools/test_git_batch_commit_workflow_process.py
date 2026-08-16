@@ -263,17 +263,36 @@ def test_batch_validation_uses_the_public_commit_plan_validator(
     }
 
 
-def test_staged_paths_reads_exact_index_membership(tmp_path: Path) -> None:
+def test_staged_paths_reads_exact_index_membership(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The batch boundary passes exact staged paths to the pure validator."""
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True, timeout=10)
-    (tmp_path / "staged.txt").write_text("content\n", encoding="utf-8")
-    subprocess.run(
-        ["git", "add", "staged.txt"],
-        cwd=tmp_path,
-        check=True,
-        timeout=10,
+    captured: dict[str, object] = {}
+
+    def staged_result(
+        arguments: tuple[str, ...],
+        *,
+        cwd: Path,
+        options: object,
+    ) -> subprocess.CompletedProcess[str]:
+        captured.update(arguments=arguments, cwd=cwd, options=options)
+        return subprocess.CompletedProcess(["git", *arguments], 0, "staged.txt\0", "")
+
+    monkeypatch.setattr(
+        git_batch_workflow,
+        "run_cross_platform_git_command",
+        staged_result,
     )
     assert git_batch_workflow._staged_paths(tmp_path) == ("staged.txt",)
+    assert captured["arguments"] == (
+        "diff",
+        "--cached",
+        "--name-only",
+        "--no-renames",
+        "-z",
+    )
+    assert captured["cwd"] == tmp_path
 
 
 def test_batch_validation_reports_public_validator_diagnostics(

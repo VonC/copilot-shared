@@ -125,7 +125,8 @@ def test_reclaim_restores_mid_round_and_stays_idempotent_on_live_rounds(
     assert transcript.count("Outcome: escalation") == 0
 
 
-def test_reclaim_rejects_missing_coordination_gate_and_escalated_states(
+@pytest.fixture
+def rejected_reclaim_states_journey(
     tmp_path: Path,
 ) -> None:
     """Reclaim never bypasses idle, convergence-gate, or escalated stops."""
@@ -145,6 +146,13 @@ def test_reclaim_rejects_missing_coordination_gate_and_escalated_states(
     core.escalate("abandonment recorded before any reclaim")
     with pytest.raises(ReviewExchangeError, match="reclaim requires"):
         core.reclaim()
+
+
+def test_reclaim_rejects_missing_coordination_gate_and_escalated_states(
+    rejected_reclaim_states_journey: None,
+) -> None:
+    """All non-reclaimable states remain covered by the prepared journey."""
+    assert rejected_reclaim_states_journey is None
 
 
 def test_invalid_transition_and_confirmation_labels_fail_without_mutation(

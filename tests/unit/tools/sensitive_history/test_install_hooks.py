@@ -5,8 +5,8 @@ and a ``NoReturn`` return), so the strict pyright gate no longer flags
 unknown parameter or argument types on the monkeypatched double.
 Collision propagation injects Git path discovery because repository plumbing
 is covered separately and is not part of that behavior.
-The real hook-commit and CLI scenarios prepare their subprocess results in
-fixtures so assertion timing is not coupled to Git process startup.
+CLI and generated-hook contracts use recorded Git results, so installer tests
+do not create repositories or execute commits.
 """
 
 from __future__ import annotations
@@ -31,17 +31,6 @@ from tools.sensitive_history.install_hooks import (
     install_hooks,
     main,
 )
-
-
-def _repo(path: Path) -> Path:
-    path.mkdir()
-    subprocess.run(  # noqa: S603
-        ["git", "init", "-b", "main"],  # noqa: S607
-        cwd=path,
-        check=True,
-        capture_output=True,
-    )
-    return path
 
 
 def test_install_is_idempotent_and_preserves_an_existing_hook(
@@ -75,22 +64,33 @@ def test_install_is_idempotent_and_preserves_an_existing_hook(
     assert install_hooks(repo, tmp_path / "llm-shared") == ()
 
 
-def test_shared_rules_config_is_absolute_and_idempotent(tmp_path: Path) -> None:
+def test_shared_rules_config_is_absolute_and_idempotent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Hook repositories retain an explicit machine-local common rules path."""
-    repo = _repo(tmp_path / "repo")
+    repo = tmp_path / "repo"
+    repo.mkdir()
     shared = tmp_path / "common.rules"
     shared.write_text("literal:CommonTerm==>redacted\n", encoding="utf-8")
+    configured: Path | None = None
+
+    def config_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal configured
+        if "--get" in args:
+            output = "" if configured is None else f"{configured}\n"
+            return subprocess.CompletedProcess(args, int(configured is None), output, "")
+        configured = Path(args[-1])
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", config_run)
 
     assert _configure_shared_rules(repo, shared)
-    configured = subprocess.run(  # noqa: S603
-        ["git", "config", "--path", "--get", "sensitive.sharedRulesFile"],  # noqa: S607
-        cwd=repo,
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    ).stdout.strip()
-    assert Path(configured).resolve() == shared.resolve()
+    assert configured is not None
+    assert configured.resolve() == shared.resolve()
     assert not _configure_shared_rules(repo, shared)
     with pytest.raises(HookInstallError, match="not found"):
         _configure_shared_rules(repo, tmp_path / "missing.rules")
@@ -101,7 +101,8 @@ def test_shared_rules_config_reports_git_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A Git config failure stops installation before hooks become misleading."""
-    repo = _repo(tmp_path / "repo")
+    repo = tmp_path / "repo"
+    repo.mkdir()
     shared = tmp_path / "common.rules"
     shared.write_text("literal:CommonTerm==>redacted\n", encoding="utf-8")
 
@@ -112,6 +113,31 @@ def test_shared_rules_config_reports_git_failure(
     monkeypatch.setattr(subprocess, "run", failed_git)
     with pytest.raises(HookInstallError, match="cannot configure"):
         _configure_shared_rules(repo, shared)
+
+
+def test_git_path_parses_relative_output_and_translates_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Git-path discovery resolves output and wraps command failures."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    failing = False
+
+    def git_path_result(
+        command: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        if failing:
+            raise subprocess.CalledProcessError(1, command)
+        return subprocess.CompletedProcess(command, 0, ".git/hooks\n", "")
+
+    monkeypatch.setattr(subprocess, "run", git_path_result)
+    assert _git_path(repo, "hooks") == (repo / ".git" / "hooks").resolve()
+
+    failing = True
+    with pytest.raises(HookInstallError, match="cannot resolve Git 'hooks' path"):
+        _git_path(repo, "hooks")
 
 
 def test_dispatcher_and_entry_are_small_composable_shell_scripts(tmp_path: Path) -> None:
@@ -153,12 +179,33 @@ def test_existing_hook_collision_fails_without_overwriting(tmp_path: Path) -> No
 def git_path_main_results(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> tuple[str, int, str, int, str, int, str]:
-    """Run real CLI Git operations outside measured assertion time."""
-    repo = _repo(tmp_path / "repo")
+    """Run CLI behavior through recorded path and configuration boundaries."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    hooks = repo / ".git" / "hooks"
+    hooks.mkdir(parents=True)
     shared = tmp_path / "shared"
+    configured = False
 
-    hooks_name = _git_path(repo, "hooks").name
+    def fake_git_path(candidate: Path, name: str) -> Path:
+        if not candidate.is_dir():
+            message = f"not a Git repository: {candidate}"
+            raise HookInstallError(message)
+        assert name == "hooks"
+        return hooks
+
+    def configure_rules(_repo: Path, _rules: Path | None) -> bool:
+        nonlocal configured
+        changed = not configured
+        configured = True
+        return changed
+
+    monkeypatch.setattr(hook_installer, "_git_path", fake_git_path)
+    monkeypatch.setattr(hook_installer, "_configure_shared_rules", configure_rules)
+
+    hooks_name = fake_git_path(repo, "hooks").name
     rules = tmp_path / "common.rules"
     rules.write_text("literal:CommonTerm==>redacted\n", encoding="utf-8")
     arguments = [
@@ -233,90 +280,36 @@ def test_install_reports_preserved_target_collision(
         install_hooks(repo, tmp_path / "shared")
 
 
-@pytest.fixture
-def installed_hook_results(
+def test_installed_hooks_route_blob_and_message_checks(
     tmp_path: Path,
-) -> tuple[
-    subprocess.CompletedProcess[str],
-    subprocess.CompletedProcess[str],
-    subprocess.CompletedProcess[str],
-]:
-    """Run the three real hook commits outside measured assertion time."""
-    repo = _repo(tmp_path / "repo")
-    subprocess.run(  # noqa: S603
-        ["git", "config", "user.name", "Hook Tests"],  # noqa: S607
-        cwd=repo,
-        check=True,
-    )
-    subprocess.run(  # noqa: S603
-        ["git", "config", "user.email", "hooks@example.invalid"],  # noqa: S607
-        cwd=repo,
-        check=True,
-    )
-    shared_rules = tmp_path / "a.sensitive.replacements.local.txt"
-    shared_rules.write_text(
-        "literal:BlockedHookTerm==>redacted\n",
-        encoding="utf-8",
-    )
-    (repo / "a.sensitive.replacements.local.txt").write_text("", encoding="utf-8")
-    install_hooks(repo, Path(__file__).parents[4], shared_rules)
-
-    candidate = repo / "candidate.txt"
-    candidate.write_text("contains BlockedHookTerm\n", encoding="utf-8")
-    subprocess.run(  # noqa: S603
-        ["git", "add", "candidate.txt"],  # noqa: S607
-        cwd=repo,
-        check=True,
-    )
-    blob_result = subprocess.run(  # noqa: S603
-        ["git", "commit", "-m", "safe message"],  # noqa: S607
-        cwd=repo,
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
-
-    candidate.write_text("safe content\n", encoding="utf-8")
-    subprocess.run(  # noqa: S603
-        ["git", "add", "candidate.txt"],  # noqa: S607
-        cwd=repo,
-        check=True,
-    )
-    message_result = subprocess.run(  # noqa: S603
-        ["git", "commit", "-m", "BlockedHookTerm message"],  # noqa: S607
-        cwd=repo,
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
-
-    clean_result = subprocess.run(  # noqa: S603
-        ["git", "commit", "-m", "safe message"],  # noqa: S607
-        cwd=repo,
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
-    return blob_result, message_result, clean_result
-
-
-def test_installed_hooks_block_blob_and_message_then_allow_clean_commit(
-    installed_hook_results: tuple[
-        subprocess.CompletedProcess[str],
-        subprocess.CompletedProcess[str],
-        subprocess.CompletedProcess[str],
-    ],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Real Git commits exercise both generated dispatchers and lean adapters."""
-    blob_result, message_result, clean_result = installed_hook_results
+    """Both generated dispatchers route to their exact lean adapters."""
+    repo = tmp_path / "repo"
+    hooks = repo / "hooks"
+    hooks.mkdir(parents=True)
 
-    assert blob_result.returncode != 0
-    assert "candidate.txt:1" in blob_result.stderr
-    assert "BlockedHookTerm" not in blob_result.stderr
-    assert message_result.returncode != 0
-    assert "commit message line 1" in message_result.stderr
-    assert "BlockedHookTerm" not in message_result.stderr
-    assert clean_result.returncode == 0, clean_result.stderr
+    def fake_git_path(_candidate: Path, name: str) -> Path:
+        assert name == "hooks"
+        return hooks
+
+    def configured(_repo: Path, _rules: Path | None) -> bool:
+        return True
+
+    monkeypatch.setattr(hook_installer, "_git_path", fake_git_path)
+    monkeypatch.setattr(hook_installer, "_configure_shared_rules", configured)
+    install_hooks(repo, Path(__file__).parents[4], tmp_path / "shared.rules")
+
+    pre_commit = (hooks / "pre-commit").read_text(encoding="utf-8")
+    commit_message = (hooks / "commit-msg").read_text(encoding="utf-8")
+    blob_entry = (hooks / "pre-commit.d" / "90-sensitive").read_text(
+        encoding="utf-8",
+    )
+    message_entry = (hooks / "commit-msg.d" / "90-sensitive").read_text(
+        encoding="utf-8",
+    )
+
+    assert DISPATCHER_MARKER in pre_commit
+    assert DISPATCHER_MARKER in commit_message
+    assert "sensitive_pre_commit.py" in blob_entry
+    assert "sensitive_commit_msg.py" in message_entry

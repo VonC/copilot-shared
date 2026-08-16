@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import subprocess
 from contextlib import chdir, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from io import StringIO
@@ -28,8 +27,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from datetime import datetime
     from pathlib import Path
-
-# ruff: noqa: S603, S607
 
 POLICY = FamilyPolicy("consolidation-ready", "Revise and review again", "Consolidate")
 TIMESTAMP = "2026-08-11T14:00:00+02:00"
@@ -55,15 +52,9 @@ class Effort:
 
 
 def init_repo(root: Path, *, marker: bool = True) -> None:
-    """Create a Git repository whose transient review artifacts are ignored."""
+    """Create the filesystem shape consumed by the recorded Git boundary."""
     root.mkdir(parents=True)
-    subprocess.run(
-        ["git", "init", "-q"],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        timeout=10,
-    )
+    (root / ".git").mkdir()
     (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
     if marker:
         (root / "a.review-mode").write_text("", encoding="utf-8")

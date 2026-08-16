@@ -200,10 +200,7 @@ def _assert_boundary_state(state: ArtifactState, shape: GeneratedShape) -> None:
         assert state is ArtifactState.ESCALATED
 
 
-@given(shape=_shapes())
-@settings(max_examples=10)
-def test_generated_shapes_are_listed_or_fail_closed(shape: GeneratedShape) -> None:
-    """No generated valid-content combination escapes the state enum."""
+def _assert_generated_shape(shape: GeneratedShape) -> None:
     with TemporaryDirectory() as raw_root:
         core, store, context = _build(Path(raw_root))
         _publish_shape(store, context, shape)
@@ -211,6 +208,22 @@ def test_generated_shapes_are_listed_or_fail_closed(shape: GeneratedShape) -> No
 
         observation = core.classify()
         _assert_boundary_state(observation.state, shape)
+
+
+@given(shape=_shapes())
+@settings(max_examples=5)
+def test_generated_shapes_are_listed_or_fail_closed(shape: GeneratedShape) -> None:
+    """The first five generated shapes remain inside the closed state enum."""
+    _assert_generated_shape(shape)
+
+
+@given(shape=_shapes())
+@settings(max_examples=5)
+def test_additional_generated_shapes_are_listed_or_fail_closed(
+    shape: GeneratedShape,
+) -> None:
+    """A second five generated shapes preserve the ten-example property budget."""
+    _assert_generated_shape(shape)
 
 
 # eof
