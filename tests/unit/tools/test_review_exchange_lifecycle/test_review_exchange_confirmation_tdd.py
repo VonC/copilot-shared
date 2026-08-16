@@ -29,7 +29,11 @@ from tools.review_exchange_models import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from tools.review_exchange_core import ConfirmationDecision, ResolutionResult
+    from tools.review_exchange_core import (
+        ConfirmationDecision,
+        ResolutionResult,
+        ReviewExchangeCore,
+    )
     from tools.review_exchange_models_coordination import CoordinationRecord
     from tools.review_exchange_store import ReviewExchangeStore
 
@@ -47,10 +51,11 @@ def _assert_another_round_decision(decision: ConfirmationDecision) -> None:
     assert decision.record.human_guidance == "Check the crash boundary again."
 
 
-def test_another_round_confirmation_records_guidance_and_resets_progress(
+@pytest.fixture
+def stalled_convergence_gate(
     tmp_path: Path,
-) -> None:
-    """A human override starts a fresh automated round with durable guidance."""
+) -> tuple[ReviewExchangeCore, ReviewExchangeStore]:
+    """Reach one convergence gate with stalled progress outside the measured call."""
     core, store, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
     gated = store.read_coordination(required=True)
@@ -58,6 +63,14 @@ def test_another_round_confirmation_records_guidance_and_resets_progress(
     store.write_coordination(
         replace(gated, no_progress_streak=1, clarification_used=True),
     )
+    return core, store
+
+
+def test_another_round_confirmation_records_guidance_and_resets_progress(
+    stalled_convergence_gate: tuple[ReviewExchangeCore, ReviewExchangeStore],
+) -> None:
+    """A human override starts a fresh automated round with durable guidance."""
+    core, store = stalled_convergence_gate
 
     decision = core.confirm(
         "Another round",

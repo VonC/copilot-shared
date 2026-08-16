@@ -101,6 +101,10 @@ class ReviewExchangeHumanMixin(ABC):
     def _clear_marker(self, record: CoordinationRecord) -> CoordinationRecord:
         """Return a record with transition bookkeeping cleared."""
 
+    @abstractmethod
+    def _repeatable_entry(self, base: str) -> tuple[str, int]:
+        """Return a unique transcript identity and attempt for a repeatable event."""
+
     def confirm(
         self,
         label: str,
@@ -219,6 +223,72 @@ class ReviewExchangeHumanMixin(ABC):
             self.store.remove_exact(self.store.paths.answer)
             self.store.remove_exact(self.store.paths.coordination)
             return True
+
+    def force_reclaim(self, summary: str) -> CoordinationRecord:
+        """Resume one escalated round in place for an authorized manual handoff.
+
+        Automated `reclaim` never crosses an escalation. A human who owns the
+        stopped exchange may instead resume the same round without renumbering
+        it, leaving the published request, answer, and transcript untouched and
+        recording the decision as durable transcript evidence.
+        """
+        if not summary.strip():
+            raise ReviewExchangeError("forced reclaim summary must be non-empty")
+        with self.store.transition_lock():
+            record = self.store.read_coordination()
+            if record is None or record.status is not CoordinationStatus.ESCALATED:
+                raise ReviewExchangeError("forced reclaim requires an escalated exchange")
+            if record.incomplete_transition not in (
+                None,
+                IncompleteTransitionKind.HUMAN_RECLAIM,
+            ):
+                raise ReviewExchangeError("repair the pending transition before forced reclaim")
+            actor = self._resumed_actor()
+            entry_id, occurrence = self._repeatable_entry(
+                f"human-reclaim-round-{record.round_number}",
+            )
+            entry = TranscriptEntry(
+                entry_id,
+                ReviewRole.HUMAN,
+                "human-reclaim",
+                self._timestamp(),
+                summary,
+                occurrence,
+            )
+            marked = self._mark_transition(
+                record,
+                IncompleteTransitionKind.HUMAN_RECLAIM,
+                entry.entry_id,
+            )
+            marked = self.store.append_transcript_once(
+                marked,
+                transition=IncompleteTransitionKind.HUMAN_RECLAIM,
+                entry=entry,
+                clear_marker=False,
+            )
+            resumed = replace(
+                self._clear_marker(marked),
+                status=CoordinationStatus.ACTIVE,
+                expected_next_actor=actor,
+                lease_renewed_at=self._timestamp(),
+                escalation_reason=None,
+                human_guidance=summary,
+            )
+            self.store.write_coordination(resumed)
+            return resumed
+
+    def _resumed_actor(self) -> Actor:
+        """Return the actor one intact escalated round is handed back to."""
+        shape = (
+            self.store.paths.request.is_file(),
+            self.store.paths.answer.is_file(),
+            self.store.paths.tombstone.is_file(),
+        )
+        if shape == (False, True, False):
+            return Actor.REQUESTOR
+        if shape not in {(True, False, False), (False, False, False)}:
+            raise ReviewExchangeError("forced reclaim requires one intact escalated round")
+        return Actor.REVIEWER
 
     def resolve_escalation(
         self,

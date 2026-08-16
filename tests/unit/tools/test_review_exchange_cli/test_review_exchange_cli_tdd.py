@@ -118,6 +118,11 @@ class FakeCore:
         self._call("reclaim")
         return self.record
 
+    def force_reclaim(self, summary: str) -> CoordinationRecord:
+        """Record one authorized forced resume of an escalated round."""
+        self._call("force_reclaim", summary)
+        return self.record
+
     def escalate(self, reason: str) -> CoordinationRecord:
         """Record an escalation reason."""
         self._call("escalate", reason)

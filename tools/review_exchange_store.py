@@ -55,6 +55,7 @@ _TRANSCRIPT_OUTCOMES: Final[frozenset[str]] = frozenset(
         "answer",
         "escalation",
         "human-confirmation",
+        "human-reclaim",
         "human-resolution",
     },
 )
@@ -71,11 +72,14 @@ class TranscriptEntry:
     outcome: str
     recorded_at: str
     authored_content: str
+    occurrence: int = 1
 
     def __post_init__(self) -> None:
         """Reject ambiguous footer data and unsupported transcript outcomes."""
         if _ENTRY_ID_RE.fullmatch(self.entry_id) is None:
             raise ReviewExchangeError("invalid transcript entry identifier")
+        if self.occurrence < 1:
+            raise ReviewExchangeError("transcript entry occurrence must be positive")
         if self.outcome not in _TRANSCRIPT_OUTCOMES:
             raise ReviewExchangeError(
                 f"unsupported transcript outcome: {self.outcome}",
@@ -209,6 +213,13 @@ class ReviewExchangeStore:
         except OSError as error:
             raise ReviewExchangeError(f"exact cleanup failed: {error}") from error
         return True
+
+    def entry_occurrence(self, entry_id: str) -> int:
+        """Return the next positive occurrence for one repeatable entry identity."""
+        if not self.paths.transcript.is_file():
+            return 1
+        content = self.paths.transcript.read_text(encoding="utf-8")
+        return content.count(f"{_ENTRY_FOOTER_PREFIX} {entry_id} -->") + 1
 
     def initialize_transcript(self, context: ReviewContext) -> bool:
         """Initialize a missing family transcript and preserve an existing one."""
@@ -440,6 +451,15 @@ class ReviewExchangeStore:
         heading = f"## Round {record.round_number} by {entry.role.value}"
         if context.implementation_step is not None:
             heading += f" - Step {context.implementation_step}"
+        if entry.role is ReviewRole.HUMAN:
+            # One round holds at most one request and one answer, so role and
+            # round identify those headings. A human may act more than once in
+            # the same round, so only that role needs its outcome to stay unique.
+            heading += f" - {entry.outcome}"
+        if entry.occurrence > 1:
+            # A stop-and-resume cycle can repeat the same outcome inside one
+            # round, so the attempt is what explains the repeated heading.
+            heading += f" - attempt {entry.occurrence}"
         lines = [
             "",
             heading,

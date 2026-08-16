@@ -121,6 +121,15 @@ answer, or transcript content; it is idempotent while the round stays live.
 Reclaim never applies once an escalation is recorded, and it never repairs an
 interrupted or inconsistent exchange.
 
+Use `reclaim --force --summary-file <path>` only when a human decides that a
+recorded escalation was a stopped handoff rather than a failure, typically when
+the exchange continues as a manual back-and-forth after an automated wait timed
+out. The forced resume requires an escalated exchange whose request, answer, and
+transcript are intact; it restores the same round number and hands it back to
+the actor its artifact shape names, and it appends the authored summary to the
+transcript as durable evidence. It never repairs an interrupted or inconsistent
+exchange, and no automated role may substitute it for `resolve` or `archive`.
+
 Use `escalate --summary-file <path>` when the specialized workflow must stop
 automation with an authored reason. Use `cancel --summary-file <path>` for a
 human cancellation at convergence.

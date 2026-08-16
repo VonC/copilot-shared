@@ -20,6 +20,7 @@ import pytest
 
 from tests.unit.tools.test_review_exchange_cli.test_review_exchange_cli_tdd import (
     _common,
+    _run,
     _runtime,
 )
 from tools import review_exchange_cli as cli
@@ -147,6 +148,46 @@ def test_dispatch_covers_disabled_status_and_unknown_operation(
     monkeypatch.setattr(cli, "validate_activation", valid_activation)
     with pytest.raises(ReviewExchangeError, match="unsupported operation"):
         cli._dispatch(argparse.Namespace(operation="unknown"), active, io.StringIO())
+
+
+def test_forced_reclaim_requires_its_authorized_summary_pairing(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    """Only `--force` with `--summary-file` delegates one forced resume."""
+    runtime, core = _runtime(tmp_path)
+    summary = tmp_path / "a.review-summary.md"
+    summary.write_text("Manual back-and-forth resume.", encoding="utf-8")
+
+    code, payload, _ = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["reclaim", *_common(runtime), "--force", "--summary-file", str(summary)],
+    )
+
+    assert code == 0
+    assert payload["outcome"] == "force-reclaimed"
+    assert core.calls[-1] == ("force_reclaim", ("Manual back-and-forth resume.",), {})
+
+    code, payload, _ = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["reclaim", *_common(runtime), "--force"],
+    )
+    assert code == _EXIT_FATAL
+    assert "--summary-file" in payload["diagnostic"]
+
+    code, payload, _ = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["reclaim", *_common(runtime), "--summary-file", str(summary)],
+    )
+    assert code == _EXIT_FATAL
+    assert "only with --force" in payload["diagnostic"]
 
 
 def test_script_entry_point_returns_fatal_json(

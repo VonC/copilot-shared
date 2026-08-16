@@ -135,6 +135,7 @@ def _classify_marker(
             (False, True, False),
             (False, False, False),
         },
+        IncompleteTransitionKind.HUMAN_RECLAIM: True,
         IncompleteTransitionKind.HUMAN_RESOLUTION: True,
     }[marker]
     if not valid:

@@ -114,6 +114,10 @@ class CorePort(Protocol):
         """Renew an expired lease for an intact abandoned round."""
         ...
 
+    def force_reclaim(self, summary: str) -> CoordinationRecord:
+        """Resume one escalated round in place for an authorized manual handoff."""
+        ...
+
     def escalate(self, reason: str) -> CoordinationRecord:
         """Stop automation with durable evidence."""
         ...
@@ -203,8 +207,11 @@ def _parser() -> JsonArgumentParser:
 
     parser = JsonArgumentParser(prog="review-exchange")
     subparsers = parser.add_subparsers(dest="operation", required=True)
-    for name in ("activate", "status", "start", "continue", "reclaim", "complete"):
+    for name in ("activate", "status", "start", "continue", "complete"):
         subparsers.add_parser(name, parents=[common])
+    reclaim = subparsers.add_parser("reclaim", parents=[common])
+    reclaim.add_argument("--force", action="store_true")
+    reclaim.add_argument("--summary-file")
     for name in ("publish-request", "publish-answer"):
         command = subparsers.add_parser(name, parents=[common])
         command.add_argument("--content-file", required=True)
@@ -362,9 +369,23 @@ def _dispatch_simple(
         runtime.core.continue_round()
         return OperationResult("continued")
     if args.operation == "reclaim":
+        return _dispatch_reclaim(args, runtime)
+    return OperationResult("completed", extra={"removed": runtime.core.complete()})
+
+
+def _dispatch_reclaim(args: argparse.Namespace, runtime: Runtime) -> OperationResult:
+    """Renew one abandoned lease or perform one authorized forced resume."""
+    summary_file: str | None = args.summary_file
+    if args.force and summary_file is None:
+        raise ReviewExchangeError("forced reclaim requires --summary-file")
+    if summary_file is not None and not args.force:
+        raise ReviewExchangeError("reclaim accepts --summary-file only with --force")
+    if summary_file is None:
         runtime.core.reclaim()
         return OperationResult("reclaimed")
-    return OperationResult("completed", extra={"removed": runtime.core.complete()})
+    summary = _read_input_file(runtime.project_root, summary_file, "summary")
+    runtime.core.force_reclaim(summary)
+    return OperationResult("force-reclaimed")
 
 
 def _dispatch_publication(

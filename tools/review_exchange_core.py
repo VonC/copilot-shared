@@ -496,7 +496,9 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
                 self._timestamp(),
             )
             self.store.write_coordination(record)
-        entry_id = f"escalation-round-{record.round_number}"
+        entry_id, occurrence = self._repeatable_entry(
+            f"escalation-round-{record.round_number}",
+        )
         marked = self._mark_transition(
             record,
             IncompleteTransitionKind.ESCALATION,
@@ -519,6 +521,7 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
             "escalation",
             self._timestamp(),
             reason.strip(),
+            occurrence,
         )
         marked = self.store.append_transcript_once(
             marked,
@@ -529,6 +532,16 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
         final = self._clear_marker(marked)
         self.store.write_coordination(final)
         return final
+
+    def _repeatable_entry(self, base: str) -> tuple[str, int]:
+        """Return one unique transcript identity and attempt for a repeatable event.
+
+        A stop-and-resume cycle can record the same outcome more than once in one
+        round, so both the durable identity and its rendered heading carry the
+        attempt that explains the repetition.
+        """
+        occurrence = self.store.entry_occurrence(base)
+        return (base if occurrence == 1 else f"{base}-{occurrence}"), occurrence
 
     def _clear_marker(self, record: CoordinationRecord) -> CoordinationRecord:
         """Clear one fully completed transcript repair marker in memory."""
