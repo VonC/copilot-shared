@@ -98,7 +98,7 @@ purposes in this order: explanation, tutorials, how-to guides, then reference.
 Background and reasoning: understand why the workflow and utilities make
 their choices.
 
-### AI-assisted development workflow
+### AI-assisted development workflow explained
 
 - 📝 [Why documents come before code](explanation/why-documents-before-code.md)
 - 🔁 [Why the LLM reviews its own work](explanation/why-the-llm-reviews-its-own-work.md)
@@ -106,7 +106,7 @@ their choices.
 - 🔁 [One launcher, three modes](explanation/one-launcher-three-modes.md)
 - 🤖 [One body, many agents](explanation/one-body-many-agents.md)
 
-### Additional utilities
+### Additional utilities explained
 
 - 🤖 [Why project logos use a shared visual system](explanation/why-project-logos-use-a-shared-visual-system.md)
 - 🧪 [Groundhog as a reset loop](explanation/groundhog-as-a-reset-loop.md)
@@ -120,13 +120,13 @@ their choices.
 
 Learning by doing: follow the steps in order and inspect the result.
 
-### AI-assisted development workflow
+### AI-assisted development workflow tutorials
 
 - 🤖 [Plug llm-shared into your project](tutorials/01-plug-llm-shared-into-your-project.md)
 - 📝 [From draft note to settled requirement](tutorials/02-from-draft-to-settled-requirement.md)
 - 🔁 [Run the implement chain on one plan step](tutorials/04-run-the-implement-chain.md)
 
-### Additional utilities
+### Additional utilities tutorials
 
 - 🧪 [Your first groundhog walk](tutorials/03-your-first-groundhog-walk.md)
 - 📊 [Prepare your first release from develop](tutorials/05-prepare-a-release-from-develop.md)
@@ -138,7 +138,7 @@ Learning by doing: follow the steps in order and inspect the result.
 
 Recipes for a precise goal, for readers who already know the basics.
 
-### AI-assisted development workflow
+### AI-assisted development workflow guides
 
 - 📝 [Split a mixed draft into requirements](how-to/split-a-mixed-draft.md)
 - 🔁 [Answer a review round](how-to/answer-a-review-round.md)
@@ -151,7 +151,7 @@ Recipes for a precise goal, for readers who already know the basics.
 - 🤖 [Use the skills from Google Antigravity](how-to/use-the-skills-from-antigravity.md)
 - 🤖 [Pick up skill edits without restarting](how-to/pick-up-skill-edits-without-restarting.md)
 
-### Additional utilities
+### Additional utilities guides
 
 - 🤖 [Create a coherent logo family for a project](how-to/create-a-logo-family-for-a-project.md)
 - 🧪 [Fix a red groundhog walk](how-to/fix-a-red-groundhog-walk.md)
@@ -173,7 +173,7 @@ Recipes for a precise goal, for readers who already know the basics.
 
 Exact descriptions of commands, formats, files, and supported behavior.
 
-### AI-assisted development workflow
+### AI-assisted development workflow reference
 
 - 🤖 [Skills catalog](reference/skills-catalog.md)
 - 🔁 [pw launcher](reference/pw-launcher.md)
@@ -183,7 +183,7 @@ Exact descriptions of commands, formats, files, and supported behavior.
 - 🤖 [Repository layout and AI entry points](reference/repository-layout.md)
 - 🤖 [Automation and direct-invocation ownership](reference/automation-and-direct-invocation.md)
 
-### Additional utilities
+### Additional utilities reference
 
 - 🤖 [Project logo prompt template and asset conventions](reference/project-logo-prompt-template.md)
 - 🤖 [Aliases and bin launchers](reference/aliases-and-launchers.md)
