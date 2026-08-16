@@ -410,17 +410,24 @@ def _render_from_arguments(args: argparse.Namespace, project_root: Path) -> None
         args.plan_validation_command,
         args.request_validation_command,
     )
+    authored_inputs = {
+        "assessment": _read_utf8(inputs["assessment"], "assessment file"),
+        "implementation_report": _read_utf8(
+            inputs["implementation_report"],
+            "implementation report file",
+        ),
+        "change_summary": _read_utf8(inputs["change_summary"], "change summary file"),
+        "writer_response": _read_utf8(inputs["writer_response"], "writer response file"),
+    }
     request_index_tree = capture_index_tree(root)
     source = CodeReviewRoundInput(
         context=context,
         round_number=args.round_number,
         created_at=format_local_timestamp(),
-        assessment=_read_utf8(inputs["assessment"], "assessment file"),
-        implementation_report=_read_utf8(
-            inputs["implementation_report"], "implementation report file",
-        ),
-        change_summary=_read_utf8(inputs["change_summary"], "change summary file"),
-        writer_response=_read_utf8(inputs["writer_response"], "writer response file"),
+        assessment=authored_inputs["assessment"],
+        implementation_report=authored_inputs["implementation_report"],
+        change_summary=authored_inputs["change_summary"],
+        writer_response=authored_inputs["writer_response"],
         request_index_tree=request_index_tree,
         resolved_validation_set=resolved_validation_set,
         human_guidance=None if guidance is None else _read_utf8(guidance, "guidance file"),
