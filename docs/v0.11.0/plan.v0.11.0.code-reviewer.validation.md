@@ -117,7 +117,14 @@ or requestor capability is impaired.
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because the executable evidence boundary, commit validation, manifest recovery, and tests have not been added.
+Yes. Step 2 has been fully implemented.
+
+The executable evidence types, CLI, launcher, manifest lifecycle, and shared
+commit-plan validator are present and covered. Validation-state capture is now
+bounded to caller-supplied paths, every CLI file operand stays inside the
+selected repository, retained payloads fail closed on malformed relationships,
+and manifest identities are restricted to the fixed `code/code` family and
+type.
 
 ### Goal for Step 2
 
@@ -131,27 +138,124 @@ Provide machine-checkable snapshots, repair attribution, umbrella and validation
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Repair attribution**: `RecordedBlob` records pre-repair Git objects for
+  existing and untracked files, identifies writer-deleted files, and
+  `attribute_reviewer_patch` produces reviewer-only text patches without
+  rewriting the index.
+- **Executable comparisons**: umbrella digest and validation-state value
+  objects expose capture and comparison operations, including explicit
+  not-applicable umbrella evidence and ignored-versus-tracked validation
+  differences.
+- **Retained evidence**: `CodeReviewEvidence` serializes baseline and assessed
+  index trees, repair evidence, and validation states; stable manifest helpers
+  write, read, identity-check, and retire the ignored JSON artifact.
+- **Public adapter**: `CodeReviewEvidenceCli` exposes every planned operation
+  without prompts, and `bin/code_review_evidence.bat --help` succeeds from the
+  repository root without environment setup.
+- **Commit validation**: `validate_commit_plan` checks conventional subjects,
+  safe one-path `git add` commands, duplicate membership, missing paths, and
+  exact staged membership while preserving group order. The root batch
+  workflow calls this public validator before changing the index.
+- **Validation evidence**: the completion grep finds the planned executable
+  symbols, focused tests cover the implemented models and adapters, and the
+  latest Groundhog cycle completed 1,748 tests in 1 minute 23.8 seconds with
+  100% coverage, zero failures, zero outliers, and a slowest call of 0.42
+  seconds against the 0.50-second ceiling.
+- **Bounded validation capture**: callers pass the exact validation paths; Git
+  receives literal pathspecs only for those paths, unrelated repository files
+  are neither enumerated nor hashed, and comparisons require the same ordered
+  path set.
+- **Defensive evidence boundary**: repository file operands reject absolute,
+  root, and parent-traversal paths; payload parsing validates digest shapes,
+  applicability pairs, unique safe paths, state membership, and fixed manifest
+  identity before evidence is written or used.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+- `RecordedBlob` and `RepairAttribution`: immutable pre-repair content and
+  reviewer-only patch evidence.
+- `UmbrellaDigest` and `UmbrellaComparison`: optional protected-document
+  identity and comparison results.
+- `FileDigest`, `ValidationState`, and `ValidationStateComparison`: repository
+  content snapshots and classified validation side effects, implemented in the
+  focused `code_review_evidence_validation_state.py` module and re-exported by
+  the public evidence boundary.
+- `CodeReviewEvidence`: versioned retained evidence for one exchange identity
+  and implementation step.
+- `CodeReviewEvidenceCli`: non-interactive typed dispatcher for evidence
+  capture, comparison, and manifest lifecycle operations.
+- `CommitPlanGroup` and `CommitPlanValidation`: ordered public results for the
+  side-effect-free batch-plan validator.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+The evidence domain records immutable shared values in
+`code_review_evidence.py`, delegates validation snapshots and comparisons to
+`code_review_evidence_validation_state.py`, and shares digest, containment, and
+Git error handling through `code_review_evidence_common.py`. Argument and
+repository path validation remain in `code_review_evidence_cli.py`, while the
+batch workflow depends on the pure public validator in
+`git_batch_commit_validation.py`. These dependency directions are sound, the
+compatibility exports are explicit, and the changed evidence files remain
+below the 650-line ceiling: 479, 105, 248, and 202 physical lines for the
+evidence hub, common boundary, validation-state module, and CLI respectively.
+
+No architecture issues need to be addressed for Step 2.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Blob recording and repair attribution use constant Git operations per named
+path. Commit-plan validation is linear over explicit groups and paths, apart
+from bounded diagnostic ordering. Manifest lifecycle reads or writes one
+identity-derived file. Validation-state capture preserves caller order and
+performs O(n) work over only the explicit staged, repair, and validation
+artifact paths, using literal Git pathspecs and no repository-wide enumeration
+or sorting.
+
+No performance issue needs to be addressed for Step 2.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+The dedicated evidence, evidence-CLI, commit-validation, root-workflow, and
+batch-process tests reach every production branch. They cover existing files,
+created files, writer deletions, patch attribution, umbrella changes,
+ignored-versus-tracked effects, bounded literal-path capture, unrelated-file
+exclusion, repository path escapes, malformed digest and path relationships,
+duplicate and inconsistent validation payloads, fixed manifest identity,
+manifest lifecycle, conventional subjects, membership mismatches, unsafe `git
+add` paths, and shared-validator wiring. The latest full run reports 100%
+project coverage across 1,748 passing tests.
+
+The evidence tests are split by responsibility: core capture and lifecycle
+contracts occupy 221 lines, while defensive payload, path, and Git boundary
+contracts occupy 456 lines. Both remain below the plan's 550-line split
+threshold. One explicit boundary contract opts out of the package's autouse
+in-memory Git fixture and records real `git ls-files` output for tracked,
+ignored, and untracked bracketed names, proving that each `:(literal)` pathspec
+excludes its glob-matching decoy.
+
+No unit-tested class is below 100% coverage for Step 2.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+The root batch workflow rejects an inaccurate `a.commit` before reset or
+commit, and the approved earlier Step 2 batch commits demonstrated that shared
+path in practice. Request rendering still reads authored inputs before
+capturing the index, existing Step 1 request evidence remains intact, and the
+new validation-state split preserves the complete public import surface.
+
+The protocol-owned transcript now contains the Step 2 round-one through
+round-three requests and answers, the timeout escalation, and the authorized
+forced-reclaim entry. The round-two and round-three lease reclaims appended
+nothing, because an ordinary reclaim renews the lease without touching request,
+answer, or transcript bytes. Historical Step 1 bytes and the duplicate human
+headings remain untouched. The transcript is restored to the trailing
+documentation group so the complete Step 2 review record lands with the step,
+while later protocol appends remain eligible through that group's exact-path
+staging command.
+
+Existing behavior is not impaired, and Step 2 is ready for round-four reviewer
+assessment after the accepted repairs passed the project gate.
 
 ---
 

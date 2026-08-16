@@ -370,6 +370,7 @@ Fix intent:
 
 - Add an explicit reviewer assessment mode to the canonical implementation-check instruction.
 - Require that mode to call the Step 2 evidence launcher before and after either the criteria pass or fail path.
+- Require each validation-state capture to name at least every staged step path and every known validation-artifact path, so tracked differences cannot fall outside the compared scope.
 - Permit writes only to validation-plan rows for the reviewed step and treat any detected umbrella mutation as a `changes-requested` finding that leaves the changed file in place.
 
 Expected outcome:
@@ -395,13 +396,14 @@ Tests first:
 
 - Assert the canonical instruction names the evidence launcher's `umbrella_digest` capture/compare operations on both criteria result paths.
 - Assert it names validation-state capture/compare, pre-repair blob capture, patch attribution, and manifest lifecycle commands rather than describing equivalent shell operations.
+- Assert both result paths build the validation-state scope from all staged step paths and known validation-artifact paths before capture.
 - Cover the reviewed-step validation-row exemption, forbidden umbrella completion writes, changed-file retention, and `Umbrella draft: none` handling.
 - Reuse Step 2 executable tests as the proof that pass-path and fail-path mutation and validation side effects are actually detected.
 
 Classes and behavior:
 
 - Reviewer assessment mode: an explicit canonical mode that delegates executable evidence work to `bin/code_review_evidence.bat`, permits only reviewed-step validation-row writes, and reports any other tracked difference.
-- Canonical command contract: instruction tests anchor on command identifiers such as `umbrella_digest` and `validation_state`, while helper tests prove their behavior.
+- Canonical command contract: instruction tests anchor on command identifiers such as `umbrella_digest` and `validation_state`, require the staged-plus-validation-artifact minimum path set, and use helper tests to prove their behavior.
 
 Completion criteria:
 
