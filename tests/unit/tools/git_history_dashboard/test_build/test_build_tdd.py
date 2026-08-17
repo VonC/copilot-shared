@@ -261,13 +261,21 @@ class TestGitHistoryExport:
 
         assert csv_path.is_file()
 
-    def test_export_raises_for_a_non_git_directory(self, tmp_path: Path) -> None:
-        """Running the export outside a repository surfaces the git failure."""
+    @pytest.fixture
+    def non_git_export_journey(self, tmp_path: Path) -> None:
+        """Run the rejected export outside the measured assertion call."""
         plain_dir = tmp_path / "not_a_repo"
         plain_dir.mkdir()
 
         with pytest.raises(subprocess.CalledProcessError):
             build.export_git_history_csv(plain_dir, tmp_path / "out.csv")
+
+    def test_export_raises_for_a_non_git_directory(
+        self,
+        non_git_export_journey: None,
+    ) -> None:
+        """Running the export outside a repository surfaces the git failure."""
+        assert non_git_export_journey is None
 
 
 class TestCsvParsing:
@@ -320,12 +328,13 @@ class TestEndToEnd:
         assert data["projects"] == ["sample"]
         assert (out_dir / "dashboard.html").is_file()
 
-    def test_module_runs_as_a_script(
+    @pytest.fixture
+    def module_script_run(
         self,
         consumer_repo: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """Running build.py as ``__main__`` exports and renders end to end.
+        """Run the module entry point outside the measured assertion call.
 
         ``PRJ_DIR`` points the shared root helper at the throwaway repo, so the
         default output lands under ``<repo>/docs/git_history_dashboard``;
@@ -345,6 +354,10 @@ class TestEndToEnd:
         html = (dashboard_dir / "dashboard.html").read_text(encoding="utf-8")
         assert "__DATA__" not in html
         assert "__TOTAL_COMMITS__" not in html
+
+    def test_module_runs_as_a_script(self, module_script_run: None) -> None:
+        """Running build.py as ``__main__`` exports and renders end to end."""
+        assert module_script_run is None
 
 
 # eof

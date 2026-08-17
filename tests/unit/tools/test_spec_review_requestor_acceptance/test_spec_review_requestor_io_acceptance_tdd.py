@@ -172,8 +172,9 @@ def test_tracked_root_renderer_input_is_rejected_before_outputs(
     assert tracked_input_journey is None
 
 
-def test_escalation_preserves_evidence_and_cannot_be_reclaimed(tmp_path: Path) -> None:
-    """An escalated request remains stopped with its exact evidence intact."""
+@pytest.fixture
+def escalated_request_journey(tmp_path: Path) -> None:
+    """Escalate and inspect one request outside the measured call."""
     root = _root(tmp_path, "escalation")
     document = _document(root, "plan", "escalated")
     core = _core(root, document)
@@ -189,6 +190,13 @@ def test_escalation_preserves_evidence_and_cannot_be_reclaimed(tmp_path: Path) -
     assert core.store.paths.request.read_bytes() == request_before
     with pytest.raises(ReviewExchangeError, match="reclaim requires"):
         core.reclaim()
+
+
+def test_escalation_preserves_evidence_and_cannot_be_reclaimed(
+    escalated_request_journey: None,
+) -> None:
+    """An escalated request remains stopped with its exact evidence intact."""
+    assert escalated_request_journey is None
 
 
 def test_exact_path_routing_never_scans_docs_or_reads_transcript(

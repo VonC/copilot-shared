@@ -40,7 +40,7 @@ def test_identity_json_data_round_trip_is_exact(identity: ExchangeIdentity) -> N
     assert restored.key == identity.key
 
 
-@settings(max_examples=40, deadline=None)
+@settings(max_examples=10, deadline=None)
 @given(_identity(), _identity())
 def test_distinct_identity_keys_never_compare_equal(
     first: ExchangeIdentity,

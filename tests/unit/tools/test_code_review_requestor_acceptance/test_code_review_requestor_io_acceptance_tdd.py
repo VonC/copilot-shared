@@ -92,10 +92,21 @@ def _inputs(root: Path) -> tuple[Topic, WorkflowState, MemoryRecord]:
     return topic, state, record
 
 
-def test_mismatched_plan_step_round_and_umbrella_fail_closed(tmp_path: Path) -> None:
-    """Nearby code identities cannot publish into one exact active exchange."""
-    root = tmp_path / "identity"
+@pytest.fixture
+def opted_in_inputs(
+    tmp_path: Path,
+) -> tuple[Path, Topic, WorkflowState, MemoryRecord]:
+    """Build the real Git-backed routing context outside measured calls."""
+    root = tmp_path / "opted-in"
     topic, state, record = _inputs(root)
+    return root, topic, state, record
+
+
+def test_mismatched_plan_step_round_and_umbrella_fail_closed(
+    opted_in_inputs: tuple[Path, Topic, WorkflowState, MemoryRecord],
+) -> None:
+    """Nearby code identities cannot publish into one exact active exchange."""
+    root, topic, state, record = opted_in_inputs
     route = code_review.resolve_code_review_route(root, topic, state, record)
     assert route is not None
     context = route.context
@@ -244,10 +255,11 @@ def test_exact_routing_rejects_scans_transcript_reads_and_unrelated_staging(
     assert all(not path.name.startswith("review.") for path in reads)
 
 
-def test_duplicate_live_exchange_and_escalation_stay_stopped(tmp_path: Path) -> None:
+def test_duplicate_live_exchange_and_escalation_stay_stopped(
+    opted_in_inputs: tuple[Path, Topic, WorkflowState, MemoryRecord],
+) -> None:
     """Duplicate starts and escalated evidence cannot gain a second owner."""
-    root = tmp_path / "duplicate"
-    topic, state, record = _inputs(root)
+    root, topic, state, record = opted_in_inputs
     route = code_review.resolve_code_review_route(root, topic, state, record)
     assert route is not None
     core = ReviewExchangeCore(

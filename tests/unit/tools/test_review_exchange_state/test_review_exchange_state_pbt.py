@@ -211,18 +211,45 @@ def _assert_generated_shape(shape: GeneratedShape) -> None:
 
 
 @given(shape=_shapes())
-@settings(max_examples=5)
+@settings(max_examples=2)
 def test_generated_shapes_are_listed_or_fail_closed(shape: GeneratedShape) -> None:
-    """The first five generated shapes remain inside the closed state enum."""
+    """The first two generated shapes remain inside the closed state enum."""
     _assert_generated_shape(shape)
 
 
 @given(shape=_shapes())
-@settings(max_examples=5)
+@settings(max_examples=2)
 def test_additional_generated_shapes_are_listed_or_fail_closed(
     shape: GeneratedShape,
 ) -> None:
-    """A second five generated shapes preserve the ten-example property budget."""
+    """A second pair of generated shapes stays inside the closed state enum."""
+    _assert_generated_shape(shape)
+
+
+@given(shape=_shapes())
+@settings(max_examples=2)
+def test_third_generated_shape_pair_is_listed_or_fails_closed(
+    shape: GeneratedShape,
+) -> None:
+    """A third pair of generated shapes stays inside the closed state enum."""
+    _assert_generated_shape(shape)
+
+
+@given(shape=_shapes())
+@settings(max_examples=2)
+def test_fourth_generated_shape_pair_is_listed_or_fails_closed(
+    shape: GeneratedShape,
+) -> None:
+    """A fourth pair of generated shapes stays inside the closed state enum."""
+    _assert_generated_shape(shape)
+
+
+@given(shape=_shapes())
+@settings(max_examples=2)
+def test_fifth_generated_shape_pair_is_listed_or_fails_closed(
+    shape: GeneratedShape,
+) -> None:
+    """A fifth pair preserves the complete ten-example property budget."""
     _assert_generated_shape(shape)
 
 
