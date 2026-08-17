@@ -86,7 +86,7 @@ reports an answer, read only the exact `paths.answer` file.
 | `answer-pending` | Read only `paths.answer`, then assess staged repairs. |
 | `abandoned-request` | Call `reclaim`, then wait with unchanged evidence. |
 | `abandoned-answer` | Call `reclaim`, then assess the retained answer. |
-| `abandoned-mid-round` | Call `reclaim`, then resume the persisted owner action. |
+| `abandoned-mid-round` | Call `reclaim` and resume normally, unless the human explicitly decides to close it through forced completion. |
 | `convergence-gate` | Re-present evidence, recommendation, and both choices. |
 | `owning-action-pending` | Resume the authorized commit without asking again. |
 | `escalated` | Stop for shared human resolution; never reclaim it. |

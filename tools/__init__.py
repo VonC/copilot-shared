@@ -37,6 +37,7 @@ from tools.review_exchange_models import (
 )
 from tools.review_exchange_models_coordination import CoordinationRecord
 from tools.review_exchange_models_envelope import Envelope
+from tools.review_exchange_publication import ReviewExchangePublicationMixin
 from tools.spec_review_answer import (
     SpecificationAnswerRender,
     SpecificationAssessment,
@@ -70,6 +71,7 @@ __all__ = [
     "ReviewContext",
     "ReviewDisposition",
     "ReviewExchangeError",
+    "ReviewExchangePublicationMixin",
     "ReviewFamily",
     "ReviewRole",
     "SpecificationAnswerRender",

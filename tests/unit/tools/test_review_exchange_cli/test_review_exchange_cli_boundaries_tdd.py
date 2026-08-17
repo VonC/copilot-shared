@@ -24,6 +24,7 @@ from tests.unit.tools.test_review_exchange_cli.test_review_exchange_cli_tdd impo
     _runtime,
 )
 from tools import review_exchange_cli as cli
+from tools import review_exchange_cli_parser as cli_parser
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import ReviewExchangeError
 
@@ -36,12 +37,12 @@ _WAIT_TIMEOUT = 15
 
 def test_positive_number_parsers_reject_zero() -> None:
     """Wait durations and intervals must be positive before dispatch."""
-    assert cli._positive_int("2") == _POSITIVE_INT
-    assert cli._positive_float("0.5") == _POSITIVE_FLOAT
+    assert cli_parser.positive_int("2") == _POSITIVE_INT
+    assert cli_parser.positive_float("0.5") == _POSITIVE_FLOAT
     with pytest.raises(argparse.ArgumentTypeError, match="positive"):
-        cli._positive_int("0")
+        cli_parser.positive_int("0")
     with pytest.raises(argparse.ArgumentTypeError, match="positive"):
-        cli._positive_float("-1")
+        cli_parser.positive_float("-1")
 
 
 def test_code_context_rejects_a_non_plan_document(tmp_path: Path) -> None:
@@ -185,6 +186,51 @@ def test_forced_reclaim_requires_its_authorized_summary_pairing(
         capsys,
         runtime,
         ["reclaim", *_common(runtime), "--summary-file", str(summary)],
+    )
+    assert code == _EXIT_FATAL
+    assert "only with --force" in payload["diagnostic"]
+
+
+def test_forced_completion_requires_its_authorized_summary_pairing(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    """Only --force with --summary-file delegates forced completion."""
+    runtime, core = _runtime(tmp_path)
+    summary = tmp_path / "a.completion-summary.md"
+    summary.write_text("The human closes the abandoned round.", encoding="utf-8")
+
+    code, payload, _ = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["complete", *_common(runtime), "--force", "--summary-file", str(summary)],
+    )
+
+    assert code == 0
+    assert payload["outcome"] == "force-completed"
+    assert payload["removed"] is True
+    assert core.calls[-1] == (
+        "force_complete",
+        ("The human closes the abandoned round.",),
+        {},
+    )
+
+    code, payload, _ = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["complete", *_common(runtime), "--force"],
+    )
+    assert code == _EXIT_FATAL
+    assert "--summary-file" in payload["diagnostic"]
+
+    code, payload, _ = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["complete", *_common(runtime), "--summary-file", str(summary)],
     )
     assert code == _EXIT_FATAL
     assert "only with --force" in payload["diagnostic"]

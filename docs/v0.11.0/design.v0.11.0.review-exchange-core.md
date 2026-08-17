@@ -186,7 +186,7 @@ Fixed template conclusions and file-handling instructions are coordination boile
 | Absent | Present | Absent | `awaiting-human-confirmation` with no confirmed outcome | Suspended | Convergence gate | Retain the answer and re-present the human choices across sessions. |
 | Absent | Present | Absent | `awaiting-human-confirmation` with confirmed `continue-owning-workflow` | Suspended | Owning action pending | Retain the answer and re-report the confirmed authorization idempotently without asking the human again. |
 | Any | Any | Any | `escalated` with reason | None | Escalated, awaiting human resolution | Preserve everything, append no duplicate escalation, and wait for human resolution. |
-| Absent | Absent | Absent | `active` | Expired or absent | Abandoned mid-round | Preserve coordination state; the expected actor may reclaim by lease renewal, otherwise escalate attributing inaction to the expected actor. |
+| Absent | Absent | Absent | `active` | Expired or absent | Abandoned mid-round | Preserve coordination state; the expected actor may reclaim by lease renewal, or a human may explicitly force completion with a durable close decision. |
 | Absent | Absent | Present | `active` or missing | Expired or absent | Interrupted answer publication | Preserve the tombstone and escalate for human recovery. |
 | Absent | Present | Present | `active` with incomplete marker | Expired or absent | Interrupted transcript append | Preserve both artifacts and repair the exact identity before continuation. |
 | Present | Absent | Absent | `active` or missing | Expired or absent | Abandoned request | Preserve state; with active coordination the expected actor may reclaim by lease renewal, otherwise append escalation and require human resolution. |
@@ -208,7 +208,7 @@ The state transitions are:
 5. Continue automated round: publish a new request with the requestor response summary, increment the round, set the reviewer as expected next actor, and renew the lease. Two consecutive `reviewed_work_changed: false` change-request rounds trigger no-progress escalation; convergence exits the automated loop instead. Persist whether the dedicated clarification round has already run.
 6. Record escalation: under the short lock, set the escalation-transcript incomplete marker before changing status, set status to `escalated` with its reason, append the escalation entry idempotently, clear the marker, and stop renewing the lease. Observing an already-escalated exchange appends nothing new.
 7. Record human confirmation or resolution: under the short lock, set the human-transcript incomplete marker before persisting the human choice or resolution, append its transcript entry idempotently, then clear the marker. Confirmation handling follows the convergence transitions below; escalation resolution follows the fresh-round recovery flow.
-8. Complete exchange: remove the coordination record only after the human-authorized owning action succeeds and no incomplete transition remains.
+8. Complete exchange: remove the coordination record only after the human-authorized owning action succeeds and no incomplete transition remains. As a separate recovery, a human may force completion only for an artifact-free `abandoned-mid-round`; the core marks and appends that close decision idempotently before removing coordination, without asserting convergence or authorizing new owning work.
 9. Reclaim abandoned round: under the short lock, verify the round is abandoned or still live with active coordination and no incomplete marker, then renew the lease in place and change nothing else. Escalated, confirming, interrupted, and inconsistent exchanges cannot be reclaimed.
 
 Renaming the matching request path to the tombstone satisfies the delete-before-answer rule because the matching request path disappears before the answer becomes visible. The tombstone preserves the exact consumed evidence until answer publication and transcript append are durable.
@@ -227,7 +227,12 @@ The core initializes a missing transcript from the template selected by review f
 
 ### Append-only review entries
 
-Each appended entry has this logical shape:
+Each appended entry has this logical shape. Code-review request and answer
+identifiers include the implementation step before the round, so different
+steps in one plan never count as restarted exchanges. When the same document
+and step start a new exchange, request and answer headings append
+`(exchange <n>)` and their stable entry identifiers append `-exchange-<n>` so
+round numbering can restart without colliding with earlier history.
 
 ```md
 ## Round <n> by <requestor-or-reviewer> - Step <identifier when applicable>
@@ -237,12 +242,12 @@ Each appended entry has this logical shape:
 - Umbrella: <validated path or none>
 - Reviewed document: <exact specification or plan path>
 - Implementation step: <identifier when applicable>
-- Outcome: <request, answer, escalation, human-confirmation, or human-resolution>
+- Outcome: <request, answer, escalation, human-confirmation, human-completion, human-reclaim, or human-resolution>
 
 <complete substantive role-authored content>
 ```
 
-The core serializes appends under the identity's short operating-system lock. Agents pass the new entry to the core and do not read historical transcript content. Each entry has a stable identity and is appended idempotently, so repair cannot duplicate a completed round. This preserves the transcript's documentation-only purpose while making round order, no-progress evidence, and escalation history human-verifiable.
+The core serializes appends under the identity's short operating-system lock. Agents pass the new entry to the core and do not read historical transcript content. Each entry has a stable identity and is appended idempotently, so repair cannot duplicate a completed round. This preserves the transcript's documentation-only purpose while making round order, no-progress evidence, and escalation history human-verifiable. A requestor-only legacy repair may replace the final entry while its request is still pending when an older renderer produced a repeated exchange identity; the durable request remains unchanged, the existing incomplete-transition marker makes replacement crash-repairable, and no earlier entry is rewritten.
 
 For implementation-code review, the implementation step is appended to every
 round heading. This keeps headings unique when one transcript records rounds

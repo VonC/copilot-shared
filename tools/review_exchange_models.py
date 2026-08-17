@@ -88,6 +88,7 @@ class IncompleteTransitionKind(StrEnum):
     PUBLISH_ANSWER = "publish-answer"
     ESCALATION = "escalation"
     HUMAN_CONFIRMATION = "human-confirmation"
+    HUMAN_COMPLETION = "human-completion"
     HUMAN_RECLAIM = "human-reclaim"
     HUMAN_RESOLUTION = "human-resolution"
 

@@ -130,6 +130,23 @@ the actor its artifact shape names, and it appends the authored summary to the
 transcript as durable evidence. It never repairs an interrupted or inconsistent
 exchange, and no automated role may substitute it for `resolve` or `archive`.
 
+Use `complete --force --summary-file <path>` only when a human explicitly
+decides to close an `abandoned-mid-round` exchange instead of resuming it. The
+forced completion requires the intact artifact-free abandoned shape, appends
+the authored decision to the transcript idempotently, and then removes only
+the coordination record. It does not manufacture convergence, authorize an
+owning action, or replace normal `complete`; an automated role may not choose
+it without the human's explicit close decision.
+
+Use `repair-request-transcript --summary-file <path>` only when a pending
+request is the final transcript entry and a restarted exchange exposed a
+legacy round-one identity collision. The requestor supplies the same
+substantive summary with headings qualified by `(exchange N)`; the core keeps
+the durable request artifact, replaces only that final legacy entry through
+the existing crash-repair marker, and assigns the request a unique
+`request-round-N-exchange-M` footer. It rejects non-final, first-exchange, and
+non-request-pending shapes.
+
 Use `escalate --summary-file <path>` when the specialized workflow must stop
 automation with an authored reason. Use `cancel --summary-file <path>` for a
 human cancellation at convergence.

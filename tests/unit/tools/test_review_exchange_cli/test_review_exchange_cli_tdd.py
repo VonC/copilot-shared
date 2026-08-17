@@ -85,6 +85,14 @@ class FakeCore:
         self._call("publish_answer", markdown, transcript_content)
         return self.record
 
+    def repair_current_request_transcript(
+        self,
+        transcript_content: str,
+    ) -> CoordinationRecord:
+        """Record final legacy request transcript repair."""
+        self._call("repair_current_request_transcript", transcript_content)
+        return self.record
+
     def wait_for_exact(
         self,
         expected: ArtifactState,
@@ -156,6 +164,11 @@ class FakeCore:
     def complete(self) -> bool:
         """Record owning-action completion."""
         self._call("complete")
+        return True
+
+    def force_complete(self, summary: str) -> bool:
+        """Record one authorized forced completion."""
+        self._call("force_complete", summary)
         return True
 
 
@@ -305,6 +318,11 @@ def _assert_inputs_retained(content: Path, summary: Path, guidance: Path) -> Non
             "publish-answer",
             ["--content-file", "CONTENT", "--summary-file", "SUMMARY"],
             "publish_answer",
+        ),
+        (
+            "repair-request-transcript",
+            ["--summary-file", "SUMMARY"],
+            "repair_current_request_transcript",
         ),
         ("wait-request", ["--timeout-seconds", "5"], "wait_for_exact"),
         ("wait-answer", ["--timeout-seconds", "5"], "wait_for_exact"),

@@ -420,10 +420,10 @@ def _assert_owning_authorization(journey: CodeJourney) -> None:
 def _assert_code_transcript_order(journey: CodeJourney) -> None:
     """Check round order, stable confirmation identity, and offset timestamps."""
     ordered = [
-        journey.transcript.index("request-round-1"),
-        journey.transcript.index("answer-round-1"),
-        journey.transcript.index("request-round-2"),
-        journey.transcript.index("answer-round-2"),
+        journey.transcript.index("request-step-5-round-1"),
+        journey.transcript.index("answer-step-5-round-1"),
+        journey.transcript.index("request-step-5-round-2"),
+        journey.transcript.index("answer-step-5-round-2"),
         journey.transcript.index("human-confirmation-round-2"),
     ]
     assert ordered == sorted(ordered)

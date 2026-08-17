@@ -55,6 +55,7 @@ _TRANSCRIPT_OUTCOMES: Final[frozenset[str]] = frozenset(
         "answer",
         "escalation",
         "human-confirmation",
+        "human-completion",
         "human-reclaim",
         "human-resolution",
     },
@@ -214,12 +215,42 @@ class ReviewExchangeStore:
             raise ReviewExchangeError(f"exact cleanup failed: {error}") from error
         return True
 
-    def entry_occurrence(self, entry_id: str) -> int:
-        """Return the next positive occurrence for one repeatable entry identity."""
+    def entry_occurrence(
+        self,
+        entry_id: str,
+        *,
+        discriminator: str | None = None,
+        before_offset: int | None = None,
+    ) -> int:
+        """Return the next occurrence for one stable transcript identity family."""
         if not self.paths.transcript.is_file():
             return 1
-        content = self.paths.transcript.read_text(encoding="utf-8")
-        return content.count(f"{_ENTRY_FOOTER_PREFIX} {entry_id} -->") + 1
+        content = self.paths.transcript.read_bytes()
+        if before_offset is not None:
+            content = content[:before_offset]
+        text = content.decode("utf-8")
+        suffix = (
+            rf"(?:-{re.escape(discriminator)}-\d+)?"
+            if discriminator is not None
+            else r"(?:-\d+)?"
+        )
+        footer = re.compile(
+            rf"{re.escape(_ENTRY_FOOTER_PREFIX)} {re.escape(entry_id)}{suffix} -->",
+        )
+        return len(footer.findall(text)) + 1
+
+    def current_entry_offset(self, entry_id: str) -> int:
+        """Locate the current final legacy entry without scanning authored headings."""
+        content = self.paths.transcript.read_bytes()
+        footer = f"{_ENTRY_FOOTER_PREFIX} {entry_id} -->".encode()
+        footer_offset = content.rfind(footer)
+        if footer_offset < 0 or content[footer_offset + len(footer):].strip():
+            raise ReviewExchangeError("legacy transcript entry is not the final entry")
+        prior_footer = content.rfind(_ENTRY_FOOTER_PREFIX.encode(), 0, footer_offset)
+        heading_offset = content.find(b"\n## Round ", prior_footer, footer_offset)
+        if prior_footer < 0 or heading_offset < 0:
+            raise ReviewExchangeError("legacy transcript entry boundary is unavailable")
+        return heading_offset
 
     def initialize_transcript(self, context: ReviewContext) -> bool:
         """Initialize a missing family transcript and preserve an existing one."""
@@ -457,9 +488,13 @@ class ReviewExchangeStore:
             # the same round, so only that role needs its outcome to stay unique.
             heading += f" - {entry.outcome}"
         if entry.occurrence > 1:
-            # A stop-and-resume cycle can repeat the same outcome inside one
-            # round, so the attempt is what explains the repeated heading.
-            heading += f" - attempt {entry.occurrence}"
+            if entry.role is ReviewRole.HUMAN:
+                # A stop-and-resume cycle can repeat the same human outcome.
+                heading += f" - attempt {entry.occurrence}"
+            else:
+                # A completed exchange can restart at round one for the same
+                # document, so request and answer headings name that exchange.
+                heading += f" (exchange {entry.occurrence})"
         lines = [
             "",
             heading,
