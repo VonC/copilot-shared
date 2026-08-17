@@ -47,6 +47,96 @@ Check your headings. The answer and its transcript summary are appended to a rev
 
 Check your validation plan update: re-read the status sentence you wrote under `### Analysis of Step N implementation state`. It MUST be exactly `Yes. Step N has been fully implemented.` or `No. Step N has NOT been fully implemented.`, with no other introduction sentence and no `Step checked:` prefix. If it is not the exact `Yes. Step N has been fully implemented.` sentence, search the updated document for the `### Missing work for Step N` heading. If that heading is absent, the check is not finished: add the section with the gathered missing-element bullets before ending your answer.
 
+## Reviewer assessment mode for implementation checks
+
+Enter this mode only when the calling prompt explicitly assigns an advisory
+code reviewer. Outside reviewer assessment mode, follow the writer-owned
+instructions above and the document-level and umbrella completion rules below
+unchanged. Reviewer mode never completes an umbrella row, commits, reverts a
+detected change, or grants workflow authority.
+
+### Reviewer evidence setup before applying criteria
+
+Use `bin/code_review_evidence.bat` for every Git and filesystem evidence
+operation. Do not replace these calls with prose or equivalent shell commands.
+
+Every path operand is repository-relative. The launcher rejects an absolute
+operand with `must be repository-relative` and exit `2`, so convert the
+request's absolute umbrella and plan paths before passing them. Each retained
+JSON result is an operand rather than a value: write it to its own ignored root
+`a.*` file and pass that repository-relative path wherever a command takes a
+JSON operand, so no retained evidence becomes a tracked side effect of this
+check.
+
+1. Build `validation_path_set` as a first-seen ordered union in O(n). It must
+   contain every staged path that belongs to the reviewed step, the exact
+   validation plan, and every known validation-artifact path named by the
+   resolved validation commands. Never omit a staged step path because a
+   validation command is expected not to touch it.
+2. Run `bin/code_review_evidence.bat --repository <root> umbrella-digest
+   capture <umbrella>` and retain its JSON as `umbrella_digest_before`. When
+   the request says `Umbrella draft: none`, omit the path operand; retain the
+   returned not-applicable result with `"applicable": false`.
+3. Run `bin/code_review_evidence.bat --repository <root> validation-state
+   capture <validation_path_set...>` and retain its JSON as
+   `validation_state_before`.
+4. Before changing any permitted validation-plan path, run
+   `bin/code_review_evidence.bat --repository <root>
+   record-pre-repair-blob <path>` and retain each baseline JSON value.
+5. Assemble the baseline evidence JSON and run
+   `bin/code_review_evidence.bat --repository <root> write-manifest
+   <evidence-json>`. On resumed work, call `read-manifest` with the exact
+   identity before using retained evidence.
+
+Reviewer mode may write only the exact validation-plan rows for the reviewed
+step. It must suppress the final-step umbrella completion section below even
+when this is the last step in the effort.
+
+### Reviewer evidence boundary after a Yes result
+
+After writing the reviewed-step validation rows for a Yes result, always run
+all of these commands before reporting the assessment:
+
+1. Run `bin/code_review_evidence.bat --repository <root> umbrella-digest
+   compare <umbrella_digest_before-json> <umbrella>`; omit the final path for
+   `Umbrella draft: none`.
+2. Run `bin/code_review_evidence.bat --repository <root> validation-state
+   capture <validation_path_set...>` as `validation_state_after`, using the
+   same ordered `validation_path_set` captured before the criteria.
+3. Run `bin/code_review_evidence.bat --repository <root> validation-state
+   compare <validation_state_before-json> <validation_state_after-json>`.
+
+### Reviewer evidence boundary after a No result
+
+After writing the reviewed-step validation rows and concrete missing-work rows
+for a No result, always run the same evidence boundary before reporting the
+assessment:
+
+1. Run `bin/code_review_evidence.bat --repository <root> umbrella-digest
+   compare <umbrella_digest_before-json> <umbrella>`; omit the final path for
+   `Umbrella draft: none`.
+2. Run `bin/code_review_evidence.bat --repository <root> validation-state
+   capture <validation_path_set...>` as `validation_state_after`, using the
+   same ordered `validation_path_set` captured before the criteria.
+3. Run `bin/code_review_evidence.bat --repository <root> validation-state
+   compare <validation_state_before-json> <validation_state_after-json>`.
+
+For either result, an applicable changed umbrella digest is a
+`changes-requested` boundary finding. Leave the changed umbrella file in place
+and report it; do not stage or revert it. Validation-plan differences are
+permitted only when they are confined to rows for the reviewed step. Any other
+tracked difference, including a tracked validation side effect, is a
+`changes-requested` finding that stays unstaged and unreverted. Differences
+confined to ignored validation artifacts are acceptable.
+
+For each permitted validation-plan edit, run
+`bin/code_review_evidence.bat --repository <root>
+attribute-reviewer-patch <baseline-json>` and stage only the attributable
+patch. Update the retained evidence with `write-manifest`; do not retire it
+inside this check. The calling reviewer retires it with
+`bin/code_review_evidence.bat --repository <root> retire-manifest` only after
+`publish-answer` reports `outcome: published`.
+
 ## Document-level status line
 
 The validation plan opens with its own document-level status sentence, `No, it is not implemented.` in the initial skeleton. After recording this step's verdict, re-read every `### Analysis of Step N implementation state` section of the document. When each one now starts with the exact `Yes. Step N has been fully implemented.` sentence (this check just turned the last pending step into a Yes), update that opening line to `Yes, it is implemented.` and refresh the theme sentence below it so the document no longer reads as pending. When any step still reads `No` or `Not started`, leave the opening line at `No, it is not implemented.`. Skipping this flip leaves a fully validated effort looking unfinished, and `prepare-release` stops on that line.
