@@ -521,8 +521,10 @@ class ReviewExchangeStore:
         """Render an in-repository transcript path without host identity."""
         try:
             return path.relative_to(self.paths.project_root).as_posix()
-        except ValueError:
-            return path.as_posix()
+        except ValueError as error:
+            raise ReviewExchangeError(
+                "transcript path is outside the project root",
+            ) from error
 
     def _portable_transcript_content(self, content: str) -> str:
         """Remove this repository's absolute prefix from authored evidence."""
