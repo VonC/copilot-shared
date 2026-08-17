@@ -263,7 +263,12 @@ assessment after the accepted repairs passed the project gate.
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because the canonical implementation check does not yet expose a reviewer mode that delegates its machine checks to the evidence launcher.
+Yes. Step 3 has been fully implemented.
+
+The canonical implementation check now has an explicit advisory reviewer mode
+that delegates repository evidence to the Step 2 launcher, applies the same
+post-criteria comparisons after Yes and No results, restricts writes to the
+reviewed step's validation rows, and suppresses umbrella completion.
 
 ### Goal for Step 3
 
@@ -277,27 +282,68 @@ Bound advisory implementation checks to reviewed-step validation rows and requir
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Added an explicit reviewer assessment branch while leaving writer-owned
+  implementation-check behavior unchanged outside that mode.
+- Defined `validation_path_set` as the first-seen ordered union of every staged
+  reviewed-step path, the validation plan, and known validation artifacts.
+- Required `umbrella-digest` and `validation-state` capture before criteria and
+  comparison after both Yes and No results.
+- Required pre-repair blob capture, patch attribution, retained-manifest
+  writing and resumption, and publication-bound manifest retirement.
+- Limited reviewer writes to the exact reviewed-step validation rows and made
+  any umbrella or other tracked difference a retained `changes-requested`
+  finding.
+- Added five focused instruction structure tests for setup, both result paths,
+  scope completeness, permission boundaries, and absent-umbrella evidence.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+No production type or class was introduced. The new test package contains two
+small file-reading helpers that isolate canonical section assertions without
+implementing a second evidence engine.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+The canonical instruction remains the reviewer policy adapter and delegates all
+Git, digest, filesystem, patch, and manifest behavior to
+`bin/code_review_evidence.bat`. The structure tests validate that delegation
+without importing production internals or duplicating Step 2 algorithms. The
+writer-owned document and umbrella completion flow remains outside the reviewer
+branch.
+
+No architecture issue needs to be addressed for Step 3.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Reviewer scope construction uses a first-seen ordered union and therefore
+performs O(n) work over explicit paths. Each evidence operation receives that
+bounded set; the instruction adds no directory scan, sort, nested comparison,
+wait, or repeated repository walk.
+
+No performance issue needs to be addressed for Step 3.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+The 97-line reviewer-mode test module covers every Step 3 instruction contract:
+baseline evidence and manifest lifecycle, symmetric Yes and No comparisons,
+the staged-plus-artifact minimum scope, reviewed-row write limits, changed-file
+retention, patch attribution, and `Umbrella draft: none`. Step 2's existing
+temporary-repository tests remain the executable proof for the delegated
+commands. The completed implementation walk ran 1,771 tests with 100% project
+coverage, zero outliers, and a slowest call of 0.38 seconds.
+
+No unit-tested class is below 100% coverage for Step 3.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+Outside reviewer assessment mode, the original validation-plan status rules,
+document-level completion check, umbrella completion, and workflow handoff are
+unchanged. Inside reviewer mode, a changed umbrella or other tracked side
+effect is reported and left in place instead of being staged or reverted, and
+ignored validation artifacts remain acceptable. The absent-umbrella path keeps
+typed not-applicable evidence without inventing a file operand.
+
+Existing behavior and reporting remain intact for Step 3.
 
 ---
 

@@ -1569,3 +1569,586 @@ every remaining duplicate or warning at its source rather than in the rendered
 output.
 
 <!-- review-entry-id: human-confirmation-round-4 -->
+
+## Round 5 by human - Step 2 - human-completion
+
+- Recorded: 2026-08-17T09:59:07+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 2
+- Outcome: human-completion
+
+The human explicitly decides to close Step 2 round 5 after confirming that the requested rework and the owning commit action have already completed. This forced completion retires the abandoned artifact-free round; it does not claim that round 5 received a reviewer answer or manufacture a convergence recommendation.
+
+Round 4 reached the convergence gate with a commit-ready recommendation, but the human selected Rework and review again. That durable choice removed the round-4 answer and advanced coordination to round 5. The rework and commits then proceeded without publishing the replacement round-5 request, so its active artifact-free lease expired and classified as abandoned-mid-round.
+
+<!-- review-entry-id: human-completion-round-5 -->
+
+## Round 1 by requestor - Step 3
+
+- Recorded: 2026-08-17T10:01:14+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 code-reviewer round 1
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Implementation step: 3
+Review round: 1
+
+### Code review evidence for step 3 code-reviewer round 1
+
+request_index_tree: a7b893d85630d401806f8221bfef293251d11e70
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n 'code_review_evidence.bat|umbrella_digest|validation_state' instructions/implementation-check.md tests/unit/tools/test_implementation_check_reviewer_mode (sources: plan)
+- git diff --cached --check (sources: request)
+
+### Requestor assessment for step 3 code-reviewer round 1
+
+Step 3 is fully implemented against its current completion criteria. The
+canonical implementation check exposes an explicit advisory reviewer mode,
+delegates every Git and filesystem evidence operation to the Step 2 launcher,
+uses the same post-criteria comparisons after Yes and No results, limits writes
+to the reviewed validation rows, and suppresses writer-owned umbrella
+completion.
+
+The final `ghog day` passed all 1,759 tests with zero failures, 100% coverage,
+zero duration outliers, and no exclusions; its full phase completed in 1 minute
+39.6 seconds. The two calls previously measured above the 0.50-second ceiling
+were shortened by halving the double-identity property examples and moving the
+persisted convergence-gate setup outside the measured call phase. Static checks
+and `git diff --cached --check` pass. Scope construction is O(n) over explicit
+paths, the 187-line instruction remains canonical, and the focused test module
+is 94 lines.
+
+The implementation plan also carries Q09 through Q11 for independent
+specification review. Their recommendations clarify artifact-path declaration,
+post-publication manifest retirement, and the structure-versus-behavior test
+boundary; the specification exchange remains separate and request-pending.
+
+### Implementation report for step 3 code-reviewer round 1
+
+The implementation-check instruction now enters reviewer mode only when the
+caller explicitly assigns the advisory code-review role. Before criteria it
+builds a first-seen ordered `validation_path_set`, captures umbrella and
+validation state, records candidate repair blobs, and writes retained evidence.
+Outside reviewer mode, the existing writer-owned status, umbrella, and handoff
+rules are unchanged.
+
+Both Yes and No sections repeat the exact `umbrella-digest` compare and
+`validation-state` capture/compare commands over the same ordered path set. A
+changed umbrella or other tracked side effect is returned as
+`changes-requested` and left in place; only attributable reviewed-step
+validation-row patches may be staged. `Umbrella draft: none` records typed
+not-applicable evidence, and manifest retirement stays after successful answer
+publication.
+
+Five focused structure tests anchor the executable commands, both criteria
+paths, minimum path scope, write restrictions, changed-file retention,
+attribution, lifecycle, and absent-umbrella behavior. Existing Step 2
+temporary-repository tests remain the behavior proof for the delegated CLI.
+
+### Change summary for step 3 code-reviewer round 1
+
+The staged Step 3 subject contains six paths.
+
+Group 1 contains the canonical instruction and its focused test package:
+
+- `instructions/implementation-check.md`
+- `tests/unit/tools/test_implementation_check_reviewer_mode/__init__.py`
+- `tests/unit/tools/test_implementation_check_reviewer_mode/test_implementation_check_reviewer_mode_tdd.py`
+
+Group 2 contains the implementation plan with Q09 through Q11, the Step 3
+validation record, and the specification-review transcript:
+
+- `docs/v0.11.0/plan.v0.11.0.code-reviewer.md`
+- `docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md`
+- `docs/v0.11.0/review.plan.v0.11.0.code-reviewer.md`
+
+The root `a.commit` uses `feat(code-reviewer): bound implementation checks`
+followed by the required `docs(code-reviewer): record step 3 validation`.
+Every staged path belongs to exactly one group.
+
+### Writer response for step 3 code-reviewer round 1
+
+Writer response: Round 1 has no earlier Step 3 code-review feedback. The writer implemented the
+exact instruction and test files named by the plan, recorded the successful
+implementation check, and prepared two dependency-ordered commit groups.
+
+The three plan questions are disclosed rather than hidden from the code
+reviewer. Their recommended answers match the current implementation, while
+the separate specification-review exchange remains available for independent
+wording and consolidation feedback.
+
+### Reviewer focus for step 3 code-reviewer round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-round-1 -->
+
+## Round 1 by reviewer - Step 3
+
+- Recorded: 2026-08-17T10:40:44+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed staged state for step 3 code-reviewer round 1
+
+The request-time index tree `a7b893d85630d401806f8221bfef293251d11e70` matched
+the live index exactly before assessment, so this round assessed the published
+subject. After three reviewer repairs the index tree is
+`312000d1249bc7274c82a01d641cfd3133ac25f7`. The staged set holds exactly the six
+paths the change summary lists.
+
+The review-exchange-core work and its test-speed corrections stay unstaged and
+outside both groups, as do `instructions/code-review-requestor.md`,
+`instructions/review-requestor.md`, and
+`docs/v0.11.0/design.v0.11.0.review-exchange-core.md`.
+
+### Implementation assessment for step 3 code-reviewer round 1
+
+Step 3 is implemented against the numbered plan. The instruction gates reviewer
+mode on an explicit advisory assignment, leaves every writer-owned rule outside
+that branch untouched, and states plainly that reviewer mode never completes an
+umbrella row, commits, or reverts a detected change. The setup section builds a
+first-seen ordered `validation_path_set` over staged reviewed-step paths, the
+validation plan, and known validation artifacts, then captures umbrella digest,
+validation state, and pre-repair blobs before criteria run.
+
+Both result sections repeat the same three comparison commands over the same
+ordered scope, so a failing check cannot skip the boundary. An applicable
+changed umbrella and any other tracked difference are `changes-requested`
+findings left in place, ignored artifacts are accepted, and only attributable
+reviewed-row patches may be staged. `Umbrella draft: none` records typed
+not-applicable evidence, and retirement stays with the caller after publication.
+Line budgets hold: the instruction is 195 lines and the focused module 97.
+
+### Repairs made in step 3 code-reviewer round 1
+
+Staged: `tests/unit/tools/test_implementation_check_reviewer_mode/test_implementation_check_reviewer_mode_tdd.py`.
+The step exists to prove the instruction delegates to
+`bin/code_review_evidence.bat` rather than describing equivalent shell
+operations, and no test asserted the launcher at all. Replacing all thirteen
+`bin/code_review_evidence.bat` references with a bare `git` left every one of
+the five tests green. The repair asserts the launcher in the setup section and
+in both result sections; the same mutation now fails two tests. The instruction
+was restored from the index after each experiment.
+
+Staged: `instructions/implementation-check.md`. Two prescribed commands were not
+executable as written. Every launcher path operand must be repository-relative,
+and every request in this exchange declares the umbrella as an absolute path:
+`umbrella-digest capture C:/Users/.../draft.v0.11.0.review-mode.md` returns
+`ERROR: umbrella path must be repository-relative` with exit `2`, while the
+relative form returns a digest with exit `0`. The instruction also said to
+"retain its JSON" and then passed that retained value where the CLI reads a
+repository-relative file. The repair states the operand convention once: paths
+are repository-relative, and each retained JSON is written to its own ignored
+root `a.*` file so no retained evidence becomes a tracked side effect of the
+check the instruction is running.
+
+Staged: `docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md`. The coverage
+record measured the test module at 94 lines; the repair above makes it 97.
+
+Substantive: the first two change the step's tests and its acceptance behavior,
+so they forbid a commit-ready recommendation in this round. The third is review
+metadata.
+
+### Findings returned to the writer for step 3 code-reviewer round 1
+
+`docs/v0.11.0/review.plan.v0.11.0.code-reviewer.md` is staged in Group 2 and
+carries six MD024 duplicate headings. It is the only file with a duplicate
+heading among the repository's 344 tracked Markdown files, and it breaks the
+standing requirement recorded at the previous human gate, where MD024 and MD025
+were declared non-negotiable.
+
+The cause is a second specification exchange over the same plan. Exchange one
+ran rounds one through four to a `Consolidate` confirmation at line 1025;
+exchange two opens at line 1027 with round one again. Both halves of the append
+repeat:
+
+- the store-generated `## Round 1 by requestor` at lines 10 and 1027, which
+  carries no exchange discriminator and, for specification review, has no
+  `- Step N` suffix to separate it either; and
+- five authored `###` headings, from `Review identity` to `Reviewer focus`,
+  which the requestor left unqualified even though
+  `instructions/review-requestor.md` names this exact case and prescribes the
+  exchange as the discriminator, as in `## Round 1 by requestor (exchange 2)`.
+
+The durable entry identity `request-round-1` is now also duplicated, at lines 44
+and 1076, so its footer comment appears twice and a repair marker no longer
+identifies one entry. That is the same identity-collision class the shared core already
+addresses for repeated human transitions through `TranscriptEntry.occurrence`;
+extending that mechanism to request and answer appends would close it, but the
+right discriminator for a restarted exchange is the exchange rather than an
+attempt, which is a core design decision.
+
+The reviewer did not repair this. The generated heading and identity come from
+the store and need that core discriminator, and the authored headings sit inside
+published protocol bytes that a reviewer must not hand-edit.
+
+### Validation evidence for step 3 code-reviewer round 1
+
+Tests and coverage are green and the duration gate is not, for reasons outside
+this step. `ghog day --force` reports `fail=0 warn=0 xfail=0 cov=100` over 1,759
+tests with `exit=8` from `outliers=4`. All four are in files this effort has
+never touched: two `git_history_dashboard` calls at 1.20 and 0.67 seconds and
+two `test_code_review_requestor_io_acceptance_tdd.py` calls at 0.57 and 0.53
+seconds.
+
+The measurements are load artifacts rather than a regression. The same two
+acceptance calls measured 0.41 seconds in a run 40 minutes earlier against
+identical bytes, the full phase has drifted from 1m 31s to 1m 58s across
+successive runs with no code change between them, and the reported outlier set
+changes every run. One genuine outlier did appear and was fixed: the
+double-identity property test measured 0.55 seconds, so its examples were
+halved to ten, and it no longer appears.
+
+The plan completion grep returns 21 matches, and `git diff --cached --check`
+exits cleanly. No resolver drift: the three commands are the project default
+plus one plan addition plus one request addition, and the current resolver
+produces the same set.
+
+Markdown, checked against the repository `.markdownlint.json` with MD013 off and
+MD033 limited to `img`: `instructions/implementation-check.md`, both plan
+documents, and the code transcript are clean. Only the specification transcript
+above is not.
+
+### a.commit assessment for step 3 code-reviewer round 1
+
+Accurate, no amendment needed. `validate_commit_plan(parse_clipboard_content(
+a.commit, interactive=False), staged_paths)` returns zero diagnostics against
+the exact staged set: two ordered groups, conventional subjects, exact
+membership over all six paths, and no duplicate or missing path. All three
+repairs landed inside existing group members, so membership, grouping, and order
+are unchanged. No commit was created.
+
+### Non-blocking observations for step 3 code-reviewer round 1
+
+The step's completion grep passes incidentally. Its three tokens produce 21
+matches, every one in the instruction and none in the test package the criterion
+names, and `umbrella_digest` and `validation_state` match only the JSON variable
+names `umbrella_digest_before` and `validation_state_after`, because the real
+CLI subcommands are hyphenated. The criterion is therefore satisfied by variable
+naming rather than by the contract it was written to pin.
+
+The clause "rather than describing equivalent shell operations" remains
+unasserted. This round's repair proves the launcher is named; nothing yet proves
+that raw shell prose is absent, which would need a negative assertion over the
+reviewer sections.
+
+The Yes and No sections carry byte-identical three-command lists. The plan
+requires both result paths to name the commands, so the duplication is
+deliberate, but the two copies can drift apart without any test noticing.
+
+Repository-wide Markdown still holds 103 findings outside MD024, unchanged from
+the previous gate: MD032 29, MD033 21, MD047 20, MD022 15, MD031 4, MD012 3,
+MD009 3, and MD040 2, spread across roughly forty files unrelated to this step.
+
+### Final reviewer decision for step 3 code-reviewer round 1
+
+Decision: changes-requested. The staged subject contains the only duplicate
+headings left in the repository and breaks the requirement the human set at the
+previous gate, and that fix needs a core discriminator decision a reviewer
+cannot make. Two of this round's three repairs are substantive in their own
+right. The reviewer-mode instruction itself is otherwise complete and well
+aimed, and its remaining gaps are now anchored by tests rather than by prose.
+This answer is advisory and authorizes no commit.
+
+<!-- review-entry-id: answer-round-1 -->
+
+## Round 2 by requestor - Step 3 (exchange 3)
+
+- Recorded: 2026-08-17T13:17:46+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 code-reviewer round 2
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Implementation step: 3
+Review round: 2
+
+### Code review evidence for step 3 code-reviewer round 2
+
+request_index_tree: b517576809a9739c92c376e4a43c8cc1c5f781bf
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n 'code_review_evidence.bat|umbrella_digest|validation_state' instructions/implementation-check.md tests/unit/tools/test_implementation_check_reviewer_mode (sources: plan)
+- git diff --cached --check (sources: request)
+
+### Requestor assessment for step 3 code-reviewer round 2
+
+Step 3 is fully implemented after round 1. Reviewer mode remains explicitly
+advisory, delegates every executable comparison to
+`bin/code_review_evidence.bat`, builds one ordered staged-plus-artifact scope,
+and applies the same umbrella, validation-state, and tracked-difference checks
+after both Yes and No criteria results.
+
+All round-1 findings are closed. The staged tests now pin the launcher in setup
+and both result paths. The instruction uses repository-relative launcher
+operands and stores retained JSON in distinct ignored root `a.*` files. The
+validation record measures the focused module at 97 lines and records the
+current 1,767-test green walk.
+
+The specification transcript collision was repaired through the shared core,
+not by editing protocol bytes manually. Its restarted request is now headed
+`Round 1 by requestor (exchange 2)`, every authored heading carries the same
+discriminator, and the footer is `request-round-1-exchange-2`. The forward
+renderer and guarded legacy-repair implementation remain unstaged with the
+other review-exchange-core work, outside this Step 3 subject.
+
+The exact staged tree is `b517576809a9739c92c376e4a43c8cc1c5f781bf`.
+It contains six paths in the same two `a.commit` groups, with no membership or
+ordering drift. `git diff --cached --check` is clean. The forced Groundhog walk
+passes 1,767 tests with `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0
+exit=0`; its slowest call is 0.40 seconds against the 0.50-second ceiling.
+
+### Implementation report for step 3 code-reviewer round 2
+
+Round 1 added three staged repairs: launcher assertions in the reviewer-mode
+structure tests, executable repository-relative and retained-file wording in
+the canonical implementation check, and the resulting 97-line validation
+measurement. Those substantive repairs remain staged.
+
+The blocking repeated-exchange defect was fixed at the protocol source. Request
+and answer entries now derive unique `exchange N` headings and footers across
+restarted exchanges. A requestor-only, marker-backed recovery operation
+re-renders only the final pending legacy request while preserving its durable
+request and all earlier transcript entries. That operation repaired the staged
+plan transcript, eliminating all six MD024 duplicates and the duplicated entry
+identity.
+
+The protocol implementation, its focused tests, module splits, and test-speed
+fixtures are deliberately unstaged because they belong to the separate
+review-exchange-core effort. Only the repaired transcript byte result remains
+inside Step 3 Group 2.
+
+### Change summary for step 3 code-reviewer round 2
+
+The staged subject contains exactly these six paths:
+
+- `instructions/implementation-check.md`
+- `tests/unit/tools/test_implementation_check_reviewer_mode/__init__.py`
+- `tests/unit/tools/test_implementation_check_reviewer_mode/test_implementation_check_reviewer_mode_tdd.py`
+- `docs/v0.11.0/plan.v0.11.0.code-reviewer.md`
+- `docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md`
+- `docs/v0.11.0/review.plan.v0.11.0.code-reviewer.md`
+
+`a.commit` assigns the first three paths to `feat(code-reviewer): bound
+implementation checks` and the last three to `docs(code-reviewer): record step
+3 validation`. The Why narratives still reference the umbrella draft, topic
+draft, feature request, design, implementation plan, and validation plan in
+their two narrative paragraphs. No group, order, subject, or membership change
+was needed; only the recorded suite count advanced to 1,767.
+
+### Writer response for step 3 code-reviewer round 2
+
+Writer response: The writer accepts every round-1 repair and finding without disagreement.
+
+The launcher boundary is now asserted, the two command examples are executable
+with repository-relative operands and retained ignored files, and the
+validation line count is current. The repeated specification exchange no
+longer creates duplicate generated headings, authored headings, or entry
+footers; the live legacy entry was repaired through the newly covered protocol
+operation. No published transcript bytes were hand-edited.
+
+Please verify that all round-1 findings are closed, the exact staged tree and
+two `a.commit` groups remain coherent, and the full gate supports a
+`commit-ready` recommendation.
+
+### Reviewer focus for step 3 code-reviewer round 2
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-round-2-exchange-3 -->
+
+## Round 2 by reviewer - Step 3 (exchange 3)
+
+- Recorded: 2026-08-17T15:00:26+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed staged state for step 3 code-reviewer round 2
+
+The request-time index tree `b517576809a9739c92c376e4a43c8cc1c5f781bf` matched
+the live index exactly before assessment, and it is unchanged afterwards because
+this round needed no repair. The staged set holds exactly the six paths the
+change summary lists.
+
+The staged subject carries no hidden edit. Five of the six paths add lines only;
+the validation plan's seven deletions are its replaced skeleton placeholders and
+its `Not started` sentence. The specification transcript is a pure append of 51
+lines, and because that append is new relative to `HEAD` the reviewer checked it
+against renderer output rather than against the absent-deletion signal that
+would hide an edit inside an uncommitted block.
+
+The review-exchange-core implementation, its module splits, its focused tests,
+and its timing fixtures stay unstaged and outside both groups.
+
+### Round 1 findings verified in step 3 code-reviewer round 2
+
+All findings are closed, each verified independently rather than accepted from
+the report.
+
+The blocking duplicate-heading defect is fixed at the protocol source, not in
+the rendered bytes. The store now appends `(exchange {occurrence})` to a request
+or answer heading and the matching suffix to its footer identity, so the
+restarted specification exchange renders `## Round 1 by requestor (exchange 2)`
+with footer `request-round-1-exchange-2`, and all five authored headings carry
+the same discriminator. The repaired block matches that renderer output exactly,
+which is what distinguishes a protocol repair from a hand edit. MD024 and MD025
+are now zero across all 344 tracked Markdown files, and no transcript anywhere
+carries a hand-written qualifier.
+
+The specification exchange itself remains healthy after the repair: its status
+reports one intact `abandoned-request` at round 1 awaiting the specification
+reviewer, so the operation preserved the durable request instead of stranding
+the exchange.
+
+The three round-1 repairs are retained verbatim: the launcher assertions, the
+repository-relative and retained-file operand wording, and the 97-line
+measurement. The launcher assertion still bites. Replacing all thirteen
+`bin/code_review_evidence.bat` references with a bare `git` fails
+`test_reviewer_mode_uses_executable_baselines_and_manifest_lifecycle` and
+`test_yes_and_no_paths_apply_the_same_executable_comparisons`; the instruction
+was restored from the index afterwards and re-verified.
+
+One round-1 observation closed as a side effect. The completion grep now matches
+`code_review_evidence.bat` inside the test package it names, because the repair
+introduced that constant, so the criterion no longer passes on the instruction
+alone.
+
+### Repairs made in step 3 code-reviewer round 2
+
+None. The staged subject needed no reviewer repair in this round, so nothing
+here forbids the recommendation below.
+
+### Findings returned to the writer for step 3 code-reviewer round 2
+
+The occurrence counter ignores the implementation step that the heading already
+uses as its discriminator, so a code transcript spanning several steps now
+claims exchanges it never had. This round's own request is headed
+`## Round 2 by requestor - Step 3 (exchange 3)` at line 1869 of
+`review.code.v0.11.0.code-reviewer.md`, with footer
+`request-round-2-exchange-3`, because that transcript already holds
+`request-round-2` footers from Step 1 at line 382 and Step 2 at line 879. Those
+are different implementation steps of one document, not a restarted exchange,
+and `## Round 2 by requestor - Step 3` was already unique through its `- Step 3`
+segment. This answer will carry the same false claim for the same reason, since
+`answer-round-2` footers exist at lines 467 and 1026.
+
+The root cause is that the base entry identity is round-scoped only. Including
+the implementation step in the base identity for code-family entries, as in
+`request-step-3-round-2`, would make identities unique by construction and leave
+the occurrence suffix for a genuinely restarted exchange. That changes the
+durable identity format and therefore marker-repair matching, so it is a core
+design decision rather than a reviewer repair.
+
+This finding sits entirely in the unstaged review-exchange-core work and in the
+protocol transcript, which is in neither `a.commit` group. It does not make the
+Step 3 staged subject wrong and is recorded here because this exchange is where
+it became observable.
+
+### Validation evidence for step 3 code-reviewer round 2
+
+Every command in the resolved set ran on an idle machine. `ghog day --force`
+reports `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` over 1,767
+tests, with the full phase at 1 minute 21.3 seconds and a slowest call of 0.43
+seconds. The round-1 duration flapping is gone, which confirms the load
+diagnosis recorded then: the same suite and bytes now report zero outliers where
+four were reported under concurrent runs.
+
+The plan completion grep returns 22 matches, now spanning both files it names.
+`git diff --cached --check` exits cleanly. No resolver drift: the three commands
+are the project default plus one plan addition plus one request addition, and the
+current resolver produces the same set.
+
+Line budgets hold at 195 lines for the canonical instruction and 97 for the
+focused module. The validation record's 1,767-test figure and zero-outlier
+result match this run; its 0.40-second slowest call differs from the 0.43 seconds
+measured here because the slowest call varies per run, while every outcome field
+agrees.
+
+Markdown, checked against the repository `.markdownlint.json` with MD013 off and
+MD033 limited to `img`: all four staged Markdown files and the code transcript
+are clean, and the repository has no MD024 or MD025 finding left.
+
+### a.commit assessment for step 3 code-reviewer round 2
+
+Accurate, no amendment needed. `validate_commit_plan(parse_clipboard_content(
+a.commit, interactive=False), staged_paths)` returns zero diagnostics against
+the exact staged set: two ordered groups, conventional subjects, exact membership
+over all six paths, and no duplicate or missing path. Both Why narratives cite
+the umbrella draft, the code-reviewer topic draft, the feature request, the
+design, the implementation plan, and the validation plan, as the change summary
+claims. No commit was created.
+
+### Non-blocking observations for step 3 code-reviewer round 2
+
+The clause "rather than describing equivalent shell operations" is still
+unasserted. This round's evidence proves the launcher is named in the setup and
+both result sections; nothing yet proves that raw shell prose is absent, which
+needs a negative assertion over the reviewer sections and a decision about how
+strict it should be.
+
+The completion grep's other two tokens still match only variable names.
+`umbrella_digest` and `validation_state` appear as `umbrella_digest_before` and
+`validation_state_after`, because the real CLI subcommands are hyphenated. The
+criterion works now, but through the launcher token rather than through the two
+it was written around.
+
+The Yes and No sections still carry byte-identical three-command lists. The plan
+requires both result paths to name the commands, so this is deliberate, and the
+two copies can still drift apart without any test noticing.
+
+Repository-wide Markdown still holds its earlier findings outside MD024 and
+MD025, in roughly forty files unrelated to this step.
+
+### Final reviewer decision for step 3 code-reviewer round 2
+
+Decision: commit-ready. Step 3 is fully implemented against its plan step, every
+round-1 finding is closed and independently verified, the reviewer made no
+repair in this round, `a.commit` matches the staged set exactly, and all three
+resolved validation commands pass with 100% coverage and zero outliers on an
+idle machine.
+
+The one finding above belongs to the unstaged review-exchange-core work and to a
+transcript in neither commit group, so it does not bear on this commit; it does
+need fixing before that core effort is itself reviewed.
+
+This recommendation is advisory. It authorizes no commit, and the human gate
+remains the sole authority for the `Commit` choice.
+
+<!-- review-entry-id: answer-round-2-exchange-3 -->
+
+## Round 2 by human - Step 3 - human-confirmation
+
+- Recorded: 2026-08-17T16:42:15+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 3
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->

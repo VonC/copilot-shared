@@ -1023,3 +1023,54 @@ Human choice: Consolidate
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-4 -->
+
+## Round 1 by requestor (exchange 2)
+
+- Recorded: 2026-08-16T22:55:35+02:00
+- Exchange: specification/plan/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Outcome: request
+
+### Review identity for plan code-reviewer round 1 (exchange 2)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Reviewed specification: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Review round: 1
+
+### Requestor assessment for plan code-reviewer round 1 (exchange 2)
+
+The implementation plan now asks three focused Step 3 implementation
+questions. Q09 identifies the missing deterministic source for known
+validation-artifact paths, Q10 fixes manifest retirement ownership at the
+publication boundary, and Q11 states where instruction structure tests stop
+and Step 2 executable tests take over.
+
+Each question stays inside implementation-plan scope, supplies three distinct
+options with pros and cons, maps its BBQ analogy to concrete concepts, and
+records a reasoned recommended answer. No feature requirement or design choice
+is reopened. Round 1 has no earlier reviewer wording to assess.
+
+### Change summary for plan code-reviewer round 1 (exchange 2)
+
+The plan gained one `## Open questions for the v0.11.0 implementation plan`
+section containing Q09 through Q11. The existing implementation decisions,
+scope, six numbered steps, command checklist, and line budgets remain
+unchanged.
+
+The Step 3 implementation also exists in the working tree, but this
+specification review is limited to the plan's new questions and does not assess
+or stage code.
+
+### Writer response for plan code-reviewer round 1 (exchange 2)
+
+Writer response: Round 1 has no earlier specification-review feedback. The writer requests an
+independent check that the three questions cover the remaining Step 3
+implementation ambiguities, that their options do not cross into design, and
+that the recommended answers are sufficient for later consolidation.
+
+### Reviewer focus for plan code-reviewer round 1 (exchange 2)
+
+Check for missing questions, assess the existing options and answers, and suggest any clearer wording.
+
+<!-- review-entry-id: request-round-1-exchange-2 -->

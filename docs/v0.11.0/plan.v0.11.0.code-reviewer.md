@@ -670,3 +670,144 @@ Full workflow timing run readiness:
 Time-gated status for Step 6:
 
 - No persistent timeout marker; bounded-wait cases use configured short fixture deadlines and deterministic state transitions.
+
+## Open questions for the v0.11.0 implementation plan
+
+### Q09: Source of known validation-artifact paths
+
+Question description: Step 3 requires `validation_path_set` to include every
+known validation-artifact path, but the resolved validation entries currently
+carry command text and sources rather than structured output paths. The plan
+must state how the reviewer obtains a complete deterministic path set without a
+repository scan or guesswork.
+
+#### BBQ for Q09
+
+A cleaner needs a room list before starting. Reading labels on cleaning
+products does not reveal every room where residue may appear, while walking the
+whole building after the job defeats the bounded checklist. In this picture:
+the room list is `validation_path_set`, the product labels are validation
+command strings, residue is a validation artifact, and walking the building is
+a repository-wide scan.
+
+#### Options for Q09
+
+- Option I1: Extend each resolved validation entry with structured artifact
+  paths.
+  - pro: The request and reviewer share one machine-checkable source.
+  - con: Step 3 would modify the Step 1 validation model and its renderer.
+- Option I2: Define a deterministic reviewer checklist that maps project and
+  plan commands to their declared artifact paths, with request additions
+  supplied explicitly.
+  - pro: The instruction remains bounded and Step 3 stays within its planned
+    files.
+  - con: Command authors must keep the declared artifact list current.
+- Option I3: Discover artifacts by comparing the repository after validation.
+  - pro: It can notice outputs that command authors forgot to declare.
+  - con: It violates the explicit-path boundary and detects omissions only
+    after the baseline scope was already incomplete.
+
+#### Recommended option for Q09 (with arguments for this choice)
+
+Option I2: Require the caller to provide an explicit artifact checklist for
+each additive validation command and define the mandatory project's artifacts
+beside its command contract. This stays inside Step 3, preserves O(n) capture
+over named paths, and makes an omitted artifact a request or plan defect rather
+than an invitation to scan the repository.
+
+#### Answer to Q09: option I2 (with reason why it must be accepted as the answer)
+
+Option I2: Accept the deterministic checklist because Step 3 is an instruction
+boundary and Step 2 already supplies exact-path capture. Structured resolver
+metadata can remain a later change if command-to-artifact declarations prove
+too hard to maintain.
+
+### Q10: Owner and timing of manifest retirement
+
+Question description: Step 3 requires manifest lifecycle commands but does not
+say whether `implementation-check`, the calling reviewer, or the requestor
+retires retained evidence. Retirement timing determines whether an interrupted
+answer publication can resume safely.
+
+#### BBQ for Q10
+
+A courier should not shred the delivery receipt while the parcel is still on
+the loading dock. The receipt can go only after the destination records the
+delivery. In this picture: the receipt is the retained manifest, the parcel is
+the reviewer answer, the loading dock is paired rendering, and the destination
+record is `publish-answer` with `outcome: published`.
+
+#### Options for Q10
+
+- Option J1: The calling reviewer retires the manifest only after the published
+  outcome.
+  - pro: Interrupted rendering or publication retains recovery evidence.
+  - con: The reviewer workflow must remember one post-publication command.
+- Option J2: `implementation-check` retires the manifest after its comparisons.
+  - pro: The check cleans up everything it touched.
+  - con: A later publication failure loses the assessed-tree and repair
+    recovery record.
+- Option J3: The requestor retires the manifest after consuming the answer.
+  - pro: Evidence remains available through requestor assessment.
+  - con: Ownership crosses role boundaries and leaves stale manifests at the
+    human convergence gate.
+
+#### Recommended option for Q10 (with arguments for this choice)
+
+Option J1: Keep retirement with the calling reviewer and key it to the
+published outcome. This matches the design's recovery boundary, including the
+exit-3 convergence publication, while keeping `implementation-check` advisory
+and publication-independent.
+
+#### Answer to Q10: option J1 (with reason why it must be accepted as the answer)
+
+Option J1: Accept reviewer-owned post-publication retirement because the
+manifest exists to bridge assessment and publication. Removing it at either an
+earlier check boundary or a later requestor boundary gives the wrong role
+control over that bridge.
+
+### Q11: Depth of reviewer-mode instruction tests
+
+Question description: The plan asks tests to cover both criteria paths,
+permission boundaries, and executable evidence commands. A Markdown
+instruction cannot execute an LLM decision path, so the plan must define where
+structure assertions stop and the Step 2 executable tests take over.
+
+#### BBQ for Q11
+
+A fire-escape sign can be checked for every required arrow, while a separate
+drill proves that the doors open. Building a robot that reads the sign and
+performs the drill would test a new robot rather than the escape route. In this
+picture: the sign is `implementation-check.md`, the arrows are command and
+permission clauses, the drill is the Step 2 evidence suite, and the robot is a
+new instruction interpreter.
+
+#### Options for Q11
+
+- Option K1: Use structure tests for instruction clauses and reuse Step 2 tests
+  for command behavior.
+  - pro: Each boundary is tested at its executable layer without duplicate Git
+    logic.
+  - con: No automated test interprets the complete prose workflow end to end.
+- Option K2: Add a test-only instruction interpreter for Yes and No journeys.
+  - pro: The suite could simulate the whole written sequence.
+  - con: The interpreter becomes an unplanned second implementation whose
+    agreement with an LLM is not established.
+- Option K3: Replace the instruction branch with a new production assessment
+  service.
+  - pro: Reviewer permissions and branches become directly executable.
+  - con: It reopens design Q03 and expands Step 3 far beyond its listed files.
+
+#### Recommended option for Q11 (with arguments for this choice)
+
+Option K1: Assert the exact command identifiers, both result sections, path-set
+minimum, write restrictions, changed-file retention, and absent-umbrella rule
+in the instruction. Let the existing Step 2 temporary-repository tests prove
+capture and comparison behavior.
+
+#### Answer to Q11: option K1 (with reason why it must be accepted as the answer)
+
+Option K1: Accept the layered test boundary because it proves every Step 3
+responsibility without inventing an interpreter or copying evidence behavior.
+The code-review round can still challenge whether the prose clauses are
+complete and mutually consistent.
