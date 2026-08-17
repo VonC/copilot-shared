@@ -256,6 +256,8 @@ def test_publish_request_validates_summary_appends_once_and_renews_lease(
     assert record.lease_renewed_at == "2026-08-04T16:00:05+02:00"
     assert transcript.count("review-entry-id: request-step-3-round-1") == 1
     assert "Requestor implementation report." in transcript
+    assert context.document_path.as_posix() not in transcript
+    assert "docs/plan.v0.11.0.review-exchange-core.md" in transcript
 
 
 def test_publish_request_rejects_summary_mismatch_before_mutation(tmp_path: Path) -> None:
