@@ -136,6 +136,8 @@ The feature request and design will need to insist on termination criteria for t
 | 4 | Feature-request | Request implementation code reviews | `code-review-requestor` | completed | `docs/v0.11.0/feature-request.v0.11.0.code-review-requestor.md` | `docs/v0.11.0/plan.v0.11.0.code-review-requestor.validation.md` |
 | 5 | Feature-request | Respond to implementation code reviews | `code-reviewer` | pending | - | - |
 | 6 | Feature-request | Document the review-mode workflows | `review-mode-docs` | pending | - | - |
+| 7 | Feature-request | Check Markdown against the repository rules | `markdown-check` | pending | - | - |
+| 8 | Feature-request | Expose commit-plan validation without committing | `commit-plan-check` | pending | - | - |
 
 ### Requirement details for the umbrella
 
@@ -198,3 +200,23 @@ The feature request and design will need to insist on termination criteria for t
 - Boundary rationale: documentation follows the settled behavior of every role and gives users one coherent operational view without making the functional requirements depend on prose that is still changing.
 - Concrete rules and constraints: document the LLM-specific wrappers that locate the canonical shared instructions; cover how to enable review mode, run each reviewer, interpret and recover the transient files, and escalate to a human; keep review transcripts beside their source documents and transient coordination files at the root; and keep each Diataxis page focused on one purpose, presented in the order explanation, tutorials, how-to guides, then reference.
 - Depends on: `review-exchange-core`, `spec-review-requestor`, `spec-reviewer`, `code-review-requestor`, `code-reviewer`.
+
+#### 7. Check Markdown against the repository rules
+
+- Type: Feature-request
+- Key title: Check Markdown against the repository rules
+- Slug: `markdown-check`
+- Regroups: an executable check for the Markdown rules this umbrella already declares non-negotiable, its repository-root launcher, its place in the shared gate, and the Diataxis reference page that states which rules are enforced and why the two heading rules may never be disabled.
+- Boundary rationale: the heading rules belong to review mode because a duplicate heading in a transcript is a protocol defect, but the check itself is a repository-wide quality gate that no review role should own; separating it keeps the reviewer roles focused on assessment rather than on carrying a linter.
+- Concrete rules and constraints: apply the rule set the repository already declares in `.markdownlint.json`, where MD013 is off and MD033 allows only `img`; run from the repository root without environment setup, in an environment that has no Node runtime and no reachable package network, so the implementation is Python over the declared rules; report one finding per line with path, line, rule, and reason; treat MD024 and MD025 as failures that no configuration may disable, since `instructions/review-requestor.md` and `instructions/implementation-check.md` both forbid disabling them; decide during the requirement and design phases whether the gate fails or warns, whether it covers every tracked Markdown file or only changed ones, and how the pre-existing findings outside this effort are handled rather than folded into an unrelated commit.
+- Depends on: `review-exchange-core`, `code-reviewer`, `review-mode-docs`.
+
+#### 8. Expose commit-plan validation without committing
+
+- Type: Feature-request
+- Key title: Expose commit-plan validation without committing
+- Slug: `commit-plan-check`
+- Regroups: a launcher over the existing public `validate_commit_plan` API that reports groups and diagnostics for the root `a.commit` against the exact staged set without touching the index, and the reviewer-instruction wording that names it where the assessment is currently prose.
+- Boundary rationale: the validator already exists and is shared with batch execution, so this requirement adds only the missing entry point and the instruction that calls it; folding it into the reviewer role would put a commit-plan tool inside an assessment skill, and folding it into batch execution would tie a read-only check to the committing path.
+- Concrete rules and constraints: reuse the shipped `validate_commit_plan(blocks, staged_paths)` rather than reimplementing its rules; parse the plan with `interactive=False`; never reset, stage, or commit; report the typed groups and every diagnostic in a form the reviewer can quote as readiness-floor evidence; note that the one shipped entry point today refuses `--root-a-commit` combined with `--dry-run`, so the requirement must decide between a new launcher and lifting that restriction; and decide whether `group-commits-msg` should call the same command before a request is published so both roles judge the plan identically.
+- Depends on: `review-exchange-core`, `code-reviewer`.

@@ -1,0 +1,69 @@
+# Check Markdown against the repository rules
+
+- Type: feature-request
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+
+Review mode declares Markdown heading rules non-negotiable, but nothing in the
+project can verify them. `instructions/review-requestor.md` states that every
+heading text must be unique within a transcript, that a transcript keeps exactly
+one top-level heading, and that "a transcript a Markdown linter reports `MD024`
+or `MD025` on is a defect in the round that appended to it". The reviewer mode
+added to `instructions/implementation-check.md` repeats that rule. The
+repository carries `.markdownlint.json`, which turns MD013 off and limits MD033
+to `img`, so the intended rule set is already declared. Yet no command in the
+repository applies it: `ghog check` runs ty, pyright, ruff, radon, vulture, a
+file-size check, shellcheck, and an end-of-file check, and none of them reads a
+Markdown file.
+
+## Why this is worth an effort of its own
+
+Every Markdown defect found during the v0.11.0 code-reviewer effort was caught
+by hand or not at all, and one reached a published protocol artifact before a
+human noticed it.
+
+- A published transcript heading was hand-edited to `## Round 1 by human - Step
+  2 bis` to dodge a duplicate. The counter suffix violated the same instruction
+  that forbids counters, and no check rejected it.
+- `review.plan.v0.11.0.code-reviewer.md` carried six duplicate headings from a
+  restarted exchange, in a file staged for commit. It took a reviewer reading
+  headings by eye to find them.
+- A sentence wrapped so that `0.` began a line, which CommonMark renders as an
+  ordered list item in the middle of a paragraph.
+- `plan.v0.11.0.code-reviewer.md` carried a whitespace-only line between a
+  horizontal rule and a heading.
+
+The store now prevents duplicate generated headings, and Step 4's renderer
+qualifies authored ones. Those are the right fixes, but they protect only the
+headings those two components emit. Every other Markdown file in the repository,
+and every hand-authored section inside a review artifact, remains unverified.
+
+## Shape of the need
+
+A checker that applies the repository `.markdownlint.json` rules, a launcher
+that runs it from the repository root without environment setup, and a step in
+the shared gate so a violation stops the walk the way a lint error does today.
+A Diátaxis reference page should state which rules are enforced and why the two
+heading rules cannot be disabled.
+
+The checker has to work in this environment: no Node runtime is installed, so
+the markdownlint CLI is unavailable, and package downloads fail because the
+network presents an untrusted certificate. A Python implementation over the
+declared rule set is therefore the only route that runs unattended here.
+
+## Questions for the requirement and design phases
+
+These are open on purpose and belong to `write-requirement` and `write-design`
+rather than to this draft.
+
+- Which rules the checker implements, and whether the set is fixed in code or
+  read from `.markdownlint.json`.
+- Whether the gate fails or warns, and whether it covers every tracked Markdown
+  file or only the changed ones.
+- What to do with the pre-existing findings outside this effort. A survey during
+  the code-reviewer rounds counted roughly one hundred, spread over about forty
+  files, dominated by blank-line rules around lists, headings, and fences. They
+  are unrelated to review mode and should not silently enter an unrelated
+  commit.
+- Whether the transcript-specific rules deserve a stricter mode than ordinary
+  documentation, since a duplicate heading in a transcript is a protocol defect
+  while a missing blank line is cosmetic.
