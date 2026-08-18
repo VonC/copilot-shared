@@ -400,7 +400,7 @@ Step 4 preserves the feature's authority boundary: `commit-ready` is rendered on
 
 ### Analysis of Step 5 implementation state
 
-Not started. Step 5 is not implemented because the reviewer route, typed actor, canonical instruction, host adapters, and structure tests are absent.
+Yes. Step 5 has been fully implemented.
 
 ### Goal for Step 5
 
@@ -415,27 +415,37 @@ Route only an exact pending code request to the advisory reviewer and expose the
 
 ### What was implemented for Step 5
 
-_(empty — no check has taken place yet.)_.
+- `tools/prompt_workflow_code_review.py` now resolves one typed `CodeReviewActor` from the classified state, rejects an actor/state mismatch at `CodeReviewRoute` construction, and renders the route's resolved reviewer or requestor role without a second state partition.
+- `tools/prompt_workflow_skill.py` routes an ordinary exact `request-pending` code exchange to `code-reviewer`, retains every other state in `code-review-requestor`, and applies the same ownership rule to forced roles, including a diagnostic cold abandoned-request handoff.
+- `instructions/code-reviewer.md` defines the fixed code-family policy and one bounded reviewer sequence while delegating evidence, paired rendering, and protocol mutation to `bin/code_review_evidence.bat`, `bin/code_review_answer.bat`, and `bin/review_exchange.bat`.
+- The `.agent`, `.agents`, and `.claude` adapters link directly to the canonical root instruction and contain no copied reviewer or exchange policy.
+- The Step 4 follow-up is closed by exposing `exchange_occurrence` in exact `request-pending` status output and deriving the generated answer occurrence from the current request entry; `tools/review_exchange_transcript_identity.py` keeps that identity rule out of the already large store and publication modules.
 
 ### New types or classes introduced for Step 5
 
-_(empty — no check has taken place yet.)_.
+- `CodeReviewActor`: the typed `REVIEWER` or `REQUESTOR` owner resolved once from the classified artifact state.
+- `CodeReviewRoute.actor`: a required immutable field whose post-init validation rejects any owner that disagrees with the route state.
+- `transcript_entry_base(...)` and `current_request_occurrence(...)`: small shared functions that keep request, answer, status, and restarted-exchange headings on one step-scoped identity contract.
 
 ### Architecture check for Step 5
 
-_(empty — no check has taken place yet.)_.
+The implementation preserves the existing exact-path observer and shared exchange state machine. Routing adds no artifact scan and only `ArtifactState.REQUEST_PENDING` maps to the reviewer. Forced routing reuses the same resolved route, while cold abandoned requests fail closed with a requestor reclaim handoff. Canonical policy remains in `instructions/code-reviewer.md`; all provider files are metadata-plus-redirect adapters under `rules/llm-specific-adapters.md`.
+
+Line budgets remain below the 650-line ceiling: `tools/prompt_workflow_code_review.py` is 277 lines, `tools/prompt_workflow_skill.py` is 646, and the existing route test is 434. The dispatcher is 46 lines above the 600-line advisory estimate and 4 lines below the hard ceiling; static complexity passes after review-role forcing was extracted into its own dispatcher. After the round-one EOF repair, the canonical instruction is 187 lines, and the new instruction, skill-route, adapter, and transcript-identity modules are 102, 180, 65, and 46 lines respectively.
 
 ### Performance check for Step 5
 
-_(empty — no check has taken place yet.)_.
+No polling or timeout loop was added. State classification and actor resolution are constant-time over one exact context, and the exchange occurrence reads only the one exact transcript already named by that context. The post-repair round-two `ghog day --force` completed the 1,846-test full phase in 1m 45.8s with zero duration outliers; the slowest call was 0.28s.
 
 ### Unit test coverage check for Step 5
 
-_(empty — no check has taken place yet.)_.
+The new and updated tests cover reviewer ownership only for `request-pending`, requestor ownership for every other live or recovery state, actor/state construction rejection, ordinary and forced Codex/Claude rendering with the exact plan step, absent and cold-abandoned forced reviewer routes, and exact forced requestor routing. Instruction tests pin fixed policy, exact request reads, one bounded wait, early rejection, repair attribution, validation side effects, retained-manifest recovery, both successful publication exits, forbidden authority, and launcher-only executable boundaries. Adapter tests prove every host links directly to the canonical instruction and copies no policy. The restarted request/answer regression and status payload test pin `exchange_occurrence` without reviewer transcript discovery.
+
+The focused 93-test Step 5 slice passed before the full walk. Final `ghog day` reported `fail=0 warn=0 xfail=0 cov=100 outliers=0 exit=0` across 1,846 tests. The routing completion grep returned 10 matches, the launcher-boundary grep returned 15 matches, and the mandatory `git diff --cached --check` command returned no diagnostics after the round-one EOF repair.
 
 ### Feature integrity for Step 5
 
-_(empty — no check has taken place yet.)_.
+Step 5 preserves the feature's advisory boundary. The reviewer may wait, assess, make bounded attributable repairs, render, and publish, but the canonical instruction explicitly forbids answer consumption, continuation, confirmation, completion, escalation, cancellation, resolution, archival, and commits. It reads the exact request path returned by the protocol, never the transcript as working context, and retires retained evidence on the published outcome for both exit `0` and convergence exit `3`. Every writer-owned, human-owned, abandoned cold-route, escalation, and repair-required state remains requestor-owned.
 
 ---
 

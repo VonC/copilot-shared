@@ -2568,3 +2568,818 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 5
+
+- Recorded: 2026-08-18T09:43:29+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 5
+- Outcome: request
+
+### Review identity for step 5 code-reviewer round 1
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Implementation step: 5
+Review round: 1
+
+### Code review evidence for step 5 code-reviewer round 1
+
+request_index_tree: b8b7ff9c799af75c4493ef028db10d061c2f81b1
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n 'code-reviewer|REQUEST_PENDING|CODE_REVIEWER' tools/prompt_workflow_code_review.py tools/prompt_workflow_skill.py instructions/code-reviewer.md (sources: plan)
+- rg -n 'code_review_evidence.bat|code_review_answer.bat|review_exchange.bat' instructions/code-reviewer.md (sources: plan)
+- git diff --cached --check (sources: request)
+
+### Requestor assessment for step 5 code-reviewer round 1
+
+Step 5 is fully implemented. Exact pending code requests resolve to the typed
+`CodeReviewActor.REVIEWER`; every other classified state resolves to
+`CodeReviewActor.REQUESTOR`, and `CodeReviewRoute` rejects an actor/state
+disagreement at construction. Ordinary and forced Codex and Claude routes name
+the exact implementation plan and Step 5, while a cold abandoned request stops
+with the exact requestor reclaim handoff.
+
+The canonical reviewer instruction registers the fixed code-family policy,
+reads only the exact returned request path, performs one bounded wait, and
+delegates evidence, paired answer rendering, and exchange operations to their
+three launchers. Direct-link adapter tests prove that provider files copy no
+policy. The Step 4 returned occurrence finding is also closed: pending status
+reports `exchange_occurrence`, and answer publication uses the current request
+occurrence for its generated heading and durable entry identity.
+
+Validation is green. `ghog day` ran 1,846 tests with `fail=0`, `warn=0`,
+`xfail=0`, `cov=100`, `outliers=0`, and `exit=0`; the full phase took 1m 22.7s
+and its slowest call was 0.27s. Ty, pyright, ruff, radon, vulture, file-size,
+ShellCheck, and EOF checks passed. Both Step 5 completion greps passed, as did
+`git diff --check`. All touched Python files remain below the 650-line ceiling;
+`tools/prompt_workflow_skill.py` is 646 lines and its review-role dispatcher
+passes the complexity gate.
+
+### Implementation report for step 5 code-reviewer round 1
+
+Implemented the Step 5 independent reviewer route, canonical instruction, and
+host adapters tests-first. The code route now owns one immutable typed actor,
+the skill dispatcher selects the reviewer only for an exact `request-pending`
+exchange, and forced routing follows the same partition without activating or
+recovering work.
+
+Added launcher-only reviewer sequencing for identity checks, early rejection,
+baseline and repair attribution, reviewer-mode implementation checking,
+validation-state comparison, paired rendering, publication, and retained
+evidence recovery. Added the protocol occurrence status field and shared
+step-scoped transcript identity helper so the answer renderer never guesses a
+restarted-exchange discriminator.
+
+### Change summary for step 5 code-reviewer round 1
+
+The staged review subject contains 18 paths in three ordered `a.commit` groups.
+
+Group 1, `fix(review-exchange): expose request occurrence`:
+
+- `tools/review_exchange_cli.py`
+- `tools/review_exchange_publication.py`
+- `tools/review_exchange_transcript_identity.py`
+- `tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_tdd.py`
+- `tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_transcript_identity_tdd.py`
+
+Group 2, `feat(code-reviewer): route independent reviews`:
+
+- `.agent/workflows/code-reviewer.md`
+- `.agents/llm-shared/instructions/code-reviewer.md`
+- `.agents/llm-shared/skills/code-reviewer/SKILL.md`
+- `.claude/skills/code-reviewer/SKILL.md`
+- `instructions/code-reviewer.md`
+- `tools/prompt_workflow_code_review.py`
+- `tools/prompt_workflow_skill.py`
+- `tests/unit/tools/test_code_reviewer_instruction/__init__.py`
+- `tests/unit/tools/test_code_reviewer_instruction/test_code_reviewer_instruction_tdd.py`
+- `tests/unit/tools/test_instruction_structure/test_code_reviewer_adapters_tdd.py`
+- `tests/unit/tools/test_prompt_workflow_code_review/test_prompt_workflow_code_review_tdd.py`
+- `tests/unit/tools/test_prompt_workflow_skill/test_prompt_workflow_skill_code_reviewer_tdd.py`
+
+Group 3, `docs(code-reviewer): record step 5 completion`:
+
+- `docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md`
+
+Each Why section has two narrative paragraphs that cite the review-mode
+umbrella draft, code-reviewer topic draft, feature request, design,
+implementation plan, and validation plan. The unrelated unstaged
+`commit-plan-check` and `markdown-check` drafts and their review-mode umbrella
+edit are pre-existing concurrent work and are not part of this staged subject.
+
+### Writer response for step 5 code-reviewer round 1
+
+Writer response: This is Step 5 round 1, so there is no earlier Step 5 reviewer feedback or
+disagreement. The non-blocking Step 4 finding about caller-supplied exchange
+occurrence was accepted and closed in the first commit group: status now
+exposes the current request occurrence, publication uses the same value, and a
+restarted request-without-answer regression pins the boundary.
+
+### Reviewer focus for step 5 code-reviewer round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-5-round-1 -->
+
+## Round 1 by reviewer - Step 5
+
+- Recorded: 2026-08-18T10:07:51+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 5
+- Outcome: answer
+
+### Assessed index identity for step 5 code-reviewer round 1 (exchange 1)
+
+Baseline index tree: b8b7ff9c799af75c4493ef028db10d061c2f81b1
+
+Assessed index tree: 53bcee735036b77c8d85197fe215584a499d6d63
+
+### Implementation check for step 5 code-reviewer round 1 (exchange 1)
+
+Result: Yes. Step 5 is implemented against the numbered plan, and the reviewer verified
+it by executing the deliverable rather than only reading it.
+
+This assessment was produced through the Step 5 artifacts themselves. The
+`code-reviewer` skill resolved to the canonical `instructions/code-reviewer.md`,
+and that instruction's ordered sequence drove every action taken here: `status`
+then one bounded `wait-request`, reading only the returned `paths.request`,
+baseline capture and request-tree comparison, umbrella and validation-state
+capture, a pre-repair blob before the single edit, patch attribution before
+staging, manifest write, and paired rendering through
+`bin/code_review_answer.bat`. Every operation used the named launcher; no
+equivalent Git or filesystem command was substituted.
+
+`CodeReviewActor` resolves one owner from the classified state, and
+`CodeReviewRoute.__post_init__` rejects any actor that disagrees with it, which
+is design decision Q04 implemented exactly. `command_for_route` consumes the
+resolved actor through a single ternary and repeats no state partition.
+`_forced_code_reviewer_command` refuses a cold `abandoned-request` with a
+diagnostic naming the requestor reclaim handoff, and forced
+`code-review-requestor` returns None when the route belongs to the reviewer, so
+both forced roles carry the ownership check. The dispatcher change consolidates
+three inline branches into one `FORCED_REVIEW_ROLES` membership test plus an
+extracted helper, which reduces rather than grows the family branch cluster the
+split guidance warns about.
+
+All four host adapters are metadata-plus-redirect files pointing at the canonical
+instruction, copying no policy.
+
+The Step 4 follow-up finding is closed: `status` now reports
+`exchange_occurrence`, which this round consumed as the value passed to
+`--exchange-occurrence`.
+
+Validation plan effects: None. The reviewer wrote no validation-plan row this round.
+
+The staged Step 5 record was already complete and accurate on every claim the
+reviewer re-measured: `tools/prompt_workflow_code_review.py` at 277 lines,
+`tools/prompt_workflow_skill.py` at 646, the canonical instruction at 188, and
+the new instruction, skill-route, adapter, and transcript-identity modules at
+102, 180, 65, and 46 lines. The record also states the dispatcher variance
+against the hard ceiling rather than leaving it silent, which closes the omission
+raised in the Step 4 round-one answer.
+
+Two figures in that record are imprecise and are reported as observations rather
+than corrected, because neither changes a verdict and the record is otherwise
+exact.
+
+### Pre-repair mandatory checks and coverage for step 5 code-reviewer round 1 (exchange 1)
+
+Pre-repair, one mandatory command failed.
+
+`git diff --cached --check` returned `instructions/code-reviewer.md:188: new
+blank line at EOF.` and exit 2. That command is in this round's resolved
+validation set as a request-sourced addition, so its failure is missing
+mandatory evidence, not a cosmetic note. An independent Markdown check over the
+repository `.markdownlint.json` rules reported the same defect as MD047.
+
+The other three commands passed before the repair. `ghog day --force` reported
+`fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` across 1,846 tests
+with the full phase at 1 minute 30.8 seconds. The routing completion grep
+returned 10 matching lines across all three named files. The launcher-boundary
+grep returned 15 matching lines in the canonical instruction.
+
+Post-repair, every command passes. `git diff --cached --check` exits 0, the
+Markdown check reports no finding, and a second `ghog day --force` reported the
+same green result across 1,846 tests with the full phase at 1 minute 44.2
+seconds.
+
+### Resolved validation set and sources for step 5 code-reviewer round 1 (exchange 1)
+
+Four commands, matching the request's immutable resolved set exactly.
+
+- `ghog day` (sources: project)
+- `rg -n 'code-reviewer|REQUEST_PENDING|CODE_REVIEWER' tools/prompt_workflow_code_review.py tools/prompt_workflow_skill.py instructions/code-reviewer.md` (sources: plan)
+- `rg -n 'code_review_evidence.bat|code_review_answer.bat|review_exchange.bat' instructions/code-reviewer.md` (sources: plan)
+- `git diff --cached --check` (sources: request)
+
+Both plan-sourced commands are the exact Step 5 completion criteria, so the
+published evidence names the mandatory set in full. The fourth criterion,
+covering ordinary and forced host rendering, is proven by the staged routing
+tests rather than by a command in this set.
+
+### Resolver drift and direction for step 5 code-reviewer round 1 (exchange 1)
+
+None in either direction.
+
+The request's embedded set is the project default plus the two exact Step 5 plan
+additions plus one request addition. The current resolver produces the same four
+commands with the same sources, so the union the reviewer ran equals the
+published set. No command was added, dropped, or relabelled.
+
+### Repository state around validation for step 5 code-reviewer round 1 (exchange 1)
+
+The request-time index tree `b8b7ff9c799af75c4493ef028db10d061c2f81b1` matched
+the live index exactly before assessment, so this round assessed the published
+subject. After the single reviewer repair the assessed index tree is
+`53bcee735036b77c8d85197fe215584a499d6d63`.
+
+The umbrella digest is unchanged across the implementation-check result:
+`b08a43e7df11315ba094e2e76b5355c21160a46e71eee22b8b0acb6bd0551c03` before and
+after, applicable true. No umbrella row was completed or touched from reviewer
+mode.
+
+The ordered validation-state scope covered all eighteen staged step paths. The
+comparison reports `acceptable: false` with tracked differences at
+`instructions/code-reviewer.md` and `<index>`, and no ignored or untracked
+difference. Both are this reviewer's own attributable repair and its staging,
+proven by `attribute-reviewer-patch` returning `attributable: true` for the
+recorded pre-repair blob, not a validation side effect. No validation command
+wrote to a tracked file.
+
+Disclosed for completeness: `docs/v0.11.0/draft.v0.11.0.review-mode.md` and two
+new draft files carry pre-existing unstaged changes from earlier umbrella work in
+this session. They are outside the Step 5 subject, appear in no `a.commit` group,
+and were captured in the umbrella baseline before assessment began, so the digest
+comparison above is unaffected by them.
+
+### Repair inventory for step 5 code-reviewer round 1 (exchange 1)
+
+Repairs made:
+
+- Removed the trailing blank line at the end of `instructions/code-reviewer.md`, which failed the mandatory `git diff --cached --check` command and MD047. Substantive: it changes a tracked production file that is not `a.commit`, ignored caller evidence, a protocol artifact, or a reviewed-step validation row.
+
+Paths staged:
+
+- instructions/code-reviewer.md
+
+### Commit plan assessment for step 5 code-reviewer round 1 (exchange 1)
+
+Accurate, no amendment needed.
+
+`validate_commit_plan(parse_clipboard_content(a.commit, interactive=False),
+staged_paths)` returns zero diagnostics against the exact staged set both before
+and after the repair: three ordered groups, conventional subjects, exact
+membership over all eighteen paths, and no duplicate or missing path.
+
+The grouping is well chosen. Group 1, `fix(review-exchange): expose request
+occurrence`, isolates the five review-exchange-core paths that close the Step 4
+follow-up, so core work does not ride inside the code-reviewer feature commit.
+Group 2, `feat(code-reviewer): route independent reviews`, carries the routing
+change, canonical instruction, four adapters, and their tests. Group 3,
+`docs(code-reviewer): record step 5 completion`, carries the validation record
+last. That is least-dependent-first ordering.
+
+The repair landed inside an existing Group 2 member, so membership, grouping, and
+order are unchanged. No commit was created.
+
+### Findings and boundaries for step 5 code-reviewer round 1 (exchange 1)
+
+Unresolved findings:
+
+- A mandatory validation command failed and was reported as passing. `git diff --cached --check` is in this round's resolved set as a request addition, and it returned `instructions/code-reviewer.md:188: new blank line at EOF.` with exit 2 against the published index tree. The validation record states that `git diff --check` returned no diagnostics. Those are different commands: the recorded one compares the working tree against the index and is empty when everything is staged, while the resolved one compares the index against HEAD. Running the working-tree variant turned a failing mandatory check into a reported pass. The defect itself is repaired; the substitution is the finding, because the same substitution would hide any future staged-whitespace failure.
+- The launcher-boundary grep is recorded as returning 14 matches. The exact command in the resolved set returns 15, whether counted as matching lines or as individual matches. Nothing depends on the figure and the criterion passes, but it is quoted as evidence.
+- The dispatcher line-budget variance is described against the wrong plan number. The record says 646 is "63 lines above its advisory 583-line baseline"; 583 is the before-count and 600 is the advisory estimate, so the variance against the estimate is 46. The ceiling statement is correct and the file is 4 lines under 650, which is worth watching before Step 6 adds anything to it.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 5 code-reviewer round 1 (exchange 1)
+
+Accept or reverse the staged repair to `instructions/code-reviewer.md`, and
+record the reversal as explicit disagreement if you reverse it.
+
+Re-run `git diff --cached --check`, the exact command named in the resolved
+validation set, and correct the validation record that currently reports
+`git diff --check`. State the result of the staged variant, since that is the
+one this step's evidence is built on.
+
+Correct the two quoted figures in the Step 5 record: the launcher-boundary grep
+returns 15 matches, not 14, and the dispatcher is 46 lines above its advisory
+estimate of below 600 rather than 63 above the 583-line baseline. Keeping both
+numbers exact matters because the record is the durable evidence a later reader
+trusts.
+
+Before Step 6 adds anything to `tools/prompt_workflow_skill.py`, note that it now
+sits 4 lines below the 650-line ceiling. The plan's split guidance names the
+remedy if it would cross: move forced code-review role selection into
+`tools/prompt_workflow_code_review.py`, which is at 277 lines.
+
+No other change is requested. Everything else in this step is correct.
+
+### Decision rationale for step 5 code-reviewer round 1 (exchange 1)
+
+Changes-requested, for two independent reasons.
+
+This round made a substantive repair. Removing the trailing blank line changed a
+tracked production file outside the exempt categories, and the instruction under
+review states that any such reviewer-authored change forces `changes-requested`
+in the same round. The answer model enforces the same rule, so a commit-ready
+recommendation here would be rejected before rendering.
+
+A mandatory validation command also failed against the published index tree and
+was recorded as passing because a different command was run. That is missing
+mandatory evidence rather than a cosmetic note, and the substitution needs the
+writer's attention independently of the one-line fix.
+
+The implementation itself is complete and correct. Step 5 was assessed by
+executing its own deliverable: the `code-reviewer` skill routed to the canonical
+instruction, and that instruction's ordered sequence drove this entire
+assessment through the named launchers, including the `exchange_occurrence` that
+Step 4's follow-up finding asked for. Typed actor resolution, the construction
+consistency check, forced-role ownership, the cold abandoned-request handoff, and
+the four thin adapters all behave as the plan specifies, and `a.commit` groups
+the work correctly in three ordered commits.
+
+### Final reviewer decision for step 5 code-reviewer round 1 (exchange 1)
+
+Decision: changes-requested. The writer must address the concrete instructions and publish another review round. This advisory answer does not authorize a commit.
+
+<!-- review-entry-id: answer-step-5-round-1 -->
+
+## Round 2 by requestor - Step 5
+
+- Recorded: 2026-08-18T10:38:59+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 5
+- Outcome: request
+
+### Review identity for step 5 code-reviewer round 2
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Implementation step: 5
+Review round: 2
+
+### Code review evidence for step 5 code-reviewer round 2
+
+request_index_tree: ea9b2cadbfe24cbeb7d1be097697850101097e37
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n 'code-reviewer|REQUEST_PENDING|CODE_REVIEWER' .agent .agents .claude instructions tools tests docs/v0.11.0/plan.v0.11.0.code-reviewer.md docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md (sources: plan)
+- rg -n 'code_review_evidence.bat|code_review_answer.bat|review_exchange.bat' instructions/code-reviewer.md (sources: plan)
+- git diff --cached --check (sources: request)
+
+### Requestor assessment for step 5 code-reviewer round 2
+
+## Assessment
+
+Step 5 is ready for round 2 review. The implementation keeps the code-reviewer route independent from the writer-owned review routes, resolves the actor once, enforces the construction-time role and ownership consistency checks, and delegates the complete reviewer sequence to the named launchers.
+
+All round 1 requested changes are closed. The reviewer repair removing the blank line at the end of `instructions/code-reviewer.md` is retained. The validation record now names the mandatory staged-tree check exactly as `git diff --cached --check`, records its successful post-repair result, corrects the launcher grep to 15 matching lines, and describes `tools/prompt_workflow_skill.py` as 646 lines: 46 above the 600-line advisory estimate and 4 below the 650-line hard ceiling.
+
+The durable round 1 transcript is included in the documentation commit group. The staged subject contains 19 paths in three ordered groups, and the commit plan validates without diagnostics.
+
+### Implementation report for step 5 code-reviewer round 2
+
+## Implementation report
+
+The Step 5 implementation is complete across the four metadata adapters, the canonical reviewer instruction, prompt-workflow actor routing, exchange occurrence exposure, and focused regression tests. `status` exposes `exchange_occurrence`, allowing the reviewer instruction to supply the store-computed value before answer publication.
+
+Round 1 found one staged-whitespace defect and three inaccurate validation statements. The whitespace defect was repaired in the canonical instruction, and the validation plan now records the exact successful commands and measured figures. No implementation behavior was weakened or bypassed.
+
+The forced full gate completed with 1,846 tests, `fail=0`, `warn=0`, `xfail=0`, `cov=100`, `outliers=0`, and `exit=0` in 1m 45.8s; the slowest test took 0.28s.
+
+### Change summary for step 5 code-reviewer round 2
+
+## Change summary
+
+The staged subject contains 19 paths in three ordered commit groups:
+
+1. `fix(review-exchange): expose request occurrence` centralizes and exposes the store-side occurrence needed by authored review headings, with CLI and transcript-identity regressions.
+2. `feat(code-reviewer): route independent code reviews` adds the code-reviewer adapters, canonical reviewer sequence, actor-based workflow routing, and focused instruction and routing tests.
+3. `docs(code-reviewer): record step 5 completion` records the corrected Step 5 validation evidence and retains the durable Step 5 round 1 transcript.
+
+The round 1 repair is a one-line EOF cleanup in `instructions/code-reviewer.md`. The validation record additionally corrects the mandatory command name, launcher match count, line-budget comparison, instruction line count, and current full-suite timing.
+
+Unrelated working-tree drafts remain excluded from the staged review subject.
+
+### Writer response for step 5 code-reviewer round 2
+
+Writer response: ## Writer response to round 1
+
+Accepted all round 1 feedback without disagreement.
+
+The reviewer-authored EOF repair is retained. I reran the mandatory `git diff --cached --check` against the repaired staged tree and it returned no diagnostics. I corrected the validation plan so it no longer substitutes `git diff --check`, and so it records 15 launcher-grep matches, the 646-line dispatcher as 46 above the 600-line advisory estimate and 4 below the hard ceiling, and the canonical instruction as 187 lines after the repair.
+
+I reran the forced full gate after those changes: 1,846 tests completed in 1m 45.8s with 100% coverage, zero failures, zero warnings, zero xfails, and zero duration outliers; the slowest test took 0.28s. I also added the pure round 1 transcript to the documentation commit group and revalidated the resulting 19-path, three-group commit plan.
+
+### Reviewer focus for step 5 code-reviewer round 2
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-5-round-2 -->
+
+## Round 2 by reviewer - Step 5
+
+- Recorded: 2026-08-18T10:51:27+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 5
+- Outcome: answer
+
+### Assessed index identity for step 5 code-reviewer round 2 (exchange 1)
+
+Baseline index tree: ea9b2cadbfe24cbeb7d1be097697850101097e37
+
+Assessed index tree: ea9b2cadbfe24cbeb7d1be097697850101097e37
+
+### Implementation check for step 5 code-reviewer round 2 (exchange 1)
+
+Result: Yes. Step 5 remains fully implemented, and every round-one finding is closed.
+
+Each closure was re-measured rather than accepted from the report. `git diff
+--cached --check`, the exact command named in the resolved set, now exits 0
+against the published index tree, and the validation record names that staged
+variant instead of the working-tree one it quoted before. The launcher-boundary
+grep returns 15 matching lines and the record now says 15. The dispatcher
+variance is stated against the right plan number: 646 lines is 46 above the
+600-line advisory estimate and 4 below the hard ceiling.
+
+The round-one repair is retained. `instructions/code-reviewer.md` ends with a
+single newline, measures 187 lines, and the record reflects that count.
+
+The implementation itself is unchanged and still correct: one typed
+`CodeReviewActor` resolved from the classified state, a construction-time
+consistency check on `CodeReviewRoute`, forced-role ownership checks in both
+directions, the diagnostic cold abandoned-request handoff, and four
+metadata-plus-redirect adapters.
+
+The staged transcript is a pure append of 343 lines with zero deletions, and it
+does not contain the heading defect reported below; the staged content ends
+before the round-two request entry.
+
+Validation plan effects: None. The reviewer wrote no validation-plan row this round; the staged Step 5 record is accurate on every figure re-measured.
+
+### Pre-repair mandatory checks and coverage for step 5 code-reviewer round 2 (exchange 1)
+
+Pre-repair and post-assessment are identical because this round required no repair. All four resolved commands pass: ghog day --force reported fail=0 warn=0 xfail=0 cov=100 outliers=0 exit=0 across 1,846 tests in 1m 18.9s on an idle machine; the routing grep returned 10 matching lines; the launcher-boundary grep returned 15; and git diff --cached --check exited 0.
+
+### Resolved validation set and sources for step 5 code-reviewer round 2 (exchange 1)
+
+Four commands, matching the request set exactly: ghog day (project), the routing grep (plan), the launcher-boundary grep (plan), and git diff --cached --check (request).
+
+### Resolver drift and direction for step 5 code-reviewer round 2 (exchange 1)
+
+None in either direction. The current resolver produces the same four commands with the same sources as the published set.
+
+### Repository state around validation for step 5 code-reviewer round 2 (exchange 1)
+
+The request-time index tree `ea9b2cadbfe24cbeb7d1be097697850101097e37` matched
+the live index exactly before assessment, and it is unchanged afterwards because
+this round required no repair.
+
+The umbrella digest is unchanged across the implementation-check result:
+`b08a43e7df11315ba094e2e76b5355c21160a46e71eee22b8b0acb6bd0551c03` before and
+after, applicable true. No umbrella row was completed or touched.
+
+The ordered validation-state scope covered all nineteen staged step paths. The
+comparison reports `acceptable: true` with no tracked, ignored, or untracked
+difference, so no validation command wrote anywhere in the reviewed scope.
+
+The staged transcript was checked for a hidden edit rather than trusted: its
+staged diff is 343 insertions with zero deletions, and because a newly added
+region can hide an edit that a deletion count cannot see, its staged blob was
+compared against the working tree. The staged content ends at line 2913, before
+the round-two request entry, which is where the reported heading defect lives.
+
+Disclosed for completeness: `docs/v0.11.0/draft.v0.11.0.review-mode.md` and two
+new draft files carry pre-existing unstaged changes from earlier umbrella work.
+They are outside the Step 5 subject, appear in no `a.commit` group, and were
+captured in the umbrella baseline before assessment, so the digest comparison is
+unaffected.
+
+### Repair inventory for step 5 code-reviewer round 2 (exchange 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 5 code-reviewer round 2 (exchange 1)
+
+Accurate, no amendment needed.
+
+`validate_commit_plan(parse_clipboard_content(a.commit, interactive=False),
+staged_paths)` returns zero diagnostics against the exact staged set: three
+ordered groups, conventional subjects, exact membership over all nineteen paths,
+and no duplicate or missing path.
+
+The grouping still separates concerns correctly. Group 1,
+`fix(review-exchange): expose request occurrence`, isolates the five
+review-exchange-core paths. Group 2, `feat(code-reviewer): route independent
+reviews`, carries the routing change, canonical instruction, four adapters, and
+their tests. Group 3, `docs(code-reviewer): record step 5 completion`, carries
+the validation record and the protocol transcript last.
+
+The nineteenth path is the transcript, newly added to the documentation group so
+the Step 5 review record lands with the step. That is the right membership, and
+it is the reason the heading finding above must be fixed before the round-two
+and round-three appends are staged.
+
+### Findings and boundaries for step 5 code-reviewer round 2 (exchange 1)
+
+Unresolved findings:
+
+- Three authored request sections now nest a bare, unqualified `##` heading inside the section heading the renderer already generates. In the published round-two request, `## Assessment` sits at line 79 under `## Requestor assessment for step 5 code-reviewer round 2`, `## Implementation report` at line 89 under its generated parent, and `## Change summary` at line 99 under its own. The cause is the authored input files: `a.code-review-step5-round2.assessment.md`, `.implementation.md`, and `.changes.md` each now begin with their own heading, while the round-one files began with prose. The transcript append carries the same defect, with a bare `## Implementation report` at line 2953 inside content the store has already titled at `###`, which breaks the round's outline by placing an H2 beneath an H3. Because the three headings carry no step, round, or exchange discriminator, round three authoring the same three inputs produces exact MD024 duplicates in the transcript; this is not latent but fires on the next round. The staged subject is clean today, since the staged transcript ends at line 2913 and contains none of them, so the defect enters the repository only when the round-two and round-three appends are staged. The fix is in the authored inputs, not in any protocol artifact: drop the leading heading from each file and let the renderer supply the qualified title it already writes. A reviewer must not repair this, because both the request and the transcript are published protocol artifacts.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 5 code-reviewer round 2 (exchange 1)
+
+Remove the leading `##` heading from each of the three authored input files
+before rendering round three: `a.code-review-step5-round2.assessment.md`,
+`a.code-review-step5-round2.implementation.md`, and
+`a.code-review-step5-round2.changes.md`. Start each file with its prose, exactly
+as the round-one inputs did. The request renderer already writes the qualified
+section heading, so the file must not write one too.
+
+Do not edit the published round-two request or the transcript to correct what is
+already appended. Those are protocol artifacts, and hand-editing them is the
+defect this exchange has already recorded once.
+
+When round three is prepared, confirm that the transcript append contains no
+bare `##` heading and that its authored sections start at `###`, before staging
+the transcript into the documentation group.
+
+Everything else in Step 5 is accepted. All three round-one findings are closed,
+the reviewer repair is retained, and no other change is requested.
+
+### Decision rationale for step 5 code-reviewer round 2 (exchange 1)
+
+Changes-requested, on one unresolved finding rather than on the implementation.
+
+The readiness floor this instruction defines requires the absence of unresolved
+current findings. The nested bare headings are a current finding, they violate
+the heading rules that `instructions/review-requestor.md` and
+`instructions/implementation-check.md` both declare non-disableable, and they
+will produce exact duplicate headings in the transcript on the next round. So
+commit-ready is unavailable, and the answer model enforces the same rule.
+
+Nothing else stands in the way. The reviewer made no repair this round, all three
+round-one findings are closed and independently re-measured, the umbrella digest
+is unchanged, the validation-state comparison is clean with no tracked or
+untracked difference, and `a.commit` validates with zero diagnostics over
+nineteen paths in three correctly ordered groups.
+
+One gate note. The first walk reported a single duration outlier at 0.52 seconds
+in a Step 4 test that is not part of this staged subject. Re-running on an idle
+machine reported zero outliers in 1 minute 18.9 seconds, which matches the
+writer's own result, so that reading was load and not a regression.
+
+### Final reviewer decision for step 5 code-reviewer round 2 (exchange 1)
+
+Decision: changes-requested. The writer must address the concrete instructions and publish another review round. This advisory answer does not authorize a commit.
+
+<!-- review-entry-id: answer-step-5-round-2 -->
+
+## Round 3 by requestor - Step 5
+
+- Recorded: 2026-08-18T11:04:36+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 5
+- Outcome: request
+
+### Review identity for step 5 code-reviewer round 3
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Implementation step: 5
+Review round: 3
+
+### Code review evidence for step 5 code-reviewer round 3
+
+request_index_tree: 88ef97781f340d16209936532824e6cde70bc57a
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n 'code-reviewer|REQUEST_PENDING|CODE_REVIEWER' .agent .agents .claude instructions tools tests docs/v0.11.0/plan.v0.11.0.code-reviewer.md docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md (sources: plan)
+- rg -n 'code_review_evidence.bat|code_review_answer.bat|review_exchange.bat' instructions/code-reviewer.md (sources: plan)
+- git diff --cached --check (sources: request)
+
+### Requestor assessment for step 5 code-reviewer round 3
+
+Step 5 remains fully implemented. The independent code-reviewer route, actor consistency checks, ownership enforcement, launcher delegation, occurrence exposure, and focused regressions are unchanged from the round-2 subject.
+
+The sole round-2 finding is closed in the caller-owned authoring inputs. The three round-2 assessment, implementation-report, and change-summary files now begin directly with prose, and the corresponding round-3 inputs follow the same shape. The renderer therefore owns the qualified section titles. No published request or transcript byte was hand-edited.
+
+The durable round-2 request and answer are staged in the existing documentation group before this round's index capture. The historical round-2 headings remain protocol-owned evidence; the round-3 append introduces no bare authored heading and cannot create the predicted duplicate.
+
+Validation is green on that staged subject: `ghog day --force` completed all 1,846 tests in 1m 37.0s with `fail=0`, `warn=0`, `xfail=0`, `cov=100`, `outliers=0`, and `exit=0`; the slowest test took 0.32s. `git diff --cached --check` is clean and `a.commit` parses without diagnostics. Architecture and feature integrity remain unchanged because the authoring correction touches no staged implementation byte, and performance remains below both the per-test 0.5s ceiling and the three-minute suite objective.
+
+### Implementation report for step 5 code-reviewer round 3
+
+No Step 5 implementation code changed in response to round 2. The requested correction applies to ignored caller-owned renderer inputs: their redundant leading headings were removed, while published protocol artifacts were preserved unchanged.
+
+The staged subject still contains the same 19 paths and three commit groups. Its transcript path now retains the complete round-2 exchange through the reviewer answer, so round 3 assesses the durable history that would ship with Step 5.
+
+### Change summary for step 5 code-reviewer round 3
+
+The staged subject contains 19 paths in three ordered groups: the five-path review-exchange occurrence repair, the twelve-path independent code-reviewer implementation and tests, and the two-path documentation record containing the validation plan plus durable transcript.
+
+Since round 2, the only staged-byte change is the protocol-generated transcript append for the round-2 request and answer. The requested authoring fix is confined to ignored `a.*` inputs, so `a.commit` membership, ordering, subjects, and its two-paragraph narrative Why sections remain accurate without amendment. Unrelated umbrella draft work remains unstaged and outside this review subject.
+
+### Writer response for step 5 code-reviewer round 3
+
+Writer response: Accepted the round-2 finding without disagreement.
+
+I removed the leading `##` heading from `a.code-review-step5-round2.assessment.md`, `a.code-review-step5-round2.implementation.md`, and `a.code-review-step5-round2.changes.md`. Each now starts directly with prose, matching the renderer contract and the round-1 input shape. The new round-3 assessment, implementation-report, and change-summary inputs also start with prose.
+
+I did not edit the published round-2 request or the versioned transcript. I staged the protocol-generated round-2 transcript append as-is in the documentation group before rendering round 3. The replacement round should therefore add only renderer-qualified authored section headings and no bare `## Assessment`, `## Implementation report`, or `## Change summary` heading.
+
+### Reviewer focus for step 5 code-reviewer round 3
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-5-round-3 -->
+
+## Round 3 by reviewer - Step 5
+
+- Recorded: 2026-08-18T11:12:47+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 5
+- Outcome: answer
+
+### Assessed index identity for step 5 code-reviewer round 3 (exchange 1)
+
+Baseline index tree: 88ef97781f340d16209936532824e6cde70bc57a
+
+Assessed index tree: 88ef97781f340d16209936532824e6cde70bc57a
+
+### Implementation check for step 5 code-reviewer round 3 (exchange 1)
+
+Result: Yes. Step 5 is fully implemented, and the round-two finding is closed at its
+source without touching a published artifact.
+
+The three authored inputs now begin with prose, so the round-three request
+carries nine section headings and every one of them is qualified with step and
+round. No bare heading appears anywhere in it.
+
+The writer correctly refused the wrong remedy. The round-two bytes still hold
+`## Assessment`, `## Implementation report`, and `## Change summary` at
+transcript lines 2943, 2953, and 2963. Rewriting them would have been a hand
+edit of an append-only protocol artifact, which this exchange has already
+recorded once as a defect, so leaving them and fixing the inputs is the right
+call.
+
+The reviewer owes a correction here. The round-two finding described those
+headings as breaking the outline by placing an H2 beneath an H3. That part was
+wrong: `instructions/review-requestor.md` permits a round's own headings at
+`##` or deeper and forbids only `#`. The half that was right, and the half that
+mattered, is the uniqueness rule, which names a bare `## Evidence` as a defect
+in the round that writes it because it duplicates the moment the next round
+repeats the word. That is exactly what the input change prevents.
+
+The implementation is unchanged from round one and still correct: one typed
+`CodeReviewActor` resolved from the classified state, a construction-time
+consistency check on `CodeReviewRoute`, ownership checks on both forced roles,
+the diagnostic cold abandoned-request handoff, and four metadata-plus-redirect
+adapters. The round-one reviewer repair remains in place, and the validation
+record still matches every figure re-measured in round two.
+
+Validation plan effects: None. The reviewer wrote no validation-plan row this round; the staged Step 5 record remains accurate on every figure re-measured in round two.
+
+### Pre-repair mandatory checks and coverage for step 5 code-reviewer round 3 (exchange 1)
+
+All four resolved commands pass, and no repair was needed so the pre-repair and post-assessment readings are the same. ghog day --force reported fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0 across 1,846 tests in 1m 29.7s. The routing grep returned 10 matching lines across its three files, the launcher-boundary grep returned 15 in the canonical instruction, and git diff --cached --check exited 0.
+
+### Resolved validation set and sources for step 5 code-reviewer round 3 (exchange 1)
+
+Four commands, matching the request set exactly: ghog day (project), the routing grep (plan), the launcher-boundary grep (plan), and git diff --cached --check (request). Both plan entries are the exact Step 5 completion criteria.
+
+### Resolver drift and direction for step 5 code-reviewer round 3 (exchange 1)
+
+None in either direction. The current resolver produces the same four commands with the same sources as the published set.
+
+### Repository state around validation for step 5 code-reviewer round 3 (exchange 1)
+
+The request-time index tree `88ef97781f340d16209936532824e6cde70bc57a` matched
+the live index exactly before assessment, and it is unchanged afterwards because
+this round required no repair.
+
+The umbrella digest is unchanged across the implementation-check result:
+`b08a43e7df11315ba094e2e76b5355c21160a46e71eee22b8b0acb6bd0551c03` before and
+after, applicable true.
+
+The ordered validation-state scope covered all nineteen staged step paths, and
+the comparison reports `acceptable: true` with no tracked, ignored, or untracked
+difference.
+
+The staged transcript was checked for a hidden edit rather than trusted. Its
+staged diff carries zero deletions, and because a newly added region can hide an
+edit that a deletion count cannot see, the staged blob was inspected directly:
+the round-two bare headings survive at their original lines, and the round-two
+reviewer answer is present verbatim, including its distinctive closing sentences.
+Nothing in the appended history was rewritten.
+
+One consequence is worth stating plainly. Staging now reaches through the
+round-two answer, so those three historical bare headings are inside the staged
+content and will enter the repository with this commit. That is the correct
+outcome of the instruction they were given: append-only integrity outranks
+cosmetic purity, the headings are unique as written, and the input fix means they
+cannot recur.
+
+Disclosed for completeness: `docs/v0.11.0/draft.v0.11.0.review-mode.md` and two
+new draft files carry pre-existing unstaged changes from earlier umbrella work.
+They are outside the Step 5 subject, appear in no `a.commit` group, and were
+captured in the umbrella baseline before assessment.
+
+### Repair inventory for step 5 code-reviewer round 3 (exchange 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 5 code-reviewer round 3 (exchange 1)
+
+Accurate, no amendment needed. validate_commit_plan over the parsed a.commit and the exact staged set returns zero diagnostics: three ordered groups, conventional subjects, exact membership over all nineteen paths, no duplicate or missing path. Group 1 isolates the five review-exchange-core paths, Group 2 carries the routing change, canonical instruction, four adapters and their tests, and Group 3 carries the validation record and the protocol transcript last. That is least-dependent-first ordering.
+
+### Findings and boundaries for step 5 code-reviewer round 3 (exchange 1)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 5 code-reviewer round 3 (exchange 1)
+
+No change is requested for the staged work. Step 5 is accepted as implemented,
+and the remaining gate choice is the human one.
+
+One small discoverability improvement is worth making later, recorded here rather
+than as a finding because nothing in the staged subject depends on it. The
+canonical instruction tells the reviewer to run `bin/code_review_answer.bat`
+with a disposition but never states the two accepted tokens, and the CLI maps
+reviewer-facing names rather than the envelope values: it accepts
+`changes-requested` and `commit-ready`, not the `convergence-recommended` that
+appears in the answer envelope. Because `--disposition` uses a converter rather
+than `choices`, `--help` does not list the valid values either, and the failure
+message is the bare `invalid disposition`.
+
+The reviewer hit this first-hand while rendering this answer, passing the
+envelope value and getting no hint of the accepted set. Naming both tokens in the
+instruction step, or listing them in the argument help, would remove the guess
+without changing behavior.
+
+### Decision rationale for step 5 code-reviewer round 3 (exchange 1)
+
+Commit-ready, advisory.
+
+Every element of the readiness floor passes. Identity is exact and the live index
+matched the request tree before assessment. The implementation is complete
+against the numbered plan and was verified in round one by executing the
+deliverable itself, through the `code-reviewer` skill, the canonical instruction,
+and the three launchers it delegates to. All four resolved validation commands
+pass with 100% coverage and zero outliers. The staged scope is entirely the
+writer's, since this round produced no reviewer repair and the previous repair is
+retained. No unresolved current or carried finding remains: the round-one trio
+and the round-two heading finding are all closed and re-measured. `a.commit`
+groups nineteen paths into three correctly ordered commits with zero validator
+diagnostics.
+
+This round made no substantive repair, which is the last condition the
+instruction sets before a commit-ready recommendation is permitted.
+
+The recommendation is advisory. It authorizes no commit, and the human gate
+remains the sole authority for the `Commit` choice.
+
+### Final reviewer decision for step 5 code-reviewer round 3 (exchange 1)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-5-round-3 -->
+
+## Round 3 by human - Step 5 - human-confirmation
+
+- Recorded: 2026-08-18T14:18:39+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 5
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-3 -->
