@@ -351,7 +351,9 @@ Existing behavior and reporting remain intact for Step 3.
 
 ### Analysis of Step 4 implementation state
 
-Not started. Step 4 is not implemented because the typed answer model, CLI, template, launcher, and tests do not exist.
+Yes. Step 4 has been fully implemented.
+
+The implementation supplies both discriminated answer shapes, renders the durable answer and substantive transcript summary from one immutable source, and keeps the reviewer decision advisory. The assessment path validates the exact live retained manifest and assessed index tree without retiring the manifest; the early-rejection path rejects assessment-only evidence before rendering.
 
 ### Goal for Step 4
 
@@ -365,27 +367,32 @@ Render separately validated early-rejection and assessment answers plus their pa
 
 ### What was implemented for Step 4
 
-_(empty — no check has taken place yet.)_.
+- Added `tools/code_review_answer.py` with immutable early-rejection and full-assessment inputs, readiness-floor enforcement, explicit exchange-occurrence heading discrimination, shared-envelope composition, and paired answer/transcript rendering.
+- Added `tools/code_review_answer_cli.py` with explicit ignored-root `a.*` inputs, prohibited-mixture and mandatory-field checks, strict single UTF-8 reads, exact manifest/index validation, distinct-path enforcement, and rollback-safe atomic pair publication.
+- Added `templates/code-review-answer.template.md` and the repository-root `bin/code_review_answer.bat` launcher. Rendering deliberately leaves manifest retirement to the later publication workflow.
+- Added separate model and CLI test modules covering both valid variants, guidance pairing, advisory decisions, failure boundaries, manifest drift, ignored-path validation, single reads, and partial-write cleanup.
 
 ### New types or classes introduced for Step 4
 
-_(empty — no check has taken place yet.)_.
+- `EarlyRejectionAssessment`: the narrow pre-assessment disagreement and writer-instruction shape.
+- `ImplementationAssessment`: the complete evidence, repair, validation, drift, readiness, and decision shape.
+- `CodeReviewAnswerRender`: the non-empty answer-content and transcript-summary pair.
 
 ### Architecture check for Step 4
 
-_(empty — no check has taken place yet.)_.
+Rendering and typed model validation remain in `tools/code_review_answer.py` at 470 physical lines, while filesystem, Git, manifest, and CLI validation remain in `tools/code_review_answer_cli.py` at 395 lines. The model and CLI tests remain separate at 315 and 470 lines. Every file is below the plan's 550-line safe threshold and 650-line ceiling; no split is required. Both production modules exceed their advisory estimate of below 380 lines, by 90 and 15 lines respectively; the shared checklist records that variance without failing a file at or below 650 lines. The shared envelope and Step 2 evidence APIs are composed rather than forked, and the launcher contains no policy.
 
 ### Performance check for Step 4
 
-_(empty — no check has taken place yet.)_.
+The deterministic local implementation adds no timeout gate. The final `ghog day` full phase completed 1,813 tests in 2m 25.9s with the slowest call at 0.47s, zero duration outliers, and exit 0. Exact caller paths and linear inventories bound the renderer's work without directory enumeration.
 
 ### Unit test coverage check for Step 4
 
-_(empty — no check has taken place yet.)_.
+`ghog single tests/unit/tools/test_code_review_answer` passed before the final walk. The final `ghog day` reported `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` across 1,813 tests. Coverage includes invalid families and roots, non-tuple and mismatched inventories, restarted-exchange heading discrimination, parser and ignored-path failures, live-manifest/index drift, failed temporary output, and restoration of both existing and previously absent paired outputs.
 
 ### Feature integrity for Step 4
 
-_(empty — no check has taken place yet.)_.
+Step 4 preserves the feature's authority boundary: `commit-ready` is rendered only as an advisory convergence recommendation, `changes-requested` carries concrete writer instructions, and neither result commits, consumes, confirms, completes, or retires protocol evidence. Every authored answer and transcript heading includes the caller-supplied positive exchange occurrence, so a restarted step-round remains unique without transcript scanning. The completion grep finds both typed variants and paired fields, and `bin/code_review_answer.bat --help` succeeds from the repository root without prior environment setup.
 
 ---
 

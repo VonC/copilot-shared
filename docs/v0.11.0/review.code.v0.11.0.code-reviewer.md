@@ -2152,3 +2152,419 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 4
+
+- Recorded: 2026-08-17T19:39:41+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 4
+- Outcome: request
+
+### Review identity for step 4 code-reviewer round 1
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Implementation step: 4
+Review round: 1
+
+### Code review evidence for step 4 code-reviewer round 1
+
+request_index_tree: 556d0ac9e9561b654602d0c0e5e4489bc0d76da0
+resolved_validation_set:
+
+- ghog day (sources: project, plan)
+- bin\code_review_answer.bat --help (sources: request)
+
+### Requestor assessment for step 4 code-reviewer round 1
+
+Assess Step 4, "Build paired code-review answers", against the exact staged index and the v0.11.0 code-reviewer requirement, design, implementation plan, and validation plan. Verify both answer variants, the paired rendering source, the live retained-manifest and assessed-index checks, ignored-root IO, atomic rollback, advisory authority boundary, and the exact `a.commit` membership and ordering. Treat any repair to staged substantive work as requiring another round.
+
+### Implementation report for step 4 code-reviewer round 1
+
+Yes. Step 4 has been fully implemented.
+
+The staged implementation adds immutable `EarlyRejectionAssessment`, `ImplementationAssessment`, and `CodeReviewAnswerRender` models; a shared-envelope answer and substantive transcript renderer; an explicit-file CLI; the answer template; and the repository-root launcher. Assessment rendering verifies the exact live evidence manifest and assessed index without retiring it. Early rejection rejects assessment fields before rendering. Both paths publish a rollback-safe pair and retain advisory-only decision semantics.
+
+The final `ghog day` passed 1,811 tests with `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`; the full phase took 2m 14.6s and the slowest call was 0.40s. The completion grep found both typed variants and paired outputs, `bin/code_review_answer.bat --help` exited 0 from the repository root, and every new production or test file remains below the 550-line safe threshold.
+
+### Change summary for step 4 code-reviewer round 1
+
+- Add the typed early-rejection and implementation-assessment answer models.
+- Render complete answer content and substantive transcript summary from one immutable source.
+- Validate explicit ignored-root inputs, the live retained manifest, and the live assessed index.
+- Publish the two outputs atomically and restore prior presence and bytes after partial failure.
+- Add the answer template, repository-root launcher, and separate model and CLI unit suites.
+- Record the affirmative Step 4 implementation check and global validation evidence.
+
+### Writer response for step 4 code-reviewer round 1
+
+Writer response: This is the initial Step 4 review request, so there are no prior reviewer findings to answer. The staged implementation follows the tests-first plan and includes the completed implementation-check record plus the grouped commit plan requested for review.
+
+### Reviewer focus for step 4 code-reviewer round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-4-round-1 -->
+
+## Round 1 by reviewer - Step 4
+
+- Recorded: 2026-08-17T20:27:23+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 4
+- Outcome: answer
+
+### Assessed staged state for step 4 code-reviewer round 1
+
+The request-time index tree `556d0ac9e9561b654602d0c0e5e4489bc0d76da0` matched
+the live index exactly before assessment, so this round assessed the published
+subject. After one reviewer repair the index tree is
+`c37ec5a319dadc599e8139a09991617402d6096e`. The staged set holds exactly the
+eight paths the plan names for this step.
+
+Seven of the eight paths are new files. The validation plan is the only modified
+path, and its seven deletions are the replaced `Not started` sentence and the
+skeleton placeholders, so nothing is hidden inside an edited region.
+
+The review-exchange-core work remains unstaged and outside both groups.
+
+### Implementation assessment for step 4 code-reviewer round 1
+
+Step 4 is implemented against the numbered plan, and the reviewer exercised the
+deliverable rather than only reading it. Rendering one real early-rejection pair
+through `tools/code_review_answer_cli.py` returned exit 0 and produced a
+well-formed answer with a single `#` title, `## JSON` as its first section, the
+four identity fields once each, and authored sections starting at H2, plus a
+matching transcript summary whose sections start at H3.
+
+The discriminated union is enforced where it belongs. `EarlyRejectionAssessment`
+rejects any assessment field and any assessment flag before rendering, and
+requires `changes-requested`. `ImplementationAssessment` requires every evidence
+field, validates both tree identities, normalizes four inventories to unique
+non-empty values, and pairs repairs with staged paths. `_validate_commit_ready`
+is the authority boundary in code: a convergence recommendation is refused when
+the readiness floor is incomplete, when a substantive repair happened, or when
+unresolved findings or boundary-crossing work remain. The final decision text
+states plainly that the recommendation authorizes no commit.
+
+The CLI validates the variant shape before reading any file, resolves every
+operand to an ignored root `a.*` path, rejects collisions among all inputs and
+both outputs, reads each authored input once, and publishes the pair through a
+same-directory temporary file with `os.replace`, restoring prior bytes or prior
+absence when either replace fails.
+
+The identity fields render repository-relative, which matches the current
+portability policy introduced by `8726245`, where transcript metadata and
+authored evidence drop the workstation prefix while durable request envelopes
+keep exact identity. The reviewer checked this against
+`validate_summary_identity` before accepting it: the published request passes
+that absolute-path check and the rendered answer does not, and that difference is
+the intended split rather than a defect, since the shared check applies to
+requests only and this round's transcript metadata is relative throughout.
+
+### Repairs made in step 4 code-reviewer round 1
+
+Staged: `docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md`. The architecture
+record stated that both production modules sit below the 550-line safe threshold
+and the 650-line ceiling, which is true, but omitted the advisory-estimate
+variance that item 8 of the plan's shared execution checklist requires. Both
+modules exceed their advisory estimate of below 380 lines, by 93 and 12 lines.
+The record now states that variance and that it fails no file at or below 650.
+
+Polishing-only: this is a reviewed-step validation record, it changes no code,
+test, acceptance behavior, or commit grouping, and it is the only repair in this
+round.
+
+### Findings returned to the writer for step 4 code-reviewer round 1
+
+The published resolved validation set omits the step's own completion grep. The
+plan's Step 4 completion criteria name three checks, and the request's immutable
+evidence carries only two commands: `ghog day` with project and plan sources,
+and the launcher help as a request addition. The missing command is
+`rg -n 'EarlyRejection|ImplementationAssessment|answer_content|transcript_summary'
+tools/code_review_answer.py tools/code_review_answer_cli.py`, which the
+implementation report says was run and which returns 21 matches here. The
+requestor instruction requires every exact plan-step addition to be passed
+through a repeatable plan-validation flag, and each earlier round in this
+exchange did carry its plan grep. The evidence therefore understates the
+mandatory set for this step. The reviewer did not repair it, because the resolved
+set lives inside the published immutable request.
+
+Authored answer headings carry no exchange discriminator. `_section` builds every
+heading as `{title} for step {step} {slug} round {round}`, which is unique across
+rounds and steps inside one exchange but not across a restarted exchange over the
+same step and round. The store already solves this for its own generated heading
+by appending `(exchange N)`, and the code transcript proves restarts are real.
+This renderer is what will author every reviewer sub-heading from now on, so the
+duplicate-heading class that was declared non-negotiable can return through it.
+Closing this needs the exchange occurrence to reach the renderer, which the
+assessment models do not currently carry, so it is a design decision rather than
+a reviewer repair.
+
+### Validation evidence for step 4 code-reviewer round 1
+
+Both commands in the resolved set ran after the repair, and so did the plan
+command the set omits. `ghog day --force` reports `fail=0 warn=0 xfail=0 cov=100
+outliers=0 excluded=0 exit=0` over 1,811 tests, with the full phase at 1 minute
+50.2 seconds. `bin/code_review_answer.bat --help` exits 0 from the repository
+root with no environment setup. The omitted plan grep returns 21 matches across
+both production modules, so the criterion it encodes is satisfied even though the
+published evidence does not name it.
+
+Beyond the declared set, the reviewer rendered a real answer pair end to end, and
+`git diff --cached --check` exits cleanly.
+
+Line counts are 473, 392, 293, and 469 for the two production modules and the two
+test modules, plus 9 template lines and a 20-line launcher. All are below the
+550-line safe threshold, with the advisory variance now recorded.
+
+Markdown, checked against the repository `.markdownlint.json` with MD013 off and
+MD033 limited to `img`: the staged validation plan, the new template, and the
+code transcript are clean.
+
+### a.commit assessment for step 4 code-reviewer round 1
+
+Accurate, no amendment needed. `validate_commit_plan(parse_clipboard_content(
+a.commit, interactive=False), staged_paths)` returns zero diagnostics against the
+exact staged set: two ordered groups, conventional subjects, exact membership
+over all eight paths, and no duplicate or missing path. The implementation group
+`feat(code-reviewer): render paired review answers` precedes the required
+`docs(code-reviewer): record step 4 validation`, which is the least-dependent
+ordering. The repair landed inside the existing Group 2 member. No commit was
+created.
+
+### Non-blocking observations for step 4 code-reviewer round 1
+
+`_validated_inventory` filters `if isinstance(value, str)` inside its
+normalization comprehension, but a non-string item has already raised on the line
+above, so that guard can never exclude anything.
+
+The same helper special-cases one label to build its message, choosing
+`duplicate staged paths` when the label is `staged path inventory` and
+`duplicate {label}` otherwise. A message that branches on a caller-supplied
+string is easy to break from the call site; passing the message with the label
+would remove the coupling.
+
+The requestor assessment, implementation report, and change summary in this
+request are unwrapped single-line paragraphs, where every earlier round wrapped
+near 78 columns. MD013 is disabled, so nothing fails, but the transcript now
+mixes both styles.
+
+### Final reviewer decision for step 4 code-reviewer round 1
+
+Decision: changes-requested. The published evidence omits one of the three
+commands the plan sets as Step 4 completion criteria, and the authored-heading
+discriminator needs a design decision that a reviewer cannot make inside this
+step. Neither concerns the implementation, which is complete, exercised end to
+end, and green on every check including the omitted one; the single repair in
+this round is polishing-only. This answer is advisory and authorizes no commit.
+
+<!-- review-entry-id: answer-step-4-round-1 -->
+
+## Round 2 by requestor - Step 4
+
+- Recorded: 2026-08-18T08:03:06+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 4
+- Outcome: request
+
+### Review identity for step 4 code-reviewer round 2
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Implementation step: 4
+Review round: 2
+
+### Code review evidence for step 4 code-reviewer round 2
+
+request_index_tree: 39741f8c562b685f6d5ed92b1c8eafeeebb66eae
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n 'EarlyRejection|ImplementationAssessment|answer_content|transcript_summary' tools/code_review_answer.py tools/code_review_answer_cli.py (sources: plan)
+- bin\code_review_answer.bat --help (sources: request)
+
+### Requestor assessment for step 4 code-reviewer round 2
+
+Reassess Step 4 after the round-1 changes against the exact staged index. Verify that the resolved validation set now includes all three completion commands, every rendered answer and transcript heading carries the positive exchange occurrence, the reviewer polishing repair remains intact, the durable round-1 transcript is staged, and `a.commit` exactly covers and orders all nine staged paths. Treat any new substantive repair as requiring another round.
+
+### Implementation report for step 4 code-reviewer round 2
+
+Yes. Step 4 remains fully implemented after the round-1 changes.
+
+The omitted completion grep is now supplied as the exact plan-validation command, alongside the project `ghog day` command and the launcher smoke command. The answer model now requires a positive `exchange_occurrence`; the CLI requires `--exchange-occurrence`; and every authored answer and substantive transcript heading ends in `(exchange N)`. A restarted-exchange regression renders occurrence 2 and asserts that every authored heading in both paired outputs carries `round 2 (exchange 2)`.
+
+The reviewer polishing repair remains in the validation plan. Its architecture record now measures 470 and 395 lines for the production modules and records their 90-line and 15-line advisory-estimate variances; the test modules measure 315 and 470 lines. The final `ghog day` passed 1,813 tests with `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`; the full phase took 2m 25.9s and the slowest call was 0.47s. The completion grep returns 22 matches and `bin/code_review_answer.bat --help` exits 0.
+
+### Change summary for step 4 code-reviewer round 2
+
+- Require a positive exchange occurrence in both answer variants and the CLI contract.
+- Append `(exchange N)` to every authored answer and transcript heading.
+- Add a restarted-exchange regression over both paired outputs.
+- Retain the reviewer repair and update measured line counts and global test evidence.
+- Add the exact Step 4 completion grep to the immutable resolved validation set.
+- Stage the durable round-1 transcript and add it to the final documentation group in `a.commit`.
+
+### Writer response for step 4 code-reviewer round 2
+
+Writer response: Both round-1 findings are closed. The missing completion grep is now an explicit plan-validation input, so the replacement request publishes all three Step 4 completion commands in its immutable resolved set. The heading collision is closed by a required positive exchange occurrence propagated through the CLI and both immutable models; every authored heading now carries `(exchange N)`, with occurrence 2 covered across both outputs.
+
+The reviewer polishing repair was retained and updated with the post-change measurements. The round-1 transcript is staged without hand edits, and `a.commit` now covers the exact nine-path staged set in the same two-group order.
+
+### Reviewer focus for step 4 code-reviewer round 2
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-4-round-2 -->
+
+## Round 2 by reviewer - Step 4
+
+- Recorded: 2026-08-18T08:19:53+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 4
+- Outcome: answer
+
+### Assessed staged state for step 4 code-reviewer round 2
+
+The request-time index tree `39741f8c562b685f6d5ed92b1c8eafeeebb66eae` matched
+the live index exactly before assessment, and it is unchanged afterwards because
+this round needed no repair. The staged set holds nine paths, one more than
+round one, since the durable round-one transcript is now a member.
+
+The staged subject carries no hidden edit. Eight paths are new files or pure
+additions, the validation plan's seven deletions are its replaced skeleton
+placeholders, and the transcript adds 211 lines with zero deletions. Because a
+newly added transcript region can hide an edit that a deletion count cannot see,
+the reviewer compared the appended round-one answer block byte for byte against
+the summary published last round: they are identical.
+
+The review-exchange-core work remains unstaged and outside both groups.
+
+### Round 1 findings verified in step 4 code-reviewer round 2
+
+Both findings are closed, each verified rather than accepted from the report.
+
+The immutable resolved validation set now carries all three Step 4 completion
+commands: `ghog day` from the project, the completion grep from the plan, and
+the launcher smoke command from the request. That was the whole of the first
+finding.
+
+The heading discriminator is real and asserted. Every authored heading now ends
+in `(exchange N)` through `_heading_label`, and removing that suffix from the
+builder fails two tests, including the dedicated restarted-exchange regression
+that asserts `round 2 (exchange 2)` across both paired outputs. Rendering a real
+early-rejection pair with `--exchange-occurrence 2` confirms it end to end: the
+answer carries four `(exchange 2)` headings at H2 and the summary three at H3.
+
+The Step 3 finding was closed in the same movement, which this round's own
+transcript demonstrates. Durable entry identities are now step-scoped, reading
+`request-step-4-round-1`, `answer-step-4-round-1`, and `request-step-4-round-2`,
+so they are unique by construction. The cross-step inflation reported then is
+gone: these entries render with no exchange suffix at all, because their
+occurrence is genuinely one.
+
+The reviewer's round-one polishing repair was retained and correctly updated.
+Its architecture record now measures 470, 395, 315, and 470 lines, and states
+advisory-estimate variances of 90 and 15 lines. All four measurements and both
+variances are exact.
+
+### Repairs made in step 4 code-reviewer round 2
+
+None. The staged subject needed no reviewer repair in this round, so nothing
+here forbids the recommendation below.
+
+### Findings returned to the writer for step 4 code-reviewer round 2
+
+The renderer now requires an exchange occurrence that no exposed command can
+supply. `--exchange-occurrence` is mandatory and the answer must be rendered
+before `publish-answer` runs, but `entry_occurrence` lives only in
+`review_exchange_store.py` and its two internal callers; neither
+`bin/review_exchange.bat` nor `bin/code_review_evidence.bat` exposes it. A caller
+who guesses wrong produces authored sub-headings claiming one exchange inside a
+generated round heading claiming another, which is the ambiguity the
+discriminator exists to remove.
+
+The step-scoped identity fix makes this low risk today, since the correct value
+is one until an exchange genuinely restarts for the same step and round, and
+Step 4's plan explicitly defers workflow wiring to Step 5 in the same way it
+defers manifest retirement. Recording it here so Step 5 closes it deliberately:
+either expose the occurrence through the protocol command surface or state in the
+canonical reviewer instruction how the value is obtained.
+
+### Validation evidence for step 4 code-reviewer round 2
+
+All three commands in the resolved set ran on an idle machine. `ghog day --force`
+reports `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` over 1,813
+tests, with the full phase at 1 minute 24.3 seconds. The completion grep matches,
+and `bin/code_review_answer.bat --help` exits 0 from the repository root without
+environment setup.
+
+Beyond the declared set, the reviewer rendered a real paired answer end to end,
+mutated the heading builder to confirm the new assertions bite, restored the file
+from the index and re-verified it, and confirmed `git diff --cached --check`
+exits cleanly.
+
+Markdown, checked against the repository `.markdownlint.json` with MD013 off and
+MD033 limited to `img`: the staged validation plan, the staged transcript, and
+the answer template are clean, and the repository still reports no MD024 or MD025
+finding anywhere.
+
+### a.commit assessment for step 4 code-reviewer round 2
+
+Accurate, no amendment needed. `validate_commit_plan(parse_clipboard_content(
+a.commit, interactive=False), staged_paths)` returns zero diagnostics against the
+exact staged set: two ordered groups, conventional subjects, exact membership
+over all nine paths, and no duplicate or missing path. The implementation group
+`feat(code-reviewer): render paired review answers` precedes the required
+`docs(code-reviewer): record step 4 validation`, which now correctly carries both
+the validation plan and the durable transcript.
+
+### Non-blocking observations for step 4 code-reviewer round 2
+
+The request reports the completion grep as returning 22 matches. Here the same
+command reports 21 matching lines, and 24 individual matches with `rg -o`, so the
+figure matches neither measure. Nothing in the staged subject depends on it, and
+the criterion itself passes; the command form used for the count is worth
+rechecking before it is quoted again.
+
+The two observations from round one are unchanged and remain harmless: the dead
+`isinstance` guard inside the normalization comprehension of
+`_validated_inventory`, and its duplicate-message branch on a caller-supplied
+label string.
+
+### Final reviewer decision for step 4 code-reviewer round 2
+
+Decision: commit-ready. Step 4 is fully implemented against its plan step, both
+round-one findings are closed and independently verified, the round-one repair is
+retained and its measurements are exact, the reviewer made no repair in this
+round, `a.commit` matches the staged set exactly, and all three resolved
+validation commands pass with 100% coverage and zero outliers.
+
+The single finding above belongs to Step 5's wiring, which this plan defers by
+design, and does not bear on this commit.
+
+This recommendation is advisory. It authorizes no commit, and the human gate
+remains the sole authority for the `Commit` choice.
+
+<!-- review-entry-id: answer-step-4-round-2 -->
+
+## Round 2 by human - Step 4 - human-confirmation
+
+- Recorded: 2026-08-18T08:30:15+02:00
+- Exchange: code/code/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Implementation step: 4
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->
