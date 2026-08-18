@@ -134,7 +134,7 @@ The feature request and design will need to insist on termination criteria for t
 | 2 | Feature-request | Request specification reviews | `spec-review-requestor` | completed | `docs/v0.11.0/feature-request.v0.11.0.spec-review-requestor.md` | `docs/v0.11.0/plan.v0.11.0.spec-review-requestor.validation.md` |
 | 3 | Feature-request | Respond to specification reviews | `spec-reviewer` | completed | `docs/v0.11.0/feature-request.v0.11.0.spec-reviewer.md` | `docs/v0.11.0/plan.v0.11.0.spec-reviewer.validation.md` |
 | 4 | Feature-request | Request implementation code reviews | `code-review-requestor` | completed | `docs/v0.11.0/feature-request.v0.11.0.code-review-requestor.md` | `docs/v0.11.0/plan.v0.11.0.code-review-requestor.validation.md` |
-| 5 | Feature-request | Respond to implementation code reviews | `code-reviewer` | pending | - | - |
+| 5 | Feature-request | Respond to implementation code reviews | `code-reviewer` | completed | `docs/v0.11.0/feature-request.v0.11.0.code-reviewer.md` | `docs/v0.11.0/plan.v0.11.0.code-reviewer.validation.md` |
 | 6 | Feature-request | Document the review-mode workflows | `review-mode-docs` | pending | - | - |
 | 7 | Feature-request | Check Markdown against the repository rules | `markdown-check` | pending | - | - |
 | 8 | Feature-request | Expose commit-plan validation without committing | `commit-plan-check` | pending | - | - |

@@ -1,8 +1,8 @@
 # v0.11.0 code-reviewer implementation tracking and validation
 
-No, it is not implemented.
+Yes, it is implemented.
 
-This skeleton tracks the six planned responder slices; no implementation check has run yet.
+All six responder slices are implemented and validated through the project gate, focused boundary tests, and temporary-repository acceptance journeys.
 
 ---
 
@@ -410,14 +410,15 @@ Route only an exact pending code request to the advisory reviewer and expose the
 
 - Ordinary and forced routing agree on actor and identity.
 - `CodeReviewRoute.actor` is resolved once and cannot disagree with the classified state.
-- Every non-pending live state remains requestor-owned.
+- Pending requests and their intact abandoned form are reviewer-owned; every writer-owned or stopped state remains requestor-owned.
 - Canonical prose forbids owner, escalation, and commit operations.
 
 ### What was implemented for Step 5
 
-- `tools/prompt_workflow_code_review.py` now resolves one typed `CodeReviewActor` from the classified state, rejects an actor/state mismatch at `CodeReviewRoute` construction, and renders the route's resolved reviewer or requestor role without a second state partition.
-- `tools/prompt_workflow_skill.py` routes an ordinary exact `request-pending` code exchange to `code-reviewer`, retains every other state in `code-review-requestor`, and applies the same ownership rule to forced roles, including a diagnostic cold abandoned-request handoff.
-- `instructions/code-reviewer.md` defines the fixed code-family policy and one bounded reviewer sequence while delegating evidence, paired rendering, and protocol mutation to `bin/code_review_evidence.bat`, `bin/code_review_answer.bat`, and `bin/review_exchange.bat`.
+- `tools/prompt_workflow_code_review.py` now resolves one typed `CodeReviewActor` from the classified state, assigns both active and reclaimable requests to the reviewer, rejects an actor/state mismatch at `CodeReviewRoute` construction, and renders the route's resolved reviewer or requestor role without a second state partition.
+- `tools/prompt_workflow_skill.py` routes exact `request-pending` and `abandoned-request` code exchanges to `code-reviewer`, retains every other state in `code-review-requestor`, and applies the same ownership rule to forced roles.
+- `instructions/code-reviewer.md` defines the fixed code-family policy and one bounded reviewer sequence, including one cold or in-session reclaim of an intact abandoned request, while delegating evidence, paired rendering, and protocol mutation to `bin/code_review_evidence.bat`, `bin/code_review_answer.bat`, and `bin/review_exchange.bat`.
+- `docs/v0.11.0/design.v0.11.0.code-reviewer.md` and the Step 5 plan text record the human-directed amendment: pending and intact abandoned requests stay with one reviewer actor because both retain the reviewer-owned request artifact.
 - The `.agent`, `.agents`, and `.claude` adapters link directly to the canonical root instruction and contain no copied reviewer or exchange policy.
 - The Step 4 follow-up is closed by exposing `exchange_occurrence` in exact `request-pending` status output and deriving the generated answer occurrence from the current request entry; `tools/review_exchange_transcript_identity.py` keeps that identity rule out of the already large store and publication modules.
 
@@ -429,9 +430,9 @@ Route only an exact pending code request to the advisory reviewer and expose the
 
 ### Architecture check for Step 5
 
-The implementation preserves the existing exact-path observer and shared exchange state machine. Routing adds no artifact scan and only `ArtifactState.REQUEST_PENDING` maps to the reviewer. Forced routing reuses the same resolved route, while cold abandoned requests fail closed with a requestor reclaim handoff. Canonical policy remains in `instructions/code-reviewer.md`; all provider files are metadata-plus-redirect adapters under `rules/llm-specific-adapters.md`.
+The implementation preserves the existing exact-path observer and shared exchange state machine. Routing adds no artifact scan; `ArtifactState.REQUEST_PENDING` and `ArtifactState.ABANDONED_REQUEST` map to the reviewer because both shapes retain the reviewer-owned request artifact. Forced routing reuses the same resolved route, and the canonical reviewer instruction performs one guarded reclaim before continuing. The human-directed design and Step 5 plan amendment now state the same single-partition rule. Canonical policy remains in `instructions/code-reviewer.md`; all provider files are metadata-plus-redirect adapters under `rules/llm-specific-adapters.md`.
 
-Line budgets remain below the 650-line ceiling: `tools/prompt_workflow_code_review.py` is 277 lines, `tools/prompt_workflow_skill.py` is 646, and the existing route test is 434. The dispatcher is 46 lines above the 600-line advisory estimate and 4 lines below the hard ceiling; static complexity passes after review-role forcing was extracted into its own dispatcher. After the round-one EOF repair, the canonical instruction is 187 lines, and the new instruction, skill-route, adapter, and transcript-identity modules are 102, 180, 65, and 46 lines respectively.
+Line budgets remain below the 650-line ceiling: `tools/prompt_workflow_code_review.py` is 277 lines, `tools/prompt_workflow_skill.py` is 640, and the existing route test is 434. The dispatcher is 40 lines above the 600-line advisory estimate and 10 lines below the hard ceiling; static complexity passes after review-role forcing was extracted into its own dispatcher. The canonical instruction is 190 lines, and the instruction, skill-route, adapter, and transcript-identity test modules are 104, 181, 65, and 46 lines respectively.
 
 ### Performance check for Step 5
 
@@ -439,13 +440,13 @@ No polling or timeout loop was added. State classification and actor resolution 
 
 ### Unit test coverage check for Step 5
 
-The new and updated tests cover reviewer ownership only for `request-pending`, requestor ownership for every other live or recovery state, actor/state construction rejection, ordinary and forced Codex/Claude rendering with the exact plan step, absent and cold-abandoned forced reviewer routes, and exact forced requestor routing. Instruction tests pin fixed policy, exact request reads, one bounded wait, early rejection, repair attribution, validation side effects, retained-manifest recovery, both successful publication exits, forbidden authority, and launcher-only executable boundaries. Adapter tests prove every host links directly to the canonical instruction and copies no policy. The restarted request/answer regression and status payload test pin `exchange_occurrence` without reviewer transcript discovery.
+The new and updated tests cover reviewer ownership for `request-pending` and its intact `abandoned-request` recovery form, requestor ownership for every writer-owned or stopped state, actor/state construction rejection, ordinary and forced Codex/Claude rendering with the exact plan step, absent forced reviewer routes, forced cold abandoned-request acceptance through `test_forced_reviewer_accepts_a_cold_abandoned_request`, and exact forced requestor routing. Instruction tests pin fixed policy, exact request reads, one bounded wait, early rejection, repair attribution, validation side effects, retained-manifest recovery, both successful publication exits, forbidden authority, and launcher-only executable boundaries. Adapter tests prove every host links directly to the canonical instruction and copies no policy. The restarted request/answer regression and status payload test pin `exchange_occurrence` without reviewer transcript discovery.
 
 The focused 93-test Step 5 slice passed before the full walk. Final `ghog day` reported `fail=0 warn=0 xfail=0 cov=100 outliers=0 exit=0` across 1,846 tests. The routing completion grep returned 10 matches, the launcher-boundary grep returned 15 matches, and the mandatory `git diff --cached --check` command returned no diagnostics after the round-one EOF repair.
 
 ### Feature integrity for Step 5
 
-Step 5 preserves the feature's advisory boundary. The reviewer may wait, assess, make bounded attributable repairs, render, and publish, but the canonical instruction explicitly forbids answer consumption, continuation, confirmation, completion, escalation, cancellation, resolution, archival, and commits. It reads the exact request path returned by the protocol, never the transcript as working context, and retires retained evidence on the published outcome for both exit `0` and convergence exit `3`. Every writer-owned, human-owned, abandoned cold-route, escalation, and repair-required state remains requestor-owned.
+Step 5 preserves the feature's advisory boundary. The reviewer may wait, assess, make bounded attributable repairs, render, and publish, but the canonical instruction explicitly forbids answer consumption, continuation, confirmation, completion, escalation, cancellation, resolution, archival, and commits. It reads the exact request path returned by the protocol, never the transcript as working context, and retires retained evidence on the published outcome for both exit `0` and convergence exit `3`. An intact abandoned request remains reviewer-owned for one guarded reclaim, while every writer-owned, human-owned, escalation, and repair-required state remains requestor-owned.
 
 ---
 
@@ -453,7 +454,9 @@ Step 5 preserves the feature's advisory boundary. The reviewer may wait, assess,
 
 ### Analysis of Step 6 implementation state
 
-Not started. Step 6 is not implemented because end-to-end temporary-repository acceptance, recovery, launcher smoke, and IO checks have not run.
+Yes. Step 6 has been fully implemented.
+
+The new acceptance package composes the completed request, evidence, answer, routing, exchange, recovery, and authority surfaces over real temporary Git repositories. Its named scenarios cover all sixteen design cases and map the feature request's eight acceptance criteria to executable tests.
 
 ### Goal for Step 6
 
@@ -468,24 +471,35 @@ Prove all requirement and design acceptance cases through real staged-state, exc
 
 ### What was implemented for Step 6
 
-_(empty — no check has taken place yet.)_.
+- `tests/unit/tools/test_code_reviewer_acceptance/fixtures.py` creates exact Step 6 plans, validation plans, staged files, contexts, paired renderer inputs, and shared exchange cores in real temporary Git repositories.
+- `test_code_reviewer_acceptance_tdd.py` proves exact pending routing, early rejection, live-index drift, safe and unsafe repair attribution, reviewed validation-row updates, umbrella protection, mandatory-gate failure, and advisory convergence.
+- `test_code_reviewer_recovery_tdd.py` proves the repeated-evidence no-progress bound, literal human-guidance handling, retained assessed-tree manifests, interrupted answer-publication replay, and manifest retirement after convergence publication returns exit 3.
+- `test_code_reviewer_io_acceptance_tdd.py` proves ignored and tracked validation-side-effect classification, literal Git pathspec behavior, side-effect-free commit-plan validation, and the reviewer authority boundary.
+- `test_code_reviewer_launcher_smoke_tdd.py` starts the request, evidence, and answer launchers once each and verifies that every adapter reaches its public argument parser.
+- Round-2 acceptance feedback exposed and corrected one permitted earlier-step defect: cold `abandoned-request` routing now keeps the request reviewer-owned, and the canonical reviewer reclaims it once before continuing.
 
 ### New types or classes introduced for Step 6
 
-_(empty — no check has taken place yet.)_.
+- `Effort`: a test-local immutable bundle containing the exact repository root, workflow topic and state, memory record, review context, plan, validation plan, umbrella, and staged source used by acceptance journeys.
 
 ### Architecture check for Step 6
 
-_(empty — no check has taken place yet.)_.
+Step 6 primarily adds acceptance tests and uses its explicit earlier-production-file allowance for one acceptance defect in the Step 5 route and canonical instruction. The correction assigns the existing `ABANDONED_REQUEST` state to the reviewer that already owns its intact request artifact and delegates the existing reclaim transition; it introduces no production dependency or new state transition. The fixtures call the public request and answer renderers, evidence functions, `ReviewExchangeCore`, routing boundary, and shared commit-plan validator. Reusable repository construction stays in the planned fixture module, while assessment, recovery, IO, and launcher responsibilities remain split across focused modules. Each scenario names explicit paths and keeps Git work linear over its bounded path set.
+
+There is no architecture smell, violation, oversized file, or other issue that needs to be addressed.
 
 ### Performance check for Step 6
 
-_(empty — no check has taken place yet.)_.
+The 31-test focused acceptance package passed before the full walk. Repository and launcher setup runs in pytest fixture setup so each measured call remains small. Final post-fix `ghog day` completed 1,877 tests with `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`; the full phase took 2m 54.2s and its slowest call took 0.46s, below the 0.5-second per-call ceiling.
+
+There is no performance issue that needs to be addressed.
 
 ### Unit test coverage check for Step 6
 
-_(empty — no check has taken place yet.)_.
+Step 6 changes no production class file, so it creates no new class-specific unit-test target. The acceptance tests exercise the existing public surfaces as composed behavior and the full project gate remains at 100% coverage.
+
+There is no unit-tested class below 100% that needs completing.
 
 ### Feature integrity for Step 6
 
-_(empty — no check has taken place yet.)_.
+All sixteen design acceptance cases have a named test: exact routing; undefined-step, identity, missing-tree, and index-drift rejection; bounded repair and overlap refusal; validation-row and umbrella boundaries; mandatory-gate failure; ignored and tracked validation effects; repeated missing evidence; advisory convergence; human guidance; stopped-round manifests; and interrupted publication replay. A separate parametrized mapping imports the named module and function for acceptance criteria 1 through 8 and requires the matching criterion marker on each executable journey; removing the AC08 marker made that exact mapping case fail before restoration. Launcher smoke covers all three new adapters, the cold-routing tests keep reclaimable requests reviewer-owned through ordinary and forced entry, and the authority test confirms the reviewer can publish but cannot consume, continue, confirm, complete, escalate, cancel, commit, or complete the umbrella. The human-directed design amendment and Step 5 plan now agree with that behavior, and the Step 6 completion criterion names the journeys' durable-state, published-outcome, and exit-3 assertions directly instead of treating a partial text search as proof.
