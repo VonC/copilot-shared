@@ -519,7 +519,7 @@ Issues to address:
 
 Fix intent:
 
-- Route only one exact `request-pending` code exchange to `code-reviewer`; keep all other live states requestor-owned.
+- Route one exact `request-pending` code exchange or its intact `abandoned-request` form to `code-reviewer`; keep writer-owned and stopped states requestor-owned.
 - Add the canonical instruction and thin host adapters after request, evidence, validator, and answer surfaces exist.
 
 Expected outcome:
@@ -551,7 +551,7 @@ Files involved:
 
 Tests first:
 
-- Cover `request-pending` reviewer routing, requestor routing for every other state, forced-role identity checks, and cold abandoned request refusal.
+- Cover `request-pending` and `abandoned-request` reviewer routing, requestor routing for every writer-owned or stopped state, forced-role identity checks, and one guarded cold abandoned-request reclaim.
 - Cover typed actor resolution once from state and reject any `CodeReviewRoute` whose actor and classified state disagree.
 - In `test_code_reviewer_instruction_tdd.py`, assert the canonical reviewer instruction names `bin/code_review_evidence.bat` for baseline capture, pre-repair blobs, patch attribution, validation-state comparison, and manifest write/read/retire, and names `bin/code_review_answer.bat` for paired rendering instead of describing equivalent Git or filesystem operations.
 - Cover canonical policy, exact answer-path reads, one bounded wait, manifest lifecycle, early rejection, repair staging, validation side effects, publication exits 0 and 3, and forbidden operations.
@@ -559,7 +559,7 @@ Tests first:
 
 Classes and behavior:
 
-- `CODE_REVIEWER`: new role constant used only for exact pending request state.
+- `CODE_REVIEWER`: role constant used for exact pending and intact abandoned request states.
 - `CodeReviewActor`: typed reviewer-or-requestor actor resolved once from the classified state.
 - `CodeReviewRoute.actor`: required typed field with a construction-time consistency check against the route state.
 - `command_for_route`: consume the resolved actor without repeating the state partition or scanning.
@@ -568,7 +568,7 @@ Classes and behavior:
 Completion criteria:
 
 - `ghog day` reports `exit=0`.
-- `rg -n 'code-reviewer|REQUEST_PENDING|CODE_REVIEWER' tools/prompt_workflow_code_review.py tools/prompt_workflow_skill.py instructions/code-reviewer.md` finds routing and canonical ownership.
+- `rg -n 'code-reviewer|REQUEST_PENDING|ABANDONED_REQUEST|CODE_REVIEWER' tools/prompt_workflow_code_review.py tools/prompt_workflow_skill.py instructions/code-reviewer.md` finds routing and canonical ownership.
 - `rg -n 'code_review_evidence.bat|code_review_answer.bat|review_exchange.bat' instructions/code-reviewer.md` finds the delegated evidence, rendering, and protocol boundaries.
 - Forced and ordinary Codex/Claude commands render the expected host prefix and exact plan step.
 
@@ -647,7 +647,7 @@ Classes and behavior:
 Completion criteria:
 
 - `ghog day` reports `exit=0` with the project coverage gate.
-- `rg -n 'early.rejection|commit-ready|changes-requested|outcome.*published|exit.*3' tests/unit/tools/test_code_reviewer_acceptance` finds both answer paths and publication outcomes.
+- Acceptance journeys assert both answer paths and the durable publication outcomes: convergence-gate advisory state, a published outcome, and CLI exit 3.
 - Every design acceptance case has a named test or parametrized case id.
 
 #### Step 6 -- addendums for end-to-end acceptance

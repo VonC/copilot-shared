@@ -58,7 +58,7 @@ class CodeReviewActor(Enum):
 
 def _actor_for_state(state: ArtifactState) -> CodeReviewActor:
     """Resolve the single owner from one already-classified exchange state."""
-    if state is ArtifactState.REQUEST_PENDING:
+    if state in (ArtifactState.REQUEST_PENDING, ArtifactState.ABANDONED_REQUEST):
         return CodeReviewActor.REVIEWER
     return CodeReviewActor.REQUESTOR
 

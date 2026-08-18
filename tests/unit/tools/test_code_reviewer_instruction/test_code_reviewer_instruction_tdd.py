@@ -48,6 +48,8 @@ def test_instruction_pins_policy_identity_and_one_bounded_wait() -> None:
     assert content.count("bounded `wait-request`") == 1
     assert "Read only the returned `paths.request`" in content
     assert "Do not read the versioned transcript" in " ".join(content.split())
+    assert "whether the expired request is first seen cold" in content
+    assert "Require the reclaimed state to be" in content
 
 
 def test_instruction_covers_assessment_repairs_validation_and_early_rejection() -> None:

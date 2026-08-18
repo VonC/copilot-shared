@@ -398,7 +398,7 @@ def test_skill_delegates_live_forced_and_authorized_routes(
         (ArtifactState.REQUEST_PENDING, code_review.CodeReviewActor.REVIEWER),
         (ArtifactState.IDLE, code_review.CodeReviewActor.REQUESTOR),
         (ArtifactState.ROUND_IN_PROGRESS, code_review.CodeReviewActor.REQUESTOR),
-        (ArtifactState.ABANDONED_REQUEST, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.ABANDONED_REQUEST, code_review.CodeReviewActor.REVIEWER),
         (ArtifactState.ANSWER_PENDING, code_review.CodeReviewActor.REQUESTOR),
         (ArtifactState.ABANDONED_ANSWER, code_review.CodeReviewActor.REQUESTOR),
         (ArtifactState.CONVERGENCE_GATE, code_review.CodeReviewActor.REQUESTOR),
@@ -412,7 +412,7 @@ def test_route_actor_is_resolved_once_from_the_classified_state(
     actor: code_review.CodeReviewActor,
     tmp_path: Path,
 ) -> None:
-    """Only an exact pending request belongs to the independent reviewer."""
+    """Only pending or reclaimable requests belong to the reviewer."""
     route = code_review.CodeReviewRoute(_context(tmp_path), state, actor)
 
     assert route.actor is actor

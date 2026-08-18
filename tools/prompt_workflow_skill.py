@@ -531,7 +531,7 @@ def _forced_code_reviewer_command(
     env: Mapping[str, str],
     override: str | None,
 ) -> str | None:
-    """Render only an exact pending code reviewer route and diagnose cold reclaim."""
+    """Render only an exact reviewer-owned code request route."""
     route = code_review.resolve_code_review_route(
         root,
         topic,
@@ -540,12 +540,6 @@ def _forced_code_reviewer_command(
     )
     if route is None:
         return None
-    if route.state is ArtifactState.ABANDONED_REQUEST:
-        message = (
-            "forced code-reviewer cannot enter an abandoned request cold; "
-            f"run {CODE_REVIEW_REQUESTOR} reclaim for {route.context.identity.key}"
-        )
-        raise code_review.CodeReviewRoutingError(message)
     if route.actor is not code_review.CodeReviewActor.REVIEWER:
         return None
     return code_review.command_for_route(

@@ -96,9 +96,9 @@ The reviewer never calls answer consumption, round continuation, human confirmat
 
 ### State-aware code-reviewer routing
 
-The code-review observer continues to resolve one exact plan and implementation-step context. Routing adds a reviewer role only for a sole `request-pending` code-family exchange. All writer-owned, abandoned cold-route, convergence, authorization, escalation, and repair-required states continue to route to `code-review-requestor`.
+The code-review observer continues to resolve one exact plan and implementation-step context. Routing assigns the reviewer role to a sole `request-pending` code-family exchange or its intact `abandoned-request` form. Both shapes retain the reviewer-owned request artifact, so one state partition can keep them with the same actor; writer-owned, convergence, authorization, escalation, and repair-required states continue to route to `code-review-requestor`.
 
-An explicit `pw skill code-reviewer` route accepts only the same sole pending request that ordinary routing would choose. It cannot activate an exchange, pick the oldest request, infer a nearby plan, or recover an abandoned request on behalf of a cold reviewer session.
+An explicit `pw skill code-reviewer` route accepts only the same pending or intact abandoned request that ordinary routing would choose. It cannot activate an exchange, pick the oldest request, or infer a nearby plan. For an abandoned request, it enters the same reviewer role so that the canonical sequence can perform the shared guarded reclaim.
 
 ### Fixed reviewer policy and allowed operations
 
@@ -111,7 +111,7 @@ another-round label: Rework and review again
 owning-workflow label: Commit
 ```
 
-It calls `status`, then one bounded `wait-request`. A visible request returns immediately. A reviewer session that still owns an intact lease may reclaim its own `abandoned-request` in session; a cold route returns the state to the requestor reclaim path. Any mismatch, interruption, escalation, or repair-required state stops with the shared diagnostic.
+It calls `status`, reclaims once when the exact request is an intact `abandoned-request`, then requires the same round to return to `request-pending` before one bounded `wait-request`. The same guarded reclaim applies whether the reviewer first sees the request cold or its lease expires during the session. Any mismatch, interruption, escalation, or repair-required state stops with the shared diagnostic.
 
 The reviewer may wait, assess, repair, render, and publish. It may not consume, continue, confirm, complete, escalate, resolve, archive, cancel, or commit.
 

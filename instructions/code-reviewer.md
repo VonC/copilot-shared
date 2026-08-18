@@ -31,9 +31,12 @@ and exact paths returned by the launchers.
 ## Ordered reviewer sequence
 
 1. Run `status` through `bin/review_exchange.bat` with the exact context and
-   fixed policy. Proceed only when its final JSON reports `request-pending`,
-   the expected code identity, step, round, and positive
-   `exchange_occurrence`.
+   fixed policy. Proceed only when its final JSON reports `request-pending` or
+   an intact `abandoned-request`, the expected code identity, step, round, and
+   positive `exchange_occurrence`. For `abandoned-request`, call `reclaim`
+   once, require `request-pending` with the same identity and round, and then
+   continue. This applies whether the expired request is first seen cold or
+   the lease expires during the same reviewer session.
 2. Run one bounded `wait-request` through `bin/review_exchange.bat` with that
    context. Read only the returned `paths.request` after access is granted.
    Never add a polling loop or reconstruct an artifact path.
@@ -166,16 +169,16 @@ and rendering under the live round. Drift requires a fresh assessment and a
 new baseline; never publish cached content with stale round, occurrence, or
 index identity. Rendering or failed publication leaves the manifest intact.
 
-If the lease expires during this same reviewer session, run `status`. Reclaim
-once only when it reports an intact `abandoned-request` for the same identity,
-round, and reviewer ownership. A cold route that first sees
-`abandoned-request` belongs to `code-review-requestor`; stop with that exact
-handoff. Malformed, interrupted, escalated, mismatched, or repair-required
-states stop through the shared diagnostic with caller evidence retained.
+At entry or after a lease expires during the reviewer session, reclaim once
+only when `status` reports an intact `abandoned-request` for the same identity,
+round, and reviewer ownership. Require the reclaimed state to be
+`request-pending` before continuing. Malformed, interrupted, escalated,
+mismatched, or repair-required states stop through the shared diagnostic with
+caller evidence retained.
 
 ## Reviewer-forbidden operations and authority
 
-The reviewer may call only `status`, `wait-request`, an eligible in-session
+The reviewer may call only `status`, `wait-request`, an eligible request
 `reclaim`, and `publish-answer` through the shared protocol. Never call
 `consume-answer`, `continue`, `confirm`, `complete`, `escalate`, `cancel`,
 `resolve`, or `archive`. Never start a replacement round or mutate protocol

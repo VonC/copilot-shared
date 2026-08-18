@@ -54,7 +54,7 @@ def _route(
     [
         (ArtifactState.REQUEST_PENDING, code_review.CodeReviewActor.REVIEWER, "code-reviewer"),
         (ArtifactState.ROUND_IN_PROGRESS, code_review.CodeReviewActor.REQUESTOR, "code-review-requestor"),
-        (ArtifactState.ABANDONED_REQUEST, code_review.CodeReviewActor.REQUESTOR, "code-review-requestor"),
+        (ArtifactState.ABANDONED_REQUEST, code_review.CodeReviewActor.REVIEWER, "code-reviewer"),
         (ArtifactState.ANSWER_PENDING, code_review.CodeReviewActor.REQUESTOR, "code-review-requestor"),
         (ArtifactState.ABANDONED_ANSWER, code_review.CodeReviewActor.REQUESTOR, "code-review-requestor"),
         (ArtifactState.CONVERGENCE_GATE, code_review.CodeReviewActor.REQUESTOR, "code-review-requestor"),
@@ -74,7 +74,7 @@ def test_ordinary_route_uses_the_single_typed_actor(
     actor: code_review.CodeReviewActor,
     role: str,
 ) -> None:
-    """Ordinary routing assigns only a pending request to the reviewer."""
+    """Ordinary routing assigns active or reclaimable requests to the reviewer."""
     topic = _topic(tmp_path)
     route = _route(tmp_path, state, actor)
     monkeypatch.setattr(skill.steps, "compute_state", lambda *_args: object())
@@ -155,26 +155,27 @@ def test_forced_requestor_accepts_only_a_requestor_owned_route(
     )
 
 
-def test_forced_reviewer_refuses_a_cold_abandoned_request(
+def test_forced_reviewer_accepts_a_cold_abandoned_request(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """Cold lease recovery remains an exact requestor responsibility."""
+    """Cold lease recovery enters the reviewer that owns the request."""
     topic = _topic(tmp_path)
     abandoned = _route(
         tmp_path,
         ArtifactState.ABANDONED_REQUEST,
-        code_review.CodeReviewActor.REQUESTOR,
+        code_review.CodeReviewActor.REVIEWER,
     )
     monkeypatch.setattr(skill.steps, "compute_state", lambda *_args: object())
     monkeypatch.setattr(skill.memory, "read_memory", lambda _root: object())
     monkeypatch.setattr(code_review, "resolve_code_review_route", lambda *_args: abandoned)
 
-    with pytest.raises(code_review.CodeReviewRoutingError) as raised:
-        skill.forced_command(tmp_path, topic, "code-reviewer", {"CLAUDECODE": "1"})
-
-    assert "code-review-requestor reclaim" in str(raised.value)
-    assert "code/code/v1.0.0/routing" in str(raised.value)
+    assert skill.forced_command(
+        tmp_path,
+        topic,
+        "code-reviewer",
+        {"CLAUDECODE": "1"},
+    ) == "/code-reviewer on docs/plan.v1.0.0.routing.md step 5"
 
 
 # eof
