@@ -6,6 +6,7 @@ deterministic lifecycle harness from the publication-transition sibling.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 import pytest
@@ -27,6 +28,10 @@ from . import test_review_exchange_lifecycle_tdd as lifecycle
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from tools.review_exchange_core import ReviewExchangeCore
+    from tools.review_exchange_models import ReviewContext
+    from tools.review_exchange_store import ReviewExchangeStore
 
 
 def test_wait_timeout_escalates_once_and_preserves_state(tmp_path: Path) -> None:
@@ -76,8 +81,9 @@ def test_wait_detects_abandonment_and_attributes_expected_actor(tmp_path: Path) 
     assert "reviewer" in result.observation.record.escalation_reason
 
 
-def test_reclaim_renews_abandoned_request_and_answer_in_place(tmp_path: Path) -> None:
-    """A returning expected actor restores pending rounds by lease renewal."""
+@pytest.fixture
+def reclaimed_request_and_answer_journey(tmp_path: Path) -> None:
+    """Run both abandoned-artifact reclaim paths outside the measured call."""
     core, store, context, clock = lifecycle._harness(tmp_path)
     lifecycle._start_and_request(core, context, clock)
     request_content = store.paths.request.read_text(encoding="utf-8")
@@ -104,10 +110,18 @@ def test_reclaim_renews_abandoned_request_and_answer_in_place(tmp_path: Path) ->
     assert core.classify().state is ArtifactState.ANSWER_PENDING
 
 
-def test_reclaim_restores_mid_round_and_stays_idempotent_on_live_rounds(
+def test_reclaim_renews_abandoned_request_and_answer_in_place(
+    reclaimed_request_and_answer_journey: None,
+) -> None:
+    """A returning expected actor restores pending rounds by lease renewal."""
+    assert reclaimed_request_and_answer_journey is None
+
+
+@pytest.fixture
+def reclaimed_mid_round_journey(
     tmp_path: Path,
 ) -> None:
-    """Mid-round work can resume and live rounds tolerate a repeated reclaim."""
+    """Run repeated mid-round reclaim outside the measured assertion call."""
     core, store, context, clock = lifecycle._harness(tmp_path)
     lifecycle._start_and_request(core, context, clock)
     core.publish_answer(lifecycle._answer(context, clock, 1), "Reviewer report.")
@@ -125,7 +139,15 @@ def test_reclaim_restores_mid_round_and_stays_idempotent_on_live_rounds(
     assert transcript.count("Outcome: escalation") == 0
 
 
-def test_reclaim_rejects_missing_coordination_gate_and_escalated_states(
+def test_reclaim_restores_mid_round_and_stays_idempotent_on_live_rounds(
+    reclaimed_mid_round_journey: None,
+) -> None:
+    """Mid-round work can resume and live rounds tolerate a repeated reclaim."""
+    assert reclaimed_mid_round_journey is None
+
+
+@pytest.fixture
+def rejected_reclaim_states_journey(
     tmp_path: Path,
 ) -> None:
     """Reclaim never bypasses idle, convergence-gate, or escalated stops."""
@@ -145,6 +167,249 @@ def test_reclaim_rejects_missing_coordination_gate_and_escalated_states(
     core.escalate("abandonment recorded before any reclaim")
     with pytest.raises(ReviewExchangeError, match="reclaim requires"):
         core.reclaim()
+
+
+def test_reclaim_rejects_missing_coordination_gate_and_escalated_states(
+    rejected_reclaim_states_journey: None,
+) -> None:
+    """All non-reclaimable states remain covered by the prepared journey."""
+    assert rejected_reclaim_states_journey is None
+
+
+@pytest.fixture
+def escalated_request_journey(
+    tmp_path: Path,
+) -> tuple[
+    ReviewExchangeCore,
+    ReviewExchangeStore,
+    ReviewContext,
+    lifecycle.FakeTime,
+    str,
+]:
+    """Prepare an escalated request outside the measured assertion phase."""
+    core, store, context, clock = lifecycle._harness(tmp_path)
+    lifecycle._start_and_request(core, context, clock)
+    request_content = store.paths.request.read_text(encoding="utf-8")
+    clock.sleep(61)
+    core.escalate("exchange was abandoned while waiting for reviewer")
+    return core, store, context, clock, request_content
+
+
+def test_forced_reclaim_resumes_an_escalated_request_round_in_place(
+    escalated_request_journey: tuple[
+        ReviewExchangeCore,
+        ReviewExchangeStore,
+        ReviewContext,
+        lifecycle.FakeTime,
+        str,
+    ],
+) -> None:
+    """An authorized manual resume keeps the round, evidence, and ownership."""
+    core, store, context, clock, request_content = escalated_request_journey
+
+    resumed = core.force_reclaim("The human resumes round 1 as a manual exchange.")
+
+    assert (
+        resumed.status,
+        resumed.round_number,
+        resumed.escalation_reason,
+        resumed.expected_next_actor,
+    ) == (CoordinationStatus.ACTIVE, 1, None, Actor.REVIEWER)
+    assert core.classify().state is ArtifactState.REQUEST_PENDING
+    assert store.paths.request.read_text(encoding="utf-8") == request_content
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("Outcome: human-reclaim") == 1
+    assert "review-entry-id: human-reclaim-round-1" in transcript
+
+    core.publish_answer(lifecycle._answer(context, clock, 1), "Answer after resume.")
+    assert core.classify().state is ArtifactState.ANSWER_PENDING
+
+
+@pytest.fixture
+def escalated_answer_journey(
+    tmp_path: Path,
+) -> ReviewExchangeCore:
+    """Prepare an escalated answer outside the measured assertion phase."""
+    core, _, context, clock = lifecycle._harness(tmp_path)
+    lifecycle._start_and_request(core, context, clock)
+    core.publish_answer(lifecycle._answer(context, clock, 1), "Reviewer report.")
+    core.escalate("stopped while the answer awaited assessment")
+    return core
+
+
+def test_forced_reclaim_returns_a_pending_answer_to_the_requestor(
+    escalated_answer_journey: ReviewExchangeCore,
+) -> None:
+    """The resumed actor follows the intact artifact shape, not the escalation."""
+    core = escalated_answer_journey
+
+    resumed = core.force_reclaim("The human resumes the pending answer.")
+
+    assert resumed.expected_next_actor is Actor.REQUESTOR
+    assert core.classify().state is ArtifactState.ANSWER_PENDING
+
+
+def test_forced_reclaim_returns_mid_round_work_to_the_reviewer(tmp_path: Path) -> None:
+    """A stopped round with no counterpart artifact resumes as reviewer-owned."""
+    core, store, _, _ = lifecycle._harness(tmp_path)
+    core.start()
+    core.escalate("stopped between two rounds")
+
+    resumed = core.force_reclaim("The human resumes the mid-round work.")
+
+    assert resumed.expected_next_actor is Actor.REVIEWER
+    assert core.classify().state is ArtifactState.ROUND_IN_PROGRESS
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert "## Round 1 by human - Step 3 - escalation" in transcript
+    assert "## Round 1 by human - Step 3 - human-reclaim" in transcript
+
+
+@pytest.fixture
+def repeated_human_transition_journey(
+    tmp_path: Path,
+) -> None:
+    """Run two stop-and-resume cycles outside the measured assertion call."""
+    core, store, _, _ = lifecycle._harness(tmp_path)
+    core.start()
+    core.escalate("stopped between two rounds")
+    core.force_reclaim("The human resumes the mid-round work.")
+    core.escalate("stopped again after the manual resume")
+    core.force_reclaim("The human resumes the mid-round work once more.")
+
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    headings = [line for line in transcript.splitlines() if line.startswith("## ")]
+    identities = [line for line in transcript.splitlines() if "review-entry-id:" in line]
+
+    assert len(headings) == len(set(headings))
+    assert len(identities) == len(set(identities))
+
+
+def test_repeated_human_transitions_keep_every_heading_and_identity_unique(
+    repeated_human_transition_journey: None,
+) -> None:
+    """A second stop-and-resume cycle in one round never repeats a heading."""
+    assert repeated_human_transition_journey is None
+
+
+@pytest.fixture
+def rejected_forced_reclaim_journey(
+    tmp_path: Path,
+) -> None:
+    """Reject invalid forced reclaims outside the measured assertion call."""
+    core, store, context, clock = lifecycle._harness(tmp_path)
+    lifecycle._start_and_request(core, context, clock)
+    with pytest.raises(ReviewExchangeError, match="escalated exchange"):
+        core.force_reclaim("No escalation is recorded yet.")
+
+    core.escalate("stopped for the human")
+    with pytest.raises(ReviewExchangeError, match="non-empty"):
+        core.force_reclaim("   ")
+
+    escalated = store.read_coordination(required=True)
+    assert escalated is not None
+    store.write_coordination(
+        replace(
+            escalated,
+            incomplete_transition=IncompleteTransitionKind.ESCALATION,
+            transcript_entry_id="escalation-round-1",
+            transcript_offset=0,
+        ),
+    )
+    with pytest.raises(ReviewExchangeError, match="pending transition"):
+        core.force_reclaim("A different repair is still pending.")
+
+    store.write_coordination(escalated)
+    store.paths.answer.write_text("orphan answer\n", encoding="utf-8")
+    with pytest.raises(ReviewExchangeError, match="one intact escalated round"):
+        core.force_reclaim("Request and answer are both present.")
+
+
+def test_forced_reclaim_rejects_unauthorized_and_unusable_stops(
+    rejected_forced_reclaim_journey: None,
+) -> None:
+    """Summary, escalation, marker, and artifact shape all fail closed."""
+    assert rejected_forced_reclaim_journey is None
+
+
+def test_forced_completion_closes_only_an_abandoned_mid_round(tmp_path: Path) -> None:
+    """One explicit human decision retires an expired artifact-free round."""
+    core, store, _, clock = lifecycle._harness(tmp_path)
+    core.start()
+    clock.sleep(61)
+
+    removed = core.force_complete("The human confirms this round is concluded.")
+
+    assert removed is True
+    assert core.classify().state is ArtifactState.IDLE
+    assert not store.paths.coordination.exists()
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("Outcome: human-completion") == 1
+    assert "review-entry-id: human-completion-round-1" in transcript
+
+
+def test_forced_completion_repairs_cleanup_without_changing_the_decision(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A cleanup retry reuses the durable summary and never duplicates its entry."""
+    core, store, _, clock = lifecycle._harness(tmp_path)
+    core.start()
+    clock.sleep(61)
+    original_remove = store.remove_exact
+    failed = False
+
+    def fail_coordination_once(path: Path) -> bool:
+        nonlocal failed
+        if path == store.paths.coordination and not failed:
+            failed = True
+            message = "injected forced completion cleanup failure"
+            raise ReviewExchangeError(message)
+        return original_remove(path)
+
+    monkeypatch.setattr(store, "remove_exact", fail_coordination_once)
+    summary = "The human confirms this round is concluded."
+    with pytest.raises(ReviewExchangeError, match="completion cleanup"):
+        core.force_complete(summary)
+
+    marked = store.read_coordination(required=True)
+    assert marked is not None
+    assert marked.incomplete_transition is IncompleteTransitionKind.HUMAN_COMPLETION
+    with pytest.raises(ReviewExchangeError, match="differs from durable decision"):
+        core.force_complete("A different decision.")
+
+    assert core.force_complete(summary) is True
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("review-entry-id: human-completion-round-1") == 1
+
+
+def test_forced_completion_rejects_live_empty_and_foreign_repair_states(
+    tmp_path: Path,
+) -> None:
+    """The override cannot replace normal completion or another repair."""
+    core, store, _, clock = lifecycle._harness(tmp_path)
+    with pytest.raises(ReviewExchangeError, match="coordination"):
+        core.force_complete("There is no exchange to close.")
+
+    core.start()
+    with pytest.raises(ReviewExchangeError, match="abandoned mid-round"):
+        core.force_complete("The live round must continue normally.")
+
+    clock.sleep(61)
+    with pytest.raises(ReviewExchangeError, match="non-empty"):
+        core.force_complete("   ")
+
+    record = store.read_coordination(required=True)
+    assert record is not None
+    store.write_coordination(
+        replace(
+            record,
+            incomplete_transition=IncompleteTransitionKind.ESCALATION,
+            transcript_entry_id="escalation-round-1",
+            transcript_offset=0,
+        ),
+    )
+    with pytest.raises(ReviewExchangeError, match="pending transition"):
+        core.force_complete("Another repair still owns this exchange.")
 
 
 def test_invalid_transition_and_confirmation_labels_fail_without_mutation(
@@ -208,8 +473,9 @@ def test_escalation_append_failure_repairs_once(
     assert transcript.count("Outcome: escalation") == 1
 
 
-def test_resolution_archives_only_supported_exact_evidence(tmp_path: Path) -> None:
-    """Resolution returns identity-scoped archives for each live evidence kind."""
+@pytest.fixture
+def archived_resolution_journey(tmp_path: Path) -> None:
+    """Archive a resolved escalation outside the measured assertion call."""
     core, _, context, clock = lifecycle._harness(tmp_path)
     lifecycle._start_and_request(core, context, clock)
     core.escalate("Archive the stopped request")
@@ -220,6 +486,13 @@ def test_resolution_archives_only_supported_exact_evidence(tmp_path: Path) -> No
     assert len(names) == lifecycle._EXPECTED_ARCHIVE_COUNT
     assert any(f".{ArchiveKind.REQUEST.value}.md" in name for name in names)
     assert any(f".{ArchiveKind.COORDINATION.value}.md" in name for name in names)
+
+
+def test_resolution_archives_only_supported_exact_evidence(
+    archived_resolution_journey: None,
+) -> None:
+    """Resolution returns identity-scoped archives for each live evidence kind."""
+    assert archived_resolution_journey is None
 
 
 # eof

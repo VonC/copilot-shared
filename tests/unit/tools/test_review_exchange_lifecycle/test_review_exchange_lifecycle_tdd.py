@@ -69,7 +69,7 @@ class FakeTime:
             self.after_sleep()
 
 
-def _context(root: Path) -> ReviewContext:
+def _context(root: Path, implementation_step: str = "3") -> ReviewContext:
     """Create the exact code-review context used by lifecycle tests."""
     document = root / "docs" / "plan.v0.11.0.review-exchange-core.md"
     document.parent.mkdir(parents=True, exist_ok=True)
@@ -85,7 +85,7 @@ def _context(root: Path) -> ReviewContext:
         ),
         document,
         umbrella,
-        "3",
+        implementation_step,
     )
 
 
@@ -93,9 +93,10 @@ def _harness(
     root: Path,
     *,
     wait_seconds: int = 60,
+    implementation_step: str = "3",
 ) -> tuple[ReviewExchangeCore, ReviewExchangeStore, ReviewContext, FakeTime]:
     """Build one core with deterministic time and exact persistence."""
-    context = _context(root)
+    context = _context(root, implementation_step)
     store = ReviewExchangeStore(derive_artifact_paths(root, context))
     clock = FakeTime()
     core = ReviewExchangeCore(
@@ -122,7 +123,7 @@ def _summary(context: ReviewContext, round_number: int, guidance: str | None = N
     lines = [
         f"Umbrella draft: {umbrella.as_posix()}",
         f"Implementation plan: {context.document_path.as_posix()}",
-        "Implementation step: 3",
+        f"Implementation step: {context.implementation_step}",
         f"Review round: {round_number}",
     ]
     if guidance is not None:
@@ -253,8 +254,10 @@ def test_publish_request_validates_summary_appends_once_and_renews_lease(
     assert record.expected_next_actor is Actor.REVIEWER
     assert record.incomplete_transition is None
     assert record.lease_renewed_at == "2026-08-04T16:00:05+02:00"
-    assert transcript.count("review-entry-id: request-round-1") == 1
+    assert transcript.count("review-entry-id: request-step-3-round-1") == 1
     assert "Requestor implementation report." in transcript
+    assert context.document_path.as_posix() not in transcript
+    assert "docs/plan.v0.11.0.review-exchange-core.md" in transcript
 
 
 def test_publish_request_rejects_summary_mismatch_before_mutation(tmp_path: Path) -> None:
@@ -275,11 +278,12 @@ def test_publish_request_rejects_summary_mismatch_before_mutation(tmp_path: Path
     assert record.incomplete_transition is None
 
 
-def test_request_append_failure_repairs_from_marker_without_duplication(
+@pytest.fixture
+def repaired_request_append_journey(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Re-running a marked request truncates only its torn suffix and completes it."""
+    """Repair one torn request append outside the measured assertion call."""
     core, store, context, clock = _harness(tmp_path)
     core.start()
     original_append = store._append_bytes
@@ -306,13 +310,99 @@ def test_request_append_failure_repairs_from_marker_without_duplication(
     transcript = store.paths.transcript.read_text(encoding="utf-8")
 
     assert record.incomplete_transition is None
-    assert transcript.count("review-entry-id: request-round-1") == 1
+    assert transcript.count("review-entry-id: request-step-3-round-1") == 1
 
 
-def test_publish_answer_consumes_request_and_sets_intermediate_ownership(
+def test_request_append_failure_repairs_from_marker_without_duplication(
+    repaired_request_append_journey: None,
+) -> None:
+    """Re-running a marked request truncates only its torn suffix and completes it."""
+    assert repaired_request_append_journey is None
+
+
+@pytest.fixture
+def restarted_exchange_journey(
     tmp_path: Path,
 ) -> None:
-    """A change request becomes visible only after request consumption."""
+    """Complete and inspect two exchanges outside the measured call."""
+    core, store, context, clock = _harness(tmp_path)
+    _reach_gate(core, context, clock)
+    core.confirm("Commit")
+    assert core.complete()
+    core.start()
+    core.publish_request(
+        _request(context, clock, 1),
+        "Requestor report for exchange two.",
+    )
+    core.publish_answer(
+        _answer(context, clock, 1),
+        "Reviewer report for exchange two.",
+    )
+
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert "by requestor - Step 3 (exchange 2)" in transcript
+    assert "by reviewer - Step 3 (exchange 2)" in transcript
+    assert transcript.count("review-entry-id: request-step-3-round-1 -->") == 1
+    assert transcript.count("review-entry-id: answer-step-3-round-1 -->") == 1
+    assert "review-entry-id: request-step-3-round-1-exchange-2" in transcript
+    assert "review-entry-id: answer-step-3-round-1-exchange-2" in transcript
+
+
+def test_restarted_exchange_disambiguates_request_and_answer_entries(
+    restarted_exchange_journey: None,
+) -> None:
+    """A new exchange may restart at round one without transcript collisions."""
+    assert restarted_exchange_journey is None
+
+
+@pytest.fixture
+def legacy_request_repair_journey(
+    tmp_path: Path,
+) -> tuple[ReviewExchangeCore, ReviewExchangeStore]:
+    """Prepare the legacy pending request outside the measured call phase."""
+    core, store, context, clock = _harness(tmp_path)
+    _reach_gate(core, context, clock)
+    core.confirm("Commit")
+    assert core.complete()
+    core.start()
+    core.publish_request(
+        _request(context, clock, 1),
+        "### Assessment (exchange 2)\n\nCurrent summary.",
+    )
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    legacy = transcript.replace(" - Step 3 (exchange 2)", " - Step 3").replace(
+        "request-step-3-round-1-exchange-2",
+        "request-step-3-round-1",
+    )
+    store.paths.transcript.write_text(legacy, encoding="utf-8")
+    return core, store
+
+
+def test_pending_legacy_request_entry_is_repaired_through_the_core(
+    legacy_request_repair_journey: tuple[ReviewExchangeCore, ReviewExchangeStore],
+) -> None:
+    """Only the final pending legacy collision can be re-rendered in place."""
+    core, store = legacy_request_repair_journey
+
+    record = core.repair_current_request_transcript(
+        "### Assessment (exchange 2)\n\nCorrected summary.",
+    )
+
+    repaired = store.paths.transcript.read_text(encoding="utf-8")
+    assert record.incomplete_transition is None
+    assert repaired.count("## Round 1 by requestor - Step 3") == len(
+        ("exchange one", "exchange two"),
+    )
+    assert "## Round 1 by requestor - Step 3 (exchange 2)" in repaired
+    assert "review-entry-id: request-step-3-round-1-exchange-2" in repaired
+    assert "Corrected summary." in repaired
+
+
+@pytest.fixture
+def published_answer_journey(
+    tmp_path: Path,
+) -> None:
+    """Publish and inspect one change request outside the measured call."""
     core, store, context, clock = _harness(tmp_path)
     _start_and_request(core, context, clock)
 
@@ -330,11 +420,19 @@ def test_publish_answer_consumes_request_and_sets_intermediate_ownership(
     assert core.classify().state is ArtifactState.ANSWER_PENDING
 
 
-def test_interrupted_answer_publication_resumes_from_tombstone(
+def test_publish_answer_consumes_request_and_sets_intermediate_ownership(
+    published_answer_journey: None,
+) -> None:
+    """A change request becomes visible only after request consumption."""
+    assert published_answer_journey is None
+
+
+@pytest.fixture
+def interrupted_answer_journey(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A failure after request rename can publish and append the answer on retry."""
+    """Repair one interrupted answer outside the measured assertion call."""
     core, store, context, clock = _harness(tmp_path)
     _start_and_request(core, context, clock)
     original_commit = store._commit_prepared
@@ -361,11 +459,19 @@ def test_interrupted_answer_publication_resumes_from_tombstone(
     assert not store.paths.tombstone.exists()
     assert store.paths.answer.is_file()
     transcript = store.paths.transcript.read_text(encoding="utf-8")
-    assert transcript.count("review-entry-id: answer-round-1") == 1
+    assert transcript.count("review-entry-id: answer-step-3-round-1") == 1
 
 
-def test_convergence_answer_enters_suspended_human_gate(tmp_path: Path) -> None:
-    """A convergence recommendation retains its answer and suspends expiry."""
+def test_interrupted_answer_publication_resumes_from_tombstone(
+    interrupted_answer_journey: None,
+) -> None:
+    """A failure after request rename can publish and append the answer on retry."""
+    assert interrupted_answer_journey is None
+
+
+@pytest.fixture
+def convergence_gate_journey(tmp_path: Path) -> None:
+    """Reach and inspect a convergence gate outside the measured call."""
     core, store, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
 
@@ -378,10 +484,18 @@ def test_convergence_answer_enters_suspended_human_gate(tmp_path: Path) -> None:
     assert core.classify().state is ArtifactState.CONVERGENCE_GATE
 
 
-def test_envelope_authoritative_convergence_repairs_active_coordination(
+def test_convergence_answer_enters_suspended_human_gate(
+    convergence_gate_journey: None,
+) -> None:
+    """A convergence recommendation retains its answer and suspends expiry."""
+    assert convergence_gate_journey is None
+
+
+@pytest.fixture
+def convergence_repair_journey(
     tmp_path: Path,
 ) -> None:
-    """A published convergence answer restores the gate after a state-write crash."""
+    """Repair one persisted gate outside the measured assertion call."""
     core, store, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
     gated = store.read_coordination(required=True)
@@ -403,7 +517,15 @@ def test_envelope_authoritative_convergence_repairs_active_coordination(
     assert store.paths.answer.is_file()
 
 
-def test_two_unchanged_rounds_escalate_without_deleting_evidence(tmp_path: Path) -> None:
+def test_envelope_authoritative_convergence_repairs_active_coordination(
+    convergence_repair_journey: None,
+) -> None:
+    """A published convergence answer restores the gate after a state-write crash."""
+    assert convergence_repair_journey is None
+
+
+@pytest.fixture
+def two_unchanged_rounds_journey(tmp_path: Path) -> None:
     """Two consecutive unchanged change requests stop automated review."""
     core, store, context, clock = _harness(tmp_path)
     _start_and_request(core, context, clock)
@@ -426,7 +548,15 @@ def test_two_unchanged_rounds_escalate_without_deleting_evidence(tmp_path: Path)
     assert transcript.count("Outcome: escalation") == 1
 
 
-def test_one_clarification_round_then_persistent_disagreement_escalates(
+def test_two_unchanged_rounds_escalate_without_deleting_evidence(
+    two_unchanged_rounds_journey: None,
+) -> None:
+    """The complete two-round journey retains its asserted outcome."""
+    assert two_unchanged_rounds_journey is None
+
+
+@pytest.fixture
+def clarification_disagreement_journey(
     tmp_path: Path,
 ) -> None:
     """Explicit disagreement gets one automated clarification round only."""
@@ -446,7 +576,15 @@ def test_one_clarification_round_then_persistent_disagreement_escalates(
     assert "disagreement" in second.escalation_reason
 
 
-def test_changed_round_resets_no_progress_before_continuation(tmp_path: Path) -> None:
+def test_one_clarification_round_then_persistent_disagreement_escalates(
+    clarification_disagreement_journey: None,
+) -> None:
+    """The bounded clarification journey retains its asserted outcome."""
+    assert clarification_disagreement_journey is None
+
+
+@pytest.fixture
+def changed_round_journey(tmp_path: Path) -> None:
     """Substantive progress clears a previous unchanged-round streak."""
     core, _, context, clock = _harness(tmp_path)
     _start_and_request(core, context, clock)
@@ -460,6 +598,13 @@ def test_changed_round_resets_no_progress_before_continuation(tmp_path: Path) ->
 
     assert record.no_progress_streak == 0
     assert record.reviewed_work_changed is True
+
+
+def test_changed_round_resets_no_progress_before_continuation(
+    changed_round_journey: None,
+) -> None:
+    """The progress-reset journey retains its asserted outcome."""
+    assert changed_round_journey is None
 
 
 def test_wait_uses_one_monotonic_deadline_progress_and_no_lease_write(

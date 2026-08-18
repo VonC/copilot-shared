@@ -1,4 +1,8 @@
-"""Property checks for immutable specification reviewer route snapshots."""
+"""Exhaustive checks for immutable specification reviewer route snapshots.
+
+Each artifact state is a separate test call so filesystem routing work stays
+below the duration floor while still covering the complete enum.
+"""
 
 from __future__ import annotations
 
@@ -7,8 +11,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from hypothesis import given
-from hypothesis import strategies as st
 
 from tools import prompt_workflow_review as review
 from tools import prompt_workflow_skill as skill
@@ -23,7 +25,7 @@ from .test_prompt_workflow_review_tdd import _topic_and_state
 EXPECTED_CONTEXT_COUNT = 3
 
 
-@given(observed=st.sampled_from(tuple(ArtifactState)))
+@pytest.mark.parametrize("observed", tuple(ArtifactState))
 def test_generated_state_maps_once_to_one_owner_or_no_route(
     observed: ArtifactState,
 ) -> None:

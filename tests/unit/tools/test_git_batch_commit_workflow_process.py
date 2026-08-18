@@ -11,19 +11,20 @@ commit phases must receive the `interactive` flag.
 
 from __future__ import annotations
 
+import subprocess
 from typing import TYPE_CHECKING
+
+import pytest
 
 from tools import git_batch_commit_models as git_batch_models
 from tools import git_batch_commit_workflow as git_batch_workflow
 
 # pyright: reportPrivateUsage=false
-# ruff: noqa: SLF001
+# ruff: noqa: S603, S607, SLF001
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
-
-    import pytest
 
 
 def _valid_block(path: str = "src/example.py") -> git_batch_models.CommitBlock:
@@ -106,6 +107,10 @@ def _raise_unexpected_diff_check(_git_adds: list[str], _root: Path) -> bool:
 
 def _return_true_staged_changes(_git_adds: list[str], _root: Path) -> bool:
     return True
+
+
+def _one_staged_path(_root: Path) -> tuple[str, ...]:
+    return ("src/example.py",)
 
 
 def test_process_commit_block_skips_when_add_phase_requests_skip(
@@ -226,6 +231,95 @@ def test_process_all_commits_logs_success_when_all_blocks_complete(
 
     assert git_batch_workflow._process_all_commits([block], tmp_path) is True
     assert "All commits processed successfully" in caplog.text
+
+
+def test_batch_validation_uses_the_public_commit_plan_validator(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The commit path delegates staged membership and subjects to one API."""
+    block = _valid_block()
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(
+        git_batch_workflow,
+        "_staged_paths",
+        _one_staged_path,
+    )
+
+    def fake_validate(
+        blocks: list[git_batch_models.CommitBlock],
+        staged_paths: tuple[str, ...],
+    ) -> git_batch_models.CommitPlanValidation:
+        captured["blocks"] = blocks
+        captured["staged_paths"] = staged_paths
+        return git_batch_models.CommitPlanValidation(groups=(), diagnostics=())
+
+    monkeypatch.setattr(git_batch_workflow, "validate_commit_plan", fake_validate)
+    git_batch_workflow._validate_commit_plan_for_root([block], tmp_path)
+    assert captured == {
+        "blocks": [block],
+        "staged_paths": ("src/example.py",),
+    }
+
+
+def test_staged_paths_reads_exact_index_membership(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The batch boundary passes exact staged paths to the pure validator."""
+    captured: dict[str, object] = {}
+
+    def staged_result(
+        arguments: tuple[str, ...],
+        *,
+        cwd: Path,
+        options: object,
+    ) -> subprocess.CompletedProcess[str]:
+        captured.update(arguments=arguments, cwd=cwd, options=options)
+        return subprocess.CompletedProcess(["git", *arguments], 0, "staged.txt\0", "")
+
+    monkeypatch.setattr(
+        git_batch_workflow,
+        "run_cross_platform_git_command",
+        staged_result,
+    )
+    assert git_batch_workflow._staged_paths(tmp_path) == ("staged.txt",)
+    assert captured["arguments"] == (
+        "diff",
+        "--cached",
+        "--name-only",
+        "--no-renames",
+        "-z",
+    )
+    assert captured["cwd"] == tmp_path
+
+
+def test_batch_validation_reports_public_validator_diagnostics(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Typed diagnostics stop the batch before its commit phase."""
+    block = _valid_block()
+    monkeypatch.setattr(git_batch_workflow, "_staged_paths", _one_staged_path)
+    invalid = git_batch_models.CommitPlanValidation(
+        groups=(),
+        diagnostics=("planned path is not staged: other.py",),
+    )
+
+    def return_invalid(
+        _blocks: list[git_batch_models.CommitBlock],
+        _paths: tuple[str, ...],
+    ) -> git_batch_models.CommitPlanValidation:
+        return invalid
+
+    monkeypatch.setattr(
+        git_batch_workflow,
+        "validate_commit_plan",
+        return_invalid,
+    )
+    with pytest.raises(git_batch_models.GitBatchCommitError, match=r"other\.py"):
+        git_batch_workflow._validate_commit_plan_for_root([block], tmp_path)
 
 
 def test_process_all_commits_stops_on_git_error_without_prompting_when_non_interactive(

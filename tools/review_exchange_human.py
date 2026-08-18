@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from tools.review_exchange_models import (
     Actor,
@@ -100,6 +100,10 @@ class ReviewExchangeHumanMixin(ABC):
     @abstractmethod
     def _clear_marker(self, record: CoordinationRecord) -> CoordinationRecord:
         """Return a record with transition bookkeeping cleared."""
+
+    @abstractmethod
+    def _repeatable_entry(self, base: str) -> tuple[str, int]:
+        """Return a unique transcript identity and attempt for a repeatable event."""
 
     def confirm(
         self,
@@ -220,6 +224,73 @@ class ReviewExchangeHumanMixin(ABC):
             self.store.remove_exact(self.store.paths.coordination)
             return True
 
+
+    def force_reclaim(self, summary: str) -> CoordinationRecord:
+        """Resume one escalated round in place for an authorized manual handoff.
+
+        Automated `reclaim` never crosses an escalation. A human who owns the
+        stopped exchange may instead resume the same round without renumbering
+        it, leaving the published request, answer, and transcript untouched and
+        recording the decision as durable transcript evidence.
+        """
+        if not summary.strip():
+            raise ReviewExchangeError("forced reclaim summary must be non-empty")
+        with self.store.transition_lock():
+            record = self.store.read_coordination()
+            if record is None or record.status is not CoordinationStatus.ESCALATED:
+                raise ReviewExchangeError("forced reclaim requires an escalated exchange")
+            if record.incomplete_transition not in (
+                None,
+                IncompleteTransitionKind.HUMAN_RECLAIM,
+            ):
+                raise ReviewExchangeError("repair the pending transition before forced reclaim")
+            actor = self._resumed_actor()
+            entry_id, occurrence = self._repeatable_entry(
+                f"human-reclaim-round-{record.round_number}",
+            )
+            entry = TranscriptEntry(
+                entry_id,
+                ReviewRole.HUMAN,
+                "human-reclaim",
+                self._timestamp(),
+                summary,
+                occurrence,
+            )
+            marked = self._mark_transition(
+                record,
+                IncompleteTransitionKind.HUMAN_RECLAIM,
+                entry.entry_id,
+            )
+            marked = self.store.append_transcript_once(
+                marked,
+                transition=IncompleteTransitionKind.HUMAN_RECLAIM,
+                entry=entry,
+                clear_marker=False,
+            )
+            resumed = replace(
+                self._clear_marker(marked),
+                status=CoordinationStatus.ACTIVE,
+                expected_next_actor=actor,
+                lease_renewed_at=self._timestamp(),
+                escalation_reason=None,
+                human_guidance=summary,
+            )
+            self.store.write_coordination(resumed)
+            return resumed
+
+    def _resumed_actor(self) -> Actor:
+        """Return the actor one intact escalated round is handed back to."""
+        shape = (
+            self.store.paths.request.is_file(),
+            self.store.paths.answer.is_file(),
+            self.store.paths.tombstone.is_file(),
+        )
+        if shape == (False, True, False):
+            return Actor.REQUESTOR
+        if shape not in {(True, False, False), (False, False, False)}:
+            raise ReviewExchangeError("forced reclaim requires one intact escalated round")
+        return Actor.REVIEWER
+
     def resolve_escalation(
         self,
         summary: str,
@@ -319,6 +390,68 @@ class ReviewExchangeHumanMixin(ABC):
             else:
                 self.store.remove_exact(path)
         return tuple(archived)
+
+
+    def force_complete(self, summary: str) -> bool:
+        """Close one abandoned mid-round after an explicit human decision.
+
+        This recovery is intentionally narrower than ordinary completion. It
+        cannot manufacture convergence or authorize an owning action: it only
+        retires an intact, artifact-free round whose lease already expired,
+        after preserving the human's reason in the append-only transcript.
+        """
+        if not summary.strip():
+            raise ReviewExchangeError("forced completion summary must be non-empty")
+        with self.store.transition_lock():
+            record = cast(
+                "CoordinationRecord",
+                self.store.read_coordination(required=True),
+            )
+            repairing = record.incomplete_transition is (
+                IncompleteTransitionKind.HUMAN_COMPLETION
+            )
+            if repairing:
+                if record.human_guidance != summary:
+                    raise ReviewExchangeError(
+                        "forced completion retry differs from durable decision",
+                    )
+            else:
+                if record.incomplete_transition is not None:
+                    raise ReviewExchangeError(
+                        "repair the pending transition before forced completion",
+                    )
+                if self.classify().state is not ArtifactState.ABANDONED_MID_ROUND:
+                    raise ReviewExchangeError(
+                        "forced completion requires an abandoned mid-round exchange",
+                    )
+                entry_id = f"human-completion-round-{record.round_number}"
+                record = self._mark_transition(
+                    record,
+                    IncompleteTransitionKind.HUMAN_COMPLETION,
+                    entry_id,
+                )
+                record = replace(
+                    record,
+                    lease_renewed_at=self._timestamp(),
+                    human_guidance=summary,
+                )
+                self.store.write_coordination(record)
+            decision_timestamp = cast("str", record.lease_renewed_at)
+            entry = TranscriptEntry(
+                f"human-completion-round-{record.round_number}",
+                ReviewRole.HUMAN,
+                "human-completion",
+                decision_timestamp,
+                summary,
+            )
+            self.store.append_transcript_once(
+                record,
+                transition=IncompleteTransitionKind.HUMAN_COMPLETION,
+                entry=entry,
+                clear_marker=False,
+            )
+            self.store.remove_exact(self.store.paths.coordination)
+            return True
 
 
 # eof

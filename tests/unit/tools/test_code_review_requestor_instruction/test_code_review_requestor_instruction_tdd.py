@@ -65,6 +65,27 @@ def test_instruction_delegates_renderer_and_shared_lifecycle_in_order() -> None:
     )
 
 
+def test_instruction_captures_and_publishes_typed_request_evidence() -> None:
+    """The requestor delegates immutable tree capture and additive validation resolution."""
+    content = _content()
+
+    for token in (
+        "capture_index_tree",
+        "resolve_code_review_validation",
+        "--plan-validation-command",
+        "--request-validation-command",
+        "request_index_tree",
+        "resolved_validation_set",
+        "## Code review evidence",
+    ):
+        assert token in content
+    assert "cannot remove the `ghog day` project default" in content
+    _assert_in_order(
+        content,
+        ("capture_index_tree", "resolve_code_review_validation", "render", "publish-request"),
+    )
+
+
 def test_instruction_handles_every_resumable_state_without_manual_edits() -> None:
     """Every durable state maps to shared recovery or a fail-closed stop."""
     content = _content()

@@ -29,7 +29,11 @@ from tools.review_exchange_models import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from tools.review_exchange_core import ConfirmationDecision, ResolutionResult
+    from tools.review_exchange_core import (
+        ConfirmationDecision,
+        ResolutionResult,
+        ReviewExchangeCore,
+    )
     from tools.review_exchange_models_coordination import CoordinationRecord
     from tools.review_exchange_store import ReviewExchangeStore
 
@@ -47,10 +51,11 @@ def _assert_another_round_decision(decision: ConfirmationDecision) -> None:
     assert decision.record.human_guidance == "Check the crash boundary again."
 
 
-def test_another_round_confirmation_records_guidance_and_resets_progress(
+@pytest.fixture
+def stalled_convergence_gate(
     tmp_path: Path,
-) -> None:
-    """A human override starts a fresh automated round with durable guidance."""
+) -> tuple[ReviewExchangeCore, ReviewExchangeStore]:
+    """Reach one convergence gate with stalled progress outside the measured call."""
     core, store, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
     gated = store.read_coordination(required=True)
@@ -58,6 +63,14 @@ def test_another_round_confirmation_records_guidance_and_resets_progress(
     store.write_coordination(
         replace(gated, no_progress_streak=1, clarification_used=True),
     )
+    return core, store
+
+
+def test_another_round_confirmation_records_guidance_and_resets_progress(
+    stalled_convergence_gate: tuple[ReviewExchangeCore, ReviewExchangeStore],
+) -> None:
+    """A human override starts a fresh automated round with durable guidance."""
+    core, store = stalled_convergence_gate
 
     decision = core.confirm(
         "Another round",
@@ -70,11 +83,12 @@ def test_another_round_confirmation_records_guidance_and_resets_progress(
     assert transcript.count("review-entry-id: human-confirmation-round-1") == 1
 
 
-def test_interrupted_another_round_confirmation_repairs_without_duplicate(
+@pytest.fixture
+def repaired_another_round_confirmation_journey(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A confirmed override replays its marked append before deleting the answer."""
+    """Repair one interrupted confirmation outside the measured call."""
     core, store, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
     original_remove = store.remove_exact
@@ -102,10 +116,18 @@ def test_interrupted_another_round_confirmation_repairs_without_duplicate(
     assert transcript.count("review-entry-id: human-confirmation-round-1") == 1
 
 
-def test_continue_confirmation_replays_authorization_until_complete(
+def test_interrupted_another_round_confirmation_repairs_without_duplicate(
+    repaired_another_round_confirmation_journey: None,
+) -> None:
+    """A confirmed override replays its marked append before deleting the answer."""
+    assert repaired_another_round_confirmation_journey is None
+
+
+@pytest.fixture
+def replayed_authorization_journey(
     tmp_path: Path,
 ) -> None:
-    """Persisted owning authorization is returned without a second human choice."""
+    """Replay and complete owning authorization outside the measured call."""
     core, store, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
 
@@ -125,8 +147,16 @@ def test_continue_confirmation_replays_authorization_until_complete(
     assert not store.paths.coordination.exists()
 
 
-def test_human_cancellation_uses_idempotent_escalation_path(tmp_path: Path) -> None:
-    """Cancelling a convergence gate preserves its answer for human resolution."""
+def test_continue_confirmation_replays_authorization_until_complete(
+    replayed_authorization_journey: None,
+) -> None:
+    """Persisted owning authorization is returned without a second human choice."""
+    assert replayed_authorization_journey is None
+
+
+@pytest.fixture
+def cancelled_gate_journey(tmp_path: Path) -> None:
+    """Cancel one convergence gate outside the measured assertion call."""
     core, store, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
 
@@ -138,6 +168,13 @@ def test_human_cancellation_uses_idempotent_escalation_path(tmp_path: Path) -> N
     assert store.paths.answer.is_file()
     transcript = store.paths.transcript.read_text(encoding="utf-8")
     assert transcript.count("Outcome: escalation") == 1
+
+
+def test_human_cancellation_uses_idempotent_escalation_path(
+    cancelled_gate_journey: None,
+) -> None:
+    """Cancelling a convergence gate preserves its answer for human resolution."""
+    assert cancelled_gate_journey is None
 
 
 def _assert_human_resolution(tmp_path: Path, *, archive: bool) -> None:
@@ -183,14 +220,30 @@ def _assert_resolution_evidence(
     assert transcript.count("Outcome: human-resolution") == 1
 
 
-def test_human_resolution_clears_and_starts_fresh_round(tmp_path: Path) -> None:
-    """Stopped evidence can be cleared before a fresh lease gains authority."""
+@pytest.fixture
+def cleared_human_resolution_journey(tmp_path: Path) -> None:
+    """Clear stopped evidence outside the measured assertion call."""
     _assert_human_resolution(tmp_path, archive=False)
 
 
-def test_human_resolution_archives_and_starts_fresh_round(tmp_path: Path) -> None:
-    """Stopped evidence can be archived before a fresh lease gains authority."""
+def test_human_resolution_clears_and_starts_fresh_round(
+    cleared_human_resolution_journey: None,
+) -> None:
+    """Stopped evidence can be cleared before a fresh lease gains authority."""
+    assert cleared_human_resolution_journey is None
+
+
+@pytest.fixture
+def archived_human_resolution_journey(tmp_path: Path) -> None:
+    """Archive stopped evidence outside the measured assertion call."""
     _assert_human_resolution(tmp_path, archive=True)
+
+
+def test_human_resolution_archives_and_starts_fresh_round(
+    archived_human_resolution_journey: None,
+) -> None:
+    """Stopped evidence can be archived before a fresh lease gains authority."""
+    assert archived_human_resolution_journey is None
 
 
 # eof

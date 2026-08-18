@@ -55,6 +55,8 @@ _TRANSCRIPT_OUTCOMES: Final[frozenset[str]] = frozenset(
         "answer",
         "escalation",
         "human-confirmation",
+        "human-completion",
+        "human-reclaim",
         "human-resolution",
     },
 )
@@ -71,11 +73,14 @@ class TranscriptEntry:
     outcome: str
     recorded_at: str
     authored_content: str
+    occurrence: int = 1
 
     def __post_init__(self) -> None:
         """Reject ambiguous footer data and unsupported transcript outcomes."""
         if _ENTRY_ID_RE.fullmatch(self.entry_id) is None:
             raise ReviewExchangeError("invalid transcript entry identifier")
+        if self.occurrence < 1:
+            raise ReviewExchangeError("transcript entry occurrence must be positive")
         if self.outcome not in _TRANSCRIPT_OUTCOMES:
             raise ReviewExchangeError(
                 f"unsupported transcript outcome: {self.outcome}",
@@ -210,6 +215,43 @@ class ReviewExchangeStore:
             raise ReviewExchangeError(f"exact cleanup failed: {error}") from error
         return True
 
+    def entry_occurrence(
+        self,
+        entry_id: str,
+        *,
+        discriminator: str | None = None,
+        before_offset: int | None = None,
+    ) -> int:
+        """Return the next occurrence for one stable transcript identity family."""
+        if not self.paths.transcript.is_file():
+            return 1
+        content = self.paths.transcript.read_bytes()
+        if before_offset is not None:
+            content = content[:before_offset]
+        text = content.decode("utf-8")
+        suffix = (
+            rf"(?:-{re.escape(discriminator)}-\d+)?"
+            if discriminator is not None
+            else r"(?:-\d+)?"
+        )
+        footer = re.compile(
+            rf"{re.escape(_ENTRY_FOOTER_PREFIX)} {re.escape(entry_id)}{suffix} -->",
+        )
+        return len(footer.findall(text)) + 1
+
+    def current_entry_offset(self, entry_id: str) -> int:
+        """Locate the current final legacy entry without scanning authored headings."""
+        content = self.paths.transcript.read_bytes()
+        footer = f"{_ENTRY_FOOTER_PREFIX} {entry_id} -->".encode()
+        footer_offset = content.rfind(footer)
+        if footer_offset < 0 or content[footer_offset + len(footer):].strip():
+            raise ReviewExchangeError("legacy transcript entry is not the final entry")
+        prior_footer = content.rfind(_ENTRY_FOOTER_PREFIX.encode(), 0, footer_offset)
+        heading_offset = content.find(b"\n## Round ", prior_footer, footer_offset)
+        if prior_footer < 0 or heading_offset < 0:
+            raise ReviewExchangeError("legacy transcript entry boundary is unavailable")
+        return heading_offset
+
     def initialize_transcript(self, context: ReviewContext) -> bool:
         """Initialize a missing family transcript and preserve an existing one."""
         self._validate_context(context)
@@ -229,7 +271,7 @@ class ReviewExchangeStore:
             content = template.substitute(
                 version=context.identity.version,
                 exchange_identity=context.identity.key,
-                reviewed_document=context.document_path.as_posix(),
+                reviewed_document=self._transcript_path(context.document_path),
             )
         except (KeyError, OSError, UnicodeError) as error:
             raise ReviewExchangeError(f"cannot initialize transcript: {error}") from error
@@ -425,21 +467,34 @@ class ReviewExchangeStore:
             raise ReviewExchangeError("another transcript repair is already pending")
         return stored
 
-    @staticmethod
     def _render_transcript_entry(
+        self,
         record: CoordinationRecord,
         entry: TranscriptEntry,
     ) -> str:
-        """Render one complete role-and-round-labeled transcript entry."""
+        """Render one portable role-and-round-labeled transcript entry."""
         context = record.context
         umbrella = (
-            context.umbrella_path.as_posix()
+            self._transcript_path(context.umbrella_path)
             if context.umbrella_path is not None
             else "none"
         )
         heading = f"## Round {record.round_number} by {entry.role.value}"
         if context.implementation_step is not None:
             heading += f" - Step {context.implementation_step}"
+        if entry.role is ReviewRole.HUMAN:
+            # One round holds at most one request and one answer, so role and
+            # round identify those headings. A human may act more than once in
+            # the same round, so only that role needs its outcome to stay unique.
+            heading += f" - {entry.outcome}"
+        if entry.occurrence > 1:
+            if entry.role is ReviewRole.HUMAN:
+                # A stop-and-resume cycle can repeat the same human outcome.
+                heading += f" - attempt {entry.occurrence}"
+            else:
+                # A completed exchange can restart at round one for the same
+                # document, so request and answer headings name that exchange.
+                heading += f" (exchange {entry.occurrence})"
         lines = [
             "",
             heading,
@@ -447,7 +502,7 @@ class ReviewExchangeStore:
             f"- Recorded: {entry.recorded_at}",
             f"- Exchange: {context.identity.key}",
             f"- Umbrella: {umbrella}",
-            f"- Reviewed document: {context.document_path.as_posix()}",
+            f"- Reviewed document: {self._transcript_path(context.document_path)}",
         ]
         if context.implementation_step is not None:
             lines.append(f"- Implementation step: {context.implementation_step}")
@@ -455,12 +510,30 @@ class ReviewExchangeStore:
             [
                 f"- Outcome: {entry.outcome}",
                 "",
-                entry.authored_content.rstrip("\n"),
+                self._portable_transcript_content(entry.authored_content).rstrip("\n"),
                 "",
             ],
         )
         lines.append(f"<!-- review-entry-id: {entry.entry_id} -->")
         return "\n".join(lines) + "\n"
+
+    def _transcript_path(self, path: Path) -> str:
+        """Render an in-repository transcript path without host identity."""
+        try:
+            return path.relative_to(self.paths.project_root).as_posix()
+        except ValueError as error:
+            raise ReviewExchangeError(
+                "transcript path is outside the project root",
+            ) from error
+
+    def _portable_transcript_content(self, content: str) -> str:
+        """Remove this repository's absolute prefix from authored evidence."""
+        root = self.paths.project_root
+        prefixes = (f"{root.as_posix()}/", f"{root}\\")
+        portable = content
+        for prefix in prefixes:
+            portable = portable.replace(prefix, "")
+        return portable
 
     @staticmethod
     def _prepare_atomic(target: Path, content: bytes) -> Path:

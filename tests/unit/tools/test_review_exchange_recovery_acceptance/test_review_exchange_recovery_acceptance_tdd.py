@@ -1,7 +1,9 @@
 """Recovery acceptance coverage across fresh review-exchange sessions.
 
 Step 5 injects failures only at documented durable boundaries, then constructs
-fresh public core instances over the same real files. The tests prove that
+fresh public core instances over the same real files. Core recovery does not
+invoke Git, so its harness writes the opt-in and ignore fixtures directly. The
+tests prove that
 requests, answers, torn transcript suffixes, escalations, consumed answers,
 and owning authorization repair without evidence loss or duplicate entries.
 """
@@ -16,7 +18,6 @@ from tests.unit.tools.test_review_exchange_acceptance.test_review_exchange_accep
     FakeTime,
     _artifact,
     _context,
-    _init_repo,
     _policy,
 )
 from tools.review_exchange_core import ReviewExchangeCore, WaitOutcome
@@ -60,8 +61,10 @@ def _harness(
     family: ReviewFamily = ReviewFamily.CODE,
     slug: str = "recovery",
 ) -> tuple[ReviewExchangeCore, ReviewExchangeStore, ReviewContext, FakeTime]:
-    """Build one real-file core with deterministic time in a Git repository."""
-    _init_repo(root)
+    """Build one real-file core with deterministic time and activation files."""
+    root.mkdir(parents=True, exist_ok=True)
+    (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
+    (root / "a.review-mode").write_text("", encoding="utf-8")
     step = "5" if family is ReviewFamily.CODE else None
     context = _context(root, family, slug, step=step)
     store = ReviewExchangeStore(derive_artifact_paths(root, context))
@@ -164,14 +167,14 @@ def escalation_harnesses(tmp_path: Path) -> tuple[Harness, Harness]:
 
 
 @pytest.fixture(params=("no-progress", "disagreement"))
-def stagnation_harness(
+def stagnation_journey(
     tmp_path: Path,
     request: pytest.FixtureRequest,
-) -> tuple[str, Harness, CoordinationRecord]:
-    """Prepare round one outside each measured stagnation assertion call."""
+) -> None:
+    """Run each two-round stagnation path outside its measured call."""
     mode = str(request.param)
     harness = _harness(tmp_path / mode, slug=mode)
-    core, _store, context, _clock = harness
+    core, store, context, _clock = harness
     _start_request(core, context)
     _publish_answer(core, context, 1)
     first = core.consume_answer(
@@ -179,7 +182,17 @@ def stagnation_harness(
         disagreement=mode == "disagreement",
     )
     core.continue_round()
-    return mode, harness, first
+    assert first.status is CoordinationStatus.ACTIVE
+    _publish_request(core, context, 2)
+    _publish_answer(core, context, 2)
+    stopped = core.consume_answer(
+        reviewed_work_changed=False,
+        disagreement=mode == "disagreement",
+    )
+    assert stopped.status is CoordinationStatus.ESCALATED
+    assert store.paths.answer.is_file()
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert transcript.count("Outcome: escalation") == 1
 
 
 def test_activation_outside_git_fails_without_artifact_mutation(tmp_path: Path) -> None:
@@ -224,7 +237,7 @@ def interrupted_request_journey(
 
     transcript = store.paths.transcript.read_text(encoding="utf-8")
     assert "torn acceptance suffix" not in transcript
-    assert transcript.count("review-entry-id: request-round-1") == 1
+    assert transcript.count("review-entry-id: request-step-5-round-1") == 1
     assert (
         _fresh(store, context, clock).classify().state is ArtifactState.REQUEST_PENDING
     )
@@ -237,7 +250,8 @@ def test_interrupted_request_and_torn_transcript_repair_once(
     assert interrupted_request_journey is None
 
 
-def test_interrupted_answer_rename_and_visible_append_repair(
+@pytest.fixture
+def interrupted_answer_repair_journey(
     answer_repair_harnesses: tuple[Harness, Harness],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -297,8 +311,15 @@ def test_interrupted_answer_rename_and_visible_append_repair(
         "Reviewer visible-answer report.",
     )
     transcript = second_store.paths.transcript.read_text(encoding="utf-8")
-    assert transcript.count("review-entry-id: answer-round-1") == 1
+    assert transcript.count("review-entry-id: answer-step-5-round-1") == 1
     assert not second_store.paths.tombstone.exists()
+
+
+def test_interrupted_answer_rename_and_visible_append_repair(
+    interrupted_answer_repair_journey: None,
+) -> None:
+    """Both answer-repair windows remain covered by the prepared journey."""
+    assert interrupted_answer_repair_journey is None
 
 
 @pytest.fixture
@@ -356,11 +377,12 @@ def test_abandoned_request_is_reclaimed_by_a_fresh_session(tmp_path: Path) -> No
     assert later.classify().state is ArtifactState.REQUEST_PENDING
     _publish_answer(later, context, 1)
     transcript = store.paths.transcript.read_text(encoding="utf-8")
-    assert transcript.count("review-entry-id: answer-round-1") == 1
+    assert transcript.count("review-entry-id: answer-step-5-round-1") == 1
     assert transcript.count("Outcome: escalation") == 0
 
 
-def test_escalation_append_and_owning_completion_replay(
+@pytest.fixture
+def escalation_and_completion_replay_journey(
     escalation_harnesses: tuple[Harness, Harness],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -413,33 +435,29 @@ def test_escalation_append_and_owning_completion_replay(
     assert later_owning.complete() is False
 
 
+def test_escalation_append_and_owning_completion_replay(
+    escalation_and_completion_replay_journey: None,
+) -> None:
+    """Both final-write recovery paths remain covered by the prepared journey."""
+    assert escalation_and_completion_replay_journey is None
+
+
 def test_automated_stagnation_and_persistent_disagreement_stop(
-    stagnation_harness: tuple[str, Harness, CoordinationRecord],
+    stagnation_journey: None,
 ) -> None:
     """Two unchanged rounds or a repeated disagreement preserve the last answer."""
-    mode, harness, first = stagnation_harness
-    core, store, context, _clock = harness
-    assert first.status is CoordinationStatus.ACTIVE
-    _publish_request(core, context, 2)
-    _publish_answer(core, context, 2)
-
-    stopped = core.consume_answer(
-        reviewed_work_changed=False,
-        disagreement=mode == "disagreement",
-    )
-
-    assert stopped.status is CoordinationStatus.ESCALATED
-    assert store.paths.answer.is_file()
-    transcript = store.paths.transcript.read_text(encoding="utf-8")
-    assert transcript.count("Outcome: escalation") == 1
+    assert stagnation_journey is None
 
 
-def test_exact_wait_ignores_an_unrelated_identity(
+@pytest.fixture
+def isolated_wait_journey(
     tmp_path: Path,
 ) -> None:
-    """A request for another slug cannot satisfy one injected-clock deadline."""
+    """Run one isolated wait outside the measured assertion call."""
     root = tmp_path / "wait-isolation"
-    _init_repo(root)
+    root.mkdir(parents=True)
+    (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
+    (root / "a.review-mode").write_text("", encoding="utf-8")
     wanted_context = _context(root, ReviewFamily.CODE, "wanted", step="5")
     other_context = _context(root, ReviewFamily.CODE, "other", step="5")
     wanted_store = ReviewExchangeStore(derive_artifact_paths(root, wanted_context))
@@ -463,6 +481,13 @@ def test_exact_wait_ignores_an_unrelated_identity(
     assert other.classify().state is ArtifactState.REQUEST_PENDING
     assert other_store.paths.request.is_file()
     assert not wanted_store.paths.request.exists()
+
+
+def test_exact_wait_ignores_an_unrelated_identity(
+    isolated_wait_journey: None,
+) -> None:
+    """A request for another slug cannot satisfy one injected-clock deadline."""
+    assert isolated_wait_journey is None
 
 
 # eof

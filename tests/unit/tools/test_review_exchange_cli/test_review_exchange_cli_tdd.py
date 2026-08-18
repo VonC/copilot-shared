@@ -37,6 +37,7 @@ from tools.review_exchange_wait import WaitOutcome, WaitProgress, WaitResult
 
 _EXIT_FATAL = 2
 _EXIT_STOP = 3
+_SECOND_EXCHANGE = 2
 
 
 class FakeCore:
@@ -85,6 +86,14 @@ class FakeCore:
         self._call("publish_answer", markdown, transcript_content)
         return self.record
 
+    def repair_current_request_transcript(
+        self,
+        transcript_content: str,
+    ) -> CoordinationRecord:
+        """Record final legacy request transcript repair."""
+        self._call("repair_current_request_transcript", transcript_content)
+        return self.record
+
     def wait_for_exact(
         self,
         expected: ArtifactState,
@@ -116,6 +125,11 @@ class FakeCore:
     def reclaim(self) -> CoordinationRecord:
         """Record an abandoned-round lease renewal."""
         self._call("reclaim")
+        return self.record
+
+    def force_reclaim(self, summary: str) -> CoordinationRecord:
+        """Record one authorized forced resume of an escalated round."""
+        self._call("force_reclaim", summary)
         return self.record
 
     def escalate(self, reason: str) -> CoordinationRecord:
@@ -151,6 +165,11 @@ class FakeCore:
     def complete(self) -> bool:
         """Record owning-action completion."""
         self._call("complete")
+        return True
+
+    def force_complete(self, summary: str) -> bool:
+        """Record one authorized forced completion."""
+        self._call("force_complete", summary)
         return True
 
 
@@ -204,6 +223,22 @@ def _input_files(tmp_path: Path) -> tuple[Path, Path, Path]:
     summary.write_text("summary", encoding="utf-8")
     guidance.write_text("guidance", encoding="utf-8")
     return content, summary, guidance
+
+
+def test_status_exposes_the_current_request_exchange_occurrence(tmp_path: Path) -> None:
+    """A reviewer gets the renderer discriminator without reading a transcript."""
+    runtime, core = _runtime(tmp_path)
+    core.state = ArtifactState.REQUEST_PENDING
+    runtime.paths.transcript.write_text(
+        "# Review transcript\n\n"
+        "<!-- review-entry-id: request-step-4-round-1 -->\n\n"
+        "<!-- review-entry-id: request-step-4-round-1-exchange-2 -->\n",
+        encoding="utf-8",
+    )
+
+    payload = cli._success_payload(runtime, "status", cli.OperationResult("observed"))
+
+    assert payload["exchange_occurrence"] == _SECOND_EXCHANGE
 
 
 def _run(
@@ -300,6 +335,11 @@ def _assert_inputs_retained(content: Path, summary: Path, guidance: Path) -> Non
             "publish-answer",
             ["--content-file", "CONTENT", "--summary-file", "SUMMARY"],
             "publish_answer",
+        ),
+        (
+            "repair-request-transcript",
+            ["--summary-file", "SUMMARY"],
+            "repair_current_request_transcript",
         ),
         ("wait-request", ["--timeout-seconds", "5"], "wait_for_exact"),
         ("wait-answer", ["--timeout-seconds", "5"], "wait_for_exact"),

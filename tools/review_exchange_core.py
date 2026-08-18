@@ -1,10 +1,9 @@
-"""Application lifecycle service for durable review exchanges.
+"""Application lifecycle orchestration for durable review exchanges.
 
 Step 3 coordinates the Step 1 protocol models and Step 2 exact-path store. It
-classifies every observable state, makes transcript-appending mutations
-marker-first and repairable, bounds waits with injected monotonic time, and
-persists escalation or human authorization without granting reviewers an
-owning action.
+classifies every observable state, delegates publication to its focused mixin,
+bounds waits with injected monotonic time, and persists escalation or human
+authorization without granting reviewers an owning action.
 """
 
 # ruff: noqa: EM101, EM102, PLR0913, TRY003
@@ -37,9 +36,9 @@ from tools.review_exchange_models_coordination import CoordinationRecord
 from tools.review_exchange_models_envelope import (
     Envelope,
     parse_envelope_markdown,
-    validate_summary_identity,
 )
 from tools.review_exchange_observer import ExchangeObservation, ReviewExchangeObserver
+from tools.review_exchange_publication import ReviewExchangePublicationMixin
 from tools.review_exchange_store import ReviewExchangeStore, TranscriptEntry
 from tools.review_exchange_wait import (
     WaitOutcome,
@@ -73,7 +72,7 @@ _RECLAIMABLE_STATES: Final[frozenset[ArtifactState]] = frozenset(
 )
 
 
-class ReviewExchangeCore(ReviewExchangeHumanMixin):
+class ReviewExchangeCore(ReviewExchangePublicationMixin, ReviewExchangeHumanMixin):
     """Coordinate one identity through bounded, recoverable review rounds.
 
     The application service owns transition ordering and clocks while delegating
@@ -140,114 +139,6 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
             )
             self.store.write_coordination(record)
             return record
-
-    def publish_request(
-        self,
-        markdown: str,
-        transcript_content: str,
-    ) -> CoordinationRecord:
-        """Publish and append one validated current-round request idempotently."""
-        with self.store.transition_lock():
-            observation = self.classify()
-            record = self._require_record(observation)
-            repairing = record.incomplete_transition is (
-                IncompleteTransitionKind.PUBLISH_REQUEST
-            )
-            if not repairing and observation.state is not ArtifactState.ROUND_IN_PROGRESS:
-                raise ReviewExchangeError("request publication requires a round in progress")
-            envelope, authored = self._validate_envelope(markdown, ReviewRole.REQUESTOR, record)
-            validate_summary_identity(authored, self.context, record.round_number)
-            if record.human_guidance is not None:
-                expected_guidance = f"Human guidance: {record.human_guidance}"
-                if expected_guidance not in authored:
-                    raise ReviewExchangeError(
-                        "replacement request summary omits confirmed human guidance",
-                    )
-            entry = TranscriptEntry(
-                f"request-round-{record.round_number}",
-                ReviewRole.REQUESTOR,
-                "request",
-                envelope.created_at,
-                transcript_content,
-            )
-            marked = self._mark_transition(
-                record,
-                IncompleteTransitionKind.PUBLISH_REQUEST,
-                entry.entry_id,
-            )
-            self.store.publish_request(markdown)
-            marked = self.store.append_transcript_once(
-                marked,
-                transition=IncompleteTransitionKind.PUBLISH_REQUEST,
-                entry=entry,
-                clear_marker=False,
-            )
-            final = replace(
-                marked,
-                owner=Actor.REQUESTOR,
-                expected_next_actor=Actor.REVIEWER,
-                lease_renewed_at=self._timestamp(),
-                incomplete_transition=None,
-                transcript_entry_id=None,
-                transcript_offset=None,
-                human_guidance=None,
-            )
-            self.store.write_coordination(final)
-            return final
-
-    def publish_answer(
-        self,
-        markdown: str,
-        transcript_content: str,
-    ) -> CoordinationRecord:
-        """Consume, publish, append, and route one reviewer answer safely."""
-        with self.store.transition_lock():
-            observation = self.classify()
-            record = self._require_record(observation)
-            repairing = record.incomplete_transition is (
-                IncompleteTransitionKind.PUBLISH_ANSWER
-            )
-            if not repairing and observation.state is not ArtifactState.REQUEST_PENDING:
-                raise ReviewExchangeError("answer publication requires a request pending")
-            envelope, _ = self._validate_envelope(markdown, ReviewRole.REVIEWER, record)
-            entry = TranscriptEntry(
-                f"answer-round-{record.round_number}",
-                ReviewRole.REVIEWER,
-                "answer",
-                envelope.created_at,
-                transcript_content,
-            )
-            marked = self._mark_transition(
-                record,
-                IncompleteTransitionKind.PUBLISH_ANSWER,
-                entry.entry_id,
-            )
-            self._publish_or_repair_answer(markdown)
-            marked = self.store.append_transcript_once(
-                marked,
-                transition=IncompleteTransitionKind.PUBLISH_ANSWER,
-                entry=entry,
-                clear_marker=False,
-            )
-            self.store.remove_exact(self.store.paths.tombstone)
-            convergence = envelope.disposition is ReviewDisposition.CONVERGENCE_RECOMMENDED
-            final = replace(
-                marked,
-                status=(
-                    CoordinationStatus.AWAITING_HUMAN_CONFIRMATION
-                    if convergence
-                    else CoordinationStatus.ACTIVE
-                ),
-                owner=Actor.REVIEWER,
-                expected_next_actor=Actor.HUMAN if convergence else Actor.REQUESTOR,
-                lease_renewed_at=None if convergence else self._timestamp(),
-                convergence_recommended=convergence,
-                incomplete_transition=None,
-                transcript_entry_id=None,
-                transcript_offset=None,
-            )
-            self.store.write_coordination(final)
-            return final
 
     def consume_answer(
         self,
@@ -496,7 +387,9 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
                 self._timestamp(),
             )
             self.store.write_coordination(record)
-        entry_id = f"escalation-round-{record.round_number}"
+        entry_id, occurrence = self._repeatable_entry(
+            f"escalation-round-{record.round_number}",
+        )
         marked = self._mark_transition(
             record,
             IncompleteTransitionKind.ESCALATION,
@@ -519,6 +412,7 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
             "escalation",
             self._timestamp(),
             reason.strip(),
+            occurrence,
         )
         marked = self.store.append_transcript_once(
             marked,
@@ -529,6 +423,16 @@ class ReviewExchangeCore(ReviewExchangeHumanMixin):
         final = self._clear_marker(marked)
         self.store.write_coordination(final)
         return final
+
+    def _repeatable_entry(self, base: str) -> tuple[str, int]:
+        """Return one unique transcript identity and attempt for a repeatable event.
+
+        A stop-and-resume cycle can record the same outcome more than once in one
+        round, so both the durable identity and its rendered heading carry the
+        attempt that explains the repetition.
+        """
+        occurrence = self.store.entry_occurrence(base)
+        return (base if occurrence == 1 else f"{base}-{occurrence}"), occurrence
 
     def _clear_marker(self, record: CoordinationRecord) -> CoordinationRecord:
         """Clear one fully completed transcript repair marker in memory."""

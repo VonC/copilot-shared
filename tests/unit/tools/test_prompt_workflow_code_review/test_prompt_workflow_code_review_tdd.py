@@ -77,9 +77,13 @@ def _effort(root: Path, step: str = "3") -> tuple[Topic, WorkflowState, MemoryRe
 
 def _context(root: Path, step: str = "3") -> ReviewContext:
     """Return the code-family context for the scratch plan and step."""
+    document = root / "docs/v0.11.0/plan.v0.11.0.routing.md"
+    document.parent.mkdir(parents=True, exist_ok=True)
+    if not document.exists():
+        document.write_text("# plan\n", encoding="utf-8")
     return ReviewContext(
         ExchangeIdentity(ReviewFamily.CODE, "code", "v0.11.0", "routing"),
-        root / "docs/v0.11.0/plan.v0.11.0.routing.md",
+        document,
         None,
         step,
     )
@@ -331,7 +335,11 @@ def test_authorized_continuation_rechecks_confirmation_outcome(
     """The owning state alone cannot bypass the persisted confirmation outcome."""
     topic, state, record = _effort(tmp_path)
     context = _context(tmp_path)
-    route = code_review.CodeReviewRoute(context, ArtifactState.OWNING_ACTION_PENDING)
+    route = code_review.CodeReviewRoute(
+        context,
+        ArtifactState.OWNING_ACTION_PENDING,
+        code_review.CodeReviewActor.REQUESTOR,
+    )
     coordination = replace(
         _coordination(context, CoordinationStatus.AWAITING_HUMAN_CONFIRMATION),
         confirmed_outcome=ConfirmationOutcome.ANOTHER_ROUND,
@@ -352,7 +360,11 @@ def test_skill_delegates_live_forced_and_authorized_routes(
     """The risk-band skill router delegates each code-review entry unchanged."""
     topic, state, record = _effort(tmp_path)
     context = _context(tmp_path)
-    route = code_review.CodeReviewRoute(context, ArtifactState.REQUEST_PENDING)
+    route = code_review.CodeReviewRoute(
+        context,
+        ArtifactState.REQUEST_PENDING,
+        code_review.CodeReviewActor.REVIEWER,
+    )
     monkeypatch.setattr(skill.steps, "compute_state", lambda *_args: state)
     monkeypatch.setattr(skill.memory, "read_memory", lambda _root: record)
     monkeypatch.setattr(code_review, "resolve_code_review_route", lambda *_args: route)
@@ -364,11 +376,8 @@ def test_skill_delegates_live_forced_and_authorized_routes(
         "code-review-requestor",
         {"CODEX_THREAD_ID": "x"},
     )
-    assert live == "/code-review-requestor on docs/v0.11.0/plan.v0.11.0.routing.md step 3"
-    assert forced == (
-        "$llm-shared:code-review-requestor on "
-        "docs/v0.11.0/plan.v0.11.0.routing.md step 3"
-    )
+    assert live == "/code-reviewer on docs/v0.11.0/plan.v0.11.0.routing.md step 3"
+    assert forced is None
     monkeypatch.setattr(skill.git, "current_branch", lambda _root: "routing")
     monkeypatch.setattr(skill.handoff, "resolve_current_topic", lambda *_args: topic)
     continuation_exit = 7
@@ -381,3 +390,45 @@ def test_skill_delegates_live_forced_and_authorized_routes(
     monkeypatch.setattr(skill.handoff, "resolve_current_topic", lambda *_args: None)
     with pytest.raises(code_review.CodeReviewRoutingError, match="no resolved"):
         skill.run_authorized_code_review_commit(tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("state", "actor"),
+    [
+        (ArtifactState.REQUEST_PENDING, code_review.CodeReviewActor.REVIEWER),
+        (ArtifactState.IDLE, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.ROUND_IN_PROGRESS, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.ABANDONED_REQUEST, code_review.CodeReviewActor.REVIEWER),
+        (ArtifactState.ANSWER_PENDING, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.ABANDONED_ANSWER, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.CONVERGENCE_GATE, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.OWNING_ACTION_PENDING, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.ESCALATED, code_review.CodeReviewActor.REQUESTOR),
+        (ArtifactState.TRANSCRIPT_REPAIR_PENDING, code_review.CodeReviewActor.REQUESTOR),
+    ],
+)
+def test_route_actor_is_resolved_once_from_the_classified_state(
+    state: ArtifactState,
+    actor: code_review.CodeReviewActor,
+    tmp_path: Path,
+) -> None:
+    """Only pending or reclaimable requests belong to the reviewer."""
+    route = code_review.CodeReviewRoute(_context(tmp_path), state, actor)
+
+    assert route.actor is actor
+
+
+def test_route_rejects_an_actor_that_disagrees_with_its_state(tmp_path: Path) -> None:
+    """A caller cannot forge reviewer or requestor ownership after classify."""
+    with pytest.raises(code_review.CodeReviewRoutingError, match="actor"):
+        code_review.CodeReviewRoute(
+            _context(tmp_path),
+            ArtifactState.REQUEST_PENDING,
+            code_review.CodeReviewActor.REQUESTOR,
+        )
+    with pytest.raises(code_review.CodeReviewRoutingError, match="actor"):
+        code_review.CodeReviewRoute(
+            _context(tmp_path),
+            ArtifactState.ANSWER_PENDING,
+            code_review.CodeReviewActor.REVIEWER,
+        )

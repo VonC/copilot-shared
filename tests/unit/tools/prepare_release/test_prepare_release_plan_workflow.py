@@ -1,15 +1,4 @@
-"""Branch-role and operation selection tests for the release planner.
-
-Fix: cover remaining planning branches: the boundary-less orphan branch,
-merges in explicit feature scope, direct-merge conflict preview, explicit
-`--feature-parent` boundaries (a first-parent merge success and an underivable failure),
-an explicit base that is not a proper ancestor, rebase and reset reflog evidence, and the
-ambiguity path where deduplicated parent candidates elect a unique nearest
-boundary with reflogs disabled.
-
-Fix: real-Git scenarios prepare plans or captured errors in fixtures, leaving
-measured calls to verify the model without repository or planner subprocesses.
-"""
+"""Planner tests over synthetic branch, reflog, tag, and conflict graphs."""
 
 from __future__ import annotations
 
@@ -27,7 +16,12 @@ from tools.prepare_release.prepare_release_plan_models import (
 )
 from tools.prepare_release.prepare_release_plan_workflow import build_release_plan
 
-from .prepare_release_plan_test_support import commit_file, git, initialize_repository
+from .prepare_release_plan_test_support import (
+    commit_file,
+    git,
+    initialize_repository,
+    repository_for,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -35,6 +29,11 @@ if TYPE_CHECKING:
     from tools.prepare_release.prepare_release_plan_models import ReleasePlan
 
 _EXPECTED_CANDIDATES = 2
+
+@pytest.fixture(autouse=True)
+def recorded_workflow_repository(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run workflow decisions against the synthetic Git topology."""
+    monkeypatch.setattr(workflow, "GitRepository", repository_for)
 
 
 class _FeatureRepositoryStub:
@@ -414,6 +413,7 @@ def auto_detected_boundary_plan(tmp_path: Path) -> tuple[str, ReleasePlan]:
     base = initialize_repository(repo)
     git(repo, "switch", "-c", "feature")
     commit_file(repo, "feature.txt", "feature\n", "feat: feature")
+    repository_for(repo).reflogs["feature"].insert(0, (base, "commit: ignored"))
     return base, build_release_plan(repo, preview_conflicts=False)
 
 

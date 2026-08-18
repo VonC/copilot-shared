@@ -11,6 +11,7 @@ command boundary validates exact ignored UTF-8 inputs before writing the pair.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -21,6 +22,12 @@ from string import Template
 from typing import TYPE_CHECKING, NoReturn
 
 from tools._models import find_project_root
+from tools.code_review_evidence import capture_index_tree
+from tools.code_review_validation import (
+    DEFAULT_PROJECT_VALIDATION_COMMANDS,
+    ResolvedValidationSet,
+    resolve_code_review_validation,
+)
 from tools.review_exchange_models import (
     ExchangeIdentity,
     ReviewContext,
@@ -44,6 +51,7 @@ _TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "templates" / (
     "code-review-request.template.md"
 )
 _JSON_SECTION = "## JSON"
+_TREE_OBJECT_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _FATAL_EXIT = 2
 
 
@@ -58,6 +66,8 @@ class CodeReviewRoundInput:
     implementation_report: str
     change_summary: str
     writer_response: str
+    request_index_tree: str
+    resolved_validation_set: ResolvedValidationSet
     human_guidance: str | None = None
 
     def __post_init__(self) -> None:
@@ -76,6 +86,10 @@ class CodeReviewRoundInput:
         for label, value in authored.items():
             if not value.strip():
                 raise ReviewExchangeError(f"{label} must be non-empty")
+        if _TREE_OBJECT_RE.fullmatch(self.request_index_tree) is None:
+            raise ReviewExchangeError("request index tree must be a Git tree object")
+        if self.resolved_validation_set.__class__ is not ResolvedValidationSet:
+            raise ReviewExchangeError("resolved validation set must be typed")
         if self.human_guidance is not None and not self.human_guidance.strip():
             raise ReviewExchangeError("human guidance must be non-empty when supplied")
 
@@ -91,6 +105,33 @@ class CodeReviewRequestRender:
         """Reject an incomplete paired rendering result."""
         if not self.request_content or not self.transcript_summary:
             raise ReviewExchangeError("paired request rendering must be non-empty")
+
+
+@dataclass(frozen=True)
+class _CodeReviewEvidence:
+    """One typed source for canonical JSON and human-readable evidence."""
+
+    request_index_tree: str
+    resolved_validation_set: ResolvedValidationSet
+
+    def to_payload(self) -> dict[str, object]:
+        """Return the canonical authored JSON object."""
+        return {
+            "request_index_tree": self.request_index_tree,
+            "resolved_validation_set": self.resolved_validation_set.to_payload(),
+        }
+
+    def summary(self) -> str:
+        """Return the paired human-readable representation."""
+        lines = [
+            f"request_index_tree: {self.request_index_tree}",
+            "resolved_validation_set:",
+            "",
+        ]
+        for entry in self.resolved_validation_set.commands:
+            sources = ", ".join(entry.sources)
+            lines.append(f"- {entry.command} (sources: {sources})")
+        return "\n".join(lines)
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -170,12 +211,31 @@ def _response_section(source: CodeReviewRoundInput, *, heading_level: int) -> st
     )
 
 
+def _code_review_evidence(source: CodeReviewRoundInput) -> _CodeReviewEvidence:
+    """Return the one typed payload used by request and transcript rendering."""
+    return _CodeReviewEvidence(
+        source.request_index_tree,
+        source.resolved_validation_set,
+    )
+
+
+def _code_review_evidence_json(source: CodeReviewRoundInput) -> str:
+    """Render canonical JSON for the authored evidence block."""
+    return json.dumps(_code_review_evidence(source).to_payload(), indent=2, sort_keys=True)
+
+
+def _code_review_evidence_summary(source: CodeReviewRoundInput) -> str:
+    """Derive a human-readable paired summary from the same typed payload."""
+    return _code_review_evidence(source).summary()
+
+
 def _request_authored_content(source: CodeReviewRoundInput) -> str:
     """Render specialized H2 content from the canonical code template."""
     values = {
         "identity_label": _identity_label(source),
         "round_number": str(source.round_number),
         "identity_fields": _identity_fields(source),
+        "code_review_evidence": _code_review_evidence_json(source),
         "assessment": source.assessment.strip(),
         "implementation_report": source.implementation_report.strip(),
         "change_summary": source.change_summary.strip(),
@@ -194,6 +254,8 @@ def _transcript_summary(source: CodeReviewRoundInput) -> str:
     sections = (
         f"### Review identity for {label} round {source.round_number}\n\n"
         f"{_identity_fields(source)}",
+        f"### Code review evidence for {label} round {source.round_number}\n\n"
+        f"{_code_review_evidence_summary(source)}",
         f"### Requestor assessment for {label} round {source.round_number}\n\n"
         f"{source.assessment.strip()}",
         f"### Implementation report for {label} round {source.round_number}\n\n"
@@ -309,6 +371,8 @@ def _parser() -> _ArgumentParser:
     parser.add_argument("--change-summary-file", required=True)
     parser.add_argument("--writer-response-file", required=True)
     parser.add_argument("--guidance-file")
+    parser.add_argument("--plan-validation-command", action="append", default=[])
+    parser.add_argument("--request-validation-command", action="append", default=[])
     parser.add_argument("--request-content-output", required=True)
     parser.add_argument("--transcript-summary-output", required=True)
     return parser
@@ -342,16 +406,31 @@ def _render_from_arguments(args: argparse.Namespace, project_root: Path) -> None
         all_paths = (*all_paths, guidance)
     if len(set(all_paths)) != len(all_paths):
         raise ReviewExchangeError("caller-owned input and output paths must be distinct")
+    resolved_validation_set = resolve_code_review_validation(
+        DEFAULT_PROJECT_VALIDATION_COMMANDS,
+        args.plan_validation_command,
+        args.request_validation_command,
+    )
+    authored_inputs = {
+        "assessment": _read_utf8(inputs["assessment"], "assessment file"),
+        "implementation_report": _read_utf8(
+            inputs["implementation_report"],
+            "implementation report file",
+        ),
+        "change_summary": _read_utf8(inputs["change_summary"], "change summary file"),
+        "writer_response": _read_utf8(inputs["writer_response"], "writer response file"),
+    }
+    request_index_tree = capture_index_tree(root)
     source = CodeReviewRoundInput(
         context=context,
         round_number=args.round_number,
         created_at=format_local_timestamp(),
-        assessment=_read_utf8(inputs["assessment"], "assessment file"),
-        implementation_report=_read_utf8(
-            inputs["implementation_report"], "implementation report file",
-        ),
-        change_summary=_read_utf8(inputs["change_summary"], "change summary file"),
-        writer_response=_read_utf8(inputs["writer_response"], "writer response file"),
+        assessment=authored_inputs["assessment"],
+        implementation_report=authored_inputs["implementation_report"],
+        change_summary=authored_inputs["change_summary"],
+        writer_response=authored_inputs["writer_response"],
+        request_index_tree=request_index_tree,
+        resolved_validation_set=resolved_validation_set,
         human_guidance=None if guidance is None else _read_utf8(guidance, "guidance file"),
     )
     rendered = render_code_review_request(source)

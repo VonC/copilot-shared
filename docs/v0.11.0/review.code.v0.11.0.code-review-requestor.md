@@ -77,7 +77,7 @@ Check the exact plan step, staged implementation, test evidence, repaired path i
 
 <!-- review-entry-id: request-round-1 -->
 
-## Round 1 by human - Step 1
+## Round 1 by human - Step 1 - escalation
 
 - Recorded: 2026-08-13T10:40:30+02:00
 - Exchange: code/code/v0.11.0/code-review-requestor
@@ -156,7 +156,7 @@ commit decision. This recommendation does not authorize a commit.
 
 <!-- review-entry-id: answer-round-1 -->
 
-## Round 1 by human - Step 1
+## Round 1 by human - Step 1 - human-confirmation
 
 - Recorded: 2026-08-13T11:11:20+02:00
 - Exchange: code/code/v0.11.0/code-review-requestor

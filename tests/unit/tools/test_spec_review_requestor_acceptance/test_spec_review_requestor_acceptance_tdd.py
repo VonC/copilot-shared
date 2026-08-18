@@ -1,18 +1,16 @@
 """Lifecycle acceptance for the complete specification requestor workflow.
 
-Step 4 composes real Git-backed activation, public command adapters, paired
+Step 4 composes Git-protocol activation, public command adapters, paired
 request rendering, exact-path routing, shared review exchange transitions, and
 the canonical consolidation boundary. Counterpart answers use the public core
 because the independent specification reviewer belongs to a later effort.
-Real Git journeys run in fixtures so call-phase timing measures assertions,
-not repeated subprocess startup.
+Recorded Git boundaries keep those journeys deterministic and process-free.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import subprocess
 from contextlib import chdir, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -74,22 +72,10 @@ class Effort:
     umbrella: Path
 
 
-def _git(root: Path, *arguments: str) -> None:
-    """Run one bounded Git command in a temporary consuming repository."""
-    subprocess.run(
-        ["git", *arguments],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=10,
-    )
-
-
 def _init_repo(root: Path, *, marker: bool = True) -> None:
-    """Create one real Git repository with ignored requestor scratch files."""
+    """Create the filesystem shape consumed by the recorded Git boundary."""
     root.mkdir(parents=True)
-    _git(root, "init", "-q")
+    (root / ".git").mkdir()
     (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
     if marker:
         (root / "a.review-mode").write_text("", encoding="utf-8")
@@ -450,7 +436,8 @@ def test_guided_override_preserves_literal_guidance_and_writer_response(
     assert guided_override_journey is None
 
 
-def test_expired_round_reclaim_keeps_identity_content_and_round(tmp_path: Path) -> None:
+@pytest.fixture
+def expired_round_reclaim_journey(tmp_path: Path) -> None:
     """A new session renews one intact round without rewriting its evidence."""
     root = tmp_path / "reclaim"
     _init_repo(root)
@@ -481,6 +468,13 @@ def test_expired_round_reclaim_keeps_identity_content_and_round(tmp_path: Path) 
     assert returning.classify().state is ArtifactState.REQUEST_PENDING
     assert paths.request.read_bytes() == request_before
     assert paths.transcript.read_bytes() == transcript_before
+
+
+def test_expired_round_reclaim_keeps_identity_content_and_round(
+    expired_round_reclaim_journey: None,
+) -> None:
+    """The intact-round reclaim remains covered by the prepared journey."""
+    assert expired_round_reclaim_journey is None
 
 
 # eof

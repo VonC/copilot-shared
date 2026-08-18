@@ -1,14 +1,14 @@
 """CLI and rendering tests for the release planner script.
 
 Fix: cover `prepare_release_plan.py` end to end for the coverage gate: the
-human-readable and JSON outputs against a real temporary repository, the
+human-readable and JSON outputs against a planner result, the
 exit-2 planner-error path, every rendering branch (boundary evidence and
 candidates, merge and rebase conflict previews), and the `__main__` guard
 through `runpy`, following the pattern of the groundhog acceptance suite. The
 guard test injects an already-tested plan so it measures dispatch rather than
 repeating the real Git workflow covered by the CLI tests above.
-The error path uses a broken `.git` file so the test stays hermetic even
-when an ancestor of the pytest temp directory is a real Git repository.
+The CLI tests replace the separately tested Git workflow at the imported seam,
+so rendering and error dispatch do not repeatedly launch Git subprocesses.
 """
 
 from __future__ import annotations
@@ -34,8 +34,6 @@ from tools.prepare_release.prepare_release_plan_models import (
     ReleasePlan,
 )
 
-from .prepare_release_plan_test_support import commit_file, initialize_repository
-
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -57,32 +55,31 @@ _TEMPLATE = ReleasePlan(
     commits=(),
     operations=(),
 )
+_ON_MAIN_PLAN = replace(
+    _TEMPLATE,
+    branch="main",
+    mode=ReleaseMode.ON_MAIN,
+    action=ReleaseAction.PREPARE_IN_PLACE,
+    commits=(CommitSummary(oid="b" * 40, subject="feat: release work"),),
+    operations=("prepare release artifacts",),
+    notes=("No rebase and no branch merge are required.",),
+)
 
 
-@pytest.fixture
-def repository_with_release_work(tmp_path: Path) -> Path:
-    """Build the real committed repository outside the measured call phase."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    commit_file(repo, "main.txt", "main\n", "feat: release work")
-    return repo
-
-
-@pytest.fixture
-def initialized_repository(tmp_path: Path) -> Path:
-    """Build the real base repository outside the measured call phase."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    return repo
+def _on_main_plan(*_args: object, **_kwargs: object) -> ReleasePlan:
+    """Return the representative on-main plan at the CLI workflow seam."""
+    return _ON_MAIN_PLAN
 
 
 def test_main_renders_a_human_plan_for_a_repository(
-    repository_with_release_work: Path,
+    tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A real on-main repository renders the header, commits, and notes."""
+    """An on-main planner result renders the header, commits, and notes."""
+    monkeypatch.setattr(plan_cli, "build_release_plan", _on_main_plan)
     code = main(
-        ["--root", str(repository_with_release_work), "--no-conflict-preview"],
+        ["--root", str(tmp_path), "--no-conflict-preview"],
     )
 
     out = capsys.readouterr().out
@@ -95,12 +92,14 @@ def test_main_renders_a_human_plan_for_a_repository(
 
 
 def test_main_emits_json_with_the_full_plan(
-    initialized_repository: Path,
+    tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """--json serializes the complete plan through `ReleasePlan.to_dict`."""
+    monkeypatch.setattr(plan_cli, "build_release_plan", _on_main_plan)
     code = main(
-        ["--root", str(initialized_repository), "--json", "--no-conflict-preview"],
+        ["--root", str(tmp_path), "--json", "--no-conflict-preview"],
     )
 
     payload = json.loads(capsys.readouterr().out)
@@ -113,15 +112,15 @@ def test_main_emits_json_with_the_full_plan(
 def test_main_reports_planner_errors_on_stderr(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A planner error exits 2 with an ERROR line, never a traceback."""
-    # A .git file naming a missing gitdir fails `rev-parse` deterministically,
-    # even when an ancestor of the temp directory is itself a Git repository.
-    broken = tmp_path / "broken"
-    broken.mkdir()
-    (broken / ".git").write_text("gitdir: does-not-exist\n", encoding="utf-8")
+    def fail_plan(*_args: object, **_kwargs: object) -> ReleasePlan:
+        message = "Unable to verify the repository"
+        raise plan_cli.ReleasePlanError(message)
 
-    code = main(["--root", str(broken)])
+    monkeypatch.setattr(plan_cli, "build_release_plan", fail_plan)
+    code = main(["--root", str(tmp_path)])
 
     captured = capsys.readouterr()
     assert code == _PLANNER_ERROR_EXIT
@@ -248,14 +247,6 @@ def test_render_plan_omits_the_preview_block_without_merge_data() -> None:
     assert "conflict preview" not in text
 
 
-@pytest.fixture
-def main_guard_repository(tmp_path: Path) -> Path:
-    """Build the main-guard repository outside measured call time."""
-    repo = tmp_path / "repo"
-    initialize_repository(repo)
-    return repo
-
-
 def _main_guard_plan(  # noqa: PLR0913 - mirrors the production seam exactly
     _root: Path,
     *,
@@ -281,7 +272,7 @@ def _main_guard_plan(  # noqa: PLR0913 - mirrors the production seam exactly
 
 
 def test_script_runs_through_its_main_guard(
-    main_guard_repository: Path,
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The planner script runs as __main__ and exits with the plan code."""
@@ -293,7 +284,7 @@ def test_script_runs_through_its_main_guard(
     argv = [
         script_path,
         "--root",
-        str(main_guard_repository),
+        str(tmp_path),
         "--no-conflict-preview",
         "--json",
     ]

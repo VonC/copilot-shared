@@ -269,7 +269,10 @@ def test_initialize_transcript_uses_family_template_and_preserves_existing(
     assert created is True
     assert preserved is False
     assert context.identity.key in initial
-    assert context.document_path.as_posix() in initial
+    assert context.document_path.relative_to(store.paths.project_root).as_posix() in initial
+    assert context.document_path.as_posix() not in initial
+    with pytest.raises(ReviewExchangeError, match="outside the project root"):
+        store._transcript_path(tmp_path.parent / "outside.md")
     assert context.identity.family.value.title() in initial
     assert store.paths.transcript.read_text(encoding="utf-8").endswith(
         "Human note\n",

@@ -151,18 +151,19 @@ def test_two_repo_render_fills_slots_and_suppresses_browser(
     assert opened == []  # --no-open suppressed the browser
 
 
-def test_notes_survive_a_rebuild_while_generated_refreshes(
+@pytest.fixture
+def rebuilt_notes_report(
     tmp_path: Path,
     solo_repo: Path,
 ) -> None:
-    """A second run keeps the hand-written notes and rewrites the generated file.
+    """Rebuild a seeded report outside the measured assertion call.
 
     ``--no-open`` means the opener is never called, so no browser monkeypatch is
-    needed here.
+    needed here. The prior files are seeded directly because first-run report
+    creation is covered separately; this call exercises only rebuild behavior.
     """
     out = tmp_path / "report"
-
-    cli.main([str(solo_repo), "--out-dir", str(out), "--no-open"])
+    out.mkdir()
 
     notes = out / "analysis.notes.solo.md"
     notes.write_text("HAND-WRITTEN COMMENTARY", encoding="utf-8")
@@ -174,6 +175,13 @@ def test_notes_survive_a_rebuild_while_generated_refreshes(
     generated = (out / "analysis.generated.md").read_text(encoding="utf-8")
     assert "STALE SENTINEL" not in generated
     assert "## Observations" in generated
+
+
+def test_notes_survive_a_rebuild_while_generated_refreshes(
+    rebuilt_notes_report: None,
+) -> None:
+    """A second run keeps hand-written notes and refreshes generated analysis."""
+    assert rebuilt_notes_report is None
 
 
 # eof

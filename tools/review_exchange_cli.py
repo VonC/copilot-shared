@@ -2,9 +2,9 @@
 """Non-interactive command adapter for the v0.11.0 review-exchange core.
 
 Step 4 gives later requestor and reviewer workflows one stable JSON command
-surface. The adapter resolves one exact document identity, validates ignored
-caller-owned UTF-8 inputs before reading them once, delegates every lifecycle
-mutation to ``ReviewExchangeCore``, and keeps progress off standard output.
+surface. The split parser resolves arguments and document identity; this hub
+validates ignored caller-owned UTF-8 inputs, delegates lifecycle mutations to
+``ReviewExchangeCore``, and keeps progress off standard output.
 """
 
 # ruff: noqa: BLE001, EM101, EM102, TRY003
@@ -13,29 +13,33 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import shutil
 import subprocess
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NoReturn, Protocol, TextIO
+from typing import TYPE_CHECKING, Any, Protocol, TextIO
 
 from tools import find_project_root
+from tools.review_exchange_cli_parser import (
+    context_from_document as _context_from_document,
+)
+from tools.review_exchange_cli_parser import (
+    parser as _parser,
+)
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
     ArtifactPaths,
     ArtifactState,
-    ExchangeIdentity,
     FamilyPolicy,
     ReviewConfiguration,
     ReviewContext,
     ReviewExchangeError,
-    ReviewFamily,
 )
 from tools.review_exchange_paths import derive_artifact_paths, validate_activation
 from tools.review_exchange_store import ReviewExchangeStore
+from tools.review_exchange_transcript_identity import current_request_occurrence
 from tools.review_exchange_wait import WaitOutcome, WaitProgress
 
 if TYPE_CHECKING:
@@ -45,10 +49,6 @@ if TYPE_CHECKING:
     from tools.review_exchange_wait import WaitResult
 
 
-_DOCUMENT_RE = re.compile(
-    r"^(feature-request|issue|design|plan)\.(v\d+\.\d+\.\d+)\."
-    r"([a-z0-9][a-z0-9_-]*)\.md$",
-)
 _STOP_STATES = frozenset(
     {
         ArtifactState.ANSWER_PUBLICATION_IN_PROGRESS,
@@ -85,6 +85,13 @@ class CorePort(Protocol):
         """Publish one answer."""
         ...
 
+    def repair_current_request_transcript(
+        self,
+        transcript_content: str,
+    ) -> CoordinationRecord:
+        """Repair one final legacy request transcript entry."""
+        ...
+
     def wait_for_exact(
         self,
         expected: ArtifactState,
@@ -114,6 +121,10 @@ class CorePort(Protocol):
         """Renew an expired lease for an intact abandoned round."""
         ...
 
+    def force_reclaim(self, summary: str) -> CoordinationRecord:
+        """Resume one escalated round in place for an authorized manual handoff."""
+        ...
+
     def escalate(self, reason: str) -> CoordinationRecord:
         """Stop automation with durable evidence."""
         ...
@@ -137,6 +148,10 @@ class CorePort(Protocol):
 
     def complete(self) -> bool:
         """Finish a human-authorized owning action."""
+        ...
+
+    def force_complete(self, summary: str) -> bool:
+        """Close one abandoned mid-round after an explicit human decision."""
         ...
 
 
@@ -164,98 +179,6 @@ class OperationResult:
     observation: ExchangeObservation | None = None
     exit_code: int | None = None
     extra: Mapping[str, Any] = field(default_factory=_empty_extra)
-
-
-class JsonArgumentParser(argparse.ArgumentParser):
-    """Raise parse errors so main can emit the mandatory final JSON object."""
-
-    def error(self, message: str) -> NoReturn:
-        """Convert argparse diagnostics to typed fatal input."""
-        raise ReviewExchangeError(message)
-
-
-def _positive_int(value: str) -> int:
-    """Parse one positive integer command value."""
-    parsed = int(value)
-    if parsed <= 0:
-        raise argparse.ArgumentTypeError("value must be positive")
-    return parsed
-
-
-def _positive_float(value: str) -> float:
-    """Parse one positive floating-point command value."""
-    parsed = float(value)
-    if parsed <= 0:
-        raise argparse.ArgumentTypeError("value must be positive")
-    return parsed
-
-
-def _parser() -> JsonArgumentParser:
-    """Build the command parser with shared exact-context arguments."""
-    common = JsonArgumentParser(add_help=False)
-    common.add_argument("--family", choices=("specification", "code"), required=True)
-    common.add_argument("--document", required=True)
-    common.add_argument("--umbrella")
-    common.add_argument("--implementation-step")
-    common.add_argument("--convergence-signal", required=True)
-    common.add_argument("--another-round-label", required=True)
-    common.add_argument("--continue-owning-workflow-label", required=True)
-
-    parser = JsonArgumentParser(prog="review-exchange")
-    subparsers = parser.add_subparsers(dest="operation", required=True)
-    for name in ("activate", "status", "start", "continue", "reclaim", "complete"):
-        subparsers.add_parser(name, parents=[common])
-    for name in ("publish-request", "publish-answer"):
-        command = subparsers.add_parser(name, parents=[common])
-        command.add_argument("--content-file", required=True)
-        command.add_argument("--summary-file", required=True)
-    for name in ("wait-request", "wait-answer"):
-        command = subparsers.add_parser(name, parents=[common])
-        command.add_argument("--timeout-seconds", type=_positive_int)
-        command.add_argument("--poll-interval", type=_positive_float, default=1.0)
-        command.add_argument("--progress-interval", type=_positive_float, default=30.0)
-    consume = subparsers.add_parser("consume-answer", parents=[common])
-    consume.add_argument(
-        "--reviewed-work-changed",
-        choices=("true", "false"),
-        required=True,
-    )
-    consume.add_argument("--disagreement", action="store_true")
-    for name in ("escalate", "cancel", "resolve", "archive"):
-        command = subparsers.add_parser(name, parents=[common])
-        command.add_argument("--summary-file", required=True)
-    confirm = subparsers.add_parser("confirm", parents=[common])
-    confirm.add_argument("--choice-label", required=True)
-    confirm.add_argument("--guidance-file")
-    return parser
-
-
-def _context_from_document(
-    family_value: str,
-    document_value: str | Path,
-    umbrella_value: str | Path | None,
-    implementation_step: str | None,
-) -> ReviewContext:
-    """Infer validated identity tokens from one exact reviewed document name."""
-    document = Path(document_value).expanduser().resolve()
-    match = _DOCUMENT_RE.fullmatch(document.name)
-    if match is None:
-        raise ReviewExchangeError("reviewed document has an unsupported file name")
-    prefix, version, slug = match.groups()
-    family = ReviewFamily(family_value)
-    if family is ReviewFamily.CODE:
-        if prefix != "plan":
-            raise ReviewExchangeError("code review requires an exact plan document")
-        type_token = "code"  # noqa: S105 - protocol token, not a credential
-    else:
-        type_token = "design-specification" if prefix == "design" else prefix
-    identity = ExchangeIdentity(family, type_token, version, slug)
-    umbrella = (
-        None
-        if umbrella_value is None
-        else Path(umbrella_value).expanduser().resolve()
-    )
-    return ReviewContext(identity, document, umbrella, implementation_step)
 
 
 def _build_runtime(args: argparse.Namespace, project_root: Path) -> Runtime:
@@ -362,9 +285,42 @@ def _dispatch_simple(
         runtime.core.continue_round()
         return OperationResult("continued")
     if args.operation == "reclaim":
+        return _dispatch_reclaim(args, runtime)
+    return _dispatch_complete(args, runtime)
+
+
+def _dispatch_reclaim(args: argparse.Namespace, runtime: Runtime) -> OperationResult:
+    """Renew one abandoned lease or perform one authorized forced resume."""
+    summary_file: str | None = args.summary_file
+    if args.force and summary_file is None:
+        raise ReviewExchangeError("forced reclaim requires --summary-file")
+    if summary_file is not None and not args.force:
+        raise ReviewExchangeError("reclaim accepts --summary-file only with --force")
+    if summary_file is None:
         runtime.core.reclaim()
         return OperationResult("reclaimed")
-    return OperationResult("completed", extra={"removed": runtime.core.complete()})
+    summary = _read_input_file(runtime.project_root, summary_file, "summary")
+    runtime.core.force_reclaim(summary)
+    return OperationResult("force-reclaimed")
+
+
+def _dispatch_complete(args: argparse.Namespace, runtime: Runtime) -> OperationResult:
+    """Finish normal authorization or one human-closed abandoned round."""
+    summary_file: str | None = args.summary_file
+    if args.force and summary_file is None:
+        raise ReviewExchangeError("forced completion requires --summary-file")
+    if summary_file is not None and not args.force:
+        raise ReviewExchangeError("complete accepts --summary-file only with --force")
+    if summary_file is None:
+        return OperationResult(
+            "completed",
+            extra={"removed": runtime.core.complete()},
+        )
+    summary = _read_input_file(runtime.project_root, summary_file, "summary")
+    return OperationResult(
+        "force-completed",
+        extra={"removed": runtime.core.force_complete(summary)},
+    )
 
 
 def _dispatch_publication(
@@ -380,6 +336,17 @@ def _dispatch_publication(
     else:
         runtime.core.publish_answer(content, summary)
     return OperationResult("published")
+
+
+def _dispatch_request_transcript_repair(
+    args: argparse.Namespace,
+    runtime: Runtime,
+    _stderr: TextIO,
+) -> OperationResult:
+    """Repair the final pending legacy request entry through the core."""
+    summary = _read_input_file(runtime.project_root, args.summary_file, "summary")
+    runtime.core.repair_current_request_transcript(summary)
+    return OperationResult("repaired")
 
 
 def _dispatch_wait(
@@ -469,6 +436,7 @@ _HANDLERS: dict[str, OperationHandler] = {
     "complete": _SIMPLE_HANDLER,
     "publish-request": _dispatch_publication,
     "publish-answer": _dispatch_publication,
+    "repair-request-transcript": _dispatch_request_transcript_repair,
     "wait-request": _dispatch_wait,
     "wait-answer": _dispatch_wait,
     "consume-answer": _dispatch_consume,
@@ -530,6 +498,12 @@ def _success_payload(runtime: Runtime, operation: str, result: OperationResult) 
         "round": record.round_number if record is not None else None,
         "state": state,
     }
+    if state == ArtifactState.REQUEST_PENDING.value and record is not None:
+        payload["exchange_occurrence"] = current_request_occurrence(
+            ReviewExchangeStore(runtime.paths),
+            runtime.context,
+            record.round_number,
+        )
     payload.update(result.extra)
     return payload
 

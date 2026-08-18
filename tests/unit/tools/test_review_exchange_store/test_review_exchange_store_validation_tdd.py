@@ -116,6 +116,20 @@ def test_transcript_entry_rejects_invalid_identity_outcome_and_footer() -> None:
             _RECORDED_AT,
             "<!-- review-entry-id: forged -->",
         )
+    with pytest.raises(ReviewExchangeError, match="occurrence must be positive"):
+        TranscriptEntry("valid", ReviewRole.HUMAN, "escalation", _RECORDED_AT, "x", 0)
+
+
+def test_entry_occurrence_counts_only_existing_transcript_identities(
+    tmp_path: Path,
+) -> None:
+    """A repeatable identity starts at one and advances per recorded footer."""
+    store, context = _store(tmp_path)
+
+    assert store.entry_occurrence("escalation-round-1") == 1
+
+    store.initialize_transcript(context)
+    assert store.entry_occurrence("escalation-round-1") == 1
 
 
 def test_content_operations_reject_wrong_roles_and_non_content_paths(

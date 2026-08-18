@@ -30,6 +30,26 @@ Never create, overwrite, rename, or delete a protocol artifact by hand. Run all
 coordination through `bin/review_exchange.bat` and use the exact paths it
 returns.
 
+## Immutable request evidence
+
+Before every fresh request publication, let `bin/code_review_request.bat` call
+`capture_index_tree` at its publication boundary. The helper records the Git
+tree object of the index in `request_index_tree`; do not substitute a worktree
+digest or compose a separate Git command.
+
+The renderer calls `resolve_code_review_validation` with the mandatory project
+default and additive checks. Pass every exact plan-step addition through a
+repeatable `--plan-validation-command` and every stricter current-request
+addition through a repeatable `--request-validation-command`. An addition may
+share a command with another source, but it cannot remove the `ghog day` project default.
+The resulting `resolved_validation_set` retains each command's project, plan,
+or request sources in deterministic order.
+
+Render both fields from that one typed value under the authored
+`## Code review evidence` heading. Keep this fenced JSON object distinct from
+the shared envelope's `## JSON`; never edit either rendering independently.
+Only then pass the complete paired artifacts to `publish-request`.
+
 ## Ordered round sequence for implementation code review
 
 1. Run `status` with the exact plan, step, optional umbrella, and fixed policy.
@@ -37,7 +57,8 @@ returns.
    once and never restart a live identity.
 3. Prepare separate ignored root UTF-8 assessment, implementation report,
    change summary, writer response, and optional guidance files. Run
-   `bin/code_review_request.bat` with two distinct ignored output paths.
+   `bin/code_review_request.bat` with every applicable additive validation
+   command and two distinct ignored output paths.
 4. Pass the complete request and substantive summary to `publish-request`.
 5. Run `wait-answer` once using the complete marker timeout. Read only the exact
    `paths.answer` file returned for this identity.
@@ -65,7 +86,7 @@ reports an answer, read only the exact `paths.answer` file.
 | `answer-pending` | Read only `paths.answer`, then assess staged repairs. |
 | `abandoned-request` | Call `reclaim`, then wait with unchanged evidence. |
 | `abandoned-answer` | Call `reclaim`, then assess the retained answer. |
-| `abandoned-mid-round` | Call `reclaim`, then resume the persisted owner action. |
+| `abandoned-mid-round` | Call `reclaim` and resume normally, unless the human explicitly decides to close it through forced completion. |
 | `convergence-gate` | Re-present evidence, recommendation, and both choices. |
 | `owning-action-pending` | Resume the authorized commit without asking again. |
 | `escalated` | Stop for shared human resolution; never reclaim it. |

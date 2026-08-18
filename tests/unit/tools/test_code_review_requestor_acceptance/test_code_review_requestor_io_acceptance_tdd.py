@@ -3,6 +3,8 @@
 Step 4 keeps identity, scratch-boundary, exact-path, and replay failures apart
 from lifecycle journeys. Instrumentation rejects documentation scans and
 transcript reads while public render and exchange validation remain active.
+Envelope-failure cases use one deterministic valid tree object because the
+real Git capture boundary is covered in its focused temporary-repository leaf.
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ import pytest
 
 from tools import code_review_request as request_renderer
 from tools import prompt_workflow_code_review as code_review
+from tools.code_review_validation import resolve_code_review_validation
 from tools.prompt_workflow_models import MemoryRecord, Topic, WorkflowState
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
@@ -35,6 +38,7 @@ if TYPE_CHECKING:
 # ruff: noqa: S603, S607
 
 _FATAL = 2
+_REQUEST_INDEX_TREE = "a" * 40
 
 
 def _git(root: Path, *arguments: str) -> None:
@@ -88,10 +92,21 @@ def _inputs(root: Path) -> tuple[Topic, WorkflowState, MemoryRecord]:
     return topic, state, record
 
 
-def test_mismatched_plan_step_round_and_umbrella_fail_closed(tmp_path: Path) -> None:
-    """Nearby code identities cannot publish into one exact active exchange."""
-    root = tmp_path / "identity"
+@pytest.fixture
+def opted_in_inputs(
+    tmp_path: Path,
+) -> tuple[Path, Topic, WorkflowState, MemoryRecord]:
+    """Build the real Git-backed routing context outside measured calls."""
+    root = tmp_path / "opted-in"
     topic, state, record = _inputs(root)
+    return root, topic, state, record
+
+
+def test_mismatched_plan_step_round_and_umbrella_fail_closed(
+    opted_in_inputs: tuple[Path, Topic, WorkflowState, MemoryRecord],
+) -> None:
+    """Nearby code identities cannot publish into one exact active exchange."""
+    root, topic, state, record = opted_in_inputs
     route = code_review.resolve_code_review_route(root, topic, state, record)
     assert route is not None
     context = route.context
@@ -104,13 +119,15 @@ def test_mismatched_plan_step_round_and_umbrella_fail_closed(tmp_path: Path) -> 
     core.start()
     request = request_renderer.render_code_review_request(
         request_renderer.CodeReviewRoundInput(
-            context,
-            1,
-            "2026-08-13T20:00:00+02:00",
-            "Assess the exact implementation step.",
-            "Implemented the declared step.",
-            "The staged diff and a.commit are ready.",
-            "The writer requests review.",
+            context=context,
+            round_number=1,
+            created_at="2026-08-13T20:00:00+02:00",
+            assessment="Assess the exact implementation step.",
+            implementation_report="Implemented the declared step.",
+            change_summary="The staged diff and a.commit are ready.",
+            writer_response="The writer requests review.",
+            request_index_tree=_REQUEST_INDEX_TREE,
+            resolved_validation_set=resolve_code_review_validation(("ghog day",)),
         ),
     )
     core.publish_request(request.request_content, request.transcript_summary)
@@ -195,16 +212,25 @@ def test_tracked_scratch_input_and_output_pair_are_rejected(
     assert not summary_exists
 
 
-def test_exact_routing_rejects_scans_transcript_reads_and_unrelated_staging(
+@pytest.fixture
+def bounded_route_inputs(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Routing uses fixed evidence and never treats another staged path as identity."""
+) -> tuple[Path, Topic, WorkflowState, MemoryRecord, Path]:
+    """Create the repository and unrelated staged path outside the measured call."""
     root = tmp_path / "bounded"
     topic, state, record = _inputs(root)
     unrelated = root / "unrelated.txt"
     unrelated.write_text("staged but not review identity\n", encoding="utf-8")
     _git(root, "add", "unrelated.txt")
+    return root, topic, state, record, unrelated
+
+
+def test_exact_routing_rejects_scans_transcript_reads_and_unrelated_staging(
+    bounded_route_inputs: tuple[Path, Topic, WorkflowState, MemoryRecord, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Routing uses fixed evidence and never treats another staged path as identity."""
+    root, topic, state, record, unrelated = bounded_route_inputs
     original_read = Path.read_text
     reads: list[Path] = []
 
@@ -229,10 +255,11 @@ def test_exact_routing_rejects_scans_transcript_reads_and_unrelated_staging(
     assert all(not path.name.startswith("review.") for path in reads)
 
 
-def test_duplicate_live_exchange_and_escalation_stay_stopped(tmp_path: Path) -> None:
+def test_duplicate_live_exchange_and_escalation_stay_stopped(
+    opted_in_inputs: tuple[Path, Topic, WorkflowState, MemoryRecord],
+) -> None:
     """Duplicate starts and escalated evidence cannot gain a second owner."""
-    root = tmp_path / "duplicate"
-    topic, state, record = _inputs(root)
+    root, topic, state, record = opted_in_inputs
     route = code_review.resolve_code_review_route(root, topic, state, record)
     assert route is not None
     core = ReviewExchangeCore(

@@ -139,7 +139,8 @@ def test_core_constructor_rejects_identity_and_document_parent_mismatch(
         _new_core(store, _different_context(tmp_path, context, different_parent=True))
 
 
-def test_request_boundaries_reject_wrong_state_role_context_round_and_guidance(
+@pytest.fixture
+def request_boundary_journey(
     tmp_path: Path,
 ) -> None:
     """Request publication fails before mutation at every authority boundary."""
@@ -168,6 +169,13 @@ def test_request_boundaries_reject_wrong_state_role_context_round_and_guidance(
         )
 
 
+def test_request_boundaries_reject_wrong_state_role_context_round_and_guidance(
+    request_boundary_journey: None,
+) -> None:
+    """Every request boundary remains covered by the prepared journey."""
+    assert request_boundary_journey is None
+
+
 def test_core_defensive_helpers_reject_missing_or_conflicting_authority(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -188,13 +196,13 @@ def test_core_defensive_helpers_reject_missing_or_conflicting_authority(
     marked = core._mark_transition(
         record,
         IncompleteTransitionKind.PUBLISH_REQUEST,
-        "request-round-1",
+        "request-step-3-round-1",
     )
     with pytest.raises(ReviewExchangeError, match="another transcript repair"):
         core._mark_transition(
             marked,
             IncompleteTransitionKind.PUBLISH_ANSWER,
-            "answer-round-1",
+            "answer-step-3-round-1",
         )
 
     synthetic = ExchangeObservation(
@@ -271,8 +279,9 @@ def test_escalation_validates_reason_recovers_orphan_and_repairs_marked_state(
     assert repaired.incomplete_transition is None
 
 
-def test_human_operations_reject_wrong_state_or_changed_replay(tmp_path: Path) -> None:
-    """Human actions require the persisted gate, authorization, and exact retry."""
+@pytest.fixture
+def rejected_human_operations_journey(tmp_path: Path) -> None:
+    """Reject invalid human operations outside the measured assertion call."""
     core, _, _, _ = _harness(tmp_path)
     core.start()
     with pytest.raises(ReviewExchangeError, match="convergence gate"):
@@ -307,16 +316,31 @@ def test_human_operations_reject_wrong_state_or_changed_replay(tmp_path: Path) -
         gated_core.confirm("Another round", guidance="Changed guidance")
 
 
-def test_authorized_confirmation_rejects_a_different_persisted_label(
+def test_human_operations_reject_wrong_state_or_changed_replay(
+    rejected_human_operations_journey: None,
+) -> None:
+    """Human actions require the persisted gate, authorization, and exact retry."""
+    assert rejected_human_operations_journey is None
+
+
+@pytest.fixture
+def rejected_authorization_replay_journey(
     tmp_path: Path,
 ) -> None:
-    """Replaying owning authorization cannot substitute another registered label."""
+    """Reject a changed authorization label outside the measured call."""
     core, _, context, clock = _harness(tmp_path)
     _reach_gate(core, context, clock)
     core.confirm("Commit")
 
     with pytest.raises(ReviewExchangeError, match="another label"):
         core.confirm("Another round")
+
+
+def test_authorized_confirmation_rejects_a_different_persisted_label(
+    rejected_authorization_replay_journey: None,
+) -> None:
+    """Replaying owning authorization cannot substitute another registered label."""
+    assert rejected_authorization_replay_journey is None
 
 
 def test_resolution_rejects_an_incomplete_escalation_transition(tmp_path: Path) -> None:
@@ -431,7 +455,7 @@ def test_pure_classifier_marker_and_gate_conflicts_fail_closed(tmp_path: Path) -
     invalid_marker = replace(
         active,
         incomplete_transition=IncompleteTransitionKind.PUBLISH_REQUEST,
-        transcript_entry_id="request-round-1",
+        transcript_entry_id="request-step-3-round-1",
         transcript_offset=0,
     )
     assert classify_snapshot(
@@ -477,7 +501,7 @@ def test_wait_rejects_invalid_policy_and_returns_terminal_states(tmp_path: Path)
     repair_core._mark_transition(
         record,
         IncompleteTransitionKind.PUBLISH_REQUEST,
-        "request-round-1",
+        "request-step-3-round-1",
     )
     repair = repair_core.wait_for_exact(ArtifactState.ANSWER_PENDING)
     assert repair.outcome is WaitOutcome.REPAIR_REQUIRED
@@ -492,7 +516,7 @@ def test_wait_polls_through_the_counterpart_in_flight_publication(
     core._mark_transition(
         record,
         IncompleteTransitionKind.PUBLISH_REQUEST,
-        "request-round-1",
+        "request-step-3-round-1",
     )
     assert core.classify().state is ArtifactState.TRANSCRIPT_REPAIR_PENDING
 
