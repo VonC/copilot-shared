@@ -23,6 +23,10 @@ from tools.review_exchange_models import (
 )
 from tools.review_exchange_models_envelope import validate_summary_identity
 from tools.review_exchange_store import TranscriptEntry
+from tools.review_exchange_transcript_identity import (
+    current_request_occurrence,
+    transcript_entry_base,
+)
 
 if TYPE_CHECKING:
     from tools.review_exchange_models import ReviewContext
@@ -150,10 +154,19 @@ class ReviewExchangePublicationMixin(ABC):
             if not repairing and observation.state is not ArtifactState.REQUEST_PENDING:
                 raise ReviewExchangeError("answer publication requires a request pending")
             envelope, _ = self._validate_envelope(markdown, ReviewRole.REVIEWER, record)
-            entry_id, occurrence = self._exchange_entry(
-                self._entry_base(ReviewRole.REVIEWER, record.round_number),
-                before_offset=record.transcript_offset if repairing else None,
+            before_offset = record.transcript_offset if repairing else None
+            occurrence = current_request_occurrence(
+                self.store,
+                self.context,
+                record.round_number,
+                before_offset=before_offset,
             )
+            base = transcript_entry_base(
+                self.context,
+                ReviewRole.REVIEWER,
+                record.round_number,
+            )
+            entry_id = base if occurrence == 1 else f"{base}-exchange-{occurrence}"
             entry = TranscriptEntry(
                 entry_id,
                 ReviewRole.REVIEWER,
@@ -306,10 +319,7 @@ class ReviewExchangePublicationMixin(ABC):
 
     def _entry_base(self, role: ReviewRole, round_number: int) -> str:
         """Return a round identity scoped by step for code reviews."""
-        prefix = "request" if role is ReviewRole.REQUESTOR else "answer"
-        if self.context.implementation_step is not None:
-            return f"{prefix}-step-{self.context.implementation_step}-round-{round_number}"
-        return f"{prefix}-round-{round_number}"
+        return transcript_entry_base(self.context, role, round_number)
 
 
 # eof

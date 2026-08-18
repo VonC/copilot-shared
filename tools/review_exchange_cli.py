@@ -39,6 +39,7 @@ from tools.review_exchange_models import (
 )
 from tools.review_exchange_paths import derive_artifact_paths, validate_activation
 from tools.review_exchange_store import ReviewExchangeStore
+from tools.review_exchange_transcript_identity import current_request_occurrence
 from tools.review_exchange_wait import WaitOutcome, WaitProgress
 
 if TYPE_CHECKING:
@@ -497,6 +498,12 @@ def _success_payload(runtime: Runtime, operation: str, result: OperationResult) 
         "round": record.round_number if record is not None else None,
         "state": state,
     }
+    if state == ArtifactState.REQUEST_PENDING.value and record is not None:
+        payload["exchange_occurrence"] = current_request_occurrence(
+            ReviewExchangeStore(runtime.paths),
+            runtime.context,
+            record.round_number,
+        )
     payload.update(result.extra)
     return payload
 

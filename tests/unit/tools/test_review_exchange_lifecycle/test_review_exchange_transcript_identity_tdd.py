@@ -121,6 +121,26 @@ def test_same_round_in_a_different_step_has_its_own_identity(
     assert different_step_identity_journey is None
 
 
+def test_answer_occurrence_follows_a_restarted_request_without_prior_answer(
+    tmp_path: Path,
+) -> None:
+    """A closed request-only exchange cannot desynchronize paired headings."""
+    core, store, context, clock = _harness(tmp_path)
+    core.start()
+    core.publish_request(_request(context, clock, 1), "First request only.")
+    store.paths.request.unlink()
+    store.paths.coordination.unlink()
+
+    core.start()
+    core.publish_request(_request(context, clock, 1), "Restarted request.")
+    core.publish_answer(_answer(context, clock, 1), "Restarted answer.")
+
+    transcript = store.paths.transcript.read_text(encoding="utf-8")
+    assert "by requestor - Step 3 (exchange 2)" in transcript
+    assert "by reviewer - Step 3 (exchange 2)" in transcript
+    assert "review-entry-id: answer-step-3-round-1-exchange-2" in transcript
+
+
 def test_pending_legacy_repair_rejects_a_foreign_marker_identity(
     pending_legacy_request: tuple[
         ReviewExchangeCore,

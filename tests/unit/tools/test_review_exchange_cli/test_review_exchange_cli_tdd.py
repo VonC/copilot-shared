@@ -37,6 +37,7 @@ from tools.review_exchange_wait import WaitOutcome, WaitProgress, WaitResult
 
 _EXIT_FATAL = 2
 _EXIT_STOP = 3
+_SECOND_EXCHANGE = 2
 
 
 class FakeCore:
@@ -222,6 +223,22 @@ def _input_files(tmp_path: Path) -> tuple[Path, Path, Path]:
     summary.write_text("summary", encoding="utf-8")
     guidance.write_text("guidance", encoding="utf-8")
     return content, summary, guidance
+
+
+def test_status_exposes_the_current_request_exchange_occurrence(tmp_path: Path) -> None:
+    """A reviewer gets the renderer discriminator without reading a transcript."""
+    runtime, core = _runtime(tmp_path)
+    core.state = ArtifactState.REQUEST_PENDING
+    runtime.paths.transcript.write_text(
+        "# Review transcript\n\n"
+        "<!-- review-entry-id: request-step-4-round-1 -->\n\n"
+        "<!-- review-entry-id: request-step-4-round-1-exchange-2 -->\n",
+        encoding="utf-8",
+    )
+
+    payload = cli._success_payload(runtime, "status", cli.OperationResult("observed"))
+
+    assert payload["exchange_occurrence"] == _SECOND_EXCHANGE
 
 
 def _run(
