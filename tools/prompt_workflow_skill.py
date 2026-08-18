@@ -81,6 +81,15 @@ IMPLEMENT_STEP = 10
 SPEC_REVIEW_REQUESTOR = "spec-review-requestor"
 SPEC_REVIEWER = "spec-reviewer"
 CODE_REVIEW_REQUESTOR = "code-review-requestor"
+CODE_REVIEWER = "code-reviewer"
+FORCED_REVIEW_ROLES = frozenset(
+    {
+        SPEC_REVIEW_REQUESTOR,
+        SPEC_REVIEWER,
+        CODE_REVIEW_REQUESTOR,
+        CODE_REVIEWER,
+    },
+)
 
 
 def next_command(
@@ -424,30 +433,14 @@ def forced_command(
         exists; None when the skill is unknown or its document is absent.
     """
     state = steps.compute_state(root, topic, None)
-    if skill_name == CODE_REVIEW_REQUESTOR:
-        route = code_review.resolve_code_review_route(
+    if skill_name in FORCED_REVIEW_ROLES:
+        return _forced_review_command(
             root,
             topic,
             state,
-            memory.read_memory(root),
-        )
-        return (
-            None
-            if route is None
-            else code_review.command_for_route(root, route, host_prefix(env, override), render_step_command)
-        )
-    if skill_name == SPEC_REVIEWER:
-        return _forced_spec_reviewer_command(root, topic, state, env, override)
-    if skill_name == SPEC_REVIEW_REQUESTOR:
-        doc = review.forced_specification_document(root, topic, state)
-        return (
-            None
-            if doc is None
-            else render_command(
-                host_prefix(env, override),
-                f"{SPEC_REVIEW_REQUESTOR}{MD_SUFFIX}",
-                _relpath(root, doc),
-            )
+            skill_name,
+            env,
+            override,
         )
     role = FORCED_ROLE.get(skill_name)
     if role is None:
@@ -465,6 +458,44 @@ def forced_command(
         return None
     instruction = f"{skill_name}{MD_SUFFIX}"
     return render_command(host_prefix(env, override), instruction, _relpath(root, doc))
+
+
+def _forced_review_command(  # noqa: PLR0913
+    root: Path,
+    topic: Topic,
+    state: WorkflowState,
+    skill_name: str,
+    env: Mapping[str, str],
+    override: str | None,
+) -> str | None:
+    """Dispatch one explicit review role without burdening generic routing."""
+    if skill_name == CODE_REVIEWER:
+        return _forced_code_reviewer_command(root, topic, state, env, override)
+    if skill_name == SPEC_REVIEWER:
+        return _forced_spec_reviewer_command(root, topic, state, env, override)
+    if skill_name == CODE_REVIEW_REQUESTOR:
+        route = code_review.resolve_code_review_route(
+            root,
+            topic,
+            state,
+            memory.read_memory(root),
+        )
+        if route is None or route.actor is not code_review.CodeReviewActor.REQUESTOR:
+            return None
+        return code_review.command_for_route(
+            root,
+            route,
+            host_prefix(env, override),
+            render_step_command,
+        )
+    doc = review.forced_specification_document(root, topic, state)
+    if doc is None:
+        return None
+    return render_command(
+        host_prefix(env, override),
+        f"{SPEC_REVIEW_REQUESTOR}{MD_SUFFIX}",
+        _relpath(root, doc),
+    )
 
 
 def _forced_spec_reviewer_command(
@@ -490,6 +521,38 @@ def _forced_spec_reviewer_command(
         host_prefix(env, override),
         f"{SPEC_REVIEWER}{MD_SUFFIX}",
         _relpath(root, route.context.document_path),
+    )
+
+
+def _forced_code_reviewer_command(
+    root: Path,
+    topic: Topic,
+    state: WorkflowState,
+    env: Mapping[str, str],
+    override: str | None,
+) -> str | None:
+    """Render only an exact pending code reviewer route and diagnose cold reclaim."""
+    route = code_review.resolve_code_review_route(
+        root,
+        topic,
+        state,
+        memory.read_memory(root),
+    )
+    if route is None:
+        return None
+    if route.state is ArtifactState.ABANDONED_REQUEST:
+        message = (
+            "forced code-reviewer cannot enter an abandoned request cold; "
+            f"run {CODE_REVIEW_REQUESTOR} reclaim for {route.context.identity.key}"
+        )
+        raise code_review.CodeReviewRoutingError(message)
+    if route.actor is not code_review.CodeReviewActor.REVIEWER:
+        return None
+    return code_review.command_for_route(
+        root,
+        route,
+        host_prefix(env, override),
+        render_step_command,
     )
 
 

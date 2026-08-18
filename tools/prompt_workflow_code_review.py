@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Final, cast
 
 from tools import prompt_workflow_plan as plan
@@ -41,18 +42,39 @@ CODE_REVIEW_POLICY: Final[FamilyPolicy] = FamilyPolicy(
     "Commit",
 )
 CODE_REVIEW_REQUESTOR: Final[str] = "code-review-requestor.md"
+CODE_REVIEWER: Final[str] = "code-reviewer.md"
 
 
 class CodeReviewRoutingError(PromptWorkflowError):
     """Raised when one exact code-review route is absent or inconsistent."""
 
 
+class CodeReviewActor(Enum):
+    """The only two workflow roles allowed to own a code-review route."""
+
+    REVIEWER = "reviewer"
+    REQUESTOR = "requestor"
+
+
+def _actor_for_state(state: ArtifactState) -> CodeReviewActor:
+    """Resolve the single owner from one already-classified exchange state."""
+    if state is ArtifactState.REQUEST_PENDING:
+        return CodeReviewActor.REVIEWER
+    return CodeReviewActor.REQUESTOR
+
+
 @dataclass(frozen=True)
 class CodeReviewRoute:
-    """One exact implementation context and its observed exchange state."""
+    """One exact implementation context, classified state, and single owner."""
 
     context: ReviewContext
     state: ArtifactState
+    actor: CodeReviewActor
+
+    def __post_init__(self) -> None:
+        """Reject ownership that does not follow the exact state partition."""
+        if self.actor is not _actor_for_state(self.state):
+            raise CodeReviewRoutingError("code-review route actor disagrees with state")
 
 
 def _umbrella_path(root: Path, topic: Topic) -> Path | None:
@@ -176,7 +198,11 @@ def resolve_code_review_route(
     ).classify()
     if observation.state is ArtifactState.INCONSISTENT:
         raise CodeReviewRoutingError(f"inconsistent code exchange: {observation.diagnostic}")
-    return CodeReviewRoute(context, observation.state)
+    return CodeReviewRoute(
+        context,
+        observation.state,
+        _actor_for_state(observation.state),
+    )
 
 
 def command_for_route(
@@ -185,12 +211,17 @@ def command_for_route(
     prefix: str,
     render_step: Callable[[str, str, str, str], str],
 ) -> str:
-    """Render the specialized requestor handoff for one immutable route."""
+    """Render the specialized handoff from one immutable typed actor."""
     document = route.context.document_path.relative_to(root.resolve()).as_posix()
     implementation_step = cast("str", route.context.implementation_step)
+    instruction = (
+        CODE_REVIEWER
+        if route.actor is CodeReviewActor.REVIEWER
+        else CODE_REVIEW_REQUESTOR
+    )
     return render_step(
         prefix,
-        CODE_REVIEW_REQUESTOR,
+        instruction,
         document,
         implementation_step,
     )
