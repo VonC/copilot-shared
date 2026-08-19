@@ -497,11 +497,11 @@ outside the selected scope.
   six-item floor is now in the body where criterion 5 can reference it, which
   was the round-1 request. Two items are not yet testable. Suggested wording:
 
-  > 3. Every mandatory validation command completes with a passing result under
-  >    the project's own gate, including its coverage threshold.
-
-  > 5. No finding raised in this round, and no finding carried into the current
-  >    request, remains unresolved.
+  > 3/ Every mandatory validation command completes with a passing result under
+  > the project's own gate, including its coverage threshold.
+  >
+  > 5/ No finding raised in this round, and no finding carried into the current
+  > request, remains unresolved.
 
   Item 5 matters more than it looks: the transcript is not reread as working
   context, so a finding from an earlier round exists for the reviewer only if
