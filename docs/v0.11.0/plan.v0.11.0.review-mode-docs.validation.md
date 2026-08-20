@@ -2,8 +2,8 @@
 
 No, it is not implemented.
 
-This record tracks five documentation slices. Step 1 is implemented and
-validated; Steps 2 through 5 remain pending.
+This record tracks five documentation slices. Steps 1 and 2 are implemented
+and validated; Steps 3 through 5 remain pending.
 
 ## File-based IO cost clarification for v0.11.0 implementation
 
@@ -112,8 +112,12 @@ integrity issue needs to be addressed.
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because tutorials `09` and `10`,
-navigation, and journey assertions have not been written.
+Yes. Step 2 has been fully implemented.
+
+The two numbered tutorials now teach separate specification and code-review
+journeys through labelled agent sessions, an intermediate answer, and the exact
+human gate. Navigation, cross-links, coverage rows, and four focused acceptance
+tests pin the family-specific paths.
 
 ### Goal for Step 2
 
@@ -128,27 +132,63 @@ requestor and reviewer sessions, intermediate changes, and human gates.
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- Added tutorial `09` for a specification exchange from the root marker through
+  round 1 changes, round 2 convergence, and the `Consolidate` or
+  `Revise and review again` choice.
+- Added tutorial `10` for one implementation step, including
+  `request_index_tree`, `resolved_validation_set`, validation-state comparison,
+  staged repair assessment, `a.commit`, and the `Commit` or
+  `Rework and review again` choice.
+- Used one fictional route-warning effort while keeping each tutorial runnable
+  from its own starting point and cross-linking the family divergence.
+- Added both tutorials to the AI-assisted workflow navigation without
+  renumbering tutorials `01` through `08`.
+- Updated the coverage record after Step 2 and added four acceptance tests for
+  numbering, links, sessions, returned answer paths, evidence, and choices.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+No production type or class was introduced. The existing documentation
+acceptance module adds four test functions and two path constants.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+The change remains in tutorial, navigation, versioned coverage, and bounded
+acceptance-test surfaces. The pages describe observable behavior and link the
+canonical requestor and reviewer instructions as the agent-policy owners. No
+production exchange, persistence, workflow, or adapter layer changed.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Normal readers open one selected tutorial and follow explicit links. The tests
+read only the two declared tutorials, `wiki/README.md`, and the fixed coverage
+path, so work remains linear in a bounded path set. The full Groundhog walk
+completed with `cov=100`, `outliers=0`, and `exit=0`.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+This documentation step changes no production class and therefore creates no
+class-specific unit-test coverage obligation. Its acceptance package now has
+nine green tests; the four Step 2 cases cover every tests-first item in the
+plan, and the full suite retains 100% project coverage.
+
+No unit-tested class is below 100% or needs completing.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+Both tutorials use the generic independent-review logo, preserve the two-agent
+boundary, and keep the specification and code evidence distinct. Their
+repository-relative examples share one fictional effort without creating live
+artifact links, local documentation links resolve, existing tutorial numbers
+remain unchanged, and the acceptance module is 204 lines against its 210-line
+post-step advisory and below the 550-line split threshold.
+
+No existing feature or reporting capability is impaired, and no Step 2 feature
+integrity issue needs to be addressed.
 
 ---
 
