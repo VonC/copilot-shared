@@ -131,6 +131,8 @@ Learning by doing: follow the steps in order and inspect the result.
 - 🤖 [Plug llm-shared into your project](tutorials/01-plug-llm-shared-into-your-project.md)
 - 📝 [From draft note to settled requirement](tutorials/02-from-draft-to-settled-requirement.md)
 - 🔁 [Run the implement chain on one plan step](tutorials/04-run-the-implement-chain.md)
+- 🤖 [Run your first specification review](tutorials/09-run-your-first-specification-review.md)
+- 🤖 [Run your first implementation code review](tutorials/10-run-your-first-implementation-code-review.md)
 
 ### Additional utilities tutorials
 

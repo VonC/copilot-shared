@@ -1,8 +1,9 @@
-"""Step 1 acceptance for independent review-mode documentation.
+"""Step 1 and 2 acceptance for independent review-mode documentation.
 
 The tests pin entry-point discovery, the visual and terminology boundary from
 self-review, canonical authority links, bounded local-link checks, and the
-incremental AC01-through-AC12 coverage record.
+incremental AC01-through-AC12 coverage record. The tutorial checks add the two
+agent sessions, bounded handoff, family evidence, and human gates.
 """
 
 from __future__ import annotations
@@ -19,6 +20,8 @@ _EXPLANATION = "wiki/explanation/independent-review-mode-and-human-authority.md"
 _SELF_REVIEW_EXPLANATION = "wiki/explanation/why-the-llm-reviews-its-own-work.md"
 _SELF_REVIEW_HOW_TO = "wiki/how-to/answer-a-review-round.md"
 _COVERAGE = "docs/v0.11.0/coverage.v0.11.0.review-mode-docs.md"
+_SPEC_TUTORIAL = "wiki/tutorials/09-run-your-first-specification-review.md"
+_CODE_TUTORIAL = "wiki/tutorials/10-run-your-first-implementation-code-review.md"
 _STEP_1_PAGES = (
     "README.md",
     "wiki/README.md",
@@ -127,3 +130,75 @@ def test_step_1_coverage_starts_complete_enumerations_with_pending_rows(
     assert "| AC02 | Page evidence |" in coverage
     assert "| AC10 | Validation evidence | Pending |" in coverage
     assert coverage.count("| Pending |") >= _MINIMUM_PENDING_ROWS
+
+
+def test_step_2_tutorials_append_numbers_cross_link_and_resolve(
+    docs_root: Path,
+) -> None:
+    """Step 2 order: tutorials 09 and 10 append, cross-link, and resolve."""
+    wiki_readme = read_declared(docs_root, "wiki/README.md")
+    specification = read_declared(docs_root, _SPEC_TUTORIAL)
+    code = read_declared(docs_root, _CODE_TUTORIAL)
+
+    spec_link = "tutorials/09-run-your-first-specification-review.md"
+    code_link = "tutorials/10-run-your-first-implementation-code-review.md"
+    assert "tutorials/08-protect-your-first-repository.md" in wiki_readme
+    assert wiki_readme.index(spec_link) < wiki_readme.index(code_link)
+    assert "10-run-your-first-implementation-code-review.md" in specification
+    assert "09-run-your-first-specification-review.md" in code
+    for tutorial in (specification, code):
+        assert "../assets/logo-llm-shared-transparent.png" in tutorial
+    assert_local_links(docs_root, (_SPEC_TUTORIAL, _CODE_TUTORIAL, "wiki/README.md"))
+
+
+def test_step_2_tutorials_show_two_agent_sessions_and_round_trip(
+    docs_root: Path,
+) -> None:
+    """Step 2 handoff: each journey shows both agents and the returned answer."""
+    for tutorial_path in (_SPEC_TUTORIAL, _CODE_TUTORIAL):
+        tutorial = read_declared(docs_root, tutorial_path)
+        assert "Requestor agent session" in tutorial
+        assert "Reviewer agent session" in tutorial
+        assert "bounded wait" in tutorial
+        assert "paths.answer" in tutorial
+        assert "changes-requested" in tutorial
+        assert "round 2" in tutorial.casefold()
+        assert "Return to the requestor agent session" in tutorial
+
+
+def test_step_2_family_evidence_and_human_choices_stay_distinct(
+    docs_root: Path,
+) -> None:
+    """Step 2 families: identity, evidence, and human gates remain distinct."""
+    specification = read_declared(docs_root, _SPEC_TUTORIAL)
+    code = read_declared(docs_root, _CODE_TUTORIAL)
+
+    for term in ("umbrella", "reviewed specification", "round"):
+        assert term in specification
+    for choice in ("Consolidate", "Revise and review again"):
+        assert choice in specification
+    for term in (
+        "implementation plan",
+        "implementation step",
+        "request_index_tree",
+        "resolved_validation_set",
+        "validation-state compare",
+        "a.commit",
+    ):
+        assert term in code
+    for choice in ("Commit", "Rework and review again"):
+        assert choice in code
+
+
+def test_step_2_coverage_records_completed_tutorial_evidence(
+    docs_root: Path,
+) -> None:
+    """Step 2 coverage: AC03 and tutorial evidence name both pages and tests."""
+    coverage = read_declared(docs_root, _COVERAGE)
+
+    assert "## Acceptance evidence after Step 2" in coverage
+    assert "| AC03 | Page evidence | Complete |" in coverage
+    assert _SPEC_TUTORIAL in coverage
+    assert _CODE_TUTORIAL in coverage
+    assert "test_step_2_tutorials_show_two_agent_sessions_and_round_trip" in coverage
+    assert "| AC04 | Page evidence | Pending |" in coverage
