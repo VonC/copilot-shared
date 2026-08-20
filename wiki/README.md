@@ -61,6 +61,11 @@ artifact is the input to the next phase. This is the central idea presented in
 [slide 4 of the project deck](../docs/llm-shared_presentation.html#solution-workflow-phases)
 and developed further in [Why the LLM reviews its own work](explanation/why-the-llm-reviews-its-own-work.md).
 
+An opt-in **independent review mode** adds a separate requestor, reviewer, and
+human gate around settled specification and implementation work. Start with
+[why independent review mode separates authority](explanation/independent-review-mode-and-human-authority.md)
+to see how it differs from the self-review loop.
+
 ## Four officially supported AI environments
 
 One shared Markdown instruction body is exposed through the native discovery
@@ -100,6 +105,7 @@ their choices.
 
 ### AI-assisted development workflow explained
 
+- 🤖 [Why independent review mode separates authority](explanation/independent-review-mode-and-human-authority.md)
 - 📝 [Why documents come before code](explanation/why-documents-before-code.md)
 - 🔁 [Why the LLM reviews its own work](explanation/why-the-llm-reviews-its-own-work.md)
 - 🔁 [Where the human stays in the loop](explanation/where-the-human-stays-in-the-loop.md)

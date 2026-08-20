@@ -10,6 +10,12 @@ The AI creates and later consolidates the review round; the human supplies the
 answers. Invoke consolidation directly only when resuming an existing answered
 document outside the original automated chain.
 
+## Separate independent-review rounds
+
+This guide covers the human-answered **self-review loop** for open questions.
+For the opt-in exchange between separate agents, first read
+[why independent review mode separates authority](../explanation/independent-review-mode-and-human-authority.md).
+
 🔁 Goal: answer the open questions a review skill raised on a requirement,
 design or plan, and get the answers folded into the document.
 
