@@ -2,8 +2,8 @@
 
 No, it is not implemented.
 
-This initial record tracks five documentation slices. No implementation check
-has taken place yet.
+This record tracks five documentation slices. Step 1 is implemented and
+validated; Steps 2 through 5 remain pending.
 
 ## File-based IO cost clarification for v0.11.0 implementation
 
@@ -25,8 +25,12 @@ Each review must reject quadratic traversal or production metadata loading.
 
 ### Analysis of Step 1 implementation state
 
-Not started. Step 1 is not implemented because its entry-point, explanation,
-comparison-link, and acceptance-test changes have not been written.
+Yes. Step 1 has been fully implemented.
+
+Both entry points now distinguish independent review mode from the self-review
+loop and route readers to one authority explanation. Acceptance tests pin the
+navigation order, visual boundary, canonical policy links, local targets, and
+the incremental coverage record.
 
 ### Goal for Step 1
 
@@ -42,27 +46,65 @@ independent review mode from the self-review loop.
 
 ### What was implemented for Step 1
 
-_(empty — no check has taken place yet.)_.
+- Added the independent-authority explanation with requestor, reviewer, and
+  human roles, advisory convergence, durable transcript evidence, and links to
+  the three canonical policy instructions.
+- Linked the explanation from `README.md` and `wiki/README.md` while retaining
+  explanation, tutorials, how-to guides, then reference order.
+- Added reciprocal comparison callouts to the two self-review pages without
+  changing their review logo or purpose.
+- Created the versioned AC01-through-AC12 coverage table with six pending
+  inventory-candidate rows and Step 1 evidence.
+- Added five acceptance tests plus bounded local-link and named-path helpers.
+- Recorded the test-module variance at 129 lines, nine above its 120-line
+  advisory, while remaining below the 550-line split threshold and 650-line
+  ceiling; `conftest.py` is 103 lines against its 180-line advisory.
 
 ### New types or classes introduced for Step 1
 
-_(empty — no check has taken place yet.)_.
+No production type or class was introduced. Test support adds small functions
+for declared UTF-8 reads, repository containment, local-link resolution,
+Markdown fragment checks, and named-path checks, plus the `docs_root` fixture.
 
 ### Architecture check for Step 1
 
-_(empty — no check has taken place yet.)_.
+The change stays in documentation and acceptance-test adapters. Test support
+reads only explicitly supplied paths and does not enter production exchange,
+workflow, persistence, or domain modules. Canonical instructions remain policy
+owners, while the wiki explains observable behavior in its own words.
+
+No DDD-Hexagonal smell, cross-layer import, or misplaced production behavior
+was found. No architecture issue needs to be addressed.
 
 ### Performance check for Step 1
 
-_(empty — no check has taken place yet.)_.
+Normal navigation follows explicit links and adds no runtime scan. Acceptance
+helpers traverse each declared page and local target once, so validation stays
+linear in the bounded input set. The fresh Groundhog walk completed 1,882 tests
+with `cov=100`, `outliers=0`, and `exit=0`.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 1
 
-_(empty — no check has taken place yet.)_.
+This documentation slice changes no production class file and therefore adds
+no class-specific unit-coverage obligation. Its five repository-level
+acceptance tests cover every Step 1 behavior named by the plan, and the full
+suite retained the 100% project coverage gate.
+
+No unit-tested class is below 100% or needs completing.
 
 ### Feature integrity for Step 1
 
-_(empty — no check has taken place yet.)_.
+The existing self-review pages retain their purpose and review logo, and both
+now link to the separate independent-review explanation. The new page uses the
+generic logo, states its invocation model, names all three authorities, and
+attributes agent policy to the canonical instructions. Both entry points keep
+the mandated Diataxis order, all declared local links and named paths resolve,
+and the coverage table carries every criterion and candidate forward.
+
+No existing feature or reporting capability is impaired, and no Step 1 feature
+integrity issue needs to be addressed.
 
 ---
 
