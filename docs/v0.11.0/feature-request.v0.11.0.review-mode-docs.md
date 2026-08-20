@@ -254,3 +254,15 @@ This feature depends on the completed `review-exchange-core`,
 state transitions, templates, launchers, reviewer assessment, writer
 continuation, and human authority. `review-mode-docs` owns the project and
 Diataxis documentation that teaches and defines that settled behavior.
+
+## File-based IO cost clarification for review-mode documentation
+
+- Normal readers follow explicit entry-point and page links; independent review
+  mode does not add a metadata crawl or directory scan to a requestor or
+  reviewer response path.
+- Reference construction reads the named canonical instructions, launchers,
+  templates, and typed models once during documentation authoring rather than
+  adding runtime discovery.
+- Acceptance validation traverses only the delivered documentation set and its
+  declared local links, so its filesystem cost stays linear in the bounded set
+  of changed pages and evidence rows.

@@ -315,3 +315,12 @@ implementation-plan phase has enough information to proceed.
 | A host lacks a shared requestor wrapper | The adapter table marks the wrapper absent and points to the family adapter that exists. | Documentation records real host coverage without inventing parity. |
 | An inventory page gains only a row | It links to the central reference and does not restate policy. | Link-only edits carry no contract-definition obligation. |
 | Documentation validation runs after staging | Both Git whitespace checks run, links and named paths resolve, and manual markdownlint review keeps MD024 and MD025 active. | Staged and unstaged changes both receive evidence. |
+
+## File-based IO cost clarification for v0.11.0 review-mode documentation
+
+The delivered pages use explicit links and fixed inventories. Opening a normal
+journey therefore reads only the selected page and the links the reader follows;
+it does not scan the repository for exchange metadata. Authoring and acceptance
+validation may read the finite page set, declared local targets, typed state
+model, and launcher contract once, for linear `O(n)` work in those bounded
+inputs. No production response path or exchange persistence behavior changes.
