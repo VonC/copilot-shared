@@ -1755,3 +1755,817 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 3
+
+- Recorded: 2026-08-20T21:27:20+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 review-mode-docs round 1
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+Implementation step: 3
+Review round: 1
+
+### Code review evidence for step 3 review-mode-docs round 1
+
+request_index_tree: 88faa944c4a313ef817f1a5749f6e066637589bd
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n Human wiki/how-to/recover-an-independent-review.md (sources: plan)
+- ghog single tests/unit/tools/test_review_mode_docs_acceptance (sources: plan)
+- git diff --check (sources: plan)
+- git diff --cached --check (sources: plan)
+
+### Requestor assessment for step 3 review-mode-docs round 1
+
+Step 3 is fully implemented. Five how-to pages assign all seven operational
+goals: opt-in and opt-out, specification start and resume, code-review start and
+resume, returned-result interpretation, durable authorized continuation,
+ordinary reclaim, and stopped-state recovery. Each page has one how-to purpose,
+uses the generic logo, follows final JSON `paths`, and prohibits manual protocol
+artifact edits.
+
+Recovery separates the ordinary lease path from `Human decision required`.
+Forced reclaim, forced completion, and resolution all sit below that heading
+with human authority, artifact-shape preconditions, and durable evidence
+effects. Result guidance distinguishes exits `0`, `3`, and `2`, and continues
+owning work only after `owning_action_authorized: true`.
+
+Four new acceptance tests bring the package to thirteen tests and the module to
+290 lines against its 320-line Step 3 advisory. A full walk first hit the known
+review-exchange-core Windows `os.replace` race in two unrelated recovery tests;
+both passed in Groundhog’s focused run. The required rerun then completed 1,890
+tests with `cov=100`, `outliers=0`, and `exit=0`.
+
+One polishing issue is disclosed rather than hidden: adding five links to the
+mixed-ending `wiki/README.md` currently renders as 9 additions and 4
+terminator-only deletions. `git diff --check` passes, but the earlier Step 1 and
+2 review pattern shows those unchanged lines should be restored byte-for-byte.
+
+### Implementation report for step 3 review-mode-docs round 1
+
+Step 3 adds five focused guides under `wiki/how-to/`: marker activation,
+specification review, implementation code review, result and authorized-action
+handling, and recovery. The wiki list links them in the how-to category, and the
+coverage document advances AC04 and AC07 to complete while leaving the Step 4
+reference and Step 5 validation boundaries pending.
+
+The recovery guide uses shipped launcher forms for ordinary `reclaim`, human
+`reclaim --force`, human `complete --force`, `resolve`, and `archive`. Four
+acceptance tests pin the page-to-goal map, local links, generic logos, final JSON
+and exit rules, human heading order, forced command placement, recovery states,
+and the coverage rows. No production module or protocol behavior changed.
+
+Implementation-check records an exact Step 3 Yes and updates the document theme
+to say Steps 1 through 3 are implemented and validated while Steps 4 and 5
+remain pending, avoiding the stale-line finding from the prior two steps.
+
+### Change summary for step 3 review-mode-docs round 1
+
+The staged subject contains nine paths in two dependency-ordered groups. Group 1
+contains the coverage table, acceptance module, wiki list, and five new guides
+under `docs(review-mode-docs): add task guides`. Group 2 contains only the
+validation plan under `docs(review-mode-docs): record step 3 validation`.
+
+`a.commit` covers all nine staged paths exactly, and staged whitespace checks
+are clean. The known `wiki/README.md` terminator churn is inside Group 1 and is
+called out for reviewer repair; it does not alter grouping or the commit
+subjects.
+
+### Writer response for step 3 review-mode-docs round 1
+
+Writer response: This is the first Step 3 code-review round, so there is no earlier reviewer
+feedback to accept or contest. The request reports the exact staged subject,
+green final walk, prior transient Windows failures, line budget, task coverage,
+commit grouping, and the known mixed-ending wiki hunk for independent review.
+
+### Reviewer focus for step 3 review-mode-docs round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-3-round-1 -->
+
+## Round 1 by reviewer - Step 3
+
+- Recorded: 2026-08-20T21:40:05+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed index identity for step 3 review-mode-docs round 1 (exchange 1)
+
+Baseline index tree: 88faa944c4a313ef817f1a5749f6e066637589bd
+
+Assessed index tree: 8c164e9cefbdbc37ce1fcb19c4c6a6a0dbdc99b8
+
+### Implementation check for step 3 review-mode-docs round 1 (exchange 1)
+
+Result: Yes. Step 3 has been fully implemented.
+
+The five how-to pages exist exactly as the consolidated design's topology
+requires, and between them they own all seven operational goals: one opt-in page
+covering enable and disable, one specification page and one implementation-code
+page each covering start and resume, one results page covering the returned
+result and authorized continuation, and one recovery page covering ordinary
+reclaim and stopped-state recovery in separate sections. Each carries the
+generic logo, an invocation model, and the instruction not to reconstruct
+protocol filenames or edit protocol artifacts.
+
+The recovery page satisfies the settled Q13 contract precisely. Ordinary reclaim
+comes first, then a `## Human decision required` heading, then a blockquote
+naming Authority, Precondition, and Evidence effect, and only after that do
+`reclaim --force`, `complete --force`, `resolve`, and `archive` appear. No forced
+command sits above that boundary.
+
+The reviewer verified the protocol claims against the canonical instruction and
+the shipped code rather than reading them for plausibility. Ordinary reclaim is
+correctly limited to an intact lease-expired round and correctly described as
+idempotent while the round is live and as leaving request, answer, and
+transcript content untouched. `reclaim --force` correctly requires an escalated
+exchange whose artifacts are intact and correctly restores the same round and
+returns ownership from artifact shape. `complete --force` correctly requires the
+intact artifact-free abandoned-mid-round shape and correctly disclaims
+manufacturing convergence or owning authorization. `resolve` and `archive`
+correctly start a fresh round, with archive preserving evidence under derived
+names, and the page correctly forbids resuming the interrupted transition. The
+exit contract on the results page matches the shipped meanings of `0`, `3`, and
+`2`, and its warning not to read `outcome: published` as authorization is
+exactly right: publication and the human gate are separate, as this very
+exchange demonstrates. The `owning_action_authorized` and
+`owning-action-pending` continuation rule matches the instruction, including not
+asking the human twice. The opt-in page's 1,800-second default matches
+`_DEFAULT_WAIT_SECONDS`, and its single `wait_timeout_seconds=` override matches
+the marker parser.
+
+One claim on the opt-in page was wrong and was repaired; it is recorded in the
+repair inventory rather than counted against the step's completeness.
+
+The four new acceptance tests precede the pages they pin and cover every
+tests-first item the plan names for Step 3: the five-page topology with all seven
+goals and no mixed Diataxis purpose, returned-path and exit-contract discipline,
+the ordinary-before-human ordering with the three blockquote labels and the
+forced commands below the boundary, and the completed AC04 and AC07 coverage
+rows with the pending Step 4 boundary. The package is green.
+
+The staged set is nine paths: the eight named by the Step 3 file list plus the
+validation plan as review metadata. Nothing staged falls outside the step, and
+the working tree holds no unstaged writer work beyond the protocol transcript.
+
+The document-level theme sentence was refreshed proactively this round, without
+a reviewer having to return it, and now reads that Steps 1 through 3 are
+implemented and validated while Steps 4 and 5 remain pending. The opening
+`No, it is not implemented.` line correctly stays while two steps are open.
+
+The architecture assessment is clean. No production module changed, every
+traversal stays linear in a bounded declared path set, and no existing feature
+or reporting capability is impaired.
+
+Validation plan effects: Reviewer mode wrote no validation-plan row this round. Neither repair changed a
+recorded figure: one restored line terminators and the other corrected a
+sentence in a how-to page, so no Step 3 row needed adjustment.
+
+The whole staged validation-plan difference is therefore writer work that was
+assessed rather than rewritten. The Step 3 verdict sentence is the exact
+`Yes. Step 3 has been fully implemented.` form, followed by an empty line and a
+prose summary, as the template orders, and the required subsections are present
+with their closing sentences.
+
+The document-level theme sentence was refreshed by the writer this round and now
+reads that Steps 1 through 3 are implemented and validated while Steps 4 and 5
+remain pending. That closes, at source, the finding this reviewer had to return
+after Step 1 and again after Step 2. The opening `No, it is not implemented.`
+line correctly stays while two steps are open.
+
+No row for any other step was touched, and no umbrella row was completed.
+
+### Pre-repair mandatory checks and coverage for step 3 review-mode-docs round 1 (exchange 1)
+
+The writer reported 1,890 passing tests at 100% coverage with zero outliers
+before publishing. That report was not inherited as this answer's evidence;
+every resolved command was re-run after the repairs and `ghog day` was forced.
+
+One pre-repair state was measured directly and is the origin of the line-ending
+repair. The staged blob of `wiki/README.md` carried 193 CR against 210 LF while
+`HEAD` carries 197 CR against 205 LF. `git diff --cached --numstat` reported nine
+added and four removed lines, while the same diff with `--ignore-cr-at-eol`
+reported five added and zero removed. That pair proves four pre-existing lines
+had been rewritten by terminator alone.
+
+Both whitespace commands passed before the repairs, because the rewritten lines
+were LF. This is the same blind spot recorded in Steps 1 and 2: `git diff --check`
+inspects trailing whitespace and conflict markers, not a change of line
+terminator.
+
+The second repair had no measurable pre-state beyond the sentence itself, which
+is quoted in the repair inventory.
+
+Pre-repair blobs were recorded for both paths before the first edit to each:
+`wiki/README.md` at `27ff234765dc0e3b0b7f2f9c447a5bd32d894647` and
+`wiki/how-to/enable-independent-review-mode.md` at
+`d98660c39716a9af07127c5b38f7f6da4199d77a`.
+
+### Resolved validation set and sources for step 3 review-mode-docs round 1 (exchange 1)
+
+The request supplied five commands and the current resolver produced the same
+five, so the union is five and every one was run after the repairs.
+
+`ghog day`, sourced from the project, was run with `--force` rather than
+accepting a freshness short-circuit, because the repairs had touched tracked
+files. The forced walk reported `check` green, `affected --no-cov` green,
+`Objective reached`, and `ghog full done fail=0 warn=0 xfail=0 cov=100
+outliers=0 excluded=0 exit=0`.
+
+The transient atomic-rename failure recorded during Step 2 did not recur in this
+round.
+
+`ghog single tests/unit/tools/test_review_mode_docs_acceptance`, sourced from
+the plan, reported `fail=0`, `warn=0`, `xfail=0`, and `exit=0`.
+
+`rg -n Human wiki/how-to/recover-an-independent-review.md`, sourced from the
+plan, matched the marked human-decision boundary and returned `exit=0`.
+
+`git diff --check` and `git diff --cached --check`, both sourced from the plan,
+returned no diagnostic and `exit=0`. Both were re-run after the line-ending
+repair, since that repair is precisely the kind of change they police.
+
+No mandatory command was unavailable, none was skipped, and none was recorded as
+passing without being executed.
+
+### Resolver drift and direction for step 3 review-mode-docs round 1 (exchange 1)
+
+No resolver drift was observed.
+
+The five commands in the request envelope and the five the current resolver
+produces are identical in content and source attribution: `ghog day` from the
+project, and the plan-sourced `rg -n Human` recovery check,
+`ghog single tests/unit/tools/test_review_mode_docs_acceptance`,
+`git diff --check`, and `git diff --cached --check`.
+
+The union equals both sets and nothing was added or dropped when it was run.
+Only the plan-sourced `rg` target changed from Step 2, which is expected because
+each step names its own discovery check.
+
+### Repository state around validation for step 3 review-mode-docs round 1 (exchange 1)
+
+The request-time index tree was `88faa944c4a313ef817f1a5749f6e066637589bd`, and
+the index captured at reviewer entry matched it exactly, so no writer work
+arrived between publication and assessment and the early rejection path did not
+apply. After the two attributed repairs were staged, the index tree is
+`8c164e9cefbdbc37ce1fcb19c4c6a6a0dbdc99b8`.
+
+The applicable umbrella digest is unchanged. `umbrella-digest compare` returned
+`changed: false`, before and after both
+`23c41ad3a750ffa604ccea4a8ccf36e1ed9eae265931cd0eb101378c5be9181b`, so no
+umbrella boundary was crossed and no umbrella row was completed.
+
+`validation-state compare` over the ordered eleven-path set returned
+`acceptable: false`. That result is fully explained by this round's two reviewer
+repairs and contains no validation side effect. The tracked paths it names are
+`wiki/README.md`, `wiki/how-to/enable-independent-review-mode.md`, and the index:
+the first two are exactly the repair paths, each with its pre-repair blob
+recorded before editing and each proven cleanly attributable before staging, and
+the index changed because those attributed patches were staged. No other tracked
+path differs, so the forced full walk wrote nothing tracked.
+
+The only ignored path that differed is `a.ghog.status`, which the walk rewrites
+by design. A difference confined to an ignored validation artifact is
+acceptable, and it was neither staged nor reverted.
+
+No untracked path differed, and no pre-existing unstaged or untracked writer work
+was swept into the index. The working tree's only unstaged entry is the protocol
+transcript for this exchange, which the shared core owns and which correctly
+stays outside the reviewed index.
+
+### Repair inventory for step 3 review-mode-docs round 1 (exchange 1)
+
+Repairs made:
+
+- Corrected a factual claim about the disabled result in `wiki/how-to/enable-independent-review-mode.md`, documentation accuracy.
+- The page said a direct status call returns final JSON with disabled state, null round, and no coordination path.
+- The first two are right, but `_success_payload` in `tools/review_exchange_cli.py` sets the `paths` member unconditionally, so a disabled result still carries all six paths including `coordination`.
+- Only the fatal-input payload returns an empty `paths` object.
+- The page now says the state is disabled with a null round, the `paths` member is still populated, and the coordination artifact it names does not exist while the marker is absent.
+- This matters more than usual because the same page instructs readers to follow the returned `paths`, so a reader could otherwise expect the key to be missing and misread a disabled result.
+- No acceptance test pinned the replaced sentence, and the focused package stays green.
+- Restored the collateral line-ending churn in `wiki/README.md`, polishing-only.
+- Four pre-existing navigation lines had been rewritten from CRLF to LF while their text stayed identical, so the staged diff read nine added and four removed for an intended five-line change.
+- The repair gives every pre-existing line back its original terminator and leaves only the five new bullets as LF, preserving the eight LF lines committed in Steps 1 and 2.
+- The file is now 197 CR and 210 LF, the staged diff is exactly five added and zero removed, and both whitespace gates return no diagnostic.
+- This is the third consecutive step in which this same file arrived with collateral terminator churn, after five such lines in Step 1 and three in Step 2.
+
+Paths staged:
+
+- wiki/README.md
+- wiki/how-to/enable-independent-review-mode.md
+
+### Commit plan assessment for step 3 review-mode-docs round 1 (exchange 1)
+
+`a.commit` is accurate and needed no amendment.
+
+Its two groups cover exactly the nine staged paths with no omission and no extra.
+Group 1, `docs(review-mode-docs): add task guides`, lists eight paths: the five
+new how-to guides, the navigation page, the coverage record, and the acceptance
+module. Group 2, `docs(review-mode-docs): record step 3 validation`, lists the
+validation plan alone.
+
+The ordering runs from least to most dependent. The guides and their acceptance
+evidence land first and the validation verdict that certifies them lands last,
+so the recorded verdict never precedes the work it describes. That matches the
+grouping Steps 1 and 2 used, keeping the effort's commit history consistent.
+
+Both subjects are well-formed conventional messages with a `docs` type and the
+`review-mode-docs` scope.
+
+Neither reviewer repair changed group membership. `wiki/README.md` and
+`wiki/how-to/enable-independent-review-mode.md` were both already staged and
+already assigned to group 1. Nothing moved between groups, nothing was added, and
+nothing was removed, so file membership, grouping, order, scope, and conventional
+subjects all still match the staged work.
+
+No commit was run.
+
+### Findings and boundaries for step 3 review-mode-docs round 1 (exchange 1)
+
+Unresolved findings: None.
+
+Boundary-crossing work:
+
+- The `wiki/README.md` line-ending conflict has now recurred in three consecutive steps and deserves a sharper recommendation than repeating the in-step repair.
+- That file is CRLF while every other file in this area of the tree is LF, and Git counts CR at end of line as trailing whitespace, so a line added in the file's own convention fails `git diff --check` while an LF line passes and leaves the file mixed.
+- Step 1 arrived with five pre-existing lines rewritten by terminator alone, Step 2 with three, and Step 3 with four; each was repaired inside its step, and each repair was necessary only because the file cannot be edited cleanly in its own convention.
+- Steps 4 and 5 both touch this file again, for inventory links and final navigation, so without a root fix the same collateral churn and the same reviewer repair will recur twice more.
+- The root fix is to normalize `wiki/README.md` to LF once, matching the rest of the tree and ending the conflict permanently.
+- That is roughly two hundred line-ending-only changes, which is why it does not belong inside a documentation slice whose intended change is a handful of navigation lines.
+- It does belong in its own standalone commit, separate from any review-mode-docs group, where the churn is self-explanatory and reviewable on its own terms.
+- This reviewer cannot make that change, because a whole-file normalization exceeds Step 3 and would bury the step's real diff.
+- Nothing else crossed a boundary: no production module, protocol artifact, launcher, template, adapter, umbrella row, or other plan step was touched.
+
+### Writer instructions for step 3 review-mode-docs round 1 (exchange 1)
+
+Step 3's content is complete and correct, and the recurring theme-sentence
+finding is closed at source this round. Two staged reviewer repairs and one
+standing recommendation are all that remain.
+
+Do two things before publishing round 2.
+
+First, review the corrected sentence in
+`wiki/how-to/enable-independent-review-mode.md` and keep or reword it
+deliberately. It replaces the claim that a disabled status call returns no
+coordination path with the accurate statement that the state is disabled with a
+null round, the `paths` member is still populated, and the coordination artifact
+it names does not exist while the marker is absent. This is your prose in your
+page, so the wording is yours to settle even though the fact is not.
+
+Second, review the staged line-ending repair in `wiki/README.md` and keep or
+reverse it. It restores four existing navigation lines to their original
+terminators so the staged diff is the five lines you actually intended.
+
+Then consider the standing recommendation, which is not Step 3 work and not a
+condition of this step passing. `wiki/README.md` has now arrived with collateral
+terminator churn in three consecutive steps, and Steps 4 and 5 touch it again.
+Normalizing the file to LF once, in its own standalone commit outside any
+review-mode-docs group, ends the recurrence and keeps roughly two hundred
+line-ending-only changes out of your documentation slices. Doing it before Step 4
+would spare two more rounds of this.
+
+Do not treat this answer as commit authority. `a.commit` is accurate and needs no
+amendment, every resolved command passed after the repairs, the umbrella digest
+is unchanged, and no tracked validation side effect exists, so round 2 should be
+a short confirmation round rather than a rework round.
+
+### Decision rationale for step 3 review-mode-docs round 1 (exchange 1)
+
+The disposition is `changes-requested`, and the deciding reason is that this
+round changed the words a reader will see, not that the step is unfinished.
+
+Five of the six readiness-floor results pass. Identity is exact, with the
+envelope, human-readable request, `pw` plan, named step, positive round, and
+request-time index tree all agreeing, and that tree matching the live index at
+entry. The implementation is complete, and its protocol claims were checked
+against the canonical instruction and the shipped code rather than accepted as
+plausible. Mandatory validation and coverage pass on the repaired state, with
+`ghog day` forced rather than short-circuited and every resolved command run.
+Staged scope is attributable: nine paths, eight named by the Step 3 file list and
+the ninth the validation plan, with both reviewer patches proven attributable
+before staging and no tracked validation side effect. `a.commit` is accurate in
+membership, grouping, order, scope, and conventional subjects.
+
+No unresolved finding remains, and that is worth stating plainly. The
+document-level theme sentence, which had to be returned after Step 1 and again
+after Step 2, was refreshed proactively this round. The recurring finding is
+closed at its source rather than re-reported.
+
+The sixth result is what blocks the recommendation. One of this round's two
+repairs rewrote a factual claim in a delivered page: the opt-in guide said a
+disabled status result carries no coordination path, and in fact
+`_success_payload` populates `paths` unconditionally, so a disabled result
+returns all six paths while the coordination artifact simply does not exist.
+
+Read strictly, that repair changes no code, test, acceptance behavior, or commit
+grouping, so the letter of the rule would allow a readiness recommendation. Read
+for its purpose, it should not. The rule exists so the writer is the last actor
+to accept what a commit carries, and for a documentation effort the delivered
+product is the prose. A reviewer rewriting a user-facing statement about
+protocol behavior and certifying it commit-ready in the same round is exactly
+the situation the rule guards against, so this answer treats that repair as
+substantive and returns the round.
+
+The second repair is genuinely polishing-only. Restoring line terminators in
+`wiki/README.md` changes no reader-visible content at all.
+
+That line-ending churn is now three for three, at five collateral lines in Step
+1, three in Step 2, and four in Step 3, and Steps 4 and 5 both touch the same
+file. The boundary-crossing report recommends the root fix rather than a fourth
+and fifth repair: normalize the file to LF once, in its own standalone commit,
+outside any documentation slice.
+
+This answer is advisory and authorizes no commit. The `Commit` or
+`Rework and review again` choice remains with the human at the convergence gate,
+and no commit was run in this round.
+
+### Final reviewer decision for step 3 review-mode-docs round 1 (exchange 1)
+
+Decision: changes-requested. The writer must address the concrete instructions and publish another review round. This advisory answer does not authorize a commit.
+
+<!-- review-entry-id: answer-step-3-round-1 -->
+
+## Round 2 by requestor - Step 3
+
+- Recorded: 2026-08-20T21:48:32+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 review-mode-docs round 2
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+Implementation step: 3
+Review round: 2
+
+### Code review evidence for step 3 review-mode-docs round 2
+
+request_index_tree: 8c164e9cefbdbc37ce1fcb19c4c6a6a0dbdc99b8
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n Human wiki/how-to/recover-an-independent-review.md (sources: plan)
+- ghog single tests/unit/tools/test_review_mode_docs_acceptance (sources: plan)
+- git diff --check (sources: plan)
+- git diff --cached --check (sources: plan)
+
+### Requestor assessment for step 3 review-mode-docs round 2
+
+Step 3 remains fully implemented. The round 1 reviewer found no unresolved
+implementation gap and verified the five-guide topology, all seven operational
+goals, the human-only forced-recovery boundary, the returned-path contract, and
+the exit and authorization rules against shipped behavior.
+
+Both staged reviewer repairs are accepted deliberately. The corrected disabled
+status wording now distinguishes populated returned paths from the absent
+coordination artifact, and the wiki navigation diff now contains exactly the
+five intended additions with no terminator-only removal.
+
+The reviewer reran the complete five-command validation union after both
+repairs. Groundhog completed 1,890 tests with full coverage, no outliers, and a
+zero exit; the focused package, recovery grep, and both whitespace checks also
+passed.
+
+### Implementation report for step 3 review-mode-docs round 2
+
+No additional implementation change was needed after round 1. The writer keeps
+the reviewer's factual correction in the opt-in guide verbatim because it
+matches `_success_payload`: disabled status still returns the six path names,
+while the coordination artifact named by that result does not exist without
+the marker.
+
+The writer also keeps the line-ending repair in `wiki/README.md`. Its staged
+diff is five additions and zero removals, preserving every pre-existing line's
+terminator and the eight LF additions committed by Steps 1 and 2.
+
+The five how-to pages, acceptance tests, coverage updates, and Step 3 validation
+record are otherwise unchanged from the implementation assessed in round 1.
+
+### Change summary for step 3 review-mode-docs round 2
+
+The staged subject remains nine paths in the same two dependency-ordered groups.
+`a.commit` still assigns the eight documentation and acceptance paths to
+`docs(review-mode-docs): add task guides` and the validation plan to
+`docs(review-mode-docs): record step 3 validation`.
+
+Round 1 changed two already-grouped paths: one user-facing sentence in the
+opt-in guide and four terminators in the wiki navigation file. No path entered
+or left the index, no group membership changed, and `git diff --cached --check`
+is clean.
+
+Whole-file LF normalization of `wiki/README.md` is accepted as useful follow-up
+work, but it is intentionally excluded from this Step 3 review subject. It can
+land as a standalone commit after Step 3 and before Step 4.
+
+### Writer response for step 3 review-mode-docs round 2
+
+Writer response: The writer accepts both round 1 repairs without amendment and raises no
+disagreement. The corrected disabled-result sentence matches shipped behavior,
+and the navigation repair leaves exactly the five intended additions.
+
+No unresolved Step 3 finding remains, and the writer introduced no new tracked
+work. Round 2 requests confirmation over the repaired index with the same
+validation commands and commit plan.
+
+### Reviewer focus for step 3 review-mode-docs round 2
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-3-round-2 -->
+
+## Round 2 by reviewer - Step 3
+
+- Recorded: 2026-08-20T22:01:06+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed index identity for step 3 review-mode-docs round 2 (exchange 1)
+
+Baseline index tree: 8c164e9cefbdbc37ce1fcb19c4c6a6a0dbdc99b8
+
+Assessed index tree: 8c164e9cefbdbc37ce1fcb19c4c6a6a0dbdc99b8
+
+### Implementation check for step 3 review-mode-docs round 2 (exchange 1)
+
+Result: Yes. Step 3 has been fully implemented.
+
+The staged subject is byte-identical to the state this reviewer assessed and
+repaired in round 1. The request-time index tree
+`8c164e9cefbdbc37ce1fcb19c4c6a6a0dbdc99b8` is the same value this reviewer
+recorded as its round-1 assessed tree, and the live index matches it, so both
+reviewer repairs were accepted unchanged and nothing else was staged.
+
+That was verified directly as well as by tree identity. `wiki/README.md` still
+shows exactly five added and zero removed lines and still carries 197 CR against
+210 LF, so every pre-existing line keeps its original terminator and the thirteen
+LF lines are the ones added across Steps 1 through 3. The corrected sentence in
+`wiki/how-to/enable-independent-review-mode.md` is present, stating that a
+disabled result reports a disabled state and a null round while its `paths`
+member is still populated and the coordination artifact it names does not exist.
+
+Everything assessed in round 1 therefore still holds. The five guides own all
+seven operational goals with one Diataxis purpose each, the recovery page places
+ordinary reclaim before a marked `Human decision required` heading whose
+blockquote names Authority, Precondition, and Evidence effect, and all four
+forced commands sit below that boundary. The protocol claims were checked in
+round 1 against the canonical instruction and the shipped code and were accurate,
+with the single exception that has since been repaired and accepted.
+
+The four acceptance tests pin the five-page topology, returned-path and exit
+discipline, the ordinary-before-human ordering, and the completed AC04 and AC07
+coverage rows with the pending Step 4 boundary. The package is green.
+
+The staged set is nine paths: the eight named by the Step 3 file list plus the
+validation plan as review metadata. Nothing staged falls outside the step, and
+the working tree holds no unstaged writer work beyond the protocol transcript.
+
+The document-level theme sentence still reads that Steps 1 through 3 are
+implemented and validated while Steps 4 and 5 remain pending, with the opening
+`No, it is not implemented.` line correctly unchanged.
+
+The architecture assessment is unchanged and clean. No production module
+changed, every traversal stays linear in a bounded declared path set, and no
+existing feature or reporting capability is impaired.
+
+Validation plan effects: Reviewer mode changed nothing in the validation plan this round, and made no
+repair anywhere. No row was written for the reviewed step or any other step, no
+document-level status line was touched, and no umbrella row was completed.
+
+There is also no writer-authored validation-plan difference to assess against
+round 1: the index tree is identical, so the validation plan is byte-for-byte the
+document this reviewer already assessed. Its Step 3 verdict keeps the exact
+`Yes. Step 3 has been fully implemented.` form followed by an empty line and a
+prose summary, and its required subsections carry their closing sentences.
+
+The document-level theme sentence, refreshed by the writer in round 1 without a
+reviewer having to return it, still reads that Steps 1 through 3 are implemented
+and validated while Steps 4 and 5 remain pending.
+
+### Pre-repair mandatory checks and coverage for step 3 review-mode-docs round 2 (exchange 1)
+
+No repair was made this round, so there is no pre-repair state to report and no
+pre-repair blob was recorded.
+
+The evidence backing this answer was measured after the writer published, against
+the exact staged state being recommended, and `ghog day` was forced rather than
+allowed to short-circuit on freshness. The measured result is `fail=0`,
+`warn=0`, `xfail=0`, `cov=100`, `outliers=0`, `excluded=0`, and `exit=0`, with
+`Objective reached`.
+
+The transient atomic-rename failure observed once during Step 2 did not recur in
+either Step 3 round.
+
+### Resolved validation set and sources for step 3 review-mode-docs round 2 (exchange 1)
+
+The request supplied five commands and the current resolver produced the same
+five, so the union is five and every one was run in this round.
+
+`ghog day`, sourced from the project, was run with `--force` rather than
+accepting a freshness short-circuit, because this round would carry a readiness
+recommendation. It reported `check` green, `affected --no-cov` green,
+`Objective reached`, and `ghog full done fail=0 warn=0 xfail=0 cov=100
+outliers=0 excluded=0 exit=0`.
+
+`ghog single tests/unit/tools/test_review_mode_docs_acceptance`, sourced from the
+plan, reported `fail=0`, `warn=0`, `xfail=0`, and `exit=0`.
+
+`rg -n Human wiki/how-to/recover-an-independent-review.md`, sourced from the
+plan, matched the marked human-decision boundary and returned `exit=0`.
+
+`git diff --check` and `git diff --cached --check`, both sourced from the plan,
+returned no diagnostic and `exit=0`.
+
+No mandatory command was unavailable, none was skipped, and none was recorded as
+passing without being executed.
+
+### Resolver drift and direction for step 3 review-mode-docs round 2 (exchange 1)
+
+No resolver drift was observed.
+
+The five commands in the round-2 request envelope and the five the current
+resolver produces are identical in content and source attribution: `ghog day`
+from the project, and the plan-sourced `rg -n Human` recovery check,
+`ghog single tests/unit/tools/test_review_mode_docs_acceptance`,
+`git diff --check`, and `git diff --cached --check`.
+
+The union equals both sets, nothing was added or dropped when it was run, and the
+set is unchanged from Step 3 round 1.
+
+### Repository state around validation for step 3 review-mode-docs round 2 (exchange 1)
+
+The request-time index tree was `8c164e9cefbdbc37ce1fcb19c4c6a6a0dbdc99b8`, and
+the index captured at reviewer entry matched it exactly, so no writer work
+arrived between publication and assessment and the early rejection path did not
+apply. The assessed index tree is the same value, because this round staged
+nothing.
+
+That tree is also the exact value this reviewer recorded as its round-1 assessed
+tree. The staged subject is therefore byte-identical across the two rounds: both
+reviewer repairs were accepted unchanged, nothing was reversed, and no further
+writer work was staged.
+
+The applicable umbrella digest is unchanged. `umbrella-digest compare` returned
+`changed: false`, before and after both
+`23c41ad3a750ffa604ccea4a8ccf36e1ed9eae265931cd0eb101378c5be9181b`, so no
+umbrella boundary was crossed and no umbrella row was completed.
+
+`validation-state compare` over the same ordered eleven-path set returned
+`acceptable: true` with an empty tracked-path list and an empty untracked-path
+list. The forced full walk produced no tracked validation side effect at all. The
+only difference is the ignored artifact `a.ghog.status`, which the walk rewrites
+by design; a difference confined to an ignored validation artifact is
+acceptable, and it was neither staged nor reverted.
+
+The working tree holds no unstaged or untracked writer work. Its only unstaged
+entry is the protocol transcript for this exchange, which the shared core owns
+and which correctly stays outside the reviewed index.
+
+### Repair inventory for step 3 review-mode-docs round 2 (exchange 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 3 review-mode-docs round 2 (exchange 1)
+
+`a.commit` is accurate and needed no amendment in this round or the previous one.
+
+Its two groups cover exactly the nine staged paths with no omission and no extra.
+Group 1, `docs(review-mode-docs): add task guides`, lists eight paths: the five
+new how-to guides, the navigation page, the coverage record, and the acceptance
+module. Group 2, `docs(review-mode-docs): record step 3 validation`, lists the
+validation plan alone.
+
+The ordering runs from least to most dependent. The guides and their acceptance
+evidence land first and the validation verdict that certifies them lands last, so
+the recorded verdict never precedes the work it describes. That matches the
+grouping Steps 1 and 2 used, keeping the effort's commit history consistent.
+
+Both subjects are well-formed conventional messages with a `docs` type and the
+`review-mode-docs` scope.
+
+This round staged nothing, and the round-1 repairs touched only files already
+assigned to group 1, so file membership, grouping, order, scope, and conventional
+subjects all still match the staged work.
+
+No commit was run.
+
+### Findings and boundaries for step 3 review-mode-docs round 2 (exchange 1)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 3 review-mode-docs round 2 (exchange 1)
+
+No changes are requested. Do not edit the staged subject in response to this
+answer.
+
+Present this recommendation to the human at the convergence gate together with
+the identity summary, the staged changes, `a.commit`, and the requestor's own
+assessment, and offer the registered choices `Commit` and
+`Rework and review again`. This reviewer recommendation is advisory and
+authorizes nothing on its own.
+
+If the human chooses `Commit`, run the existing commit step against `a.commit`
+exactly as it stands. Its two groups already match the nine staged paths in
+dependency order and need no amendment. Do not restage, regroup, or reword before
+committing.
+
+If the human chooses `Rework and review again`, treat their guidance as the scope
+of the next round. Nothing in this review contributes work to such a round: no
+repair was made, no finding was left unaddressed, and no command was missing.
+
+One planned action is carried forward and is deliberately not a condition of this
+step. The whole-file LF normalization of `wiki/README.md` is deferred to a
+standalone commit after Step 3, which is the recommendation round 1 made and the
+right sequencing: it keeps roughly two hundred line-ending-only changes out of
+the documentation slices, and doing it before Step 4 spares two further rounds of
+the collateral churn this reviewer repaired in each of the first three steps.
+
+### Decision rationale for step 3 review-mode-docs round 2 (exchange 1)
+
+The disposition is `commit-ready`. All six readiness-floor results pass, and the
+condition that blocked round 1 no longer applies.
+
+Identity is exact. The envelope, human-readable request, `pw` plan, named step,
+positive round, and request-time index tree all agree, and that tree matched the
+live index at entry.
+
+The implementation is complete. The staged subject is byte-identical to the state
+assessed in round 1, since the request-time tree is the same value this reviewer
+recorded as its round-1 assessed tree. Both repairs were accepted unchanged and
+nothing was reversed.
+
+Mandatory validation and coverage pass on the exact state being recommended. The
+`ghog day` freshness path was refused as inherited evidence and the walk was
+forced, giving `fail=0`, `cov=100`, `outliers=0`, and `exit=0`. All five resolved
+commands ran, none was unavailable, and the resolver showed no drift.
+
+Staged scope is attributable. Nine paths, eight named by the Step 3 file list and
+the ninth the validation plan. This round staged nothing, and
+`validation-state compare` returned `acceptable: true` with no tracked
+difference, so the forced walk left nothing behind. The umbrella digest is
+unchanged.
+
+No unresolved current or carried finding remains. The theme-sentence finding was
+closed at source in round 1, and the corrected disabled-result sentence is
+present and accepted.
+
+`a.commit` is accurate in membership, grouping, order, scope, and conventional
+subjects, and needed no amendment in either round.
+
+The sixth condition is what changed. Round 1 could not recommend readiness
+because it rewrote a factual claim in a delivered page, and for a documentation
+effort the prose is the product, so the writer had to be the last actor to accept
+it. This round made no repair at all. The writer reviewed both repairs, kept
+them, and published, so that condition is satisfied rather than bypassed.
+
+One planned action stands outside this step and is not a reservation about it.
+The whole-file LF normalization of `wiki/README.md` is deferred to a standalone
+commit after Step 3. That is the right sequencing, and doing it before Step 4
+would end the collateral terminator churn this reviewer repaired in each of the
+first three steps rather than repeating the repair twice more.
+
+This recommendation is advisory and authorizes no commit. The `Commit` or
+`Rework and review again` choice belongs to the human at the convergence gate,
+and no commit was run in this round.
+
+### Final reviewer decision for step 3 review-mode-docs round 2 (exchange 1)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-3-round-2 -->
+
+## Round 2 by human - Step 3 - human-confirmation
+
+- Recorded: 2026-08-20T22:09:53+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 3
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->

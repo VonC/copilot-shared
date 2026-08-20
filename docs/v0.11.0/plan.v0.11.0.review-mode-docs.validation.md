@@ -2,8 +2,8 @@
 
 No, it is not implemented.
 
-This record tracks five documentation slices. Steps 1 and 2 are implemented
-and validated; Steps 3 through 5 remain pending.
+This record tracks five documentation slices. Steps 1 through 3 are implemented
+and validated; Steps 4 and 5 remain pending.
 
 ## File-based IO cost clarification for v0.11.0 implementation
 
@@ -196,8 +196,12 @@ integrity issue needs to be addressed.
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because five how-to pages and their
-authority assertions have not been written.
+Yes. Step 3 has been fully implemented.
+
+Five focused guides now cover all seven operational goals, follow returned JSON
+paths, distinguish result exits and authorized continuation, and place forced
+recovery below a marked human decision. Four acceptance tests pin task
+assignment, local links, stop rules, and coverage evidence.
 
 ### Goal for Step 3
 
@@ -213,27 +217,62 @@ reclaim, and stopped-state recovery.
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Added an opt-in guide for empty or configured `a.review-mode` markers and
+  clean opt-out before a new exchange.
+- Added family-specific start and resume guides for specification and
+  implementation code review through their ordinary skill routes.
+- Added a result guide for final JSON authority, exits `0`, `3`, and `2`, human
+  choices, durable owning authorization, and owning-action replay.
+- Added a recovery guide that separates ordinary reclaim from human-only forced
+  reclaim, forced completion, resolution, and archive decisions.
+- Linked all five guides from the wiki and advanced AC04 and AC07 to complete in
+  the versioned coverage table.
+- Added four acceptance tests for the five-page topology, seven goals, returned
+  paths, exit meanings, marked authority, command placement, and coverage rows.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+No production type or class was introduced. The existing documentation
+acceptance module adds four test functions and two fixed guide-path constants.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+The change remains in wiki how-to, navigation, coverage, and bounded acceptance
+test surfaces. Ordinary procedures delegate to skills, direct launchers appear
+only where recovery needs them, and every policy summary links the canonical
+requestor instruction. No production exchange or adapter layer changed.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Each normal task opens one guide and follows explicit links. Acceptance checks
+read only five declared pages, the wiki list, and the fixed coverage path, so
+work stays linear in a bounded input set. The final Groundhog walk covered 1,890
+tests with `cov=100`, `outliers=0`, and `exit=0`.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+No production class changed, so this documentation step creates no
+class-specific unit-test obligation. The acceptance package has thirteen green
+tests; four Step 3 cases cover every tests-first item, and the project coverage
+gate remains 100%.
+
+No unit-tested class is below 100% or needs completing.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+The five pages retain one how-to purpose each, use the generic independent-review
+logo, follow final JSON `paths`, and prohibit manual protocol-artifact edits.
+Recovery covers timeout, abandonment, no-progress, disagreement, inconsistency,
+interruption, escalation, forced human choices, and durable continuation. The
+acceptance module is 290 lines against its 320-line post-step advisory and below
+the 550-line split threshold.
+
+No existing feature or reporting capability is impaired, and no Step 3 feature
+integrity issue needs to be addressed.
 
 ---
 
