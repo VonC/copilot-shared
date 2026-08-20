@@ -1,9 +1,10 @@
-"""Step 1 and 2 acceptance for independent review-mode documentation.
+"""Step 1 through 3 acceptance for independent review-mode documentation.
 
 The tests pin entry-point discovery, the visual and terminology boundary from
 self-review, canonical authority links, bounded local-link checks, and the
 incremental AC01-through-AC12 coverage record. The tutorial checks add the two
 agent sessions, bounded handoff, family evidence, and human gates.
+Step 3 adds bounded task ownership, result handling, and marked recovery.
 """
 
 from __future__ import annotations
@@ -22,6 +23,14 @@ _SELF_REVIEW_HOW_TO = "wiki/how-to/answer-a-review-round.md"
 _COVERAGE = "docs/v0.11.0/coverage.v0.11.0.review-mode-docs.md"
 _SPEC_TUTORIAL = "wiki/tutorials/09-run-your-first-specification-review.md"
 _CODE_TUTORIAL = "wiki/tutorials/10-run-your-first-implementation-code-review.md"
+_HOW_TO_GUIDES = (
+    "wiki/how-to/enable-independent-review-mode.md",
+    "wiki/how-to/run-specification-review.md",
+    "wiki/how-to/run-implementation-code-review.md",
+    "wiki/how-to/read-independent-review-results-and-continue.md",
+    "wiki/how-to/recover-an-independent-review.md",
+)
+_RECOVERY_GUIDE = _HOW_TO_GUIDES[-1]
 _STEP_1_PAGES = (
     "README.md",
     "wiki/README.md",
@@ -43,7 +52,7 @@ _INVENTORY_CANDIDATES = (
     "wiki/reference/automation-and-direct-invocation.md",
     "wiki/reference/repository-layout.md",
 )
-_MINIMUM_PENDING_ROWS = 10
+_MINIMUM_PENDING_ROWS = 9
 _BACKTICK = "`"
 
 
@@ -196,9 +205,86 @@ def test_step_2_coverage_records_completed_tutorial_evidence(
     """Step 2 coverage: AC03 and tutorial evidence name both pages and tests."""
     coverage = read_declared(docs_root, _COVERAGE)
 
-    assert "## Acceptance evidence after Step 2" in coverage
+    assert "## Step 2 executable evidence" in coverage
     assert "| AC03 | Page evidence | Complete |" in coverage
     assert _SPEC_TUTORIAL in coverage
     assert _CODE_TUTORIAL in coverage
     assert "test_step_2_tutorials_show_two_agent_sessions_and_round_trip" in coverage
-    assert "| AC04 | Page evidence | Pending |" in coverage
+    assert "| AC05 | Page evidence | Pending |" in coverage
+
+
+def test_step_3_five_how_to_pages_assign_all_seven_goals(docs_root: Path) -> None:
+    """Step 3 topology: five focused pages own all seven operational goals."""
+    wiki_readme = read_declared(docs_root, "wiki/README.md")
+    required_phrases = {
+        _HOW_TO_GUIDES[0]: ("Enable review mode", "Disable review mode"),
+        _HOW_TO_GUIDES[1]: ("Start a specification review", "Resume a specification review"),
+        _HOW_TO_GUIDES[2]: ("Start an implementation code review", "Resume an implementation code review"),
+        _HOW_TO_GUIDES[3]: ("Read the returned result", "Continue an authorized action"),
+        _HOW_TO_GUIDES[4]: ("Reclaim an expired live exchange", "Recover a stopped exchange"),
+    }
+
+    for path, phrases in required_phrases.items():
+        guide = read_declared(docs_root, path)
+        assert path.removeprefix("wiki/") in wiki_readme
+        assert "../assets/logo-llm-shared-transparent.png" in guide
+        assert "## Invocation model" in guide
+        for phrase in phrases:
+            assert phrase in guide
+    assert_local_links(docs_root, (*_HOW_TO_GUIDES, "wiki/README.md"))
+
+
+def test_step_3_procedures_follow_returned_paths_and_exit_contract(
+    docs_root: Path,
+) -> None:
+    """Step 3 results: paths are authoritative and exits retain their meaning."""
+    for path in _HOW_TO_GUIDES:
+        guide = read_declared(docs_root, path)
+        assert "final JSON" in guide
+        assert "`paths`" in guide
+        assert "Do not reconstruct protocol filenames or edit protocol artifacts." in guide
+
+    results = read_declared(docs_root, _HOW_TO_GUIDES[3])
+    for exit_code in ("Exit `0`", "Exit `3`", "Exit `2`"):
+        assert exit_code in results
+    assert "owning_action_authorized" in results
+    assert "owning-action-pending" in results
+
+
+def test_step_3_recovery_separates_reclaim_from_human_operations(
+    docs_root: Path,
+) -> None:
+    """Step 3 recovery: ordinary reclaim precedes marked human-only commands."""
+    recovery = read_declared(docs_root, _RECOVERY_GUIDE)
+    ordinary = recovery.index("## Reclaim an expired live exchange")
+    human = recovery.index("## Human decision required")
+
+    assert ordinary < human
+    for label in ("Authority:", "Precondition:", "Evidence effect:"):
+        assert recovery.index(label, human) > human
+    for command in ("reclaim --force", "resolve", "complete --force"):
+        assert recovery.index(command) > human
+    for state in (
+        "timeout",
+        "abandoned",
+        "no-progress",
+        "disagreement",
+        "inconsistent",
+        "interrupted",
+    ):
+        assert state in recovery
+
+
+def test_step_3_coverage_records_task_and_recovery_evidence(
+    docs_root: Path,
+) -> None:
+    """Step 3 coverage: AC04 and AC07 name the guides and executable tests."""
+    coverage = read_declared(docs_root, _COVERAGE)
+
+    assert "## Acceptance evidence after Step 3" in coverage
+    assert "| AC04 | Page evidence | Complete |" in coverage
+    assert "| AC07 | Page evidence | Complete |" in coverage
+    for path in _HOW_TO_GUIDES:
+        assert path in coverage
+    assert "test_step_3_recovery_separates_reclaim_from_human_operations" in coverage
+    assert "| AC05 | Page evidence | Pending |" in coverage

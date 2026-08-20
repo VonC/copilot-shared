@@ -4,24 +4,24 @@ This effort record starts with Step 1 and stays versioned while later plan
 steps replace pending rows with exact page, test, command, or scope evidence.
 It is acceptance evidence outside the wiki, not a Diataxis page.
 
-## Acceptance evidence after Step 2
+## Acceptance evidence after Step 3
 
-| Criterion | Evidence type | Status | Step 2 evidence or remaining work |
+| Criterion | Evidence type | Status | Step 3 evidence or remaining work |
 | --- | --- | --- | --- |
 | AC01 | Page evidence | Partial | `README.md` and `wiki/README.md` link the authority explanation; later pages remain pending |
 | AC02 | Page evidence | Complete | `wiki/explanation/independent-review-mode-and-human-authority.md` defines requestor, reviewer, and human authority |
 | AC03 | Page evidence | Complete | `wiki/tutorials/09-run-your-first-specification-review.md` and `wiki/tutorials/10-run-your-first-implementation-code-review.md` are cross-linked first-use journeys |
-| AC04 | Page evidence | Pending | Step 3 adds five task guides and marked human recovery |
+| AC04 | Page evidence | Complete | Five focused how-to pages cover opt-in, both review families, results, authorized continuation, reclaim, and stopped recovery |
 | AC05 | Page evidence | Pending | Step 4 adds the central contract reference |
-| AC06 | Page and source evidence | Partial | Both tutorials pin family terms, intermediate rounds, and exact human choices; Steps 3 and 4 add recovery and lookup evidence |
-| AC07 | Page evidence | Pending | Step 3 documents recovery owners and stopping rules |
+| AC06 | Page and source evidence | Partial | Tutorials and task guides pin family terms, intermediate rounds, exact human choices, and continuation; Step 4 adds lookup evidence |
+| AC07 | Page evidence | Complete | `wiki/how-to/recover-an-independent-review.md` assigns expired, stopped, forced, and resolution paths to their owners and stop rules |
 | AC08 | Page and source evidence | Partial | The explanation names the three canonical policy owners; Step 4 adds adapter coverage |
-| AC09 | Page evidence | Partial | Navigation retains explanation, tutorials, how-to guides, then reference and adds the numbered tutorial pair; later pages remain pending |
+| AC09 | Page evidence | Partial | Navigation retains explanation, tutorials, how-to guides, then reference and adds all five task guides; Step 4 reference remains pending |
 | AC10 | Validation evidence | Pending | Step 5 records project, whitespace, link, path, and manual Markdown checks |
 | AC11 | Scope evidence | Pending | Step 5 records that no deferred launcher or checker was added |
 | AC12 | Coverage evidence | Partial | This table contains every criterion and inventory candidate; later steps replace pending rows |
 
-## Candidate inventory dispositions after Step 2
+## Candidate inventory dispositions after Step 3
 
 Each candidate remains pending until Step 4 assesses whether its established
 subject supports a narrow discovery link.
@@ -54,3 +54,23 @@ subject supports a narrow discovery link.
   evidence, validation comparison, `a.commit`, and commit choices.
 - `test_step_2_coverage_records_completed_tutorial_evidence` pins the completed
   AC03 row, both page paths, and the pending Step 3 boundary.
+
+## Step 3 executable evidence
+
+- `test_step_3_five_how_to_pages_assign_all_seven_goals` pins the five-page
+  topology, seven goals, wiki links, generic logos, and local targets.
+- `test_step_3_procedures_follow_returned_paths_and_exit_contract` pins final
+  JSON authority, returned `paths`, the artifact-editing prohibition, all three
+  exit meanings, and owning-action authorization.
+- `test_step_3_recovery_separates_reclaim_from_human_operations` pins ordinary
+  reclaim before the marked human section and the forced command preconditions.
+- `test_step_3_coverage_records_task_and_recovery_evidence` pins completed AC04
+  and AC07 rows while leaving the Step 4 reference boundary pending.
+
+The five Step 3 guides are:
+
+- `wiki/how-to/enable-independent-review-mode.md`
+- `wiki/how-to/run-specification-review.md`
+- `wiki/how-to/run-implementation-code-review.md`
+- `wiki/how-to/read-independent-review-results-and-continue.md`
+- `wiki/how-to/recover-an-independent-review.md`

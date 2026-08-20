@@ -152,6 +152,11 @@ Recipes for a precise goal, for readers who already know the basics.
 - 🔁 [Answer a review round](how-to/answer-a-review-round.md)
 - 🔁 [Run pw from any shell](how-to/run-pw-from-any-shell.md)
 - 🤖 [Keep project docs in sync with the code](how-to/update-project-docs-from-code.md)
+- 🤖 [Enable independent review mode](how-to/enable-independent-review-mode.md)
+- 🤖 [Run a specification review](how-to/run-specification-review.md)
+- 🤖 [Run an implementation code review](how-to/run-implementation-code-review.md)
+- 🤖 [Read review results and continue](how-to/read-independent-review-results-and-continue.md)
+- 🤖 [Recover an independent review](how-to/recover-an-independent-review.md)
 
 ### AI-environment compatibility
 
