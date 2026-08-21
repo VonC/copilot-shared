@@ -1,16 +1,19 @@
-"""Step 1 through 3 acceptance for independent review-mode documentation.
+"""Step 1 through 4 acceptance for independent review-mode documentation.
 
 The tests pin entry-point discovery, the visual and terminology boundary from
 self-review, canonical authority links, bounded local-link checks, and the
 incremental AC01-through-AC12 coverage record. The tutorial checks add the two
 agent sessions, bounded handoff, family evidence, and human gates.
 Step 3 adds bounded task ownership, result handling, and marked recovery.
+Step 4 adds the exact state, result, outcome, adapter, and inventory contract.
 """
 
 from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING
+
+from tools.review_exchange_models import ArtifactState
 
 from .conftest import assert_local_links, assert_named_paths, read_declared
 
@@ -31,13 +34,10 @@ _HOW_TO_GUIDES = (
     "wiki/how-to/recover-an-independent-review.md",
 )
 _RECOVERY_GUIDE = _HOW_TO_GUIDES[-1]
+_REFERENCE = "wiki/reference/independent-review-mode-contract.md"
 _STEP_1_PAGES = (
-    "README.md",
-    "wiki/README.md",
-    _EXPLANATION,
-    _SELF_REVIEW_EXPLANATION,
-    _SELF_REVIEW_HOW_TO,
-    _COVERAGE,
+    "README.md", "wiki/README.md", _EXPLANATION,
+    _SELF_REVIEW_EXPLANATION, _SELF_REVIEW_HOW_TO, _COVERAGE,
 )
 _CANONICAL_INSTRUCTIONS = (
     "instructions/review-requestor.md",
@@ -52,8 +52,14 @@ _INVENTORY_CANDIDATES = (
     "wiki/reference/automation-and-direct-invocation.md",
     "wiki/reference/repository-layout.md",
 )
-_MINIMUM_PENDING_ROWS = 9
 _BACKTICK = "`"
+_REVIEW_OUTCOMES = (
+    "disabled", "activated", "observed", "started", "continued", "reclaimed",
+    "force-reclaimed", "completed", "force-completed", "published", "repaired",
+    "found", "timed-out", "abandoned", "escalated", "inconsistent",
+    "repair-required", "consumed", "cancelled", "archived", "resolved",
+    "another-round", "continue-owning-workflow", "fatal-input",
+)
 
 
 def _heading_position(markdown: str, label: str) -> int:
@@ -61,6 +67,19 @@ def _heading_position(markdown: str, label: str) -> int:
     match = re.search(rf"^## .*{label}.*$", markdown, re.MULTILINE)
     assert match is not None
     return match.start()
+
+
+def _second_level_section(markdown: str, heading: str) -> str:
+    """Return one declared second-level section without reading other files."""
+    start = markdown.index(f"## {heading}")
+    end = markdown.find("\n## ", start + len(heading) + 3)
+    return markdown[start:] if end < 0 else markdown[start:end]
+
+
+def _assert_contains(markdown: str, values: tuple[str, ...]) -> None:
+    """Assert one bounded Markdown value contains every declared token."""
+    for value in values:
+        assert value in markdown
 
 
 def test_step_1_entry_points_distinguish_review_modes_and_keep_diataxis_order(
@@ -126,10 +145,10 @@ def test_step_1_declared_links_and_named_paths_resolve(docs_root: Path) -> None:
     )
 
 
-def test_step_1_coverage_starts_complete_enumerations_with_pending_rows(
+def test_step_1_coverage_keeps_complete_enumerations_and_evidence(
     docs_root: Path,
 ) -> None:
-    """Step 1 coverage: all criteria and inventory candidates start versioned."""
+    """Step 1 coverage: criteria, candidates, and initial evidence stay named."""
     coverage = read_declared(docs_root, _COVERAGE)
 
     for number in range(1, 13):
@@ -138,7 +157,7 @@ def test_step_1_coverage_starts_complete_enumerations_with_pending_rows(
         assert coverage.count(f"{_BACKTICK}{candidate}{_BACKTICK}") == 1
     assert "| AC02 | Page evidence |" in coverage
     assert "| AC10 | Validation evidence | Pending |" in coverage
-    assert coverage.count("| Pending |") >= _MINIMUM_PENDING_ROWS
+    assert "## Step 1 executable evidence" in coverage
 
 
 def test_step_2_tutorials_append_numbers_cross_link_and_resolve(
@@ -210,7 +229,7 @@ def test_step_2_coverage_records_completed_tutorial_evidence(
     assert _SPEC_TUTORIAL in coverage
     assert _CODE_TUTORIAL in coverage
     assert "test_step_2_tutorials_show_two_agent_sessions_and_round_trip" in coverage
-    assert "| AC05 | Page evidence | Pending |" in coverage
+    assert "| AC05 | Page evidence | Complete |" in coverage
 
 
 def test_step_3_five_how_to_pages_assign_all_seven_goals(docs_root: Path) -> None:
@@ -278,13 +297,122 @@ def test_step_3_recovery_separates_reclaim_from_human_operations(
 def test_step_3_coverage_records_task_and_recovery_evidence(
     docs_root: Path,
 ) -> None:
-    """Step 3 coverage: AC04 and AC07 name the guides and executable tests."""
+    """Step 3 coverage: AC04 and AC07 retain guides and executable tests."""
     coverage = read_declared(docs_root, _COVERAGE)
 
-    assert "## Acceptance evidence after Step 3" in coverage
+    assert "## Step 3 executable evidence" in coverage
     assert "| AC04 | Page evidence | Complete |" in coverage
     assert "| AC07 | Page evidence | Complete |" in coverage
     for path in _HOW_TO_GUIDES:
         assert path in coverage
     assert "test_step_3_recovery_separates_reclaim_from_human_operations" in coverage
-    assert "| AC05 | Page evidence | Pending |" in coverage
+    assert "| AC10 | Validation evidence | Pending |" in coverage
+
+
+def test_step_4_reference_pins_every_state_and_fatal_payload(docs_root: Path) -> None:
+    """Step 4 states: typed rows plus disabled and fatal stay complete."""
+    reference = read_declared(docs_root, _REFERENCE)
+    state_section = _second_level_section(reference, "State matrix")
+    documented = set(re.findall(r"^\| `([^`]+)` \|", state_section, re.MULTILINE))
+
+    assert documented == {state.value for state in ArtifactState} | {
+        "disabled",
+        "fatal",
+    }
+    fatal_row = next(
+        line for line in state_section.splitlines() if line.startswith("| `fatal` |")
+    )
+    for value in (
+        "caller",
+        "null `identity`",
+        "empty `paths`",
+        "null round",
+        "`fatal-input`",
+        "Correct the input and re-run",
+    ):
+        assert value in fatal_row
+
+
+def test_step_4_reference_pins_result_artifact_and_human_contract(
+    docs_root: Path,
+) -> None:
+    """Step 4 result: fields, exits, artifacts, paths, and choices are exact."""
+    reference = read_declared(docs_root, _REFERENCE)
+    result_section = _second_level_section(reference, "Final result contract")
+
+    _assert_contains(
+        result_section,
+        tuple(
+            f"`{field}`"
+            for field in (
+                "diagnostic", "identity", "operation", "outcome",
+                "paths", "round", "state",
+            )
+        ),
+    )
+    _assert_contains(
+        result_section,
+        tuple(
+            f"`{key}`"
+            for key in (
+                "answer", "coordination", "request", "tombstone",
+                "transcript", "transition_lock",
+            )
+        ),
+    )
+    _assert_contains(result_section, ("Exit `0`", "Exit `3`", "Exit `2`"))
+    _assert_contains(
+        result_section,
+        (
+            "Consolidate",
+            "Revise and review again",
+            "Commit",
+            "Rework and review again",
+        ),
+    )
+    assert "one final JSON object on standard output" in result_section
+    assert "standard error is progress only" in result_section
+    assert "returned `paths` object is authoritative" in result_section
+
+
+def test_step_4_reference_pins_reviewed_outcomes_and_sources(docs_root: Path) -> None:
+    """Step 4 outcomes: the reviewed inline-string snapshot stays explicit."""
+    reference = read_declared(docs_root, _REFERENCE)
+    outcome_section = _second_level_section(reference, "Operation outcome snapshot")
+    documented = tuple(
+        re.findall(r"^\| `([^`]+)` \|", outcome_section, re.MULTILINE),
+    )
+
+    assert documented == _REVIEW_OUTCOMES
+    for source in (
+        "plain `OperationResult`",
+        "conditional `OperationResult`",
+        "all `WaitOutcome` values",
+        "both `ConfirmationOutcome` values",
+        "CLI fatal payload",
+    ):
+        assert source in outcome_section
+
+
+def test_step_4_adapters_and_inventory_dispositions_are_complete(
+    docs_root: Path,
+) -> None:
+    """Step 4 discovery: host gaps and all inventory decisions stay visible."""
+    reference = read_declared(docs_root, _REFERENCE)
+    adapters = _second_level_section(reference, "Host adapter matrix")
+    coverage = read_declared(docs_root, _COVERAGE)
+
+    for row in (
+        ("Codex", ".agents/llm-shared/skills/", "$", "review-requestor"),
+        ("Claude Code", ".claude/skills/", "/", "absent"),
+        ("Antigravity", ".agent/workflows/", "/", "review-requestor"),
+    ):
+        line = next(line for line in adapters.splitlines() if f"| {row[0]} |" in line)
+        for value in row[1:]:
+            assert value in line
+        assert "canonical" in line
+    for candidate in _INVENTORY_CANDIDATES:
+        assert f"| `{candidate}` | Update |" in coverage
+        inventory = read_declared(docs_root, candidate)
+        assert "independent-review-mode-contract.md" in inventory
+    assert_local_links(docs_root, (_REFERENCE, "wiki/README.md", *_INVENTORY_CANDIDATES))
