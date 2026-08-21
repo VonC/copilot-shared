@@ -6,6 +6,7 @@ leaving every scenario on the public renderer, evidence, and exchange seams.
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
 # ruff: noqa: S603, S607
 
 _CREATED_AT = "2026-08-18T12:00:00+02:00"
+_repository_template: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -67,8 +69,14 @@ def staged_paths(root: Path) -> tuple[str, ...]:
     return tuple(output.splitlines()) if output else ()
 
 
-def make_effort(root: Path, *, step: str = "6") -> Effort:
-    """Create one marker-enabled effort with real staged Git content."""
+def configure_repository_template(template: Path | None) -> None:
+    """Set the session-built real repository copied by acceptance efforts."""
+    global _repository_template  # noqa: PLW0603
+    _repository_template = template
+
+
+def create_repository_template(root: Path) -> None:
+    """Create one reusable real repository with baseline and staged content."""
     root.mkdir(parents=True)
     git(root, "init", "-q")
     (root / ".gitignore").write_text("a.*\n", encoding="utf-8")
@@ -109,6 +117,20 @@ def make_effort(root: Path, *, step: str = "6") -> Effort:
     )
     source.write_text("VALUE = 2\n", encoding="utf-8")
     git(root, "add", "reviewed.py")
+
+
+def make_effort(root: Path, *, step: str = "6") -> Effort:
+    """Copy one marker-enabled real Git effort and bind its typed context."""
+    if _repository_template is None:
+        create_repository_template(root)
+    else:
+        shutil.copytree(_repository_template, root)
+    docs = root / "docs" / "v0.11.0"
+    umbrella = docs / "draft.v0.11.0.review-mode.md"
+    draft = docs / "draft.v0.11.0.acceptance.md"
+    plan = docs / "plan.v0.11.0.acceptance.md"
+    validation = docs / "plan.v0.11.0.acceptance.validation.md"
+    source = root / "reviewed.py"
     context = code_review_request.code_review_context(plan, step, umbrella)
     topic = Topic("v0.11.0", "acceptance", draft)
     state = WorkflowState(

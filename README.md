@@ -34,6 +34,12 @@ shared trail, or 🤖 llm-shared as a whole.
 
 This README stays the at-a-glance tour; the wiki is where to go deeper.
 
+For a separate-agent assessment, start with
+[why independent review mode separates authority](wiki/explanation/independent-review-mode-and-human-authority.md).
+That opt-in exchange is distinct from the established
+[self-review loop](wiki/explanation/why-the-llm-reviews-its-own-work.md) inside
+the normal document and implementation workflow.
+
 ---
 
 ## 🎯 Goal: avoid vibe-coding

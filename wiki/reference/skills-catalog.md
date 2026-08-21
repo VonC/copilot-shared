@@ -58,6 +58,11 @@ history-repair plan.
 | `/sanitize-git-history` | automatically run the contextual history scanner, settle confidential-term rules, then optionally rewrite with git filter-repo |
 | `prepare_release_plan.bat` | internal read-only single-source tool called automatically by `/prepare-release`; its standalone interface supports diagnostics, while the skill guards empty integration ranges and explains unsupported revert, multi-topic, and non-contiguous paths |
 
+Independent review mode adds a shared `review-requestor` coordinator plus
+family-specific specification and code requestors and reviewers. Their host
+locations, command prefixes, delegation targets, and coverage gaps are listed
+in the [independent review mode contract](independent-review-mode-contract.md#host-adapter-matrix).
+
 ## 🔗 Chaining behavior of the writing skills
 
 `/write-requirement`, `/write-design` and `/write-plans` each end by

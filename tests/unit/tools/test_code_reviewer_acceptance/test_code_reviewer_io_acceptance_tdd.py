@@ -62,8 +62,9 @@ def test_validation_changes_tracked_file_blocks_without_staging_or_revert(
 
 
 @pytest.fixture
-def literal_explicit_path_set(tmp_path: Path) -> None:
+def literal_explicit_path_set(tmp_path: Path, real_git_commands: object) -> None:
     """Capture one metacharacter path without repository discovery."""
+    del real_git_commands
     effort = make_effort(tmp_path / "literal")
     literal = effort.root / "literal[1].txt"
     decoy = effort.root / "literal1.txt"

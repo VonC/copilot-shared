@@ -30,8 +30,6 @@ addopts = [
   "--strict-markers",
   "--tb=short",
   "--cov=tools",
-  "--cov-report=term-missing",
-  "--cov-report=html:htmlcov",
   "--cov-fail-under=100",
 ]
 # Filter out noisy deprecation warnings from dependencies (e.g., pymupdf/swig)

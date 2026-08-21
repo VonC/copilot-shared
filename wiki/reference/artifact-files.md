@@ -43,6 +43,7 @@ canonical draft.
 | `<effort-dir>/design.vX.Y.Z.<topic>.md` | `/write-design` | scope, constraints, acceptance cases |
 | `<effort-dir>/plan.vX.Y.Z.<topic>.md` | `/write-plans` | numbered implementation steps |
 | `<effort-dir>/plan.vX.Y.Z.<topic>.validation.md` | `/write-plans`, then `/implementation-check` | per-step verdicts and checks |
+| `<effort-dir>/review.<type>.vX.Y.Z.<topic>.md` | the review exchange | append-only specification or code review evidence |
 
 ### Document selector contract
 
@@ -121,6 +122,8 @@ committed:
 | `a.prompt_memory` | per-branch workflow state: branch, locked topic, current step |
 | `a.md` | scratch analysis: release-prep notes, or activity-report elements |
 | `a.<base>.open.questions.md` | companion file of a review round, managed by `oqm.bat` |
+| `a.review-*` | current request, answer, coordination, tombstone, lock, or archived recovery evidence; use returned `paths`, not filename reconstruction |
+| `a.code-review-evidence.<version>.<slug>.step-<step>.json` | retained code-review evidence manifest, retired after answer publication |
 | `a.prepare-release.active` | flag telling a callee skill to hand control back to `/prepare-release` |
 | `a.activity-report.<start>-<end>.md` | the activity report (plus `.html` and `.pdf`) |
 | `a.profile.html` | pyinstrument profile of one slow test |
@@ -144,5 +147,6 @@ committed:
 | `version.txt` | first line `X.Y.Z-SNAPSHOT -- <title>`, then the release-notes summary |
 | `CHANGELOG.md` | one section per release, folded in by `update-changelog.bat` |
 
-Related: [Document templates](templates.md),
+Related: [Independent review mode contract](independent-review-mode-contract.md),
+[Document templates](templates.md),
 [ghog commands and exit codes](ghog-commands-and-exit-codes.md).

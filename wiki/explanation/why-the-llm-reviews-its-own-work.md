@@ -11,6 +11,13 @@ check skills immediately after generation. The AI asks or verifies; the human
 answers questions and validates evidence. Invoke a review skill directly when
 an existing artifact needs a fresh review outside its original chain.
 
+## Independent assessment uses another boundary
+
+This page describes the **self-review loop** inside the owning workflow. The
+opt-in [independent review mode](independent-review-mode-and-human-authority.md)
+uses separate requestor and reviewer agents plus a final human gate; it does not
+replace the loop described here.
+
 🔁 The key insight of the workflow: never ship the first pass. Blindly
 trusting what the model generates — even documentation — throws away the
 cheapest quality gate available: the model itself, asked to challenge

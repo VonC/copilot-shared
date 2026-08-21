@@ -35,6 +35,11 @@ AGENTS.md                    the Codex channel: run_commands pointer + groundhog
                              junctioned into projects, slash-invoked
 ```
 
+Independent review adapters live in the Codex and Antigravity wrapper sets.
+Claude carries the four family-specific requestor and reviewer skills but no
+shared `review-requestor` wrapper. The exact host matrix is in the
+[independent review mode contract](independent-review-mode-contract.md#host-adapter-matrix).
+
 ## 📚 Shared bodies and rules
 
 ```txt
@@ -52,10 +57,13 @@ the matching body file directly.
 ```txt
 bin/                         self-locating .bat launchers: prompt_workflow (pw),
                              ghog, gcba, gcmp, wac, oqm, covg, ghd, new_draft,
-                             python_check, update_llm_shared_plugin, plus the
-                             bundled venvs/
+                             python_check, review_exchange, the family review
+                             renderers, update_llm_shared_plugin, plus bundled
+                             venvs/
 tools/                       the Python behind the launchers:
 ├─ prompt_workflow*.py       pw: menu, handoff, skill modes
+├─ review_exchange*.py       durable exchange state and transitions
+├─ code_review*.py           immutable evidence and answer rendering
 ├─ git_batch_commit*.py      validate and replay a.commit
 ├─ new_draft*.py             rename a draft, branch or worktree
 ├─ open_questions_md.py      the oqm modes
@@ -98,5 +106,6 @@ other projects (multi-root workspace, `--add-dir`, or handed bodies). The
 drafts, requirements, designs and plans — worked examples of every
 template.
 
-Related: [Plug llm-shared into your project](../tutorials/01-plug-llm-shared-into-your-project.md),
+Related: [Independent review mode contract](independent-review-mode-contract.md),
+[Plug llm-shared into your project](../tutorials/01-plug-llm-shared-into-your-project.md),
 [One body, many agents](../explanation/one-body-many-agents.md).

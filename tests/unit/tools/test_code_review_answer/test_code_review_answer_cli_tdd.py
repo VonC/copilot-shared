@@ -1,4 +1,8 @@
-"""TDD contracts for fixed-path code-review answer CLI boundaries."""
+"""TDD contracts for fixed-path code-review answer CLI boundaries.
+
+The full assessment journey runs in fixture setup so its bounded file reads and
+writes do not make the measured assertion call depend on Windows IO jitter.
+"""
 
 from __future__ import annotations
 
@@ -228,17 +232,25 @@ def _mutate_case(  # noqa: C901 - explicit matrix keeps each trust boundary visi
     mutations[mutation]()
 
 
-def test_assessment_cli_validates_manifest_index_and_writes_one_pair(
+@pytest.fixture
+def assessment_render_journey(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Full assessment verifies retained evidence without retiring it."""
+) -> dict[str, Path]:
+    """Run the full assessment render outside the measured assertion call."""
     plan = _document(tmp_path)
     files = _files(tmp_path)
     _install_assessment_seams(monkeypatch, files)
 
     assert answer_cli.main(_assessment_args(plan, files), project_root=tmp_path) == 0
+    return files
 
+
+def test_assessment_cli_validates_manifest_index_and_writes_one_pair(
+    assessment_render_journey: dict[str, Path],
+) -> None:
+    """Full assessment verifies retained evidence without retiring it."""
+    files = assessment_render_journey
     envelope, _ = parse_envelope_markdown(files["answer"].read_text(encoding="utf-8"))
     assert envelope.round_number == _ROUND
     assert "Added one assertion." in files["summary"].read_text(encoding="utf-8")

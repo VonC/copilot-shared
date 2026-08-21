@@ -65,6 +65,12 @@ run still needs a new Codex thread before the refreshed skill registry appears.
 | `mds.ps1` | `tools\serve_docs\serve_docs.py` | serve a markdown folder as a local website and open the browser (PowerShell so Ctrl-C stops it without cmd's terminate-batch question) |
 | `python_check.bat` | vulture, big-file check, `enforce_eof.py` | the check station of the walk |
 | `python_check_types.bat` | type checking | the typing gate |
+| `review_exchange.bat` | `tools\review_exchange_cli.py` | shared review state, publication, wait, confirmation, and recovery operations |
+| `spec_review_request.bat` | specification request renderer | build a specification-review request and transcript summary |
+| `spec_review_answer.bat` | specification answer renderer | build a specification-review answer and transcript summary |
+| `code_review_request.bat` | code request renderer | capture the reviewed index and build a code-review request |
+| `code_review_evidence.bat` | code evidence CLI | capture, compare, retain, and retire immutable review evidence |
+| `code_review_answer.bat` | code answer renderer | validate evidence and build a code-review answer |
 
 The `shscan` alias calls `sensitive_history_scan.bat --root "%PRJ_DIR%"`.
 Reports written below the repository must use an ignored path such as
@@ -85,5 +91,6 @@ verify that committed history diagrams match their declarative scenarios.
 `--system-certs`, then default roots) and retries on certificate errors —
 useful behind a corporate proxy; plain `uv` skips the retry path.
 
-Related: [Run pw from any shell](../how-to/run-pw-from-any-shell.md),
+Related: [Independent review mode contract](independent-review-mode-contract.md),
+[Run pw from any shell](../how-to/run-pw-from-any-shell.md),
 [ghog commands and exit codes](ghog-commands-and-exit-codes.md).

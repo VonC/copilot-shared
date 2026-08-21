@@ -61,6 +61,11 @@ artifact is the input to the next phase. This is the central idea presented in
 [slide 4 of the project deck](../docs/llm-shared_presentation.html#solution-workflow-phases)
 and developed further in [Why the LLM reviews its own work](explanation/why-the-llm-reviews-its-own-work.md).
 
+An opt-in **independent review mode** adds a separate requestor, reviewer, and
+human gate around settled specification and implementation work. Start with
+[why independent review mode separates authority](explanation/independent-review-mode-and-human-authority.md)
+to see how it differs from the self-review loop.
+
 ## Four officially supported AI environments
 
 One shared Markdown instruction body is exposed through the native discovery
@@ -100,6 +105,7 @@ their choices.
 
 ### AI-assisted development workflow explained
 
+- 🤖 [Why independent review mode separates authority](explanation/independent-review-mode-and-human-authority.md)
 - 📝 [Why documents come before code](explanation/why-documents-before-code.md)
 - 🔁 [Why the LLM reviews its own work](explanation/why-the-llm-reviews-its-own-work.md)
 - 🔁 [Where the human stays in the loop](explanation/where-the-human-stays-in-the-loop.md)
@@ -125,6 +131,8 @@ Learning by doing: follow the steps in order and inspect the result.
 - 🤖 [Plug llm-shared into your project](tutorials/01-plug-llm-shared-into-your-project.md)
 - 📝 [From draft note to settled requirement](tutorials/02-from-draft-to-settled-requirement.md)
 - 🔁 [Run the implement chain on one plan step](tutorials/04-run-the-implement-chain.md)
+- 🤖 [Run your first specification review](tutorials/09-run-your-first-specification-review.md)
+- 🤖 [Run your first implementation code review](tutorials/10-run-your-first-implementation-code-review.md)
 
 ### Additional utilities tutorials
 
@@ -144,6 +152,11 @@ Recipes for a precise goal, for readers who already know the basics.
 - 🔁 [Answer a review round](how-to/answer-a-review-round.md)
 - 🔁 [Run pw from any shell](how-to/run-pw-from-any-shell.md)
 - 🤖 [Keep project docs in sync with the code](how-to/update-project-docs-from-code.md)
+- 🤖 [Enable independent review mode](how-to/enable-independent-review-mode.md)
+- 🤖 [Run a specification review](how-to/run-specification-review.md)
+- 🤖 [Run an implementation code review](how-to/run-implementation-code-review.md)
+- 🤖 [Read review results and continue](how-to/read-independent-review-results-and-continue.md)
+- 🤖 [Recover an independent review](how-to/recover-an-independent-review.md)
 
 ### AI-environment compatibility
 
@@ -178,6 +191,7 @@ Exact descriptions of commands, formats, files, and supported behavior.
 - 🤖 [Skills catalog](reference/skills-catalog.md)
 - 🔁 [pw launcher](reference/pw-launcher.md)
 - 📝 [Artifact files and naming conventions](reference/artifact-files.md)
+- 🤖 [Independent review mode contract](reference/independent-review-mode-contract.md)
 - 📝 [Document templates](reference/templates.md)
 - 🤖 [Writing and agent rules](reference/writing-rules.md)
 - 🤖 [Repository layout and AI entry points](reference/repository-layout.md)

@@ -1050,32 +1050,58 @@ gate earlier.
 
 This loop ends on a go-ahead selection with nothing left to regenerate.
 
-### Step 12 — Update pyproject.toml and uv
+### Step 12 — Update the other version sources
 
-Only when a `pyproject.toml` exists at `<PRJ_DIR>`:
+`version.txt` is rarely the only file stating the version, and the others must
+move with it. A project can hold the same version in `pyproject.toml`, in
+`uv.lock`, in a Maven POM and its module parents, and in a `cicd/config/.env`
+read by the CI shared library. Leaving one behind publishes an artifact under a
+version no other file names.
 
-- Set its `version` to the release `X.Y.Z` (no `-SNAPSHOT` here, the draft
-  is explicit on that point).
+When the project ships `tools/set_version.py`, that single call is the whole
+step. Pass the snapshot form: `version.txt` stays at `X.Y.Z-SNAPSHOT` until
+`brel`, and the tool gives each other source the form its own consumer expects.
+
+```bash
+python "<PRJ_DIR>/tools/set_version.py" X.Y.Z-SNAPSHOT
+```
+
+Without such a tool, edit each source that exists:
+
+- `pyproject.toml`: set its `version` to the release `X.Y.Z`, with no
+  `-SNAPSHOT`. The draft is explicit on that point, and the suffix is not a
+  canonical PEP 440 identifier, so a Python conformity check rejects it.
+- Maven POM: set the project version, and the parent reference of every
+  module, to `X.Y.Z-SNAPSHOT`. A Maven snapshot carries the suffix.
+- `cicd/config/.env`: set `APP_SERVICE_VERSION` to `X.Y.Z-SNAPSHOT`.
+
+Then, only when a `pyproject.toml` exists:
+
 - Run `uv sync` from `<PRJ_DIR>`.
 - Confirm the release `X.Y.Z` is reflected in the regenerated `uv.lock`.
 
-`pyproject.toml` deliberately sits at the release `X.Y.Z` while
-`version.txt` stays at `X.Y.Z-SNAPSHOT` until `brel`; that gap is intended.
+Finally, when the project ships `tools/check_versions.py`, run it and require
+it to pass before Step 13. A failure there means two sources disagree, and the
+prepare commit would record a version the project cannot name.
+
+`pyproject.toml` deliberately sits at the release `X.Y.Z` while `version.txt`
+stays at `X.Y.Z-SNAPSHOT` until `brel`; that gap is intended. The Maven sources
+follow `version.txt` rather than `pyproject.toml`, for the same reason.
 
 ### Step 13 — Make the single prepare commit
 
 Stage `version.txt`, `CHANGELOG.md`, `.changelog.fixes` when Step 11 changed
-it, and, when present, `pyproject.toml` and `uv.lock`, then commit them
-together:
+it, and every version source Step 12 touched, then commit them together:
 
 ```bash
 git -C "<PRJ_DIR>" add version.txt CHANGELOG.md
 git -C "<PRJ_DIR>" commit -m "chore(release): prepare for vX.Y.Z release"
 ```
 
-Add `.changelog.fixes` to the `add` when Step 11 changed it, and
-`pyproject.toml` and `uv.lock` when Step 12 ran. Keep it to this one commit,
-so the human review and the later `brel` see one clean prepare step.
+Add `.changelog.fixes` to the `add` when Step 11 changed it, and whatever
+Step 12 rewrote: `pyproject.toml`, `uv.lock`, the POM and its module POMs, and
+`cicd/config/.env`. Keep it to this one commit, so the human review and the
+later `brel` see one clean prepare step.
 
 ### Step 14 — Final clean-tree gate, report and stop
 
