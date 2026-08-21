@@ -9,8 +9,10 @@ vars on every git call and drop the two `git config` subprocess calls from
 `_init_repo`. Each git spawn costs a few hundred milliseconds on Windows, so
 removing the redundant config processes cuts the test's setup wall time.
 
-Fix: Both real workflow runs are prepared by fixtures, keeping their measured
-assertion calls focused on persisted prompt and memory outcomes.
+Fix: The branch-draft journey retains the real Git integration boundary. The
+working-tree journey uses recorded read-only Git output, since the helper's
+subprocess behavior is covered separately, while still exercising the complete
+prompt and memory workflow.
 """
 
 from __future__ import annotations
@@ -63,10 +65,22 @@ def _init_repo(repo: Path) -> None:
     _git(repo, "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "init")
 
 
+def _working_tree_git(args: list[str], *, cwd: Path) -> str:
+    """Return the bounded read-only Git view for a new working-tree draft."""
+    del cwd
+    command = tuple(args)
+    if command == ("rev-parse", "--abbrev-ref", "HEAD"):
+        return "main\n"
+    if command[:1] == ("for-each-ref",):
+        return "main\n"
+    if command[:2] == ("status", "--porcelain"):
+        return "?? docs/draft.v9.8.0.iso.md\n"
+    return ""
+
+
 @pytest.fixture
 def working_tree_repo(tmp_path: Path) -> Path:
     """Return a repo with a draft present in the working tree."""
-    _init_repo(tmp_path)
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     (docs_dir / "draft.v9.8.0.iso.md").write_text("# Draft\n", encoding="utf-8")
@@ -98,6 +112,7 @@ def completed_working_tree_run(
         lambda _message, options: options[0][1],
     )
     monkeypatch.setattr(prompt_workflow, "set_clipboard_text", lambda _text: None)
+    monkeypatch.setattr(prompt_workflow.git, "run_git", _working_tree_git)
     return working_tree_repo, prompt_workflow.run(working_tree_repo)
 
 

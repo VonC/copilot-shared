@@ -248,7 +248,7 @@ def exit_three_manifest_retirement(tmp_path: Path) -> None:
         3,
         "published",
         "convergence-gate",
-    )
+    ), json.dumps(payload, sort_keys=True)
     assert retire_manifest(effort.root, retained.identity)
     assert not manifest.exists()
     assert exchange.classify().state is ArtifactState.CONVERGENCE_GATE
