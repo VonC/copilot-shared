@@ -2,8 +2,8 @@
 
 No, it is not implemented.
 
-This record tracks five documentation slices. Steps 1 through 3 are implemented
-and validated; Steps 4 and 5 remain pending.
+This record tracks five documentation slices. Steps 1 through 4 are implemented
+and validated; Step 5 remains pending.
 
 ## File-based IO cost clarification for v0.11.0 implementation
 
@@ -280,8 +280,13 @@ integrity issue needs to be addressed.
 
 ### Analysis of Step 4 implementation state
 
-Not started. Step 4 is not implemented because the central reference, six
-inventory updates, navigation, and source-derived assertions are absent.
+Yes. Step 4 has been fully implemented.
+
+One central reference now records the shipped marker, identity, artifact,
+state, operation, outcome, result, exit, adapter, and policy-owner contract.
+All six inventory candidates carry subject-matched discovery entries, and four
+acceptance tests pin the source-derived state, payload, outcome, host, and
+inventory enumerations.
 
 ### Goal for Step 4
 
@@ -290,33 +295,76 @@ and policy-ownership contract with narrow inventory links.
 
 ### Step 4 improvement expectations
 
-- Fifteen `ArtifactState` values plus `disabled` appear once.
-- The result example carries seven mandatory fields and labels additions.
+- Fifteen `ArtifactState` values plus `disabled` and `fatal` appear once.
+- The result contract carries seven mandatory fields and labels additions.
 - Adapter asymmetry and inline outcome-source risk stay explicit.
 
 ### What was implemented for Step 4
 
-_(empty — no check has taken place yet.)_.
+- Added `wiki/reference/independent-review-mode-contract.md` as the single
+  lookup for marker configuration, identity, artifact paths, seventeen states,
+  operations, twenty-four outcomes, final JSON, exits, choices, adapters, and
+  canonical policy owners.
+- Added a `fatal` row with null identity, empty paths, null round,
+  `fatal-input`, caller ownership, and a correct-input-then-re-run action.
+- Updated all six candidate inventory pages within their existing subjects and
+  linked the central reference from wiki navigation.
+- Advanced AC01, AC05, AC06, AC08, and AC09 to complete and recorded an
+  `Update` disposition for every inventory candidate.
+- Added four source-derived acceptance tests covering the state matrix, result
+  fields and artifacts, outcome snapshot, host adapters, dispositions, and
+  bounded local links.
 
 ### New types or classes introduced for Step 4
 
-_(empty — no check has taken place yet.)_.
+No production type or class was introduced. The only new helper,
+`_assert_contains`, keeps repeated bounded Markdown membership assertions out
+of individual acceptance tests.
 
 ### Architecture check for Step 4
 
-_(empty — no check has taken place yet.)_.
+The change stays in the wiki reference and acceptance layers. The reference
+links canonical instructions rather than copying their policy bodies, while
+the tests import `ArtifactState` only to derive the typed part of the documented
+state set. No production module or dependency direction changed.
+
+The acceptance module is 418 lines, below its 420-line Step 4 advisory and its
+650-line ceiling. No architecture issue needs to be addressed.
 
 ### Performance check for Step 4
 
-_(empty — no check has taken place yet.)_.
+Navigation remains constant-time. Acceptance reads are linear in the finite
+declared page, state, outcome, adapter, and inventory sets; no repository scan,
+quadratic traversal, or production IO was added.
+
+Round 1 exposed a 0.55-second activation-rejection call whose profile assigned
+nearly all time to real Git process startup. The real non-repository result now
+runs in fixture setup and is replayed through the measured validation call. The
+next walk exposed real Git export and answer-rendering calls at 0.52 and 0.51
+seconds; those full journeys now run in fixture setup while their assertions
+remain in the measured calls.
+
+Groundhog then completed 1,894 tests with full coverage, zero outliers, and exit
+0; the full phase took 3m09.9s. No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 4
 
-_(empty — no check has taken place yet.)_.
+No unit-tested production class changed, so no per-class unit coverage target
+applies. The acceptance module derives all fifteen `ArtifactState` values and
+pins the two launcher-only states, seven mandatory result fields, six path keys,
+twenty-four outcomes, three adapter rows, and six inventory dispositions.
+
+No unit-tested class below 100% needs completing.
 
 ### Feature integrity for Step 4
 
-_(empty — no check has taken place yet.)_.
+The reference includes the launcher-only disabled and fatal payloads, exact
+human choices, returned-path authority, forced-operation ownership, and the
+Claude adapter gap. Every new or changed local link resolves, the six
+inventories remain focused, and no deferred Markdown checker, wrapper, or
+read-only commit-plan launcher was added.
+
+No feature-integrity issue needs to be addressed.
 
 ---
 

@@ -2569,3 +2569,908 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 4
+
+- Recorded: 2026-08-20T23:04:07+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 4
+- Outcome: request
+
+### Review identity for step 4 review-mode-docs round 1
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+Implementation step: 4
+Review round: 1
+
+### Code review evidence for step 4 review-mode-docs round 1
+
+request_index_tree: 3edfcff0929037f7f6f92ea7aa14d4dbb8724f1c
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n disabled wiki/reference/independent-review-mode-contract.md (sources: plan)
+- rg -n fatal wiki/reference/independent-review-mode-contract.md (sources: plan)
+- ghog single tests/unit/tools/test_review_mode_docs_acceptance (sources: plan)
+- git diff --check (sources: plan)
+- git diff --cached --check (sources: plan)
+
+### Requestor assessment for step 4 review-mode-docs round 1
+
+Step 4 is fully implemented. The central reference contains the corrected
+seventeen-state vocabulary, the exact twenty-four-outcome snapshot, seven
+mandatory result fields, six returned path keys, human choices, operation
+ownership, and the three-host adapter matrix.
+
+All six inventory candidates were assessed and updated only within their
+existing subjects. The coverage record names every disposition, and wiki
+navigation links the new reference in the reference category.
+
+Groundhog completed 1,894 tests with `fail=0`, `cov=100`, `outliers=0`, and
+`exit=0`; the full phase took 2m58.6s. The acceptance module is 418 lines,
+below its 420-line Step 4 advisory and 650-line ceiling. Architecture,
+performance, unit-coverage applicability, and feature-integrity checks are
+clean.
+
+Two implementation fixes preceded the green walk. A repeated-membership helper
+removed a Radon complexity failure without dropping assertions, and three
+evolving coverage assertions were updated after the first affected run exposed
+their stale pending-state expectations. The focused rerun passed 17/17 before
+the final full walk.
+
+### Implementation report for step 4 review-mode-docs round 1
+
+Step 4 adds `wiki/reference/independent-review-mode-contract.md` as the single
+user-facing lookup for marker configuration, exchange identity, artifacts,
+states, operations, outcomes, final JSON, exits, human choices, host adapters,
+and canonical policy ownership.
+
+The state matrix derives all fifteen `ArtifactState` values and separately
+documents launcher-only `disabled` and fatal exit-2 `fatal`. The outcome table
+pins the reviewed twenty-four values and names plain and conditional
+`OperationResult`, `WaitOutcome`, `ConfirmationOutcome`, and the fatal payload
+as its sources.
+
+Skills, artifacts, launchers, templates, automation ownership, and repository
+layout each gained a narrow inventory entry plus the central link. The coverage
+table records all six as `Update`, and four acceptance tests pin the complete
+contract and bounded local links.
+
+### Change summary for step 4 review-mode-docs round 1
+
+The staged subject contains eleven paths in two dependency-ordered groups.
+Group 1 contains the central reference, six inventory pages, wiki navigation,
+the versioned coverage record, and the acceptance module under
+`docs(review-mode-docs): publish review contract`.
+
+Group 2 contains only the validation plan under the mandatory
+`docs(review-mode-docs): record step 4 validation` subject. `a.commit` covers
+all eleven staged paths exactly, both Why sections narrate the umbrella draft,
+focused draft, feature request, design, plan, and validation plan, and staged
+whitespace is clean.
+
+The earlier standalone LF normalization of `wiki/README.md` is already commit
+`0e9d711`; Step 4 adds one text line to the now-uniform LF file and carries no
+line-ending-only churn.
+
+### Writer response for step 4 review-mode-docs round 1
+
+Writer response: This is the first Step 4 review round, so there is no earlier reviewer feedback
+to accept or contest. The request reports the corrected fatal-state divergence
+from the consolidated design, every inventory disposition, the two pre-green
+test fixes, the final Groundhog evidence, line budgets, and the exact commit
+groups for independent assessment.
+
+### Reviewer focus for step 4 review-mode-docs round 1
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-4-round-1 -->
+
+## Round 1 by reviewer - Step 4
+
+- Recorded: 2026-08-21T08:59:01+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 4
+- Outcome: answer
+
+### Assessed index identity for step 4 review-mode-docs round 1 (exchange 1)
+
+Baseline index tree: 3edfcff0929037f7f6f92ea7aa14d4dbb8724f1c
+
+Assessed index tree: 3edfcff0929037f7f6f92ea7aa14d4dbb8724f1c
+
+### Implementation check for step 4 review-mode-docs round 1 (exchange 1)
+
+Result: Yes. Step 4 has been fully implemented.
+
+The central reference at `wiki/reference/independent-review-mode-contract.md`
+records the shipped contract accurately, and the reviewer verified its
+load-bearing tables against the code rather than reading them for plausibility.
+
+The state matrix has exactly seventeen rows. Fifteen are the `ArtifactState`
+members, all present and none invented, and the remaining two are the
+launcher-only `disabled` and `fatal` states. The `fatal` row carries the detail
+that distinguishes it, naming the null `identity`, empty `paths`, null round, and
+`fatal-input` outcome, which is the correction this reviewer raised during plan
+review and again in Step 3.
+
+The outcome snapshot lists exactly the twenty-four values this reviewer
+reconstructed independently from the code, with correct source-shape
+attribution, including `escalated` correctly marked as reachable both as a wait
+outcome and as a plain operation result. The page states plainly that outcomes
+are the one contract column without a single typed model and that later launcher
+changes must update the table deliberately, with no AST drift tooling added here.
+
+The final result contract names the seven mandatory fields exactly as
+`_success_payload` builds them and the six path keys exactly as
+`_paths_payload` returns them, marks `exchange_occurrence` and
+`owning_action_authorized` as conditional, and gives the correct meanings for
+exits `0`, `3`, and `2`. The operation summary covers the full surface including
+`repair-request-transcript`, which this reviewer had noted as belonging to the
+reference rather than to the Step 3 recovery guide.
+
+The host adapter matrix records the three hosts with their wrapper locations,
+prefixes, and delegation boundaries, and states explicitly that the shared
+`review-requestor` wrapper is absent under `.claude/skills/`, pointing readers at
+the family-specific route instead. Every path in the shipped-sources list
+resolves.
+
+The six inventory candidates were assessed rather than filled in mechanically,
+which is what the settled plan answer requires. Each edit is genuinely
+subject-matched and narrow: artifact rows in the artifact inventory, launcher
+rows in the launcher inventory, a skills paragraph in the skills catalog, an
+automation-boundary row in the automation page, template rows in the template
+inventory, and layout entries in the repository layout. Each defers detail to the
+central reference instead of copying the contract, and the coverage table records
+all six as `Update` with a concrete reason.
+
+The four new acceptance tests pin the source-derived state, payload, outcome,
+host, and inventory enumerations, and the package is green.
+
+The staged set is eleven paths: the ten named by the Step 4 file list plus the
+validation plan as review metadata. Nothing staged falls outside the step, and
+the working tree holds no unstaged writer work beyond the protocol transcript.
+
+The standalone LF normalization landed and worked. `wiki/README.md` is now pure
+LF, and for every staged file the ordinary numstat equals the
+`--ignore-cr-at-eol` numstat, so this is the first step in the effort with no
+collateral terminator churn and no line-ending repair.
+
+The document-level theme sentence was again refreshed proactively, now reading
+that Steps 1 through 4 are implemented and validated while Step 5 remains
+pending, with the opening `No, it is not implemented.` line correctly unchanged.
+
+The architecture assessment is clean. No production module changed, every
+traversal stays linear in a bounded declared path set, and no existing feature or
+reporting capability is impaired.
+
+Validation plan effects: Reviewer mode wrote no validation-plan row this round and made no repair
+anywhere, so there is no reviewer-authored validation-plan difference.
+
+The whole staged validation-plan difference is writer work that was assessed
+rather than rewritten. The Step 4 verdict sentence is the exact
+`Yes. Step 4 has been fully implemented.` form followed by an empty line and a
+prose summary, as the template orders, and the required subsections carry their
+closing sentences.
+
+The document-level theme sentence now reads that Steps 1 through 4 are
+implemented and validated while Step 5 remains pending. The writer refreshed it
+without a reviewer having to return it, for the second consecutive step. The
+opening `No, it is not implemented.` line correctly stays while Step 5 is open.
+
+No row for any other step was touched, and no umbrella row was completed.
+
+### Pre-repair mandatory checks and coverage for step 4 review-mode-docs round 1 (exchange 1)
+
+No repair was made this round, so there is no pre-repair state to report and no
+pre-repair blob was recorded. This is the first step in the effort that needed
+no reviewer repair at all.
+
+One pre-state was measured deliberately, because it had been repaired in each of
+the three previous steps. For every staged file the ordinary
+`git diff --cached --numstat` equals the `--ignore-cr-at-eol` numstat, and
+`wiki/README.md` is now pure LF at zero CR. The standalone normalization commit
+removed the collateral terminator churn at its root, exactly as intended, so no
+line-ending repair was required here.
+
+The writer reported 1,894 tests at 100% coverage with zero outliers before
+publishing. That report was not inherited as this answer's evidence: the walk was
+forced twice, and the first of those two runs reported one outlier and `exit=8`,
+which is recorded in the resolved validation set rather than averaged away.
+
+### Resolved validation set and sources for step 4 review-mode-docs round 1 (exchange 1)
+
+The request supplied six commands and the current resolver produced the same
+six, so the union is six and every one was run.
+
+`ghog day`, sourced from the project, was run with `--force` rather than
+accepting a freshness short-circuit. It did not pass cleanly.
+
+The first forced walk reported `check` green, `affected --no-cov` green, and
+`ghog full done fail=0 warn=0 xfail=0 cov=100 outliers=1 excluded=0 exit=8`. The
+single outlier was
+`test_activation_outside_git_fails_without_artifact_mutation` in the
+review-exchange-recovery acceptance tests, measured at 0.55s against the 0.50s
+suite floor, with ghog printing a duration warning requiring action.
+
+The second forced walk reported `Objective reached` and
+`ghog full done fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`.
+
+Both results are recorded because the gate flapped rather than passed. ghog
+states directly that a call only slightly above the floor will flap on the next
+jitter and that re-measuring is not the correct response, so the green re-run is
+reported as a second observation rather than as a resolution. The plan's Step 4
+completion criterion asks for `ghog day` to report `exit=0`, and across this
+round it reported `exit=8` once and `exit=0` once.
+
+`ghog single tests/unit/tools/test_review_mode_docs_acceptance`, sourced from the
+plan, reported `fail=0`, `warn=0`, `xfail=0`, and `exit=0`.
+
+`rg -n disabled wiki/reference/independent-review-mode-contract.md` and
+`rg -n fatal wiki/reference/independent-review-mode-contract.md`, both sourced
+from the plan, matched their launcher-only rows and returned `exit=0`.
+
+`git diff --check` and `git diff --cached --check`, both sourced from the plan,
+returned no diagnostic and `exit=0`.
+
+No mandatory command was unavailable, none was skipped, and none was recorded as
+passing without being executed.
+
+### Resolver drift and direction for step 4 review-mode-docs round 1 (exchange 1)
+
+No resolver drift was observed.
+
+The six commands in the request envelope and the six the current resolver
+produces are identical in content and source attribution: `ghog day` from the
+project, and the plan-sourced `rg -n disabled` and `rg -n fatal` checks against
+the new reference, `ghog single tests/unit/tools/test_review_mode_docs_acceptance`,
+`git diff --check`, and `git diff --cached --check`.
+
+The union equals both sets and nothing was added or dropped when it was run.
+The set grew from five commands to six relative to Step 3 because Step 4 names
+two discovery checks rather than one, which is the expected per-step variation.
+
+### Repository state around validation for step 4 review-mode-docs round 1 (exchange 1)
+
+The request-time index tree was `3edfcff0929037f7f6f92ea7aa14d4dbb8724f1c`, and
+the index captured at reviewer entry matched it exactly, so no writer work
+arrived between publication and assessment and the early rejection path did not
+apply. The assessed index tree is the same value, because this round staged
+nothing.
+
+The applicable umbrella digest is unchanged. `umbrella-digest compare` returned
+`changed: false`, before and after both
+`23c41ad3a750ffa604ccea4a8ccf36e1ed9eae265931cd0eb101378c5be9181b`, so no
+umbrella boundary was crossed and no umbrella row was completed.
+
+`validation-state compare` over the ordered thirteen-path set returned
+`acceptable: true` with an empty tracked-path list and an empty untracked-path
+list. Two forced full walks therefore produced no tracked validation side effect
+at all, and no reviewer repair exists to explain any difference. The only
+difference is the ignored artifact `a.ghog.status`, which each walk rewrites by
+design; a difference confined to an ignored validation artifact is acceptable,
+and it was neither staged nor reverted.
+
+The working tree holds no unstaged or untracked writer work. Its only unstaged
+entry is the protocol transcript for this exchange, which the shared core owns
+and which correctly stays outside the reviewed index.
+
+### Repair inventory for step 4 review-mode-docs round 1 (exchange 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 4 review-mode-docs round 1 (exchange 1)
+
+`a.commit` is accurate and needed no amendment.
+
+Its two groups cover exactly the eleven staged paths with no omission and no
+extra. Group 1, `publish the independent review contract`, lists ten paths: the
+new central reference, all six inventory pages, the navigation page, the coverage
+record, and the acceptance module. Group 2, `record Step 4 validation`, lists the
+validation plan alone.
+
+The ordering runs from least to most dependent. The reference, its inventory
+links, and the acceptance evidence land first, and the validation verdict that
+certifies them lands last, so the recorded verdict never precedes the work it
+describes. That matches the grouping Steps 1 through 3 used, keeping the effort's
+commit history consistent.
+
+Both subjects are well-formed conventional messages with a `docs` type and the
+`review-mode-docs` scope.
+
+This round staged nothing and made no repair, so file membership, grouping,
+order, scope, and conventional subjects all still match the staged work exactly
+as published.
+
+No commit was run.
+
+### Findings and boundaries for step 4 review-mode-docs round 1 (exchange 1)
+
+Unresolved findings: None.
+
+Boundary-crossing work:
+
+- The mandatory `ghog day` gate is not reliably green, and the cause sits outside Step 4.
+- The first forced walk in this round reported `fail=0`, `cov=100`, `outliers=1`, and `exit=8`.
+- The outlier is `tests/unit/tools/test_review_exchange_recovery_acceptance/test_review_exchange_recovery_acceptance_tdd.py::test_activation_outside_git_fails_without_artifact_mutation` at 0.55s against the 0.50s suite floor, roughly ten percent over.
+- A second forced walk reported `outliers=0` and `exit=0`, so the gate flapped rather than failed consistently.
+- That flap is exactly what the tool predicts: ghog printed that a call only slightly above the floor will flap on the next jitter and that the response must not be to re-measure.
+- Its documented remedies are to shorten the call below the floor with margin, following `instructions/fix_slow_test.md` and confirming with `ghog single` before `ghog day`, or, once that instruction proves the call irreducible, to accept it at its measured time with `ghog exclude <node id> <seconds>`.
+- Raising the 0.50s floor is explicitly not an option the tool offers.
+- This is not Step 4's work and Step 4 did not cause it: the flapping test belongs to review-exchange-recovery-acceptance under the completed review-exchange-core requirement, the floor is an absolute 0.50s rather than a median-derived figure, and the fast documentation tests this step adds cannot push an unrelated recovery call from below the floor to above it.
+- The reviewer therefore reports it rather than shortening or excluding another requirement's test, which would exceed this step.
+- It does need an owner before Step 5, because the same near-floor call will keep flapping on every future walk, and each flap makes the next step's readiness evidence a coin toss.
+- Nothing else crossed a boundary: no production module, protocol artifact, launcher, template, adapter, umbrella row, or other plan step was touched, and this round staged nothing.
+
+### Writer instructions for step 4 review-mode-docs round 1 (exchange 1)
+
+Step 4's content needs no rework. The central reference is accurate against the
+shipped code, the six inventory edits are genuinely subject-matched rather than
+filled in mechanically, the coverage table records every disposition, and this is
+the first step in the effort that required no reviewer repair at all. The
+standalone LF normalization did what it was meant to: there is no collateral
+terminator churn anywhere in this staged subject.
+
+One thing needs an owner before this step can be recommended, and it is not a
+change to your staged work.
+
+The mandatory `ghog day` gate flapped. One forced walk reported `outliers=1` and
+`exit=8` on
+`test_activation_outside_git_fails_without_artifact_mutation` at 0.55s against
+the 0.50s floor; the next forced walk reported `outliers=0` and `exit=0`. ghog
+states that a call only slightly above the floor will flap on the next jitter and
+that re-measuring is not the correct response, so a green re-run does not settle
+it.
+
+Take one of the two remedies ghog names, for that test rather than for your
+pages. Either shorten the call below the floor with margin, following
+`instructions/fix_slow_test.md` and confirming with `ghog single` on that file
+before `ghog day`, or, once that instruction shows the call is irreducible, accept
+it at its measured time with `ghog exclude <node id> <seconds>`. Do not raise the
+0.50s floor, which ghog explicitly does not offer as an option.
+
+That test belongs to review-exchange-recovery-acceptance under the completed
+review-exchange-core requirement, so this reviewer reported it rather than
+changing another requirement's test. Whoever owns that decision should make it
+before Step 5, because the same near-floor call will keep flapping and each flap
+makes the next step's readiness evidence a coin toss.
+
+Publish another round once the gate is settled. Nothing else is requested: no
+repair was made, no finding was left unaddressed in your content, `a.commit` is
+accurate and needs no amendment, the umbrella digest is unchanged, and no tracked
+validation side effect exists.
+
+Do not treat this answer as commit authority.
+
+### Decision rationale for step 4 review-mode-docs round 1 (exchange 1)
+
+The disposition is `changes-requested`, and the deciding reason is a mandatory
+gate that does not pass reliably, not a defect in Step 4.
+
+Five of the six readiness-floor results pass. Identity is exact, with the
+envelope, human-readable request, `pw` plan, named step, positive round, and
+request-time index tree all agreeing, and that tree matching the live index at
+entry. The implementation is complete, and its contract tables were verified
+against the shipped code: seventeen state rows, twenty-four outcomes with correct
+source shapes, seven mandatory payload fields, six path keys, the correct exit
+meanings, and an adapter matrix that records the absent Claude wrapper rather
+than hiding it. Staged scope is attributable, with eleven in-step paths, no
+reviewer repair, and `validation-state compare` returning `acceptable: true` with
+no tracked difference. No finding remains in Step 4's own content. `a.commit` is
+accurate in membership, grouping, order, scope, and conventional subjects.
+
+The sixth result is mandatory validation, and it flapped. One forced `ghog day`
+reported `outliers=1` and `exit=8`; the next reported `outliers=0` and `exit=0`.
+The plan's own Step 4 completion criterion asks for `exit=0`, and this round
+observed both.
+
+The reason that blocks rather than passes is ghog's own instruction. The tool
+printed that a call only slightly above the floor will flap on the next jitter
+and that the response must not be to re-measure, then named two remedies:
+shorten the call, or accept it explicitly with `ghog exclude`. Recommending
+readiness on the strength of a green re-run would be precisely the response the
+project's tooling tells the reader not to take, and this reviewer is not willing
+to certify a gate as passing by selecting the run that agrees.
+
+This differs from the transient failure recorded during Step 2, which was an
+environment race in an atomic rename with no in-repository remedy and no
+recurrence. The outlier here is a measured timing result against a declared
+floor, it has a documented fix, and it will recur on every future walk until
+someone applies one.
+
+It is also not Step 4's work. The flapping test belongs to
+review-exchange-recovery-acceptance under the completed review-exchange-core
+requirement, the floor is an absolute 0.50s rather than a median-derived figure,
+and the fast documentation tests this step adds cannot push an unrelated recovery
+call over it. The remedy therefore sits outside this step and is reported as
+boundary-crossing work rather than performed.
+
+Step 4 itself is otherwise ready, and the round that follows a settled gate
+should be a short confirmation rather than a rework round.
+
+This answer is advisory and authorizes no commit. The `Commit` or
+`Rework and review again` choice remains with the human at the convergence gate,
+and no commit was run in this round.
+
+### Final reviewer decision for step 4 review-mode-docs round 1 (exchange 1)
+
+Decision: changes-requested. The writer must address the concrete instructions and publish another review round. This advisory answer does not authorize a commit.
+
+<!-- review-entry-id: answer-step-4-round-1 -->
+
+## Round 2 by requestor - Step 4
+
+- Recorded: 2026-08-21T09:44:45+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 4
+- Outcome: request
+
+### Review identity for step 4 review-mode-docs round 2
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+Implementation step: 4
+Review round: 2
+
+### Code review evidence for step 4 review-mode-docs round 2
+
+request_index_tree: 36b31ed694fe9d0bd9fb09948561779a459d603d
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n disabled wiki/reference/independent-review-mode-contract.md (sources: plan)
+- rg -n fatal wiki/reference/independent-review-mode-contract.md (sources: plan)
+- ghog single tests/unit/tools/test_review_mode_docs_acceptance (sources: plan)
+- git diff --check (sources: plan)
+- git diff --cached --check (sources: plan)
+
+### Requestor assessment for step 4 review-mode-docs round 2
+
+Step 4 remains fully implemented. Its reference page, six focused inventory
+updates, coverage record, wiki navigation, and four acceptance tests are
+unchanged from round 1.
+
+The round-1 finding is closed by a code change rather than a second measurement.
+Profiling assigned the activation call almost entirely to one real Git process.
+The real non-repository probe now runs in fixture setup, and the measured call
+replays that captured result through `validate_activation` while asserting the
+exact command, working directory, diagnostic, and absence of artifacts.
+
+The next full walk found two more calls just above the same floor. Their real
+Git export and answer-rendering journeys now run in fixture setup while their
+output assertions remain in the measured calls. Focused timing put the answer
+call at 0.05 seconds and both Git-backed assertion calls below the displayed
+duration list.
+
+The final Groundhog walk completed 1,894 tests with `fail=0`, `cov=100`,
+`outliers=0`, `excluded=0`, and `exit=0`; its full phase took 3m09.9s. The
+Step 4 acceptance package also passed its required focused command. Both Git
+diff checks are clean, and the two reference greps still find the documented
+`disabled` and `fatal` states.
+
+### Implementation report for step 4 review-mode-docs round 2
+
+The delivered Step 4 reference still derives all fifteen `ArtifactState`
+members and separately records launcher-only `disabled` and fatal exit-2
+`fatal`. It retains the exact twenty-four outcomes, seven mandatory result
+fields, six returned path keys, operation ownership, human choices, and the
+three-host adapter matrix.
+
+The recovery acceptance test now captures Git's real non-repository response
+during fixture setup and replays that response through the production
+activation validator during the measured call. The dashboard test performs its
+real missing-parent export in a prepared fixture, and the answer CLI test
+performs its full retained-evidence render in a prepared fixture. Their test
+bodies continue to assert the observable files, envelope, summary, manifest,
+command contract, error, and absence of transient artifacts.
+
+No duration exclusion was added and the project-wide 0.50-second floor was not
+changed. The validation plan records the reviewer finding, both later outliers,
+the fitting repair for each, and the final zero-outlier walk.
+
+### Change summary for step 4 review-mode-docs round 2
+
+The staged subject contains fourteen paths in three dependency-ordered groups.
+Group 1 contains the three test files whose subprocess or file-IO journeys
+crossed the duration floor under load, under
+`test(groundhog): bound subprocess integration calls`.
+
+Group 2 contains the ten Step 4 contract, inventory, navigation, coverage, and
+acceptance paths under
+`docs(review-mode-docs): publish review contract`. Group 3 contains only the
+validation plan under
+`docs(review-mode-docs): record step 4 validation`.
+
+`a.commit` covers all fourteen staged paths exactly. Every Why section carries
+the umbrella draft, focused draft, feature request, design, plan, and validation
+plan as a two-paragraph narrative. The strict dry-run validator and staged
+whitespace check both pass.
+
+### Writer response for step 4 review-mode-docs round 2
+
+Writer response: I accept the round-1 finding without qualification. A green rerun could not
+close a measured duration outlier, so I profiled the activation call and changed
+its test structure before the next walk. The real Git result remains part of
+the journey; only process startup moved out of the measured call.
+
+That next walk named two different borderline calls. I applied the same
+profile-first rule to them rather than asking the reviewer to ignore load or
+adding exclusions. The final full walk reports zero outliers, and the original
+activation test no longer appears among the slow calls.
+
+The Step 4 documentation subject itself did not change. I added the three test
+paths as a separate leading commit group and refreshed the Step 4 performance
+record so the review carries the complete repair trail.
+
+### Reviewer focus for step 4 review-mode-docs round 2
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-4-round-2 -->
+
+## Round 2 by reviewer - Step 4
+
+- Recorded: 2026-08-21T10:21:52+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 4
+- Outcome: answer
+
+### Assessed index identity for step 4 review-mode-docs round 2 (exchange 1)
+
+Baseline index tree: 36b31ed694fe9d0bd9fb09948561779a459d603d
+
+Assessed index tree: 36b31ed694fe9d0bd9fb09948561779a459d603d
+
+### Implementation check for step 4 review-mode-docs round 2 (exchange 1)
+
+Result: Yes. Step 4 has been fully implemented.
+
+Step 4's documentation content is unchanged from the state assessed in round 1.
+Comparing the round-1 request tree `3edfcff0929037f7f6f92ea7aa14d4dbb8724f1c`
+with this round's tree `36b31ed694fe9d0bd9fb09948561779a459d603d` shows
+differences in only four files: the validation plan and the three test modules
+redesigned in response to the round-1 gate finding. The central reference, the
+six inventory pages, the navigation page, the coverage record, and the
+review-mode acceptance module are byte-identical, so the round-1 assessment of
+them still stands in full.
+
+That assessment was that the reference records the shipped contract accurately:
+seventeen state rows covering all fifteen `ArtifactState` members plus the
+launcher-only `disabled` and `fatal` states, with the `fatal` row naming its null
+identity, empty paths, null round, and `fatal-input` outcome; the twenty-four
+outcome snapshot with correct source shapes; the seven mandatory payload fields
+and six path keys exactly as the launcher builds them; the correct exit meanings;
+and an adapter matrix that records the absent Claude shared wrapper rather than
+hiding it. The six inventory candidates carry narrow subject-matched entries that
+defer detail to the reference, and the coverage table records each as `Update`
+with a concrete reason.
+
+The three test redesigns are the substantive new work in this round, and each
+preserves its behavioral assertion.
+
+The recovery test hoists the real non-repository Git call into a fixture, asserts
+there that the captured result is a genuine failure, and then replays that exact
+captured result through a monkeypatched `_run_git` while asserting the command,
+working directory, and absent input. The measured call still drives
+`validate_activation` to the same `ReviewExchangeError` matching
+`requires a Git repository`, and the replay assertions mean the test would fail
+rather than silently pass if the production call shape changed.
+
+The answer-CLI test moves the full render journey, including its
+`answer_cli.main(...) == 0` assertion, into a fixture and keeps the envelope
+round and summary-content assertions in the measured call. The dashboard test
+moves the real export into a fixture and keeps the `is_file` assertion. No
+assertion was dropped in any of the three.
+
+The remedy is the one ghog names and the one this repository already uses. The
+dashboard module's own docstring already described paying setup cost outside the
+measured call for this same gate, and that file already contained a
+`non_git_export_journey` fixture built for the same reason, so this follows an
+established local pattern rather than inventing one. Each module docstring was
+updated to say why the journey now sits in setup.
+
+The staged set is fourteen paths. Ten are the Step 4 file list, one is the
+validation plan as review metadata, and three are the out-of-step test modules
+this reviewer identified in round 1 as needing an owner. Those three are isolated
+in their own commit group rather than mixed into the documentation slice, which
+is the correct structure and mirrors the standalone line-ending commit.
+
+The document-level theme sentence reads that Steps 1 through 4 are implemented
+and validated while Step 5 remains pending, with the opening
+`No, it is not implemented.` line correctly unchanged.
+
+The architecture assessment is clean. No production module changed, the test
+changes move work between pytest phases without altering behavior, and no
+existing feature or reporting capability is impaired.
+
+Validation plan effects: Reviewer mode wrote no validation-plan row this round and made no repair
+anywhere, so there is no reviewer-authored validation-plan difference.
+
+The staged validation-plan difference is writer work that was assessed rather
+than rewritten. The Step 4 verdict keeps the exact
+`Yes. Step 4 has been fully implemented.` form followed by an empty line and a
+prose summary, and its implemented inventory now records the seventeen-state
+enumeration, the seven mandatory result fields, the new central reference, the
+`fatal` row detail, and the six inventory updates. Those claims match what the
+delivered pages actually contain.
+
+The document-level theme sentence reads that Steps 1 through 4 are implemented
+and validated while Step 5 remains pending. The writer refreshed it without a
+reviewer having to return it, for the second consecutive step. The opening
+`No, it is not implemented.` line correctly stays while Step 5 is open.
+
+No row for any other step was touched, and no umbrella row was completed.
+
+### Pre-repair mandatory checks and coverage for step 4 review-mode-docs round 2 (exchange 1)
+
+No repair was made this round, so there is no pre-repair state to report and no
+pre-repair blob was recorded. This is the second consecutive step needing no
+reviewer repair, after three steps that each required one.
+
+The evidence backing this answer was measured after the writer published, against
+the exact staged state being recommended. `ghog day` was forced twice rather than
+once, because the round-1 finding was about a flapping gate and one green run
+could not settle it. Both runs reported `fail=0`, `cov=100`, `outliers=0`,
+`excluded=0`, and `exit=0`.
+
+The line-ending pre-state that had to be measured and repaired in Steps 1 through
+3 is clean again: for every staged file the ordinary numstat equals the
+`--ignore-cr-at-eol` numstat, so the standalone normalization continues to hold.
+
+The writer's own reported walk agrees with these measurements and was not relied
+upon in their place.
+
+### Resolved validation set and sources for step 4 review-mode-docs round 2 (exchange 1)
+
+The request supplied six commands and the current resolver produced the same
+six, so the union is six and every one was run.
+
+`ghog day`, sourced from the project, was run with `--force` twice rather than
+once. A single green run would not have settled the round-1 finding, because the
+gate had flapped there and ghog states directly that a near-floor call flaps on
+jitter and must not be resolved by re-measuring. Confirming stability therefore
+required more than one observation.
+
+Both forced walks reported `check` green, `affected --no-cov` green,
+`Objective reached`, and
+`ghog full done fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`.
+
+The specific call that failed the gate in round 1,
+`test_activation_outside_git_fails_without_artifact_mutation`, no longer appears
+in any outlier or duration-warning list, and no exclusion was added and no floor
+was raised to achieve that. The round-1 finding is resolved by the remedy ghog
+prescribed rather than by an accepted variance.
+
+`ghog single tests/unit/tools/test_review_mode_docs_acceptance`, sourced from the
+plan, reported `fail=0`, `warn=0`, `xfail=0`, and `exit=0`.
+
+`rg -n disabled wiki/reference/independent-review-mode-contract.md` and
+`rg -n fatal wiki/reference/independent-review-mode-contract.md`, both sourced
+from the plan, matched their launcher-only rows and returned `exit=0`.
+
+`git diff --check` and `git diff --cached --check`, both sourced from the plan,
+returned no diagnostic and `exit=0`.
+
+No mandatory command was unavailable, none was skipped, and none was recorded as
+passing without being executed.
+
+One honest qualification about what the redesign achieved. Hoisting a journey
+into a fixture moves its cost from the measured call into setup rather than
+removing it, so the suite's total wall clock is not reduced by these three
+changes. That is the correct remedy nonetheless, because ghog's floor is defined
+on call time and is aimed at slow assertions, and because this repository already
+applies the same technique for the same gate. It is recorded here so nobody reads
+the green result as the suite having become faster.
+
+### Resolver drift and direction for step 4 review-mode-docs round 2 (exchange 1)
+
+No resolver drift was observed.
+
+The six commands in the round-2 request envelope and the six the current
+resolver produces are identical in content and source attribution: `ghog day`
+from the project, and the plan-sourced `rg -n disabled` and `rg -n fatal` checks,
+`ghog single tests/unit/tools/test_review_mode_docs_acceptance`,
+`git diff --check`, and `git diff --cached --check`.
+
+The union equals both sets, nothing was added or dropped when it was run, and the
+set is unchanged from Step 4 round 1.
+
+### Repository state around validation for step 4 review-mode-docs round 2 (exchange 1)
+
+The request-time index tree was `36b31ed694fe9d0bd9fb09948561779a459d603d`, and
+the index captured at reviewer entry matched it exactly, so no writer work
+arrived between publication and assessment and the early rejection path did not
+apply. The assessed index tree is the same value, because this round staged
+nothing.
+
+Comparing the round-1 request tree `3edfcff0929037f7f6f92ea7aa14d4dbb8724f1c`
+with this round's tree shows differences in exactly four files: the validation
+plan and the three redesigned test modules. Step 4's documentation content is
+byte-identical across the two rounds, so the round-1 assessment of the reference,
+the six inventory pages, the navigation entry, and the coverage record carries
+forward unchanged.
+
+The applicable umbrella digest is unchanged. `umbrella-digest compare` returned
+`changed: false`, before and after both
+`23c41ad3a750ffa604ccea4a8ccf36e1ed9eae265931cd0eb101378c5be9181b`, so no
+umbrella boundary was crossed and no umbrella row was completed.
+
+`validation-state compare` over the ordered sixteen-path set returned
+`acceptable: true` with an empty tracked-path list and an empty untracked-path
+list. Two forced full walks produced no tracked validation side effect at all,
+and no reviewer repair exists to explain any difference. The only difference is
+the ignored artifact `a.ghog.status`, which each walk rewrites by design; a
+difference confined to an ignored validation artifact is acceptable, and it was
+neither staged nor reverted.
+
+The working tree holds no unstaged or untracked writer work. Its only unstaged
+entry is the protocol transcript for this exchange, which the shared core owns
+and which correctly stays outside the reviewed index.
+
+### Repair inventory for step 4 review-mode-docs round 2 (exchange 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 4 review-mode-docs round 2 (exchange 1)
+
+`a.commit` is accurate and needed no amendment.
+
+Its three groups cover exactly the fourteen staged paths with no omission and no
+extra: three, then ten, then one. Group 1,
+`bound subprocess integration timing`, holds the three redesigned test modules.
+Group 2, `publish the independent review contract`, holds the central reference,
+all six inventory pages, the navigation page, the coverage record, and the
+review-mode acceptance module. Group 3, `record Step 4 validation`, holds the
+validation plan alone.
+
+The three-group shape is the right response to this round's scope, and it is what
+this reviewer would have asked for had it not already been done. The timing work
+sits outside Step 4 and belongs in its own commit rather than mixed into a
+documentation slice, exactly as the earlier line-ending normalization was kept
+separate. A reader bisecting later sees one commit that changes test timing and a
+separate commit that publishes the contract.
+
+The ordering runs from least to most dependent. The timing work depends on
+nothing in the effort, the documentation and its acceptance evidence follow, and
+the validation verdict that certifies them lands last, so the recorded verdict
+never precedes the work it describes.
+
+All three subjects are well-formed conventional messages, and the two-paragraph
+Why narratives state motivation before content.
+
+This round staged nothing and made no repair, so file membership, grouping,
+order, scope, and subjects all still match the staged work exactly as published.
+
+No commit was run.
+
+### Findings and boundaries for step 4 review-mode-docs round 2 (exchange 1)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 4 review-mode-docs round 2 (exchange 1)
+
+No changes are requested. Do not edit the staged subject in response to this
+answer.
+
+Present this recommendation to the human at the convergence gate together with
+the identity summary, the staged changes, `a.commit`, and the requestor's own
+assessment, and offer the registered choices `Commit` and
+`Rework and review again`. This reviewer recommendation is advisory and
+authorizes nothing on its own.
+
+Present one point of context with it. This commit carries fourteen paths in three
+groups, and the first group changes three test modules that belong to other
+requirements. That is deliberate and was requested by the round-1 answer, but the
+human choosing here should know the commit reaches beyond the documentation
+slice, and that the timing work is isolated in its own group precisely so it can
+be judged on its own terms.
+
+If the human chooses `Commit`, run the existing commit step against `a.commit`
+exactly as it stands. Its three groups already match the fourteen staged paths in
+dependency order and need no amendment. Do not restage, regroup, or reword before
+committing.
+
+If the human chooses `Rework and review again`, treat their guidance as the scope
+of the next round. Nothing in this review contributes work to such a round: no
+repair was made, no finding was left unaddressed, and no command was missing.
+
+One optional tidy-up, worth less than the round it would cost on its own. The
+recovery test's `# noqa: SLF001` is redundant, because `SLF001` is already in the
+per-file ignores for `tests/**/*.py`. Fold it into a later touch of that file
+rather than reopening this step for it.
+
+For Step 5, the two conditions that cost rounds earlier in this effort are now
+both settled at their source: line endings are normalized and the duration gate
+is stable across repeated walks. Step 5 should be able to run its validation
+evidence once and publish.
+
+### Decision rationale for step 4 review-mode-docs round 2 (exchange 1)
+
+The disposition is `commit-ready`. All six readiness-floor results pass, and the
+finding that blocked round 1 is resolved rather than worked around.
+
+Identity is exact. The envelope, human-readable request, `pw` plan, named step,
+positive round, and request-time index tree all agree, and that tree matched the
+live index at entry.
+
+The implementation is complete. Step 4's documentation content is byte-identical
+to the state verified in round 1, where the reference's seventeen states,
+twenty-four outcomes, seven payload fields, six path keys, exit meanings, and
+adapter matrix were each checked against the shipped code.
+
+Mandatory validation and coverage pass, and this time that claim rests on two
+forced walks rather than one. Round 1 saw the gate flap, and ghog states that a
+near-floor call flaps on jitter and must not be settled by re-measuring, so a
+single green run would not have been honest evidence here. Both walks reported
+`fail=0`, `cov=100`, `outliers=0`, and `exit=0`, and the call that failed round 1
+appears in no outlier or warning list.
+
+Staged scope is attributable. Fourteen paths: ten from the Step 4 file list, the
+validation plan as review metadata, and three out-of-step test modules that this
+reviewer identified in round 1 as needing an owner. Their presence is correct
+rather than scope creep, because they are the remedy the round-1 answer asked
+for and they are isolated in their own commit group instead of being mixed into
+the documentation slice.
+
+No unresolved finding remains, and the round-1 finding is closed the right way.
+The three calls were shortened per the remedy ghog prescribes, with no exclusion
+added and no floor raised. Each redesign keeps every behavioral assertion: the
+recovery test still drives `validate_activation` to the same error and now also
+asserts the replayed command, working directory, and absent input; the answer-CLI
+test keeps its success assertion in setup and its envelope and summary assertions
+in the call; the dashboard test keeps its real export and its file assertion.
+
+`a.commit` is accurate across three groups in least-to-most-dependent order, with
+well-formed subjects and two-paragraph Why narratives.
+
+This round made no repair at all, so the rule that blocks a recommending round
+does not apply.
+
+Two observations are recorded rather than held against the step. Hoisting a
+journey into a fixture moves cost from the measured call into setup rather than
+removing it, so the suite's total wall clock is unchanged; that is still the
+correct remedy, because ghog's floor is defined on call time and this repository
+already used the technique for this gate. And the recovery test carries a
+`# noqa: SLF001` that is redundant, since `SLF001` is already ignored for
+`tests/**/*.py`; it is harmless and will not be flagged, because `RUF100` is
+ignored there too.
+
+This recommendation is advisory and authorizes no commit. The `Commit` or
+`Rework and review again` choice belongs to the human at the convergence gate,
+and no commit was run in this round.
+
+### Final reviewer decision for step 4 review-mode-docs round 2 (exchange 1)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-4-round-2 -->
+
+## Round 2 by human - Step 4 - human-confirmation
+
+- Recorded: 2026-08-21T10:45:16+02:00
+- Exchange: code/code/v0.11.0/review-mode-docs
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-mode-docs.md
+- Implementation step: 4
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->
