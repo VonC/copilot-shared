@@ -6,6 +6,8 @@ invoke Git, so its harness writes the opt-in and ignore fixtures directly. The
 tests prove that
 requests, answers, torn transcript suffixes, escalations, consumed answers,
 and owning authorization repair without evidence loss or duplicate entries.
+The activation journey captures its real non-repository Git result in fixture
+setup so process startup cannot make the measured assertion call an outlier.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from tests.unit.tools.test_review_exchange_acceptance.test_review_exchange_accep
     _context,
     _policy,
 )
+from tools import review_exchange_paths as paths_module
 from tools.review_exchange_core import ReviewExchangeCore, WaitOutcome
 from tools.review_exchange_models import (
     Actor,
@@ -41,8 +44,9 @@ from tools.review_exchange_store import ReviewExchangeStore
 
 if TYPE_CHECKING:
     from pathlib import Path
+    from subprocess import CompletedProcess
 
-    from tools.review_exchange_models import ReviewContext
+    from tools.review_exchange_models import ArtifactPaths, ReviewContext
     from tools.review_exchange_models_coordination import CoordinationRecord
 
     Harness = tuple[
@@ -195,12 +199,42 @@ def stagnation_journey(
     assert transcript.count("Outcome: escalation") == 1
 
 
-def test_activation_outside_git_fails_without_artifact_mutation(tmp_path: Path) -> None:
-    """A real non-repository cannot pass effective ignore activation."""
+@pytest.fixture
+def outside_git_activation(
+    tmp_path: Path,
+) -> tuple[Path, ArtifactPaths, CompletedProcess[str]]:
+    """Capture Git's real non-repository result outside the measured call."""
     root = tmp_path / "outside-git"
     root.mkdir()
     context = _context(root, ReviewFamily.CODE, "outside-git", step="5")
     paths = derive_artifact_paths(root, context)
+    repository = paths_module._run_git(  # noqa: SLF001
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=root,
+    )
+    assert repository.returncode != 0
+    return root, paths, repository
+
+
+def test_activation_outside_git_fails_without_artifact_mutation(
+    outside_git_activation: tuple[Path, ArtifactPaths, CompletedProcess[str]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A real non-repository cannot pass effective ignore activation."""
+    root, paths, repository = outside_git_activation
+
+    def replay_repository_result(
+        command: list[str],
+        *,
+        cwd: Path,
+        input_text: str | None = None,
+    ) -> CompletedProcess[str]:
+        assert command == ["git", "rev-parse", "--is-inside-work-tree"]
+        assert cwd == root
+        assert input_text is None
+        return repository
+
+    monkeypatch.setattr(paths_module, "_run_git", replay_repository_result)
 
     with pytest.raises(ReviewExchangeError, match="requires a Git repository"):
         validate_activation(root, paths)

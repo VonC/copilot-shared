@@ -29,6 +29,8 @@ single project lands in the payload; the CSV-parse tests are unchanged because
 Groundhog duration gate: the export unit test fakes the ``git log`` subprocess
 at the ``subprocess.run`` boundary, asserting the exact argv and CSV behavior
 without paying real repository setup in the call that only covers this module.
+The missing-parent integration journey keeps real Git but performs its export
+in fixture setup, leaving the measured call to assert the resulting file.
 """
 
 from __future__ import annotations
@@ -249,17 +251,23 @@ class TestGitHistoryExport:
 
         _assert_pipe_history_export(captured, repo_dir, csv_path, written)
 
-    def test_export_creates_parent_directory(
+    @pytest.fixture
+    def missing_parent_export_journey(
         self,
         tmp_path: Path,
         one_commit_repo: Path,
+    ) -> Path:
+        """Run the real missing-parent export outside the measured call."""
+        csv_path = tmp_path / "nested" / "dir" / "git_history.csv"
+        build.export_git_history_csv(one_commit_repo, csv_path)
+        return csv_path
+
+    def test_export_creates_parent_directory(
+        self,
+        missing_parent_export_journey: Path,
     ) -> None:
         """A missing parent directory for the CSV is created on export."""
-        csv_path = tmp_path / "nested" / "dir" / "git_history.csv"
-
-        build.export_git_history_csv(one_commit_repo, csv_path)
-
-        assert csv_path.is_file()
+        assert missing_parent_export_journey.is_file()
 
     @pytest.fixture
     def non_git_export_journey(self, tmp_path: Path) -> None:
