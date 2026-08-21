@@ -1,11 +1,8 @@
 """Step 1 through 4 acceptance for independent review-mode documentation.
 
-The tests pin entry-point discovery, the visual and terminology boundary from
-self-review, canonical authority links, bounded local-link checks, and the
-incremental AC01-through-AC12 coverage record. The tutorial checks add the two
-agent sessions, bounded handoff, family evidence, and human gates.
-Step 3 adds bounded task ownership, result handling, and marked recovery.
-Step 4 adds the exact state, result, outcome, adapter, and inventory contract.
+The suite pins discovery, terminology, tutorials, task ownership, recovery,
+the exact reference contract, and the incremental AC01-through-AC12 record.
+Final Step 5 coverage belongs to the sibling final-acceptance module.
 """
 
 from __future__ import annotations
@@ -15,26 +12,26 @@ from typing import TYPE_CHECKING
 
 from tools.review_exchange_models import ArtifactState
 
-from .conftest import assert_local_links, assert_named_paths, read_declared
+from .conftest import (
+    _CODE_TUTORIAL,
+    _COVERAGE,
+    _EXPLANATION,
+    _HOW_TO_GUIDES,
+    _INVENTORY_CANDIDATES,
+    _REFERENCE,
+    _SELF_REVIEW_EXPLANATION,
+    _SELF_REVIEW_HOW_TO,
+    _SPEC_TUTORIAL,
+    assert_contains,
+    assert_local_links,
+    assert_named_paths,
+    read_declared,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-_EXPLANATION = "wiki/explanation/independent-review-mode-and-human-authority.md"
-_SELF_REVIEW_EXPLANATION = "wiki/explanation/why-the-llm-reviews-its-own-work.md"
-_SELF_REVIEW_HOW_TO = "wiki/how-to/answer-a-review-round.md"
-_COVERAGE = "docs/v0.11.0/coverage.v0.11.0.review-mode-docs.md"
-_SPEC_TUTORIAL = "wiki/tutorials/09-run-your-first-specification-review.md"
-_CODE_TUTORIAL = "wiki/tutorials/10-run-your-first-implementation-code-review.md"
-_HOW_TO_GUIDES = (
-    "wiki/how-to/enable-independent-review-mode.md",
-    "wiki/how-to/run-specification-review.md",
-    "wiki/how-to/run-implementation-code-review.md",
-    "wiki/how-to/read-independent-review-results-and-continue.md",
-    "wiki/how-to/recover-an-independent-review.md",
-)
 _RECOVERY_GUIDE = _HOW_TO_GUIDES[-1]
-_REFERENCE = "wiki/reference/independent-review-mode-contract.md"
 _STEP_1_PAGES = (
     "README.md", "wiki/README.md", _EXPLANATION,
     _SELF_REVIEW_EXPLANATION, _SELF_REVIEW_HOW_TO, _COVERAGE,
@@ -43,14 +40,6 @@ _CANONICAL_INSTRUCTIONS = (
     "instructions/review-requestor.md",
     "instructions/spec-reviewer.md",
     "instructions/code-reviewer.md",
-)
-_INVENTORY_CANDIDATES = (
-    "wiki/reference/skills-catalog.md",
-    "wiki/reference/artifact-files.md",
-    "wiki/reference/aliases-and-launchers.md",
-    "wiki/reference/templates.md",
-    "wiki/reference/automation-and-direct-invocation.md",
-    "wiki/reference/repository-layout.md",
 )
 _BACKTICK = "`"
 _REVIEW_OUTCOMES = (
@@ -74,12 +63,6 @@ def _second_level_section(markdown: str, heading: str) -> str:
     start = markdown.index(f"## {heading}")
     end = markdown.find("\n## ", start + len(heading) + 3)
     return markdown[start:] if end < 0 else markdown[start:end]
-
-
-def _assert_contains(markdown: str, values: tuple[str, ...]) -> None:
-    """Assert one bounded Markdown value contains every declared token."""
-    for value in values:
-        assert value in markdown
 
 
 def test_step_1_entry_points_distinguish_review_modes_and_keep_diataxis_order(
@@ -156,7 +139,7 @@ def test_step_1_coverage_keeps_complete_enumerations_and_evidence(
     for candidate in _INVENTORY_CANDIDATES:
         assert coverage.count(f"{_BACKTICK}{candidate}{_BACKTICK}") == 1
     assert "| AC02 | Page evidence |" in coverage
-    assert "| AC10 | Validation evidence | Pending |" in coverage
+    assert "| AC10 | Validation evidence | Complete |" in coverage
     assert "## Step 1 executable evidence" in coverage
 
 
@@ -306,7 +289,7 @@ def test_step_3_coverage_records_task_and_recovery_evidence(
     for path in _HOW_TO_GUIDES:
         assert path in coverage
     assert "test_step_3_recovery_separates_reclaim_from_human_operations" in coverage
-    assert "| AC10 | Validation evidence | Pending |" in coverage
+    assert "| AC10 | Validation evidence | Complete |" in coverage
 
 
 def test_step_4_reference_pins_every_state_and_fatal_payload(docs_root: Path) -> None:
@@ -340,7 +323,7 @@ def test_step_4_reference_pins_result_artifact_and_human_contract(
     reference = read_declared(docs_root, _REFERENCE)
     result_section = _second_level_section(reference, "Final result contract")
 
-    _assert_contains(
+    assert_contains(
         result_section,
         tuple(
             f"`{field}`"
@@ -350,7 +333,7 @@ def test_step_4_reference_pins_result_artifact_and_human_contract(
             )
         ),
     )
-    _assert_contains(
+    assert_contains(
         result_section,
         tuple(
             f"`{key}`"
@@ -360,8 +343,8 @@ def test_step_4_reference_pins_result_artifact_and_human_contract(
             )
         ),
     )
-    _assert_contains(result_section, ("Exit `0`", "Exit `3`", "Exit `2`"))
-    _assert_contains(
+    assert_contains(result_section, ("Exit `0`", "Exit `3`", "Exit `2`"))
+    assert_contains(
         result_section,
         (
             "Consolidate",

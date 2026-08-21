@@ -1,1 +1,1 @@
-"""Acceptance tests for the independent review-mode documentation set."""
+"""Incremental and final acceptance tests for review-mode documentation."""
