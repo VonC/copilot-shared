@@ -32,7 +32,8 @@ _VERSION = "v0.11.0"
 _SLUG = "review-exchange-core"
 _RECORDED_AT = "2026-08-04T10:30:00+02:00"
 _MARKER_CLEAR_WRITE_COUNT = 2
-_TRANSIENT_REPLACE_ATTEMPTS = 2
+_TRANSIENT_REPLACE_ATTEMPTS = 3
+_TRANSIENT_REPLACE_DELAYS = (0.01, 0.02)
 
 
 def _context(tmp_path: Path, family: ReviewFamily) -> ReviewContext:
@@ -159,20 +160,23 @@ def test_atomic_replace_retries_a_transient_sharing_denial(
     content = _artifact(context, ReviewRole.REQUESTOR, "Retry safely\n")
     original_replace = Path.replace
     attempts = 0
+    delays: list[float] = []
 
     def flaky_replace(source: Path, target: Path) -> Path:
         nonlocal attempts
         attempts += 1
-        if attempts == 1:
+        if attempts < _TRANSIENT_REPLACE_ATTEMPTS:
             message = "injected transient sharing denial"
             raise PermissionError(message)
         return original_replace(source, target)
 
     monkeypatch.setattr(Path, "replace", flaky_replace)
+    monkeypatch.setattr("tools.review_exchange_store.time.sleep", delays.append)
 
     store.publish_atomic(store.paths.request, content)
 
     assert attempts == _TRANSIENT_REPLACE_ATTEMPTS
+    assert tuple(delays) == _TRANSIENT_REPLACE_DELAYS
     assert store.paths.request.read_text(encoding="utf-8") == content
 
 

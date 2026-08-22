@@ -39,7 +39,7 @@ from tools.review_exchange_store import (
 _VERSION = "v0.11.0"
 _SLUG = "review-exchange-core"
 _RECORDED_AT = "2026-08-04T10:30:00+02:00"
-_ATOMIC_REPLACE_ATTEMPTS = 3
+_ATOMIC_REPLACE_ATTEMPTS = 5
 
 
 def _context(root: Path, *, parent: str = "docs") -> ReviewContext:
@@ -453,7 +453,11 @@ def test_low_level_io_failures_preserve_prepared_and_transcript_state(
         message = "injected permanent sharing denial"
         raise PermissionError(message)
 
+    def no_sleep(_seconds: float) -> None:
+        """Keep the permanent-failure test below the duration floor."""
+
     monkeypatch.setattr(Path, "replace", deny_replace)
+    monkeypatch.setattr(store_module.time, "sleep", no_sleep)
     with pytest.raises(ReviewExchangeError, match="atomic publication failed"):
         store.publish_atomic(store.paths.request, content)
     assert replace_attempts == _ATOMIC_REPLACE_ATTEMPTS

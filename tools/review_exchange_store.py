@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import re
 import tempfile
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -61,7 +62,8 @@ _TRANSCRIPT_OUTCOMES: Final[frozenset[str]] = frozenset(
     },
 )
 _ENTRY_FOOTER_PREFIX: Final[str] = "<!-- review-entry-id:"
-_ATOMIC_REPLACE_ATTEMPTS: Final[int] = 3
+_ATOMIC_REPLACE_ATTEMPTS: Final[int] = 5
+_ATOMIC_REPLACE_DELAY_SECONDS: Final[float] = 0.01
 
 
 @dataclass(frozen=True)
@@ -564,6 +566,7 @@ class ReviewExchangeStore:
             except PermissionError:
                 if attempt + 1 == _ATOMIC_REPLACE_ATTEMPTS:
                     raise
+                time.sleep(_ATOMIC_REPLACE_DELAY_SECONDS * (2**attempt))
             else:
                 return
 
