@@ -138,6 +138,8 @@ The feature request and design will need to insist on termination criteria for t
 | 6 | Feature-request | Document the review-mode workflows | `review-mode-docs` | completed | `docs/v0.11.0/feature-request.v0.11.0.review-mode-docs.md` | `docs/v0.11.0/plan.v0.11.0.review-mode-docs.validation.md` |
 | 7 | Feature-request | Check Markdown against the repository rules | `markdown-check` | pending | - | - |
 | 8 | Feature-request | Expose commit-plan validation without committing | `commit-plan-check` | pending | - | - |
+| 9 | Feature-request | Report active review status | `review-status-command` | pending | - | - |
+| 10 | Feature-request | Resume interrupted reviews | `review-resume-command` | pending | - | - |
 
 ### Requirement details for the umbrella
 
@@ -220,3 +222,23 @@ The feature request and design will need to insist on termination criteria for t
 - Boundary rationale: the validator already exists and is shared with batch execution, so this requirement adds only the missing entry point and the instruction that calls it; folding it into the reviewer role would put a commit-plan tool inside an assessment skill, and folding it into batch execution would tie a read-only check to the committing path.
 - Concrete rules and constraints: reuse the shipped `validate_commit_plan(blocks, staged_paths)` rather than reimplementing its rules; parse the plan with `interactive=False`; never reset, stage, or commit; report the typed groups and every diagnostic in a form the reviewer can quote as readiness-floor evidence; note that the one shipped entry point today refuses `--root-a-commit` combined with `--dry-run`, so the requirement must decide between a new launcher and lifting that restriction; and decide whether `group-commits-msg` should call the same command before a request is published so both roles judge the plan identically.
 - Depends on: `review-exchange-core`, `code-reviewer`.
+
+#### 9. Report active review status
+
+- Type: Feature-request
+- Key title: Report active review status
+- Slug: `review-status-command`
+- Regroups: a repository-root `rvw_status` command, its launcher and shared implementation, a stable machine-readable result, and a concise human-readable account of every review exchange currently in progress.
+- Boundary rationale: discovering who owns a stopped review and what it concerns is read-only diagnosis; it belongs outside the requestor and reviewer roles so either role can use the same facts before acting.
+- Concrete rules and constraints: run without requiring the caller to remember a family, document, slug, step, round, or artifact path; discover live specification and code exchanges from protocol-owned coordination records; report whether a review is active, its specification or code family, the current requestor or reviewer actor, state, exact reviewed document, umbrella or `none`, implementation step when applicable, round, exchange occurrence, artifact paths, and next protocol action; distinguish zero, one, and multiple live exchanges without silently choosing among several; remain strictly read-only; return a stable result that `rvw_resume` can consume without scraping prose; and work after a shell, VPN, terminal, or computer restart without relying on prompt memory.
+- Depends on: `review-exchange-core`, `spec-review-requestor`, `spec-reviewer`, `code-review-requestor`, `code-reviewer`.
+
+#### 10. Resume interrupted reviews
+
+- Type: Feature-request
+- Key title: Resume interrupted reviews
+- Slug: `review-resume-command`
+- Regroups: a repository-root `rvw_resume` command, its launcher and shared implementation, the status-to-role routing needed to resume either side of specification and code review, and self-contained host-specific continuation instructions for the current session.
+- Boundary rationale: interruption recovery is a human-invoked orchestration action over an existing exchange, not reviewer judgment or requestor authorship; keeping it separate prevents either role instruction from guessing identity or reconstructing protocol context.
+- Concrete rules and constraints: use the typed result of `rvw_status` to identify whether the current continuation belongs to a specification requestor, specification reviewer, code requestor, or code reviewer; when exactly one intact exchange is resumable, renew or reclaim that same identity, round, occurrence, artifacts, expected actor, and next action even when its lease has not expired, without waiting for `wait_timeout_seconds` and without escalating; treat direct human invocation of `rvw_resume` as the authority for that lease-independent pickup while preserving all durable evidence; emit or install one self-contained instruction that makes the selected role continue its full workflow rather than merely report status; for requestors, wait for and consume answers, apply requested work, publish later rounds, and stop at the human convergence gate; for reviewers, wait for the request, assess it, and publish the matching answer; refuse malformed, repair-required, escalated, artifact-inconsistent, or ambiguous multiple-exchange states with the `rvw_status` evidence instead of guessing; and remain idempotent when repeated after an interrupted resume.
+- Depends on: `review-exchange-core`, `review-status-command`, `spec-review-requestor`, `spec-reviewer`, `code-review-requestor`, `code-reviewer`, `review-mode-docs`.
