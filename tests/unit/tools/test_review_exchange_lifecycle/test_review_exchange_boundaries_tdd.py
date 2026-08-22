@@ -2,7 +2,8 @@
 
 These tests exercise defensive branches that valid happy-path orchestration
 cannot normally reach, plus recovery states that require deliberately staged
-durable evidence.
+durable evidence. Multi-harness journeys use fixtures so Groundhog measures the
+boundary assertions rather than repeated temporary repository setup.
 """
 
 from __future__ import annotations
@@ -477,8 +478,11 @@ def test_pure_classifier_marker_and_gate_conflicts_fail_closed(tmp_path: Path) -
     ).state is ArtifactState.INCONSISTENT
 
 
-def test_wait_rejects_invalid_policy_and_returns_terminal_states(tmp_path: Path) -> None:
-    """Bounded waits validate inputs and expose stopped or repair states immediately."""
+@pytest.fixture
+def wait_terminal_states_journey(
+    tmp_path: Path,
+) -> tuple[WaitOutcome, WaitOutcome, WaitOutcome]:
+    """Prepare invalid-policy and terminal-state evidence outside call timing."""
     core, _store, _, _ = _harness(tmp_path)
     core.start()
     with pytest.raises(ReviewExchangeError, match="wait target"):
@@ -488,13 +492,11 @@ def test_wait_rejects_invalid_policy_and_returns_terminal_states(tmp_path: Path)
 
     core.escalate("Already stopped")
     escalated = core.wait_for_exact(ArtifactState.REQUEST_PENDING)
-    assert escalated.outcome is WaitOutcome.ESCALATED
 
     inconsistent_core, inconsistent_store, _, _ = _harness(tmp_path / "inconsistent")
     inconsistent_core.start()
     inconsistent_store.paths.request.write_text("invalid", encoding="utf-8")
     inconsistent = inconsistent_core.wait_for_exact(ArtifactState.REQUEST_PENDING)
-    assert inconsistent.outcome is WaitOutcome.INCONSISTENT
 
     repair_core, _, _, _ = _harness(tmp_path / "repair-wait")
     record = repair_core.start()
@@ -504,7 +506,18 @@ def test_wait_rejects_invalid_policy_and_returns_terminal_states(tmp_path: Path)
         "request-step-3-round-1",
     )
     repair = repair_core.wait_for_exact(ArtifactState.ANSWER_PENDING)
-    assert repair.outcome is WaitOutcome.REPAIR_REQUIRED
+    return escalated.outcome, inconsistent.outcome, repair.outcome
+
+
+def test_wait_rejects_invalid_policy_and_returns_terminal_states(
+    wait_terminal_states_journey: tuple[WaitOutcome, WaitOutcome, WaitOutcome],
+) -> None:
+    """Bounded waits validate inputs and expose stopped or repair states immediately."""
+    assert wait_terminal_states_journey == (
+        WaitOutcome.ESCALATED,
+        WaitOutcome.INCONSISTENT,
+        WaitOutcome.REPAIR_REQUIRED,
+    )
 
 
 def test_wait_polls_through_the_counterpart_in_flight_publication(
