@@ -17,4 +17,10 @@ if not defined LATEST_PYTHON (
 )
 
 set "PYTHON_EXE=%PYTHON_BASE%\%LATEST_PYTHON%\Scripts\python.exe"
+if exist "%CD%\.git" set "PRJ_DIR=%CD%"
+if defined PYTHONPATH (
+    set "PYTHONPATH=%LLM_SHARED_DIR%;%PYTHONPATH%"
+) else (
+    set "PYTHONPATH=%LLM_SHARED_DIR%"
+)
 "%PYTHON_EXE%" "%LLM_SHARED_DIR%\tools\review_exchange_cli.py" %*
