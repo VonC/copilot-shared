@@ -24,10 +24,25 @@ reference form and does not replace those instructions.
 ## Marker and exchange identity
 
 The project-root `a.review-mode` file opts later workflow entry into independent
-review mode. An empty file selects the 1,800-second wait. One line of the form
+review mode. An empty file selects the default wait. One line of the form
 `wait_timeout_seconds=<positive integer>` selects another bounded wait. An
 absent marker produces `state: disabled`; invalid marker content produces the
 fatal result described below.
+
+The default wait itself comes from a `.review-exchange.ini` file, read in this
+order and stopping at the first usable value:
+
+| Source | Wins over | On invalid content |
+| --- | --- | --- |
+| `wait_timeout_seconds=` in the project-root `a.review-mode` | everything | fatal |
+| `.review-exchange.ini` at the reviewed repository root | the shipped file | ignored |
+| `.review-exchange.ini` shipped with llm-shared, currently 10,800 seconds (three hours) | nothing | ignored |
+
+The two treatments differ on purpose. A marker override was written for that
+exchange, so a mistake in it must stop the run. A settings file may belong to a
+repository that never meant to configure a review, so an unreadable file, a
+missing section or key, or a value that is not a positive integer is ignored and
+the next source applies. A broken settings file never stops a review.
 
 Every exchange identity contains:
 

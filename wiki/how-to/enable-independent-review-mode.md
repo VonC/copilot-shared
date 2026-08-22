@@ -17,17 +17,28 @@ artifact.
 ## Enable review mode
 
 1. At the Git root, create an empty file named `a.review-mode` to use the
-   1,800-second bounded-wait default.
-2. To select another positive limit, put exactly one line in the marker:
+   bounded-wait default, three hours unless a settings file says otherwise.
+2. To version another default for every review in this repository, add
+   `.review-exchange.ini` at the Git root:
+
+   ```ini
+   [review-exchange]
+   wait_timeout_seconds = 7200
+   ```
+
+   An invalid repository value is ignored, and the three-hour setting shipped
+   by llm-shared applies instead.
+3. To select another positive limit for this exchange alone, put exactly one
+   line in the marker:
 
    ```text
    wait_timeout_seconds=1200
    ```
 
-3. Start the normal specification or implementation skill. Its `pw` handoff
+4. Start the normal specification or implementation skill. Its `pw` handoff
    samples the marker at the documented boundary and routes to the matching
    requestor.
-4. Read the final JSON. Exit `0` reports the next active action; its `paths`
+5. Read the final JSON. Exit `0` reports the next active action; its `paths`
    member is authoritative for any request, answer, or coordination artifact.
 
 An empty marker and a marker with one positive override are valid. A directory,
