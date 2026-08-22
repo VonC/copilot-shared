@@ -21,6 +21,11 @@ The canonical [shared requestor instruction](../../instructions/review-requestor
 authoritative for agent policy. This page states their user-visible contract in
 reference form and does not replace those instructions.
 
+When `bin/review_exchange.bat` runs from another repository's Git root, that
+current root overrides an unrelated inherited `PRJ_DIR`. The launcher also
+places llm-shared first on `PYTHONPATH`, so a consuming repository's own
+`tools` package cannot replace the shared protocol modules.
+
 ## Marker and exchange identity
 
 The project-root `a.review-mode` file opts later workflow entry into independent
@@ -78,6 +83,15 @@ for a nearby version, or edit protocol artifacts by hand.
 Requests and answers are renderer-owned envelopes. Coordination and tombstones
 make transitions recoverable. Transcript entries are append-only evidence.
 Code reviewers retire their ignored evidence manifest after answer publication.
+
+Renderer-owned section headings end with `(round N)`. Headings inside authored
+assessment, change, response, and guidance blocks are nested below their parent
+section, retain their relative depth, and receive the round identity as their
+final suffix. Headings inside fenced examples remain literal. Human guidance is
+rendered as a separate nested block below its generated label; publication
+checks that canonical form while still accepting exact legacy guidance from an
+older round. Callers supply section content and never rewrite renderer-owned
+headings in a request, answer, or transcript.
 
 ## State matrix
 

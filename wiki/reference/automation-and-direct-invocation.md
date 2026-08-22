@@ -19,7 +19,7 @@ human validation gates the normal AI-orchestrated workflow would provide.
 
 | Workflow | Normal invocation | What the AI calls | Human role |
 | --- | --- | --- | --- |
-| Document pipeline | Ask for `process-draft` or the required writing skill | writing, explicit `pw skill --after-write` review handoffs, consolidation, then state-based bare `pw skill` | answer structured questions and validate settled documents |
+| Document pipeline | Ask for `process-draft` or the required writing skill | writing, explicit `pw skill --after-write` review handoffs, consolidation, then state-based bare `pw skill` | approve an umbrella-derived child, answer structured questions, and validate settled documents |
 | Implementation step | Ask for `implement-step N` | Groundhog, implementation check, missing-work repair, and grouped-commit preparation | validate decisions and approve commit replay |
 | Independent review mode | Start the normal writing or implementation skill with `a.review-mode` present | `pw`, the family requestor, one bounded wait, and the independent reviewer | answer only at convergence or a marked human-recovery decision |
 | Release preparation | Ask for `prepare-release` with release intent | planner, conflict previews, synchronization, merges, notes, version updates, and preparation commit | approve topology and notes; run `brel` later |

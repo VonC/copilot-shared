@@ -99,7 +99,7 @@ after the trigger completes.
 | Phase | Trigger | Output artifact |
 | --- | --- | --- |
 | Draft capture | Author writes free-form notes | a raw draft note |
-| Process draft | `/process-draft` | the draft classified (feature-request / issue), renamed `docs\draft.vX.Y.Z.<slug>.md`, on a new effort branch |
+| Process draft | `/process-draft` | a direct draft classified and branched; an umbrella child also pauses for human approval before requirement writing |
 | Split (optional) | `/split-and-define` | `List of feature-requests and issues to create` section appended to the draft |
 | Define each item | `/write-requirement <type> vX.Y.Z <topic>` | `docs\feature-request.vX.Y.Z.<topic>.md` or `docs\issue.vX.Y.Z.<topic>.md` |
 | Review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` | Open questions folded into a decision table; document approved |
@@ -121,9 +121,10 @@ see [Automated implement cycle with pw handoff](#-automated-implement-cycle-with
 The document rows above (define  --  review  --  consolidate  --  design  --
 plan) chain the same way through `pw skill`: each writer runs its explicit
 `pw skill --after-write <role>` handoff, while consolidation runs bare
-`pw skill`, and both follow the command printed, so the only
-trigger the author types is the first one, and the only human-in-the-loop stop
-is `/review-ask-questions`  --  see
+`pw skill`, and both follow the command printed, so the only trigger the author
+types is the first one. A direct draft stops at `/review-ask-questions`; a
+focused child derived from an umbrella first stops for the author to approve or
+revise that draft before requirement writing  --  see
 [Automated document phase with pw skill](#-automated-document-phase-with-pw-skill).
 
 ---
@@ -239,7 +240,7 @@ Legend for the transitions:
                     caller reads the bare next-step command printed (a "/"
                     prefix for Claude, "$" for Codex), and
                     runs it with no "go ahead"
-  [STOP ...]        the only human-in-the-loop pauses in the whole flow
+  [STOP ...]        a human-in-the-loop pause
 
                   +-----------------+
                   |  raw draft note |
@@ -363,8 +364,8 @@ The document phase before that box now chains the same way, driven by
 `/write-design`, `/write-plans`) ends by running `pw skill --after-write
 <role>`, which prints the matching `/review-ask-questions` for the artifact
 just written without inferring completion from its content. The model runs that
-review with no go-ahead. The review is the one stop: a human answers the
-`Q0x | Title | Recommended Answer`
+review with no go-ahead. For a direct draft, the question review is the first
+stop: a human answers the `Q0x | Title | Recommended Answer`
 table, then `/consolidate-then-review-ask-questions` folds the answers and,
 once the document is settled, runs `pw skill` again to hand off to the next
 phase (design, plan, or the implement chain). See
@@ -387,6 +388,11 @@ describes a single, self-contained requirement, the author can call
 `/split-and-define` when the draft mixes several distinct items, when
 the items differ in dependency order, or when the author wants the skill
 to suggest a slug per item.
+
+For a later umbrella item, `/process-draft ... based on <slug>` creates the
+focused child and item branch, presents the complete child for review, and
+waits. Corrections revise only that child and return to the same pause; an
+explicit `Go ahead` releases the handoff to `/write-requirement`.
 
 ---
 

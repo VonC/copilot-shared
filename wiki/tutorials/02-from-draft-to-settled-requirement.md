@@ -90,6 +90,12 @@ item branch, and keeps the umbrella intact. The child records its parent:
 - Umbrella: docs/v10.0.0/draft.v10.0.0.sentinel.md
 ```
 
+The continuation then presents the complete focused draft and stops. Review the
+derived boundary before any requirement is written. Comments revise only the
+child and return to the same pause; say `Go ahead` only when the draft expresses
+the intended item. The skill then hands that approved child to
+`/write-requirement`.
+
 After the item's last implementation check, the umbrella row becomes
 `completed` and records the requirement and validation-plan paths. Once that
 feature is merged into `develop`, `pw skill --after-merge` verifies the evidence

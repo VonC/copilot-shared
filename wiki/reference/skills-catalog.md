@@ -22,7 +22,7 @@ prerequisites already satisfied.
 
 | Skill | Inputs | Writes |
 | --- | --- | --- |
-| `/process-draft` | a new draft and `version.txt`, or one canonical umbrella row selected by `pw` | named draft and effort branch; umbrella continuation also creates a focused child draft without renaming the umbrella |
+| `/process-draft` | a new draft and `version.txt`, or one canonical umbrella row selected by `pw` | named draft and effort branch; an umbrella continuation preserves the umbrella, creates a focused child, and waits for explicit approval before requirement writing |
 | `/split-and-define` | a multi-topic collection draft | explicit umbrella marker, ordered pending/completed table, and requirement-detail subsections |
 | `/write-requirement` | type, `vX.Y.Z`, topic | `<effort-dir>/feature-request.vX.Y.Z.<topic>.md` or `<effort-dir>/issue.vX.Y.Z.<topic>.md` |
 | `/review-ask-questions` | a requirement, design or plan | `## Open questions` section, `Q0x` summary table |
