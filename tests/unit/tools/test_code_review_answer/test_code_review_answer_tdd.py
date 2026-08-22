@@ -129,7 +129,7 @@ def test_early_rejection_renders_only_identity_disagreement_and_instructions(
         assert authored.count(field) == 1
     for expected in ("Exact disagreement", "Human guidance: Inspect generated files."):
         assert expected in authored
-    assert "round 2 (exchange 1)" in authored
+    assert "(exchange 1) (round 2)" in authored
     assert "request index tree differs" in rendered.transcript_summary
     assert "Pre-repair validation" not in authored
 
@@ -149,6 +149,29 @@ def test_assessment_renders_validation_repairs_drift_and_advisory_decision(
         assert "a.commit membership and ordering are exact." in content
         assert "Decision: changes-requested" in content
         assert "does not authorize a commit" in content
+
+
+def test_assessment_nests_and_qualifies_caller_headings_for_each_output(
+    tmp_path: Path,
+) -> None:
+    """Reviewer prose cannot introduce sibling or duplicate transcript headings."""
+    source = replace(
+        _assessment(tmp_path),
+        pre_repair_validation="Lead.\n\n## Test evidence\n\n### Detail",
+    )
+
+    rendered = render_code_review_answer(source)
+
+    assert (
+        "### Test evidence for step 4 answer-topic (exchange 1) (round 2)"
+        in rendered.answer_content
+    )
+    assert (
+        "#### Test evidence for step 4 answer-topic (exchange 1) (round 2)"
+        in rendered.transcript_summary
+    )
+    assert "\n## Test evidence\n" not in rendered.answer_content
+    assert "\n## Test evidence\n" not in rendered.transcript_summary
 
 
 def test_commit_ready_requires_the_floor_and_remains_advisory(tmp_path: Path) -> None:
@@ -181,7 +204,7 @@ def test_restarted_exchange_discriminator_qualifies_every_paired_heading(
             if line.startswith("##") and " for " in line
         ]
         assert headings
-        assert all("round 2 (exchange 2)" in heading for heading in headings)
+        assert all("(exchange 2) (round 2)" in heading for heading in headings)
 
 
 @pytest.mark.parametrize(

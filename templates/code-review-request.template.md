@@ -1,14 +1,14 @@
-## Review identity for $identity_label round $round_number
+## Review identity for $identity_label (round $round_number)
 
 $identity_fields
 
-## Code review evidence for $identity_label round $round_number
+## Code review evidence for $identity_label (round $round_number)
 
 ```json
 $code_review_evidence
 ```
 
-## Review scope for $identity_label round $round_number
+## Review scope for $identity_label (round $round_number)
 
 Apply `implementation-check` to the exact implementation plan step and inspect
 the staged changes as the review subject. Make every safe, unambiguous repair
@@ -19,21 +19,21 @@ Leave each repair staged and name every repaired path in the answer. Inspect
 and amend `a.commit` only when file membership, grouping, order, scope, or the
 conventional subject no longer matches the staged work. Do not commit.
 
-## Requestor assessment for $identity_label round $round_number
+## Requestor assessment for $identity_label (round $round_number)
 
 $assessment
 
-## Implementation report for $identity_label round $round_number
+## Implementation report for $identity_label (round $round_number)
 
 $implementation_report
 
-## Change summary for $identity_label round $round_number
+## Change summary for $identity_label (round $round_number)
 
 $change_summary
 
 $response_section
 
-## Required reviewer conclusion for $identity_label round $round_number
+## Required reviewer conclusion for $identity_label (round $round_number)
 
 Publish either a changes-requested answer or an advisory commit-ready
 recommendation through the shared review exchange. Identify the evidence you

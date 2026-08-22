@@ -84,6 +84,37 @@ def test_render_pairs_exact_code_identity_and_markdown_shape(tmp_path: Path) -> 
     _assert_paired_identity(rendered, authored, source)
 
 
+def test_render_nests_and_qualifies_caller_headings_for_each_output(
+    tmp_path: Path,
+) -> None:
+    """Bare input headings become unique children of each generated section."""
+    source = replace(
+        _round_input(tmp_path),
+        assessment="Lead.\n\n## Test evidence\n\n### Detail",
+    )
+
+    rendered = requestor.render_code_review_request(source)
+
+    assert (
+        "### Test evidence for step 1 code-review-requestor (round 2)"
+        in rendered.request_content
+    )
+    assert (
+        "#### Detail for step 1 code-review-requestor (round 2)"
+        in rendered.request_content
+    )
+    assert (
+        "#### Test evidence for step 1 code-review-requestor (round 2)"
+        in rendered.transcript_summary
+    )
+    assert (
+        "##### Detail for step 1 code-review-requestor (round 2)"
+        in rendered.transcript_summary
+    )
+    assert "\n## Test evidence\n" not in rendered.request_content
+    assert "\n## Test evidence\n" not in rendered.transcript_summary
+
+
 def _assert_envelope_identity(
     envelope: requestor.Envelope,
     source: requestor.CodeReviewRoundInput,

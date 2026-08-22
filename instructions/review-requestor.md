@@ -65,13 +65,22 @@ follow, and they bind requestor and reviewer content alike:
   duplicated the moment the next round appends the same word.
 
 Qualify each authored heading with what actually makes it unique, choosing the
-discriminator that explains the repetition rather than a counter:
+discriminator that explains the repetition rather than a counter. Any heading
+that belongs to a review round ends with `(round N)`:
 
 - the step and round, for content inside one exchange, as in
-  `## Evidence for reviewer step 5 round 2`;
+  `#### Evidence for step 5 topic (round 2)`;
 - the exchange, where a transcript accumulates several exchanges over one
   document and each restarts at round 1, as in
-  `## Round 1 by requestor (exchange 2)`.
+  `### Evidence for topic (exchange 2) (round 1)`.
+
+The paired code-review renderers apply this rule at the input boundary. Their
+generated request sections are level 2 and their generated transcript sections
+are level 3, so headings inside caller-authored assessment, implementation,
+change-summary, response, and reviewer prose are shifted to level 3 or level 4
+respectively while their relative depth is retained. Each embedded heading is
+then qualified with the step, slug, exchange when applicable, and final
+`(round N)` suffix. Fenced code examples remain literal.
 
 Titles must also be well formed: no doubled word from interpolation, so
 `step 5` and never `step step 5`, and no trailing punctuation.

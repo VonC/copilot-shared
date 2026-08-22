@@ -28,6 +28,7 @@ from tools.review_exchange_models_envelope import (
     parse_envelope_markdown,
     render_envelope_markdown,
 )
+from tools.review_markdown_headings import qualify_round_headings
 
 _TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "templates" / (
     "code-review-answer.template.md"
@@ -238,11 +239,12 @@ def _identity_label(source: CodeReviewAssessment) -> str:
     return f"step {source.context.implementation_step} {source.context.identity.slug}"
 
 
+def _heading_qualifier(source: CodeReviewAssessment) -> str:
+    return f"{_identity_label(source)} (exchange {source.exchange_occurrence})"
+
+
 def _heading_label(source: CodeReviewAssessment) -> str:
-    return (
-        f"{_identity_label(source)} round {source.round_number} "
-        f"(exchange {source.exchange_occurrence})"
-    )
+    return f"{_heading_qualifier(source)} (round {source.round_number})"
 
 
 def _relative(path: Path, root: Path) -> str:
@@ -265,8 +267,19 @@ def _identity_fields(source: CodeReviewAssessment) -> str:
     )
 
 
-def _section(level: int, title: str, label: str, body: str) -> str:
-    return f"{'#' * level} {title} for {label}\n\n{body.strip()}"
+def _section(
+    level: int,
+    title: str,
+    source: CodeReviewAssessment,
+    body: str,
+) -> str:
+    nested = qualify_round_headings(
+        body.strip(),
+        minimum_level=level + 1,
+        qualifier=_heading_qualifier(source),
+        round_number=source.round_number,
+    )
+    return f"{'#' * level} {title} for {_heading_label(source)}\n\n{nested}"
 
 
 def _inventory(label: str, values: tuple[str, ...]) -> str:
@@ -282,16 +295,15 @@ def _guidance_section(source: CodeReviewAssessment, level: int) -> str:
     return _section(
         level,
         "Human guidance response",
-        _heading_label(source),
+        source,
         f"Human guidance: {source.human_guidance.rstrip()}\n\n"
         f"Guidance response: {response.strip()}",
     )
 
 
 def _early_sections(source: EarlyRejectionAssessment, level: int) -> list[str]:
-    label = _heading_label(source)
     sections = [
-        _section(level, "Exact disagreement", label, source.disagreement),
+        _section(level, "Exact disagreement", source, source.disagreement),
     ]
     guidance = _guidance_section(source, level)
     if guidance:
@@ -300,7 +312,7 @@ def _early_sections(source: EarlyRejectionAssessment, level: int) -> list[str]:
         _section(
             level,
             "Writer instructions",
-            label,
+            source,
             source.writer_instructions,
         ),
     )
@@ -308,63 +320,62 @@ def _early_sections(source: EarlyRejectionAssessment, level: int) -> list[str]:
 
 
 def _assessment_sections(source: ImplementationAssessment, level: int) -> list[str]:
-    label = _heading_label(source)
     sections = [
         _section(
             level,
             "Assessed index identity",
-            label,
+            source,
             f"Baseline index tree: {source.baseline_index_tree}\n\n"
             f"Assessed index tree: {source.assessed_index_tree}",
         ),
         _section(
             level,
             "Implementation check",
-            label,
+            source,
             f"Result: {source.implementation_check.strip()}\n\n"
             f"Validation plan effects: {source.validation_plan_effects.strip()}",
         ),
         _section(
             level,
             "Pre-repair mandatory checks and coverage",
-            label,
+            source,
             source.pre_repair_validation,
         ),
         _section(
             level,
             "Resolved validation set and sources",
-            label,
+            source,
             source.resolved_validation_set,
         ),
         _section(
             level,
             "Resolver drift and direction",
-            label,
+            source,
             source.resolver_drift,
         ),
         _section(
             level,
             "Repository state around validation",
-            label,
+            source,
             source.repository_state_comparison,
         ),
         _section(
             level,
             "Repair inventory",
-            label,
+            source,
             f"{_inventory('Repairs made', source.repairs)}\n\n"
             f"{_inventory('Paths staged', source.staged_paths)}",
         ),
         _section(
             level,
             "Commit plan assessment",
-            label,
+            source,
             source.commit_plan_assessment,
         ),
         _section(
             level,
             "Findings and boundaries",
-            label,
+            source,
             f"{_inventory('Unresolved findings', source.unresolved_findings)}\n\n"
             f"{_inventory('Boundary-crossing work', source.boundary_crossing_work)}",
         ),
@@ -377,13 +388,13 @@ def _assessment_sections(source: ImplementationAssessment, level: int) -> list[s
             _section(
                 level,
                 "Writer instructions",
-                label,
+                source,
                 source.writer_instructions,
             ),
             _section(
                 level,
                 "Decision rationale",
-                label,
+                source,
                 source.decision_rationale,
             ),
         ),
@@ -426,13 +437,12 @@ def _answer_authored_content(source: CodeReviewAssessment) -> str:
 
 
 def _transcript_summary(source: CodeReviewAssessment) -> str:
-    label = _heading_label(source)
     sections = _sections(source, 3)
     sections.append(
         _section(
             3,
             "Final reviewer decision",
-            label,
+            source,
             _final_decision(source),
         ),
     )
