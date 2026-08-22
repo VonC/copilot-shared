@@ -21,6 +21,14 @@ artifact and the authoritative source for revisions. Showing its proposed or
 current content in a chat response is only a preview and never substitutes for
 creating and preserving the file for the human to review.
 
+The child must also be a new working-tree result of the current continuation.
+Merely finding an unchanged tracked file inherited from branch history does not
+count as producing the draft. Before opening the review gate, run
+`git status --short -- <child-path>` in the selected branch or worktree and
+require an entry for that exact path as untracked, added, renamed, or materially
+modified. A clean result means no review artifact was produced by this run, even
+when a file already exists at that path.
+
 Do not write the feature-request or issue document here. In initial mode, do not
 reshape the draft body. In umbrella continuation mode, the focused child draft
 is deliberately derived from one settled item while the umbrella remains
@@ -82,16 +90,29 @@ Run this section before the ordinary numbered steps when the prompt contains
    slug, version, and inherited `--docs-layout` value. The tool moves that child
    source to `draft.vX.Y.Z.<item-slug>.md` in the derived effort directory in
    the new branch or worktree; the umbrella stays in the integration tree and
-   is inherited by the new branch. After the tool returns, read the final child
-   path from the selected branch or worktree and verify that it is a real file
-   containing the focused draft. Step 7 is incomplete while that file is
-   absent; a chat-rendered copy does not satisfy this check.
+   is inherited by the new branch.
+   - Recovery exception: when the human explicitly states that the current
+     branch is already the selected item branch and `new_draft` would reject its
+     existing name, do not create a competing branch. Rebuild the canonical
+     child in place from the current umbrella row and detail subsection, using
+     any pre-existing child only as revision context. The result must contain a
+     truthful, material focused-draft change; never add a cosmetic marker just
+     to dirty the path. If no material reconciliation is possible, stop and
+     report the unexpected unchanged artifact instead of claiming creation.
+   After the normal or recovery route, read the final child path and verify that
+   it is a real file containing the focused draft. Then run
+   `git status --short -- <child-path>` in that branch or worktree and require
+   the exact path to appear as untracked, added, renamed, or modified. Step 7 is
+   incomplete while the file is absent or that path-scoped status is clean; a
+   pre-existing tracked file or chat-rendered copy does not satisfy this check.
 6. After Step 7 creates the item branch or worktree and the focused child draft,
-   present the exact, clickable child-file path and its complete current content.
-   Tell the human to review the file itself; the conversation copy is only a
+   lead with the exact path-scoped Git status entry and clickable child-file
+   path, followed by its complete current content. Tell the human to review the
+   file itself as the changed artifact; the conversation copy is only a
    convenience. Keep the child file on disk throughout this gate. State that
-   the umbrella remains unchanged, then stop for human review. Do not run
-   `pw skill`, enter Step 8, or invoke `write-requirement` yet.
+   the umbrella remains
+   unchanged, then stop for human review. Do not run `pw skill`, enter Step 8,
+   or invoke `write-requirement` yet.
    - When the human supplies comments, update only the focused child draft,
      present its complete revised content, and stop at this same review gate
      again. Repeat until the human explicitly approves it.

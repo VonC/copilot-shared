@@ -74,6 +74,13 @@ def test_umbrella_child_stops_for_review_before_requirement_handoff() -> None:
     assert "produce a real Markdown child draft on disk" in content
     assert "Write this source as an actual Markdown file" in umbrella
     assert "verify that it is a real file" in umbrella
+    assert "new working-tree result of the current continuation" in content
+    assert "Merely finding an unchanged tracked file" in content
+    assert "git status --short -- <child-path>" in umbrella
+    assert "path-scoped status is clean" in umbrella
+    assert "Recovery exception" in umbrella
+    assert "truthful, material focused-draft change" in umbrella
+    assert "lead with the exact path-scoped Git status entry" in umbrella
     assert "review the file itself" in umbrella
     assert "conversation copy is only a convenience" in umbrella
     assert "run the selection straight away" in initial_handoff
