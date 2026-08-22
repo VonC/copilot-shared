@@ -118,4 +118,5 @@ def test_reviewer_instruction_denies_requestor_human_and_commit_authority() -> N
     assert "never complete an umbrella row" in normalized
     assert "The reviewer may call only" in content
     assert content.count("`publish-answer`") >= _MINIMUM_PUBLISH_REFERENCES
-    assert "one bounded `wait-request`" in content
+    assert "one bounded `wait-request` per round" in content
+    assert "same reviewer session" in content

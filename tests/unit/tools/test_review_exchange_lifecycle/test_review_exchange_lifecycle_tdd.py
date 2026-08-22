@@ -643,4 +643,37 @@ def test_wait_uses_one_monotonic_deadline_progress_and_no_lease_write(
     assert writes == []
 
 
+def test_reviewer_wait_spans_answer_pending_until_the_replacement_request(
+    tmp_path: Path,
+) -> None:
+    """A reviewer can publish changes and stay in one wait for the next round."""
+    core, _, context, clock = _harness(tmp_path)
+    _start_and_request(core, context, clock)
+    core.publish_answer(_answer(context, clock, 1), "Changes requested.")
+
+    def publish_replacement_request() -> None:
+        if (
+            clock.monotonic >= _REQUEST_EXPOSURE_TIME
+            and core.classify().state is ArtifactState.ANSWER_PENDING
+        ):
+            core.consume_answer(reviewed_work_changed=True)
+            core.continue_round()
+            _start_and_request(core, context, clock, _SECOND_ROUND)
+
+    clock.after_sleep = publish_replacement_request
+    result = core.wait_for_exact(
+        ArtifactState.REQUEST_PENDING,
+        timeout_seconds=5,
+        poll_interval=1,
+        progress_interval=1,
+    )
+
+    assert result.outcome is WaitOutcome.FOUND
+    assert result.observation.state is ArtifactState.REQUEST_PENDING
+    assert result.observation.record is not None
+    assert result.observation.record.round_number == _SECOND_ROUND
+    assert result.observation.request_envelope is not None
+    assert result.observation.request_envelope.round_number == _SECOND_ROUND
+
+
 # eof

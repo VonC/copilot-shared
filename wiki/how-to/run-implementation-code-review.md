@@ -31,12 +31,17 @@ final JSON result and use its `paths` member.
    $llm-shared:code-reviewer
    ```
 
-5. Return to the requestor after the bounded wait. Follow `paths.answer`, assess
+5. Leave the reviewer session active. After publishing `changes-requested`, it
+   immediately waits for the replacement request; do not invoke the reviewer
+   skill again for later intermediate rounds.
+6. Return to the requestor after its bounded wait. Follow `paths.answer`, assess
    staged repairs, update writer-owned records, and publish a replacement round
-   when the answer requests changes.
+   when the answer requests changes. That publication releases the waiting
+   reviewer into its next assessment.
 
 Stop when the requestor presents `Commit` and `Rework and review again`. Exit
-`3` and a commit-ready recommendation do not authorize a commit.
+`3` and a commit-ready recommendation do not authorize a commit. Convergence
+ends the reviewer's automatic wait cycle at the human gate.
 
 ## Resume an implementation code review
 

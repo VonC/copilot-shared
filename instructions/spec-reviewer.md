@@ -2,8 +2,8 @@
 
 Use this instruction when `pw` routes one exact feature request, issue,
 design, or plan to `spec-reviewer`. The reviewer independently assesses the
-current specification and publishes one paired answer without taking writer
-or human authority.
+current specification and publishes paired answers across automatic
+intermediate rounds without taking writer or human authority.
 
 Read and follow `instructions/review-requestor.md` in full before running any
 exchange command. Its command, artifact, result, and exit contracts also
@@ -37,8 +37,8 @@ overwrite, rename, or delete protocol artifacts by hand.
 1. Run `status` with the exact document, optional umbrella, and fixed policy.
    Proceed only when its final JSON reports `request-pending` for the same
    identity and reviewer-owned round.
-2. Run one bounded `wait-request` with that exact context. Do not add a polling
-   loop or reconstruct the request path. Read only the returned
+2. Run one bounded `wait-request` per round with that exact context. Do not add
+   a polling loop or reconstruct the request path. Read only the returned
    `paths.request` file after the operation grants access.
 3. Validate the complete request and read the full exact reviewed specification.
    Treat current specification text as authoritative and the request as the
@@ -57,8 +57,21 @@ overwrite, rename, or delete protocol artifacts by hand.
    answer through `--content-file` and the paired substantive summary through
    `--summary-file`. Do not publish either output independently.
 7. When `publish-answer` reports `outcome: published`, remove the single-use
-   retained manifest. Keep every protocol artifact under shared-core ownership
-   and stop after reporting the publication result.
+   retained manifest. Keep every protocol artifact under shared-core ownership.
+8. When the published disposition is `changes-requested` and the returned state
+   is `answer-pending`, immediately run the next bounded `wait-request` in this
+   same reviewer session. Do not report the round as finished, return control
+   to the user, or ask for another reviewer invocation first. The wait begins
+   while the requestor owns `answer-pending`; it grants no requestor authority
+   to the reviewer and simply watches for the replacement request.
+9. When that wait returns `found` with `request-pending`, require the same
+   exchange identity and the next reviewer-owned round, read only its returned
+   `paths.request`, and continue at Step 3. Repeat the assess, publish, and wait
+   cycle for every intermediate round.
+10. When publication reports `convergence-gate`, stop for the durable human
+    choice instead of waiting for another request. Also stop on any terminal
+    wait outcome, preserving the shared timeout, escalation, and recovery
+    contract.
 
 Do not read the versioned transcript as assessment context. Do not use an old
 request summary when it differs from the current specification. Return
@@ -156,6 +169,8 @@ Use the shared final JSON outcome without recreating its classifier:
 | Observed result | Reviewer action |
 | --- | --- |
 | `request-pending` | Run the exact bounded wait and assess once. |
+| In-session `answer-pending` after publishing `changes-requested` | Stay active in the next bounded `wait-request`; the requestor remains the owner. |
+| `convergence-gate` after publication | Stop for the human choice; do not start a post-answer wait. |
 | In-session `abandoned-request` | Reclaim the same intact reviewer-owned round once. |
 | Cold-route `abandoned-request` | Stop and hand recovery to `spec-review-requestor`. |
 | `disabled` | Stop and report that review mode must be restored. |
@@ -163,7 +178,7 @@ Use the shared final JSON outcome without recreating its classifier:
 | `interrupted` | Stop for human recovery with caller evidence retained. |
 | `repair-required` | Stop for shared repair; do not edit artifacts. |
 | `escalated` | Stop for human recovery; never reclaim or publish. |
-| Any writer or human-owned state | Stop and return control to its owning role. |
+| Any other writer or human-owned state seen on cold entry | Stop and return control to its owning role. |
 
 Timeout, ambiguity, lost ownership, malformed input, and unexpected fatal
 results also stop. Do not create a replacement request, start a fresh round,

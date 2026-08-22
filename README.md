@@ -38,7 +38,12 @@ For a separate-agent assessment, start with
 [why independent review mode separates authority](wiki/explanation/independent-review-mode-and-human-authority.md).
 That opt-in exchange is distinct from the established
 [self-review loop](wiki/explanation/why-the-llm-reviews-its-own-work.md) inside
-the normal document and implementation workflow.
+the normal document and implementation workflow. Its main purpose is an
+automatic requestor-reviewer exchange across intermediate rounds: the
+requestor waits after publishing each request, and the reviewer waits after
+publishing each change request, so replacement rounds continue in the same two
+sessions without another human prompt. Only convergence, recovery, or a bounded
+wait failure stops that exchange.
 
 ---
 

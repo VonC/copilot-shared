@@ -16,6 +16,7 @@ def test_canonical_requestor_delegates_every_mutation_to_launcher() -> None:
     """The canonical body names the launcher and core without copying a table."""
     root = steps.llm_shared_dir()
     content = (root / "instructions/review-requestor.md").read_text(encoding="utf-8")
+    normalized = " ".join(content.split())
 
     assert "review_exchange.bat" in content
     assert "ReviewExchangeCore" in content
@@ -25,6 +26,9 @@ def test_canonical_requestor_delegates_every_mutation_to_launcher() -> None:
     assert "one final JSON object" in content
     assert "standard error" in content
     assert "| Request | Answer |" not in content
+    assert "reciprocal active waits" in content
+    assert "reviewer is already in its post-answer `wait-request`" in normalized
+    assert "No human prompt or new reviewer invocation" in content
 
 
 def test_provider_files_redirect_directly_to_canonical_instruction() -> None:

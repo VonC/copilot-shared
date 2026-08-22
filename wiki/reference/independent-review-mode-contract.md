@@ -15,6 +15,15 @@ implementation skill. Full launchers are for reference, recovery, and direct
 reviewer operation. Every operation returns one final result; follow that
 result instead of discovering nearby files.
 
+Automatic intermediate exchange uses reciprocal bounded waits. The requestor
+runs `wait-answer` after `publish-request`. A reviewer that publishes
+`changes-requested` immediately runs `wait-request` in the same invocation and
+remains there while the requestor owns `answer-pending`. After the requestor
+consumes the answer, continues the round, and publishes the replacement, that
+wait returns the next `request-pending` artifact and reviewer assessment resumes.
+Convergence does not start another reviewer wait; it transfers the exchange to
+the human gate.
+
 The canonical [shared requestor instruction](../../instructions/review-requestor.md),
 [specification reviewer instruction](../../instructions/spec-reviewer.md), and
 [code reviewer instruction](../../instructions/code-reviewer.md) remain
@@ -120,6 +129,11 @@ ownership depends on durable coordination.
 | `disabled` | Not yet started | caller | Create a valid marker before starting independent review |
 | `fatal` | Invalid input or refused operation | caller | Correct the input and re-run; payload has null `identity`, empty `paths`, null round, and `fatal-input` outcome |
 
+The `answer-pending` owner remains the requestor even while the reviewer has an
+active post-publication `wait-request`. The wait observes the state; it does not
+grant answer consumption, round continuation, or any writer-owned action to the
+reviewer.
+
 ## Operation summary
 
 All commands enter through `bin/review_exchange.bat`. The caller supplies the
@@ -132,7 +146,7 @@ same exact context on every invocation.
 | `start` | requestor; idle exchange | Open round 1; `started` |
 | `continue` | requestor; consumed intermediate answer | Advance to the next round; `continued` |
 | `publish-request` | requestor; round in progress | Store request and append transcript; `published` |
-| `wait-request` | reviewer; bounded wait | Return `found`, `timed-out`, `abandoned`, `escalated`, `inconsistent`, or `repair-required` |
+| `wait-request` | reviewer; bounded entry wait or post-`changes-requested` wait | Return the next exact request as `found`, or `timed-out`, `abandoned`, `escalated`, `inconsistent`, or `repair-required` |
 | `publish-answer` | reviewer; request pending | Consume request, expose answer, and append transcript; `published` |
 | `wait-answer` | requestor; bounded wait | Return the same wait outcomes as `wait-request` |
 | `consume-answer` | requestor; non-converged answer | Record response assessment; `consumed` |

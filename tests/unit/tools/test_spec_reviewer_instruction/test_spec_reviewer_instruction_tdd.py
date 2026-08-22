@@ -60,9 +60,17 @@ def test_instruction_orders_reviewer_operations_and_exact_paths() -> None:
         ),
     )
     assert "bin/review_exchange.bat" in content
-    assert "one bounded `wait-request`" in content
+    assert "one bounded `wait-request` per round" in content
     assert "full exact reviewed specification" in content
     assert "convergence recommendation is advisory" in content
+    published = content.index("`publish-answer` reports `outcome: published`")
+    post_answer_wait = content.index(
+        "immediately run the next bounded `wait-request`",
+        published,
+    )
+    assert post_answer_wait > published
+    assert "continue at Step 3" in content
+    assert "same reviewer session" in content
 
 
 def test_instruction_limits_reclaim_to_the_active_reviewer_session() -> None:
@@ -128,6 +136,7 @@ def test_instruction_stops_outside_reviewer_authority() -> None:
     assert "Do not edit or consolidate the reviewed specification" in content
     assert "Do not read the versioned transcript" in content
     assert "stop for human recovery" in content
+    assert "Stop for the human choice; do not start a post-answer wait" in content
 
 
 # eof

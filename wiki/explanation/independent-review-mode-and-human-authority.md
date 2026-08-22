@@ -35,6 +35,23 @@ answer may recommend consolidation and a code answer may recommend commit, but
 that recommendation does not authorize consolidation or commit. The exchange
 stops at its human gate until the registered choice is supplied.
 
+## Why reciprocal waiting is the default
+
+The main purpose of the requestor-reviewer workflow is an automatic dialogue
+between two independent agent sessions, not a sequence of rounds that the human
+must restart. The requestor publishes a request and immediately waits for its
+answer. When the reviewer publishes `changes-requested`, it immediately waits
+for the replacement request in the same invocation. The requestor consumes the
+answer, updates the reviewed work, and publishes that replacement while the
+reviewer is already standing by.
+
+Each role still runs one bounded protocol wait at a time. The shared exchange
+owns polling, timeout, abandonment, and escalation, so neither agent writes its
+own retry loop. Waiting also does not transfer authority: while the reviewer
+observes `answer-pending`, only the requestor may consume the answer or continue
+the round. When a reviewer recommends convergence, reciprocal waiting ends and
+the durable human gate takes over.
+
 ## Why the evidence remains durable
 
 Each round publishes an answer and appends the request, answer, and human gate
@@ -56,7 +73,7 @@ document by hand.
 | Intent | Challenge a generated document or check implementation in the owning workflow | Obtain a separate-agent assessment through a durable exchange |
 | Participants | One agent asks or checks; the human answers or validates | Requestor agent, reviewer agent, and human gate |
 | Opt-in | Part of the normal document and implementation chain | Activated by the repository review-mode marker |
-| Intermediate work | Questions or missing work return inside the owning workflow | Published rounds alternate through request and answer artifacts |
+| Intermediate work | Questions or missing work return inside the owning workflow | Published rounds alternate automatically through reciprocal requestor and reviewer waits |
 | Final choice | Human answers questions or validates implementation evidence | Human chooses consolidation, commit, or another round |
 
 The [self-review explanation](why-the-llm-reviews-its-own-work.md) describes the

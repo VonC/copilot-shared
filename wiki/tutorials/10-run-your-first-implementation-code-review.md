@@ -66,6 +66,8 @@ an acceptance assertion and publishes `changes-requested`.
 
 The reviewer may leave an attributable repair staged, but it does not commit.
 It reports each repaired path so the requestor can accept or reverse the change.
+After publishing `changes-requested`, it immediately enters the next bounded
+`wait-request` in the same session. Leave that reviewer session running.
 
 ## 4. Accept the repair and publish round 2
 
@@ -79,20 +81,16 @@ staged paths and group order.
 
 The requestor consumes the intermediate answer and publishes round 2 with a new
 `request_index_tree` for the accepted subject. The implementation plan,
-implementation step, umbrella, and commit boundary remain explicit.
+implementation step, umbrella, and commit boundary remain explicit. Publishing
+the replacement request releases the reviewer session that is already waiting.
 
 ### Reviewer agent session — assess code-review round 2
 
-Run the reviewer skill again:
-
-```text
-$llm-shared:code-reviewer
-```
-
-The reviewer repeats the index and validation-state comparisons. When every
+Without another command from you, the active reviewer reads the returned round
+2 request and repeats the index and validation-state comparisons. When every
 readiness result passes and this round makes no substantive repair, it publishes
-a commit-ready recommendation. Exit `3` means the exchange stopped at its human
-gate; no commit has run.
+a commit-ready recommendation and does not start another wait. Exit `3` means
+the exchange stopped at its human gate; no commit has run.
 
 ## 5. Make the human choice
 
@@ -112,9 +110,9 @@ round.
 
 ## What you learned
 
-Code review binds one implementation step to immutable staged evidence, returns
-the exact answer path after a bounded two-agent exchange, and leaves the final
-commit decision with the human.
+Code review binds one implementation step to immutable staged evidence,
+alternates intermediate rounds through reciprocal active waits, returns exact
+counterpart paths, and leaves the final commit decision with the human.
 
 This page describes observable behavior. The canonical
 [code-review requestor instruction](../../instructions/code-review-requestor.md)
