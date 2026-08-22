@@ -332,6 +332,46 @@ def test_run_skill_routes_an_exact_umbrella_branch_without_after_merge(
     )
 
 
+def test_run_skill_routes_a_clean_integration_umbrella_branch(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A branch-matched umbrella remains resolvable after its merge diff is clean."""
+    umbrella = _setup_collection_tree(tmp_path)
+    review_umbrella = umbrella.with_name("draft.v10.0.0.review-mode.md")
+    umbrella.rename(review_umbrella)
+    (tmp_path / "docs" / "draft.v9.0.0.review_mode.md").write_text(
+        "# A focused draft with the same normalized slug\n",
+        encoding="utf-8",
+    )
+
+    def current_branch(_root: Path) -> str:
+        return "review_mode"
+
+    def relevant_drafts(
+        _root: Path,
+        _cwd: Path,
+        _branch: str | None,
+    ) -> list[Topic]:
+        return []
+
+    def read_memory(_root: Path) -> MemoryRecord | None:
+        return None
+
+    monkeypatch.setattr(skill.git, "current_branch", current_branch)
+    monkeypatch.setattr(skill.docs, "relevant_drafts", relevant_drafts)
+    monkeypatch.setattr(skill.memory, "read_memory", read_memory)
+
+    code = skill.run_skill(tmp_path, None, skill.HOST_CODEX)
+
+    assert code == 0
+    assert capsys.readouterr().out == (
+        "$llm-shared:process-draft on docs/draft.v10.0.0.review-mode.md "
+        "based on root-routing\n"
+    )
+
+
 def test_main_dispatches_the_skill_after_merge(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

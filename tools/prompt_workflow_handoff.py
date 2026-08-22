@@ -248,6 +248,9 @@ def resolve_current_topic(
     topic = resolve_topic(topics, record, branch)
     if topic is not None:
         return topic
+    umbrella = docs.branch_umbrella_topic(root, branch)
+    if umbrella is not None:
+        return umbrella
     return docs.branch_requirement_topic(root, branch)
 
 
