@@ -10,9 +10,10 @@ Take a draft document named in the prompt and use one of two modes:
   ordered item from an already settled collection, creates a focused child
   draft without changing the umbrella, and creates the item branch.
 
-The last step is a hand-off: a single-topic draft goes to the
+The last step is a hand-off: a single-topic initial draft goes to the
 `write-requirement` instruction; an initial draft holding more than one topic
-goes to the `split-and-define` instruction.
+goes to the `split-and-define` instruction. An umbrella-derived child first
+stops for human review and reaches that hand-off only after explicit approval.
 
 Do not write the feature-request or issue document here. In initial mode, do not
 reshape the draft body. In umbrella continuation mode, the focused child draft
@@ -74,12 +75,22 @@ Run this section before the ordinary numbered steps when the prompt contains
    source to `draft.vX.Y.Z.<item-slug>.md` in the derived effort directory in
    the new branch or worktree; the umbrella stays in the integration tree and
    is inherited by the new branch.
-6. Continue at Step 8 as one topic and hand off directly to
+6. After Step 7 creates the item branch or worktree and the focused child draft,
+   present the exact child path and its complete current content. State that the
+   umbrella remains unchanged, then stop for human review. Do not run `pw skill`,
+   enter Step 8, or invoke `write-requirement` yet.
+   - When the human supplies comments, update only the focused child draft,
+     present its complete revised content, and stop at this same review gate
+     again. Repeat until the human explicitly approves it.
+   - Treat only an explicit `Go ahead` as approval. Discussion, questions, and
+     draft corrections do not authorize the hand-off.
+7. After that approval, continue at Step 8 as one topic and hand off to
    `write-requirement`, passing the settled type, version, and slug. The
    umbrella draft remains associated context for the requirement.
 
 The ordinary initial-mode steps below do not run in umbrella continuation mode
-except for Steps 7 and 8 as narrowed above.
+except for Steps 7 and 8 as narrowed above. The human review gate applies only
+to the umbrella-derived child; an initial draft keeps the direct Step 8 hand-off.
 
 ## User choices for process-draft
 
@@ -272,3 +283,4 @@ specifies.
 | Tool interface | `--from-draft` takes the slug, version, docs layout, and branch placement as flags and prompts for nothing | Q07 | Step 7 | Re-prompt interactively; hybrid flag-or-prompt |
 | Draft relocation | Read the text and write it into the chosen tree, stage it, drop the source; in place `git mv` a tracked draft or plain-rename an untracked one | Q08 | Step 7 | Require a commit first; rename then move into the worktree |
 | Documentation layout | Offer `docs/`, `docs/vX.Y/`, `docs/vX.Y.Z/`, and `docs/vX.Y/vX.Y.Z/`; persist the choice in the draft parent | User request | Step 6 | One fixed version/topic directory; project-global configuration |
+| Umbrella child approval | Present and revise an umbrella-derived child until explicit human approval; keep an initial draft's direct hand-off | User request | Umbrella continuation Steps 6 and 7 | Send every child directly to `write-requirement`; pause initial drafts too |

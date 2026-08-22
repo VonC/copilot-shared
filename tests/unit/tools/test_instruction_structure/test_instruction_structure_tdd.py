@@ -54,6 +54,26 @@ def test_splitting_instructions_present_the_multi_choice() -> None:
         assert "Type something else" in content
 
 
+def test_umbrella_child_stops_for_review_before_requirement_handoff() -> None:
+    """Only an approved umbrella-derived child may reach write-requirement."""
+    content = _read("process-draft.md")
+    umbrella = content.split("## Umbrella continuation mode", 1)[1].split(
+        "## User choices for process-draft",
+        1,
+    )[0]
+    initial_handoff = content.split(
+        "## Step 8 for process-draft, hand off to the next instruction",
+        1,
+    )[1].split("## Design decisions for process-draft", 1)[0]
+    umbrella = " ".join(umbrella.split())
+
+    assert "stop for human review" in umbrella
+    assert "Do not run `pw skill`, enter Step 8" in umbrella
+    assert "only an explicit `Go ahead`" in umbrella
+    assert "update only the focused child draft" in umbrella
+    assert "run the selection straight away" in initial_handoff
+
+
 def test_process_draft_offers_and_passes_every_docs_layout() -> None:
     """The initial draft flow records one of the four supported effort paths."""
     content = _read("process-draft.md")
