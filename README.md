@@ -99,7 +99,7 @@ after the trigger completes.
 | Phase | Trigger | Output artifact |
 | --- | --- | --- |
 | Draft capture | Author writes free-form notes | a raw draft note |
-| Process draft | `/process-draft` | a direct draft classified and branched; an umbrella child also pauses for human approval before requirement writing |
+| Process draft | `/process-draft` | a direct draft classified and branched; an umbrella continuation writes and verifies the focused child Markdown file in the item branch before pausing for human approval |
 | Split (optional) | `/split-and-define` | `List of feature-requests and issues to create` section appended to the draft |
 | Define each item | `/write-requirement <type> vX.Y.Z <topic>` | `docs\feature-request.vX.Y.Z.<topic>.md` or `docs\issue.vX.Y.Z.<topic>.md` |
 | Review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` | Open questions folded into a decision table; document approved |
@@ -123,8 +123,9 @@ plan) chain the same way through `pw skill`: each writer runs its explicit
 `pw skill --after-write <role>` handoff, while consolidation runs bare
 `pw skill`, and both follow the command printed, so the only trigger the author
 types is the first one. A direct draft stops at `/review-ask-questions`; a
-focused child derived from an umbrella first stops for the author to approve or
-revise that draft before requirement writing  --  see
+focused child derived from an umbrella is first written and verified as a real
+file in the item branch, then stops for the author to review, approve, or revise
+that file before requirement writing  --  see
 [Automated document phase with pw skill](#-automated-document-phase-with-pw-skill).
 
 ---
@@ -390,9 +391,11 @@ the items differ in dependency order, or when the author wants the skill
 to suggest a slug per item.
 
 For a later umbrella item, `/process-draft ... based on <slug>` creates the
-focused child and item branch, presents the complete child for review, and
-waits. Corrections revise only that child and return to the same pause; an
-explicit `Go ahead` releases the handoff to `/write-requirement`.
+item branch, writes and verifies the canonical focused child Markdown file, and
+waits while the author reviews that file. A copy shown in conversation is only
+a preview, never the review artifact. Corrections revise only the on-disk child
+and return to the same pause; an explicit `Go ahead` releases the handoff to
+`/write-requirement`.
 
 ---
 

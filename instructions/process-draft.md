@@ -15,6 +15,12 @@ The last step is a hand-off: a single-topic initial draft goes to the
 goes to the `split-and-define` instruction. An umbrella-derived child first
 stops for human review and reaches that hand-off only after explicit approval.
 
+Umbrella continuation must produce a real Markdown child draft on disk in the
+new item branch or worktree before that review gate. That file is the review
+artifact and the authoritative source for revisions. Showing its proposed or
+current content in a chat response is only a preview and never substitutes for
+creating and preserving the file for the human to review.
+
 Do not write the feature-request or issue document here. In initial mode, do not
 reshape the draft body. In umbrella continuation mode, the focused child draft
 is deliberately derived from one settled item while the umbrella remains
@@ -68,17 +74,24 @@ Run this section before the ordinary numbered steps when the prompt contains
    entry and the matching requirement-detail subsection plus the umbrella
    sections, rules, examples, and constraints that entry says it
    regroups. Preserve their meaning and concrete detail; do not pull in work
-   assigned to another item. Never edit, rename, or delete the umbrella draft.
+   assigned to another item. Write this source as an actual Markdown file; do
+   not keep the derived draft only in the conversation. Never edit, rename, or
+   delete the umbrella draft.
 5. Continue at Step 7 and present only the branch-layout choice. Pass the
    temporary child source to `new_draft --from-draft` with the already settled
    slug, version, and inherited `--docs-layout` value. The tool moves that child
    source to `draft.vX.Y.Z.<item-slug>.md` in the derived effort directory in
    the new branch or worktree; the umbrella stays in the integration tree and
-   is inherited by the new branch.
+   is inherited by the new branch. After the tool returns, read the final child
+   path from the selected branch or worktree and verify that it is a real file
+   containing the focused draft. Step 7 is incomplete while that file is
+   absent; a chat-rendered copy does not satisfy this check.
 6. After Step 7 creates the item branch or worktree and the focused child draft,
-   present the exact child path and its complete current content. State that the
-   umbrella remains unchanged, then stop for human review. Do not run `pw skill`,
-   enter Step 8, or invoke `write-requirement` yet.
+   present the exact, clickable child-file path and its complete current content.
+   Tell the human to review the file itself; the conversation copy is only a
+   convenience. Keep the child file on disk throughout this gate. State that
+   the umbrella remains unchanged, then stop for human review. Do not run
+   `pw skill`, enter Step 8, or invoke `write-requirement` yet.
    - When the human supplies comments, update only the focused child draft,
      present its complete revised content, and stop at this same review gate
      again. Repeat until the human explicitly approves it.

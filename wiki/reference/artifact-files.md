@@ -37,7 +37,7 @@ canonical draft.
 | Pattern | Written by | Holds |
 | --- | --- | --- |
 | `docs\draft.<topic>.md` | the author | the raw idea, no version yet |
-| `<effort-dir>/draft.vX.Y.Z.<slug>.md` | `/process-draft`, then `/split-and-define` for collections | the classified, branched draft; an umbrella also carries the ordered status index |
+| `<effort-dir>/draft.vX.Y.Z.<slug>.md` | `/process-draft`, then `/split-and-define` for collections | the classified, branched draft; an umbrella carries the ordered status index, while an umbrella continuation writes the focused child into its item branch |
 | `<effort-dir>/feature-request.vX.Y.Z.<topic>.md` | `/write-requirement` | new behavior to build |
 | `<effort-dir>/issue.vX.Y.Z.<topic>.md` | `/write-requirement` | a bug or missing behavior |
 | `<effort-dir>/design.vX.Y.Z.<topic>.md` | `/write-design` | scope, constraints, acceptance cases |
@@ -66,6 +66,13 @@ same selector exists in more than one supported layout, resolution fails as
 ambiguous instead of choosing the newest or first copy.
 
 ### Direct and umbrella draft relationships
+
+For an umbrella continuation, the focused child at
+`<effort-dir>/draft.vX.Y.Z.<item-slug>.md` is a required on-disk artifact in the
+item branch. `/process-draft` reads it back after branch creation and does not
+open the approval gate until the file exists. That file is authoritative for
+human review and later revisions; a copy rendered in conversation is only a
+preview.
 
 For a single topic, the draft and requirement usually share a slug:
 
