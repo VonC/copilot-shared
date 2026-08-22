@@ -9,6 +9,7 @@ and the shared validation helpers used before any artifact mutation.
 
 from __future__ import annotations
 
+import configparser
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -22,7 +23,15 @@ _SLUG_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _SIGNAL_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _OFFSET_RE: Final[re.Pattern[str]] = re.compile(r"[+-]\d{2}:\d{2}$")
 _MARKER_NAME: Final[str] = "a.review-mode"
-_DEFAULT_WAIT_SECONDS: Final[int] = 1800
+_SETTINGS_NAME: Final[str] = ".review-exchange.ini"
+_SETTINGS_SECTION: Final[str] = "review-exchange"
+_SETTINGS_KEY: Final[str] = "wait_timeout_seconds"
+# Last resort only. The value that governs is the one in the shipped
+# .review-exchange.ini beside this package; this constant answers the single
+# case that file cannot: it having been deleted from an installation. The two
+# are asserted equal by the test suite so they cannot drift apart.
+_FALLBACK_WAIT_SECONDS: Final[int] = 10800
+_PACKAGE_ROOT: Final[Path] = Path(__file__).resolve().parents[1]
 _SPECIFICATION_TYPES: Final[frozenset[str]] = frozenset(
     {"feature-request", "issue", "design-specification", "plan"},
 )
@@ -415,12 +424,62 @@ class FamilyPolicy:
         )
 
 
+def _wait_setting_of(settings: Path) -> int | None:
+    """Read one wait value from a settings file, or None when unusable.
+
+    Every failure returns None rather than raising: a missing file, an
+    unreadable one, a malformed one, a missing section or key, and a value that
+    is not a positive integer. The caller then falls back to the next source.
+    That is deliberate for this file and only for this file, since it may belong
+    to a repository that never meant to configure a review.
+
+    Args:
+        settings: Path of the candidate settings file.
+
+    Returns:
+        The positive wait in seconds, or None when the file does not supply one.
+    """
+    try:
+        content = settings.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return None
+    parser = configparser.ConfigParser(interpolation=None)
+    try:
+        parser.read_string(content)
+    except configparser.Error:
+        return None
+    raw = parser.get(_SETTINGS_SECTION, _SETTINGS_KEY, fallback="").strip()
+    if not raw.isdecimal() or int(raw) <= 0:
+        return None
+    return int(raw)
+
+
+def _default_wait_seconds(project_root: Path) -> int:
+    """Resolve the wait that applies when the marker states none.
+
+    The reviewed repository wins over the shipped default, so a project sets its
+    own pace by adding one file at its root. The shipped default wins over the
+    constant, which exists only for an installation missing its own file.
+
+    Args:
+        project_root: Root of the repository the review runs in.
+
+    Returns:
+        The wait in seconds.
+    """
+    for candidate in (project_root / _SETTINGS_NAME, _PACKAGE_ROOT / _SETTINGS_NAME):
+        found = _wait_setting_of(candidate)
+        if found is not None:
+            return found
+    return _FALLBACK_WAIT_SECONDS
+
+
 @dataclass(frozen=True)
 class ReviewConfiguration:
     """Review-mode activation and its effective bounded wait limit."""
 
     enabled: bool
-    wait_timeout_seconds: int = _DEFAULT_WAIT_SECONDS
+    wait_timeout_seconds: int = _FALLBACK_WAIT_SECONDS
 
     def __post_init__(self) -> None:
         """Validate the typed configuration values."""
@@ -429,24 +488,34 @@ class ReviewConfiguration:
     @classmethod
     def load(cls, project_root: Path) -> ReviewConfiguration:
         """Read the exact root marker without writing any protocol state."""
-        marker = project_root.resolve() / _MARKER_NAME
+        root = project_root.resolve()
+        default_wait = _default_wait_seconds(root)
+        marker = root / _MARKER_NAME
         if not marker.exists():
-            return cls(enabled=False, wait_timeout_seconds=_DEFAULT_WAIT_SECONDS)
+            return cls(enabled=False, wait_timeout_seconds=default_wait)
         if not marker.is_file():
             raise ReviewExchangeError("invalid a.review-mode: marker is not a file")
         try:
             content = marker.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as error:
             raise ReviewExchangeError(f"invalid a.review-mode: {error}") from error
-        timeout = _wait_timeout_from_marker(content)
+        timeout = _wait_timeout_from_marker(content, default_wait)
         return cls(enabled=True, wait_timeout_seconds=timeout)
 
 
-def _wait_timeout_from_marker(content: str) -> int:
-    """Parse the marker's optional single positive wait override."""
+def _wait_timeout_from_marker(content: str, default_wait: int) -> int:
+    """Parse the marker's optional single positive wait override.
+
+    Args:
+        content: Exact marker text.
+        default_wait: Wait to use when the marker states none.
+
+    Returns:
+        The wait in seconds.
+    """
     lines = [line.strip() for line in content.splitlines() if line.strip()]
     if not lines:
-        return _DEFAULT_WAIT_SECONDS
+        return default_wait
     if len(lines) != 1 or not lines[0].startswith("wait_timeout_seconds="):
         raise ReviewExchangeError("invalid a.review-mode: expected one wait override")
     value = lines[0].partition("=")[2]

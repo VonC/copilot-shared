@@ -11,7 +11,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tools import review_exchange_models as models
 from tools.review_exchange_models import (
+    _FALLBACK_WAIT_SECONDS,
+    _PACKAGE_ROOT,
+    _SETTINGS_NAME,
     Actor,
     ArtifactState,
     ConfirmationOutcome,
@@ -25,6 +29,7 @@ from tools.review_exchange_models import (
     ReviewExchangeError,
     ReviewFamily,
     ReviewRole,
+    _wait_setting_of,
     format_local_timestamp,
 )
 from tools.review_exchange_models_coordination import CoordinationRecord
@@ -41,6 +46,9 @@ if TYPE_CHECKING:
 _VERSION = "v0.11.0"
 _SLUG = "review-exchange_core"
 _TIMESTAMP = "2026-08-03T14:30:05+02:00"
+_PROJECT_WAIT = 600
+_MARKER_WAIT = 90
+_SHIPPED_WAIT = 7200
 
 
 def _identity(*, code: bool = False) -> ExchangeIdentity:
@@ -332,13 +340,13 @@ def test_configuration_state_vocabulary_and_local_timestamp(tmp_path: Path) -> N
     """Marker defaults, state names, and local time match the design contract."""
     assert ReviewConfiguration.load(tmp_path) == ReviewConfiguration(
         enabled=False,
-        wait_timeout_seconds=1800,
+        wait_timeout_seconds=_FALLBACK_WAIT_SECONDS,
     )
     marker = tmp_path / "a.review-mode"
     marker.write_text("", encoding="utf-8")
     assert ReviewConfiguration.load(tmp_path) == ReviewConfiguration(
         enabled=True,
-        wait_timeout_seconds=1800,
+        wait_timeout_seconds=_FALLBACK_WAIT_SECONDS,
     )
     marker.write_text("wait_timeout_seconds=2400\n", encoding="utf-8")
     assert ReviewConfiguration.load(tmp_path) == ReviewConfiguration(
@@ -350,6 +358,91 @@ def test_configuration_state_vocabulary_and_local_timestamp(tmp_path: Path) -> N
     timestamp = format_local_timestamp()
     assert timestamp[-6] in {"+", "-"}
     assert timestamp[-3] == ":"
+
+
+def test_shipped_settings_match_the_fallback_constant() -> None:
+    """The shipped file governs, and the constant beside it may not drift."""
+    assert _wait_setting_of(_PACKAGE_ROOT / _SETTINGS_NAME) == _FALLBACK_WAIT_SECONDS
+
+
+def test_project_settings_take_precedence_over_the_shipped_default(
+    tmp_path: Path,
+) -> None:
+    """A settings file at the reviewed repository root wins over the shipped one."""
+    (tmp_path / "a.review-mode").write_text("", encoding="utf-8")
+    assert ReviewConfiguration.load(tmp_path).wait_timeout_seconds == _FALLBACK_WAIT_SECONDS
+    (tmp_path / ".review-exchange.ini").write_text(
+        "[review-exchange]\nwait_timeout_seconds = 600\n",
+        encoding="utf-8",
+    )
+    assert ReviewConfiguration.load(tmp_path).wait_timeout_seconds == _PROJECT_WAIT
+
+
+def test_marker_override_wins_over_the_project_settings(tmp_path: Path) -> None:
+    """The per-exchange marker still decides when both are present."""
+    (tmp_path / ".review-exchange.ini").write_text(
+        "[review-exchange]\nwait_timeout_seconds = 600\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "a.review-mode").write_text(
+        "wait_timeout_seconds=90\n",
+        encoding="utf-8",
+    )
+    assert ReviewConfiguration.load(tmp_path).wait_timeout_seconds == _MARKER_WAIT
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "",
+        "not an ini at all\n",
+        "[review-exchange]\n",
+        "[review-exchange]\nwait_timeout_seconds =\n",
+        "[review-exchange]\nwait_timeout_seconds = 0\n",
+        "[review-exchange]\nwait_timeout_seconds = slow\n",
+        "[review-exchange]\nwait_timeout_seconds = %broken\n",
+        "[review-exchange]\nwait_timeout_seconds = -5\n",
+        "[other]\nwait_timeout_seconds = 600\n",
+    ],
+)
+def test_unusable_project_settings_fall_back_without_failing(
+    tmp_path: Path,
+    content: str,
+) -> None:
+    """A broken settings file is ignored, never fatal: a review must still run."""
+    (tmp_path / "a.review-mode").write_text("", encoding="utf-8")
+    (tmp_path / ".review-exchange.ini").write_text(content, encoding="utf-8")
+    assert ReviewConfiguration.load(tmp_path).wait_timeout_seconds == _FALLBACK_WAIT_SECONDS
+
+
+def test_unreadable_project_settings_fall_back_without_failing(tmp_path: Path) -> None:
+    """A directory where the settings file is expected is ignored the same way."""
+    (tmp_path / "a.review-mode").write_text("", encoding="utf-8")
+    (tmp_path / ".review-exchange.ini").mkdir()
+    assert ReviewConfiguration.load(tmp_path).wait_timeout_seconds == _FALLBACK_WAIT_SECONDS
+
+
+def test_invalid_project_settings_fall_through_to_the_shipped_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unusable repository value does not hide a valid shipped value."""
+    project = tmp_path / "project"
+    shipped = tmp_path / "shipped"
+    project.mkdir()
+    shipped.mkdir()
+    (project / "a.review-mode").write_text("", encoding="utf-8")
+    (project / ".review-exchange.ini").write_text(
+        "[review-exchange]\nwait_timeout_seconds = invalid\n",
+        encoding="utf-8",
+    )
+    (shipped / ".review-exchange.ini").write_text(
+        f"[review-exchange]\nwait_timeout_seconds = {_SHIPPED_WAIT}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(models, "_PACKAGE_ROOT", shipped)
+
+    assert ReviewConfiguration.load(project).wait_timeout_seconds == _SHIPPED_WAIT
 
 
 @pytest.mark.parametrize(

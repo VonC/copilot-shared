@@ -265,7 +265,10 @@ def test_exact_path_routing_never_scans_docs_or_reads_transcript(
         allowed_exists.update(derive_artifact_paths(root, context).fixed_paths)
     assert selected == candidates[0].resolve()
     assert len(contexts) == _CANDIDATE_COUNT
-    assert all(path.name in {"a.review-mode", draft.name} for path in reads)
+    assert all(
+        path.name in {".review-exchange.ini", "a.review-mode", draft.name}
+        for path in reads
+    )
     assert set(exists_checks) <= allowed_exists
     assert not any(path.name.startswith("review.") for path in reads)
 
