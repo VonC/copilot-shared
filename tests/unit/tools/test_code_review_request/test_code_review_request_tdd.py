@@ -222,8 +222,37 @@ def test_render_carries_review_scope_staged_repairs_and_optional_guidance(
     assert "name every repaired path" in request_text
     assert "do not commit" in request_text
     assert "a.commit" in request_text
-    assert "Human guidance: Pay special attention" in rendered.request_content
-    assert "Human guidance: Pay special attention" in rendered.transcript_summary
+    assert "Human guidance:\n\nPay special attention" in rendered.request_content
+    assert "Human guidance:\n\nPay special attention" in rendered.transcript_summary
+
+
+def test_render_nests_human_guidance_headings_as_a_separate_block(
+    tmp_path: Path,
+) -> None:
+    """Stored guidance headings remain real children of the generated section."""
+    guidance = "## Human decision\n\nKeep the repair.\n\n### Evidence"
+    rendered = requestor.render_code_review_request(
+        _round_input(tmp_path, guidance=guidance),
+    )
+
+    assert (
+        "Human guidance:\n\n"
+        "### Human decision for step 1 code-review-requestor (round 2)"
+        in rendered.request_content
+    )
+    assert (
+        "#### Evidence for step 1 code-review-requestor (round 2)"
+        in rendered.request_content
+    )
+    assert (
+        "Human guidance:\n\n"
+        "#### Human decision for step 1 code-review-requestor (round 2)"
+        in rendered.transcript_summary
+    )
+    assert (
+        "##### Evidence for step 1 code-review-requestor (round 2)"
+        in rendered.transcript_summary
+    )
 
 
 @pytest.mark.parametrize(

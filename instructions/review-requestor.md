@@ -74,12 +74,14 @@ that belongs to a review round ends with `(round N)`:
   document and each restarts at round 1, as in
   `### Evidence for topic (exchange 2) (round 1)`.
 
-The paired code-review renderers apply this rule at the input boundary. Their
-generated request sections are level 2 and their generated transcript sections
-are level 3, so headings inside caller-authored assessment, implementation,
-change-summary, response, and reviewer prose are shifted to level 3 or level 4
-respectively while their relative depth is retained. Each embedded heading is
-then qualified with the step, slug, exchange when applicable, and final
+The paired specification- and code-review renderers apply this rule at the input
+boundary. Their generated request sections are level 2 and their generated
+transcript sections are level 3, so headings inside caller-authored assessment,
+implementation, change-summary, guidance, response, and reviewer prose are
+shifted to level 3 or level 4 respectively while their relative depth is
+retained. Human guidance is rendered as its own Markdown block below the
+`Human guidance:` label. Each embedded heading is then qualified with the step
+or specification identity, slug, exchange when applicable, and final
 `(round N)` suffix. Fenced code examples remain literal.
 
 Titles must also be well formed: no doubled word from interpolation, so

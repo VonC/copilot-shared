@@ -219,7 +219,7 @@ def _response_section(source: CodeReviewRoundInput, *, heading_level: int) -> st
     return (
         f"{hashes} Human guidance and writer response for {label} "
         f"(round {source.round_number})\n\n"
-        f"Human guidance: {guidance}\n\n"
+        f"Human guidance:\n\n{guidance}\n\n"
         f"Writer response: {response}"
     )
 

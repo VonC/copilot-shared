@@ -74,6 +74,21 @@ def test_legacy_reviewer_exchange_suffix_is_replaced_once() -> None:
     )
 
 
+def test_specification_qualifier_is_idempotent() -> None:
+    """A specification heading keeps one identity suffix across re-rendering."""
+    rendered = "### Evidence for feature-request review-status-command (round 2)"
+
+    assert (
+        qualify_round_headings(
+            rendered,
+            minimum_level=3,
+            qualifier="feature-request review-status-command",
+            round_number=2,
+        )
+        == rendered
+    )
+
+
 def test_plain_markdown_and_tilde_fences_are_unchanged() -> None:
     """Content without authored headings returns byte-for-byte equivalent text."""
     markdown = "Lead.\n\n~~~text\n## Literal sample\n```\n~~~"

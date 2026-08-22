@@ -27,6 +27,7 @@ from tools.review_exchange_transcript_identity import (
     current_request_occurrence,
     transcript_entry_base,
 )
+from tools.review_markdown_headings import qualify_round_headings
 
 if TYPE_CHECKING:
     from tools.review_exchange_models import ReviewContext
@@ -41,6 +42,26 @@ class ReviewExchangePublicationMixin(ABC):
 
     store: ReviewExchangeStore
     context: ReviewContext
+
+    def _rendered_human_guidance(
+        self,
+        guidance: str,
+        round_number: int,
+    ) -> str:
+        """Return guidance as request renderers nest it below their H2 section."""
+        identity = self.context.identity
+        step = self.context.implementation_step
+        qualifier = (
+            f"step {step} {identity.slug}"
+            if step is not None
+            else f"{identity.type_token} {identity.slug}"
+        )
+        return qualify_round_headings(
+            guidance.rstrip(),
+            minimum_level=3,
+            qualifier=qualifier,
+            round_number=round_number,
+        )
 
     @abstractmethod
     def classify(self) -> ExchangeObservation:
@@ -97,8 +118,20 @@ class ReviewExchangePublicationMixin(ABC):
             envelope, authored = self._validate_envelope(markdown, ReviewRole.REQUESTOR, record)
             validate_summary_identity(authored, self.context, record.round_number)
             if record.human_guidance is not None:
-                expected_guidance = f"Human guidance: {record.human_guidance}"
-                if expected_guidance not in authored:
+                rendered_guidance = self._rendered_human_guidance(
+                    record.human_guidance,
+                    record.round_number,
+                )
+                expected_guidance = (
+                    f"Human guidance:\n\n{rendered_guidance}",
+                    # Compatibility for the first heading-aware renderer, which
+                    # kept the label and nested Markdown on one line.
+                    f"Human guidance: {rendered_guidance}",
+                    # Compatibility for requests authored before guidance headings
+                    # became renderer-owned. Keep the exact-content requirement.
+                    f"Human guidance: {record.human_guidance}",
+                )
+                if not any(candidate in authored for candidate in expected_guidance):
                     raise ReviewExchangeError(
                         "replacement request summary omits confirmed human guidance",
                     )

@@ -175,6 +175,21 @@ def _publish_request(effort: Effort, round_number: int, **kwargs: str) -> None:
     )
 
 
+def _publish_heading_guidance(
+    effort: Effort,
+    round_number: int,
+    guidance: str,
+) -> None:
+    """Publish and inspect one request whose stored guidance starts with a heading."""
+    _publish_request(effort, round_number, guidance=guidance)
+    request = _core(effort).store.paths.request.read_text(encoding="utf-8")
+    assert (
+        "Human guidance:\n\n"
+        "### Human decision for step 4 acceptance (round 3)"
+        in request
+    )
+
+
 def _publish_answer(
     effort: Effort,
     round_number: int,
@@ -278,14 +293,16 @@ def repeated_round_journey(tmp_path: Path) -> None:
         recommendation="Only wording changed; commit-ready.",
     )
     assert core.classify().state is ArtifactState.CONVERGENCE_GATE
+    guidance = "## Human decision\n\nCheck the staged repair once more."
     override = core.confirm(
         "Rework and review again",
-        guidance="Check the staged repair once more.",
+        guidance=guidance,
     )
     assert not override.owning_action_authorized
     assert override.record.round_number == _ROUND_THREE
     assert override.record.no_progress_streak == 0
-    assert override.record.human_guidance == "Check the staged repair once more."
+    assert override.record.human_guidance == guidance
+    _publish_heading_guidance(effort, _ROUND_THREE, guidance)
 
 
 def _git_names(root: Path) -> tuple[str, ...]:

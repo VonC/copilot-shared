@@ -43,7 +43,12 @@ def _authored_headings(lines: list[str]) -> Iterator[tuple[int, re.Match[str]]]:
 
 def _qualified_title(title: str, qualifier: str, round_number: int) -> str:
     """Return one idempotent step-and-round-qualified heading title."""
-    base = _ROUND_CONTEXT_RE.sub("", title.rstrip())
+    base = title.rstrip()
+    current_suffix = f" for {qualifier} (round {round_number})"
+    if base.endswith(current_suffix):
+        base = base[: -len(current_suffix)]
+    else:
+        base = _ROUND_CONTEXT_RE.sub("", base)
     base = re.sub(rf"\s+\(round {round_number}\)$", "", base)
     return f"{base} for {qualifier} (round {round_number})"
 

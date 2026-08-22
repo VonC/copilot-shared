@@ -141,17 +141,49 @@ def test_render_accepts_no_umbrella_and_preserves_guidance_verbatim(
     rendered = requestor.render_specification_request(source)
 
     assert "Umbrella draft: none" in rendered.request_content
-    assert "Human guidance: Keep option A.\nDo not collapse its rationale." in (
+    assert "Human guidance:\n\nKeep option A.\nDo not collapse its rationale." in (
         rendered.request_content
     )
     assert "Writer response: The writer applied the requested direction." in (
         rendered.request_content
     )
-    assert "Human guidance: Keep option A.\nDo not collapse its rationale." in (
+    assert "Human guidance:\n\nKeep option A.\nDo not collapse its rationale." in (
         rendered.transcript_summary
     )
     assert rendered.request_content.count("Human guidance:") == 1
     assert rendered.transcript_summary.count("Human guidance:") == 1
+
+
+def test_render_nests_and_qualifies_specification_headings(
+    tmp_path: Path,
+) -> None:
+    """Caller and guidance headings remain unique children in both outputs."""
+    source = replace(
+        _round_input(
+            tmp_path,
+            guidance="## Human decision\n\nKeep Q01.\n\n### Evidence",
+        ),
+        assessment="Ready.\n\n## Assessment evidence",
+    )
+
+    rendered = requestor.render_specification_request(source)
+
+    assert (
+        "### Assessment evidence for feature-request spec-review-requestor "
+        "(round 2)" in rendered.request_content
+    )
+    assert (
+        "Human guidance:\n\n"
+        "### Human decision for feature-request spec-review-requestor (round 2)"
+        in rendered.request_content
+    )
+    assert (
+        "#### Human decision for feature-request spec-review-requestor (round 2)"
+        in rendered.transcript_summary
+    )
+    assert "round 2" not in "\n".join(
+        line for line in rendered.request_content.splitlines() if line.startswith("## ")
+    ).replace("(round 2)", "")
 
 
 def test_round_input_is_frozen_and_rejects_invalid_content(tmp_path: Path) -> None:
@@ -355,7 +387,7 @@ def test_cli_reads_explicit_files_and_writes_the_pair_once(
     assert envelope.round_number == _CLI_ROUND
     assert "Assess these questions." in request_text
     assert "Added Q01." in summary_text
-    assert "Human guidance: Keep the exact words." in summary_text
+    assert "Human guidance:\n\nKeep the exact words." in summary_text
 
 
 @pytest.mark.parametrize(

@@ -35,6 +35,7 @@ from tools.review_exchange_models_envelope import (
     parse_envelope_markdown,
     render_envelope_markdown,
 )
+from tools.review_markdown_headings import qualify_round_headings
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -161,19 +162,46 @@ def _response_section(
     *,
     heading_level: int,
 ) -> str:
-    """Render optional literal guidance and the separate writer response."""
+    """Nest optional guidance and the separate writer response."""
     hashes = "#" * heading_level
     label = _identity_label(source)
+    response = qualify_round_headings(
+        source.writer_response.strip(),
+        minimum_level=heading_level + 1,
+        qualifier=label,
+        round_number=source.round_number,
+    )
     if source.human_guidance is None:
         return (
-            f"{hashes} Writer response for {label} round {source.round_number}\n\n"
-            f"Writer response: {source.writer_response.strip()}"
+            f"{hashes} Writer response for {label} (round {source.round_number})\n\n"
+            f"Writer response: {response}"
         )
+    guidance = qualify_round_headings(
+        source.human_guidance.rstrip(),
+        minimum_level=heading_level + 1,
+        qualifier=label,
+        round_number=source.round_number,
+    )
     return (
         f"{hashes} Human guidance and writer response for {label} "
-        f"round {source.round_number}\n\n"
-        f"Human guidance: {source.human_guidance.rstrip()}\n\n"
-        f"Writer response: {source.writer_response.strip()}"
+        f"(round {source.round_number})\n\n"
+        f"Human guidance:\n\n{guidance}\n\n"
+        f"Writer response: {response}"
+    )
+
+
+def _authored_body(
+    source: SpecificationRoundInput,
+    body: str,
+    *,
+    parent_heading_level: int,
+) -> str:
+    """Nest and identify caller headings below their generated section."""
+    return qualify_round_headings(
+        body.strip(),
+        minimum_level=parent_heading_level + 1,
+        qualifier=_identity_label(source),
+        round_number=source.round_number,
     )
 
 
@@ -192,8 +220,12 @@ def _request_authored_content(source: SpecificationRoundInput) -> str:
         "identity_label": label,
         "round_number": str(source.round_number),
         "identity_fields": _identity_fields(source),
-        "assessment": source.assessment.strip(),
-        "change_summary": source.change_summary.strip(),
+        "assessment": _authored_body(source, source.assessment, parent_heading_level=2),
+        "change_summary": _authored_body(
+            source,
+            source.change_summary,
+            parent_heading_level=2,
+        ),
         "response_section": _response_section(source, heading_level=2),
         "answer_name": _answer_name(source),
     }
@@ -208,14 +240,14 @@ def _transcript_summary(source: SpecificationRoundInput) -> str:
     """Render substantive H3 feedback without fixed conclusion boilerplate."""
     label = _identity_label(source)
     sections = (
-        f"### Review identity for {label} round {source.round_number}\n\n"
+        f"### Review identity for {label} (round {source.round_number})\n\n"
         f"{_identity_fields(source)}",
-        f"### Requestor assessment for {label} round {source.round_number}\n\n"
-        f"{source.assessment.strip()}",
-        f"### Change summary for {label} round {source.round_number}\n\n"
-        f"{source.change_summary.strip()}",
+        f"### Requestor assessment for {label} (round {source.round_number})\n\n"
+        f"{_authored_body(source, source.assessment, parent_heading_level=3)}",
+        f"### Change summary for {label} (round {source.round_number})\n\n"
+        f"{_authored_body(source, source.change_summary, parent_heading_level=3)}",
         _response_section(source, heading_level=3),
-        f"### Reviewer focus for {label} round {source.round_number}\n\n"
+        f"### Reviewer focus for {label} (round {source.round_number})\n\n"
         "Check for missing questions, assess the existing options and answers, "
         "and suggest any clearer wording.",
     )

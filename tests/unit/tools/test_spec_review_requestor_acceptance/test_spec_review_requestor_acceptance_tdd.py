@@ -386,7 +386,7 @@ def guided_override_journey(
     assert _run_cli(root, effort.context, "start").code == 0
     assert _publish_request(effort, 1).code == 0
     _publish_answer(effort, 1, ReviewDisposition.CONVERGENCE_RECOMMENDED)
-    guidance = "Keep Q02 literal; do not merge it with Q01."
+    guidance = "## Human decision\n\nKeep Q02 literal; do not merge it with Q01."
     guidance_path = _root_input(root, "human-guidance", guidance)
     override = _run_cli(
         root,
@@ -423,10 +423,19 @@ def guided_override_journey(
 
     assert override.payload["round"] == _ROUND_TWO
     assert publication.code == 0
-    assert request.count(f"Human guidance: {guidance}") == 1
-    assert summary.count(f"Human guidance: {guidance}") == 1
+    assert request.count(
+        "Human guidance:\n\n### Human decision for issue guided (round 2)\n\n"
+        "Keep Q02 literal; do not merge it with Q01.",
+    ) == 1
+    assert summary.count(
+        "Human guidance:\n\n#### Human decision for issue guided (round 2)\n\n"
+        "Keep Q02 literal; do not merge it with Q01.",
+    ) == 1
     assert "Writer response: The writer kept Q02 separate" in request
-    assert f"Human guidance: {guidance}" in transcript
+    assert (
+        "Human guidance:\n\n#### Human decision for issue guided (round 2)"
+        in transcript
+    )
 
 
 def test_guided_override_preserves_literal_guidance_and_writer_response(
