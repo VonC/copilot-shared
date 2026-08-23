@@ -3,6 +3,37 @@
 - Type: feature-request
 - Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
 
+## Boundary inherited from the umbrella
+
+This child covers only umbrella item 7. It owns the repository-wide Markdown
+checker, its repository-root launcher, its place in the shared gate, and the
+Diátaxis reference that explains the enforced rules. It does not own the review
+exchange lifecycle, specification or code reviewer behavior, commit-plan
+validation, review-status reporting, or interrupted-review recovery.
+
+The effort depends on the completed `review-exchange-core`, `code-reviewer`, and
+`review-mode-docs` items. Its reason for remaining separate is that duplicate
+transcript headings are review-protocol defects, while the executable checker
+is a repository quality gate that must not become the responsibility of either
+reviewer role.
+
+The non-negotiable inherited constraints are:
+
+- use the repository's declared `.markdownlint.json` policy, including disabled
+  MD013 and MD033 limited to `img`;
+- implement the unattended check in Python because Node and a reachable package
+  network are unavailable;
+- report each finding with its path, line, rule, and reason;
+- never permit configuration to disable MD024 or MD025; and
+- require exactly one `#` document title, multiple `##` section titles, and
+  properly nested `###` subsection titles without skipped or orphaned heading
+  levels;
+- require every heading title to be unique across the complete document, not
+  merely unique among siblings at the same level; and
+- settle gate severity, tracked-versus-changed scope, and treatment of existing
+  findings during requirement and design work instead of folding unrelated
+  cleanup into this effort.
+
 Review mode declares Markdown heading rules non-negotiable, but nothing in the
 project can verify them. `instructions/review-requestor.md` states that every
 heading text must be unique within a transcript, that a transcript keeps exactly
@@ -43,7 +74,10 @@ A checker that applies the repository `.markdownlint.json` rules, a launcher
 that runs it from the repository root without environment setup, and a step in
 the shared gate so a violation stops the walk the way a lint error does today.
 A Diátaxis reference page should state which rules are enforced and why the two
-heading rules cannot be disabled.
+heading rules cannot be disabled. The checker must also validate the complete
+heading outline: one level-one document title, multiple level-two sections with
+their level-three subsections, no skipped levels, and no repeated heading title
+anywhere in the file.
 
 The checker has to work in this environment: no Node runtime is installed, so
 the markdownlint CLI is unavailable, and package downloads fail because the
