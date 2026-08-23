@@ -104,7 +104,9 @@ its own assessment, and exactly these choices:
 Only your `Consolidate` choice authorizes the owning workflow to fold the
 settled answers into the specification. The recommendation alone does not
 authorize consolidation. Choose `Revise and review again` when another
-independent round is needed.
+independent round is needed. After authorization, the owning workflow first
+commits the answered specification alone, then performs the fold and completes
+the exchange.
 
 ## What you learned
 

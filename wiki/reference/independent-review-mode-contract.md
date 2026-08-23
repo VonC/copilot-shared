@@ -241,6 +241,10 @@ Specification convergence presents `Consolidate` and
 `Revise and review again`. Code convergence presents `Commit` and
 `Rework and review again`. A reviewer recommendation is advisory; only the
 registered human choice can authorize consolidation or commit.
+An authorized specification consolidation first creates a one-file Git commit
+of the answered specification. It resets and verifies the index before staging
+that file, then verifies the snapshot and an empty index before folding or
+stripping any question content.
 
 ## Host adapter matrix
 

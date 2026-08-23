@@ -26,7 +26,7 @@ prerequisites already satisfied.
 | `/split-and-define` | a multi-topic collection draft | explicit umbrella marker, ordered pending/completed table, and requirement-detail subsections |
 | `/write-requirement` | type, `vX.Y.Z`, topic | `<effort-dir>/feature-request.vX.Y.Z.<topic>.md` or `<effort-dir>/issue.vX.Y.Z.<topic>.md` |
 | `/review-ask-questions` | a requirement, design or plan | `## Open questions` section, `Q0x` summary table |
-| `/consolidate-then-review-ask-questions` | the doc with answers | decision table, stripped questions, or a new round |
+| `/consolidate-then-review-ask-questions` | the doc with answers | one-file pre-consolidation question commit, then a decision table, stripped questions, or a new round |
 | `/write-design` | the settled requirement | `<effort-dir>/design.vX.Y.Z.<topic>.md` |
 | `/write-plans` | the settled design | `<effort-dir>/plan.vX.Y.Z.<topic>.md` + `.validation.md` skeleton |
 | `/implement-step N` | plan, design, requirement | code and tests, green `ghog day` |
@@ -71,7 +71,9 @@ running `pw skill --after-write requirement`, `--after-write design`, or
 `/review-ask-questions` it prints. This explicit writer event prevents
 settled-looking text from skipping review; pass `stop here` in the argument to
 hold the chain and read the document first.
-`/consolidate-then-review-ask-questions` runs bare `pw skill` when the document
+`/consolidate-then-review-ask-questions` first resets the index, commits only
+the answered document with the group-commit template, and verifies an empty
+index. It then performs the fold and runs bare `pw skill` when the document
 settles. `/implement-step`, `/implementation-check` and
 `/implement-missing-step` chain through `pw handoff` instead, and
 `/group-commits-msg` closes the chain at the commit gate with

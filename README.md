@@ -107,10 +107,10 @@ after the trigger completes.
 | Process draft | `/process-draft` | a direct draft classified and branched; an umbrella continuation writes and verifies the focused child Markdown file in the item branch before pausing for human approval |
 | Split (optional) | `/split-and-define` | `List of feature-requests and issues to create` section appended to the draft |
 | Define each item | `/write-requirement <type> vX.Y.Z <topic>` | `docs\feature-request.vX.Y.Z.<topic>.md` or `docs\issue.vX.Y.Z.<topic>.md` |
-| Review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` | Open questions folded into a decision table; document approved |
+| Review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` | one-file Git snapshot of the answered questions, then questions folded into a decision table; document approved |
 | Design | `/write-design` | `docs\design.vX.Y.Z.<topic>.md` with acceptance scenarios |
 | Plan | `/write-plans` | `docs\plan.vX.Y.Z.<topic>.md` + `docs\plan.vX.Y.Z.<topic>.validation.md` |
-| Plan review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` on the plan | Plan open questions folded into a decision table; plan approved (the validation plan is left untouched) |
+| Plan review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` on the plan | one-file Git snapshot of the answered plan questions, then questions folded into a decision table; plan approved (the validation plan is left untouched) |
 | Implement and check | `/implement-step N`, then `pw handoff` chains `/implementation-check N` | Code, tests, and updates to the validation document |
 | Group commits | `pw handoff after-check` routes a `Yes` step to `/group-commits-msg`; `gcba` replays | `a.commit` with one conventional commit per group, replayed by `gcba` |
 | Merge and reword | Merge a feature into `develop`, or work into `main`, with `--no-ff`; then run `/update-merge-commit-msg` and `grmc` | Merge commit with a conventional message tied to the merged docs |
@@ -125,9 +125,12 @@ see [Automated implement cycle with pw handoff](#-automated-implement-cycle-with
 
 The document rows above (define  --  review  --  consolidate  --  design  --
 plan) chain the same way through `pw skill`: each writer runs its explicit
-`pw skill --after-write <role>` handoff, while consolidation runs bare
-`pw skill`, and both follow the command printed, so the only trigger the author
-types is the first one. A direct draft stops at `/review-ask-questions`; a
+`pw skill --after-write <role>` handoff. Before consolidation changes any
+requirement, design, or plan, it resets the index, commits that document alone
+with its answered questions, verifies the index is empty, then folds the
+answers and runs bare `pw skill`. Both handoffs follow the command printed, so
+the only trigger the author types is the first one. A direct draft stops at
+`/review-ask-questions`; a
 focused child derived from an umbrella is first written and verified as a real
 file in the item branch, then stops for the author to review, approve, or revise
 that file before requirement writing  --  see
@@ -280,24 +283,24 @@ Legend for the transitions:
                   +-----------------+
                   |                 |----+  == pw skill ==> /review-ask-questions
                   | requirement doc |    |  [STOP] a human answers the Q0x | Title |
-                  |                 |<---+  Recommended table; /consolidate folds them
-                  +--------+--------+       and loops here, or settles
+                  |                 |<---+  table; /consolidate snapshots this doc alone,
+                  +--------+--------+       then folds them and loops or settles
                            |
                            |  settled == pw skill ==> /write-design
                            v
                   +-----------------+
                   |                 |----+  == pw skill ==> /review-ask-questions
                   |   design doc    |    |  [STOP] a human answers the Q0x table;
-                  |                 |<---+  /consolidate loops here, or settles
-                  +--------+--------+
+                  |                 |<---+  /consolidate snapshots this doc alone,
+                  +--------+--------+       then loops here or settles
                            |
                            |  settled == pw skill ==> /write-plans
                            v
                   +-----------------+
                   |     plan +      |----+  == pw skill ==> /review-ask-questions
                   | validation plan |    |  [STOP] a human answers the Q0x table
-                  |                 |<---+  (plan only); /consolidate loops or settles
-                  +--------+--------+
+                  |                 |<---+  (plan only); /consolidate snapshots the plan
+                  +--------+--------+       alone, then loops or settles
                            |
                            |  settled == pw skill ==> /implement-step N (enters chain)
                            v
