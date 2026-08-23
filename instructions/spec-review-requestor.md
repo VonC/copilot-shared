@@ -150,7 +150,9 @@ session reports `owning-action-pending`, do not ask the human again.
 After durable authorization, invoke the canonical
 `consolidate-then-review-ask-questions` workflow on the exact reviewed
 document. Do not add a private consolidation path and do not let the shared
-core edit the specification.
+core edit the specification. That canonical workflow first resets the index and
+creates its required one-file pre-consolidation question snapshot commit before
+it changes or strips the reviewed specification.
 
 The consolidation handoff may start a new session. Normal `pw skill`
 live-exchange precedence must return the settled document to this role. Verify

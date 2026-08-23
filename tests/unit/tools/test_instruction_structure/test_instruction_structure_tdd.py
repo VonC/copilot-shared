@@ -41,6 +41,37 @@ def test_writing_and_consolidate_instructions_carry_a_handoff() -> None:
         assert "pw skill" in content
 
 
+def test_consolidation_commits_one_question_snapshot_before_editing() -> None:
+    """Every document type records its answered questions before the fold."""
+    content = _read("consolidate-then-review-ask-questions.md")
+    snapshot = content.index("## Pre-consolidation question snapshot")
+    integration = content.index("You need to remove `Qxx:` sections")
+    snapshot_contract = " ".join(content[snapshot:integration].split())
+
+    assert snapshot < integration
+    for document_type in (
+        "feature request",
+        "issue",
+        "design",
+        "implementation plan",
+    ):
+        assert document_type in snapshot_contract
+    for required_text in (
+        "plain `git reset`",
+        "git diff --cached --name-only",
+        "git add -A <document-path>",
+        "prints exactly `<document-path>` and no other path",
+        "docs: record pre-consolidation questions",
+        "group-commits-msg.template.md",
+        "wac.bat",
+        "gcba.bat",
+        "--root-a-commit --non-interactive",
+        "do not present another commit menu",
+        "Leave any unrelated working-tree changes unstaged",
+    ):
+        assert required_text in snapshot_contract
+
+
 def test_review_instruction_leaves_the_consolidation_hint() -> None:
     """review-ask-questions hints the consolidation step on the reviewed document."""
     assert "consolidate-then-review-ask-questions" in _read("review-ask-questions.md")
