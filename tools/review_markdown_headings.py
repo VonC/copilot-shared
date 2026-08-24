@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
+from tools.markdown_check.source import fenced_line_numbers
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
@@ -12,7 +14,6 @@ _ATX_HEADING_RE = re.compile(
     r"^(?P<indent>[ \t]{0,3})(?P<marks>#{1,6})[ \t]+"
     r"(?P<title>.*?)(?P<closing>[ \t]+#+[ \t]*)?$",
 )
-_FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
 _ROUND_CONTEXT_RE = re.compile(
     r"\s+for step .+?(?: \(exchange \d+\))? "
     r"(?:round \d+|\(round \d+\))(?: \(exchange \d+\))?$",
@@ -20,21 +21,10 @@ _ROUND_CONTEXT_RE = re.compile(
 
 
 def _authored_headings(lines: list[str]) -> Iterator[tuple[int, re.Match[str]]]:
-    """Yield ATX headings outside fenced code blocks."""
-    fence_character: str | None = None
-    fence_length = 0
+    """Yield ATX headings using the checker's shared fence boundaries."""
+    fenced = fenced_line_numbers(lines)
     for index, line in enumerate(lines):
-        fence = _FENCE_RE.match(line)
-        if fence is not None:
-            marker = fence.group("fence")
-            if fence_character is None:
-                fence_character = marker[0]
-                fence_length = len(marker)
-            elif marker[0] == fence_character and len(marker) >= fence_length:
-                fence_character = None
-                fence_length = 0
-            continue
-        if fence_character is not None:
+        if index + 1 in fenced:
             continue
         heading = _ATX_HEADING_RE.match(line)
         if heading is not None:
