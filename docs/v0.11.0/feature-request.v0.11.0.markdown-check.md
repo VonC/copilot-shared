@@ -214,6 +214,13 @@ historical Markdown finding as an unrelated side effect. It also does not
 change review-exchange ownership, reviewer behavior, commit-plan validation,
 review-status reporting, or interrupted-review recovery.
 
+## File-based IO cost clarification for the markdown-check requirement
+
+The checker obtains one tracked Markdown inventory from Git, loads policy and
+baseline inputs once, and reads each inventory file once per run. Classification
+and all supported rules reuse the same parsed representation, so the shared gate
+does not multiply file reads by rule count.
+
 ## Code and policy references for markdown-check
 
 - `.markdownlint.json`: current repository Markdown policy.

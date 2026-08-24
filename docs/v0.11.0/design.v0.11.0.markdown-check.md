@@ -299,6 +299,15 @@ The integration does not duplicate rule configuration or baseline logic in
 batch code. The direct launcher result and the shared-gate result therefore use
 one policy authority.
 
+## File-based IO cost clarification for the v0.11.0 checker design
+
+One run executes one Git tracked-path query, one configuration read, one
+baseline read, and one UTF-8 read per tracked Markdown file. The source model is
+created once per file and passed to classification and rule evaluators in
+memory. Baseline grouping and deterministic sorting operate on collected
+records without reopening source files, and no rule performs its own directory
+walk.
+
 ## Acceptance cases for the v0.11.0 repository Markdown checker
 
 | Scenario | Expected outcome | Reason |

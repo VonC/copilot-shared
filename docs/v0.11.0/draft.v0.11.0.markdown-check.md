@@ -87,6 +87,12 @@ the markdownlint CLI is unavailable, and package downloads fail because the
 network presents an untrusted certificate. A Python implementation over the
 declared rule set is therefore the only route that runs unattended here.
 
+## File-based IO cost clarification for the markdown-check draft
+
+One checker run reads the tracked-path index, configuration, and baseline once,
+then reads each tracked Markdown file once. Rule evaluators share the parsed
+source model and do not reopen files or repeat repository-wide directory scans.
+
 ## Questions for the requirement and design phases
 
 These are open on purpose and belong to `write-requirement` and `write-design`
