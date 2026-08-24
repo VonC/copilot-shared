@@ -24,8 +24,8 @@ from typing import TYPE_CHECKING, NoReturn
 from tools._models import find_project_root
 from tools.code_review_evidence import capture_index_tree
 from tools.code_review_validation import (
-    DEFAULT_PROJECT_VALIDATION_COMMANDS,
     ResolvedValidationSet,
+    load_project_validation_commands,
     resolve_code_review_validation,
 )
 from tools.review_exchange_models import (
@@ -443,7 +443,7 @@ def _render_from_arguments(args: argparse.Namespace, project_root: Path) -> None
     if len(set(all_paths)) != len(all_paths):
         raise ReviewExchangeError("caller-owned input and output paths must be distinct")
     resolved_validation_set = resolve_code_review_validation(
-        DEFAULT_PROJECT_VALIDATION_COMMANDS,
+        load_project_validation_commands(root),
         args.plan_validation_command,
         args.request_validation_command,
     )

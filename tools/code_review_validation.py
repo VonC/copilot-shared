@@ -11,10 +11,69 @@ from tools.review_exchange_models import ReviewExchangeError
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from pathlib import Path
 
 ValidationSource = Literal["project", "plan", "request"]
 DEFAULT_PROJECT_VALIDATION_COMMANDS = ("ghog day",)
 _SOURCE_ORDER: tuple[ValidationSource, ...] = ("project", "plan", "request")
+
+PROJECT_VALIDATION_FILE = ".review-validation"
+
+
+def load_project_validation_commands(project_root: Path) -> tuple[str, ...]:
+    """Read the project's declared mandatory commands, or the built-in default.
+
+    The default assumes a Python project: `ghog day` walks a check step and a
+    pytest step. A repository without a Python suite cannot satisfy it and, since
+    the resolver has no removal operation, could never reach a complete
+    validation floor whatever it did. That made commit-readiness unreachable for
+    every non-Python repository rather than for one, which is a policy nobody
+    wrote down.
+
+    So the floor is declarable. The file is VERSIONED, unlike the `a.review-mode`
+    marker, because it states what a repository must prove rather than how one
+    machine runs: the reviewer, the transcript and every contributor read the
+    same declaration.
+
+    Declaring does not weaken the no-removal rule. Whatever a project names here
+    is mandatory for it, additions still cannot subtract, and the resolved set
+    still labels these commands `project` so a reader can see where the
+    obligation came from. What changes is that the obligation can describe the
+    repository it applies to.
+
+    Format is one command per line; `#` comments and blank lines are ignored. An
+    empty declaration is refused rather than read as "no floor": a project that
+    means to keep the built-in default omits the file.
+
+    Args:
+        project_root: Repository root holding the optional declaration.
+
+    Returns:
+        The declared commands, or the built-in default when none is declared.
+    """
+    declaration = project_root / PROJECT_VALIDATION_FILE
+    if not declaration.exists():
+        return DEFAULT_PROJECT_VALIDATION_COMMANDS
+    if not declaration.is_file():
+        message = f"invalid {PROJECT_VALIDATION_FILE}: declaration is not a file"
+        raise ReviewExchangeError(message)
+    try:
+        content = declaration.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        message = f"invalid {PROJECT_VALIDATION_FILE}: {error}"
+        raise ReviewExchangeError(message) from error
+    commands = tuple(
+        stripped
+        for line in content.splitlines()
+        if (stripped := line.strip()) and not stripped.startswith("#")
+    )
+    if not commands:
+        message = (
+            f"invalid {PROJECT_VALIDATION_FILE}: declares no command; "
+            "omit the file to keep the built-in default"
+        )
+        raise ReviewExchangeError(message)
+    return commands
 
 
 @dataclass(frozen=True)
