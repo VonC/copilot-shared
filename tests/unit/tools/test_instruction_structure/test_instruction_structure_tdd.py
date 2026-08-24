@@ -28,6 +28,12 @@ def _read(name: str) -> str:
     return (_INSTRUCTIONS / name).read_text(encoding="utf-8")
 
 
+def _assert_contains_all(content: str, fragments: tuple[str, ...]) -> None:
+    """Report every required fragment missing from one instruction slice."""
+    missing = tuple(fragment for fragment in fragments if fragment not in content)
+    assert not missing, f"missing instruction fragments: {missing!r}"
+
+
 def test_writing_and_consolidate_instructions_carry_a_handoff() -> None:
     """The four writing and consolidation instructions run pw skill in a ## Handoff."""
     for name in (
@@ -98,22 +104,32 @@ def test_umbrella_child_stops_for_review_before_requirement_handoff() -> None:
     )[1].split("## Design decisions for process-draft", 1)[0]
     umbrella = " ".join(umbrella.split())
 
-    assert "stop for human review" in umbrella
-    assert "Do not run `pw skill`, enter Step 8" in umbrella
-    assert "only an explicit `Go ahead`" in umbrella
-    assert "update only the focused child draft" in umbrella
-    assert "produce a real Markdown child draft on disk" in content
-    assert "Write this source as an actual Markdown file" in umbrella
-    assert "verify that it is a real file" in umbrella
-    assert "new working-tree result of the current continuation" in content
-    assert "Merely finding an unchanged tracked file" in content
-    assert "git status --short -- <child-path>" in umbrella
-    assert "path-scoped status is clean" in umbrella
-    assert "Recovery exception" in umbrella
-    assert "truthful, material focused-draft change" in umbrella
-    assert "lead with the exact path-scoped Git status entry" in umbrella
-    assert "review the file itself" in umbrella
-    assert "conversation copy is only a convenience" in umbrella
+    _assert_contains_all(
+        umbrella,
+        (
+            "stop for human review",
+            "Do not run `pw skill`, enter Step 8",
+            "only an explicit `Go ahead`",
+            "update only the focused child draft",
+            "Write this source as an actual Markdown file",
+            "verify that it is a real file",
+            "git status --short -- <child-path>",
+            "path-scoped status is clean",
+            "Recovery exception",
+            "truthful, material focused-draft change",
+            "lead with the exact path-scoped Git status entry",
+            "review the file itself",
+            "conversation copy is only a convenience",
+        ),
+    )
+    _assert_contains_all(
+        content,
+        (
+            "produce a real Markdown child draft on disk",
+            "new working-tree result of the current continuation",
+            "Merely finding an unchanged tracked file",
+        ),
+    )
     assert "run the selection straight away" in initial_handoff
 
 
@@ -126,10 +142,10 @@ def test_process_draft_docs_keep_the_on_disk_umbrella_child_contract() -> None:
             root / "wiki/tutorials/02-from-draft-to-settled-requirement.md"
         ).read_text(encoding="utf-8"),
         "how-to": (root / "wiki/how-to/split-a-mixed-draft.md").read_text(
-            encoding="utf-8"
+            encoding="utf-8",
         ),
         "reference": (root / "wiki/reference/artifact-files.md").read_text(
-            encoding="utf-8"
+            encoding="utf-8",
         ),
     }
 
