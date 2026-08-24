@@ -125,6 +125,14 @@ New test package roots:
 Property-based coverage is required for heading normalization, hierarchy
 streams, and baseline count comparison. No time-bound `xfail` test is needed.
 
+## Implementation decisions for v0.11.0 Markdown checking
+
+| Question | Decision | Integrated in | Rejected alternatives |
+| --- | --- | --- | --- |
+| Q01 | Publish repository-root `markdown-check.bat` for Windows and `python -m tools.markdown_check.cli` on every platform; both call `cli.main`. | Step 2 launcher behavior, tests, and completion criteria. | A package-only Python API, and launchers outside the repository root. |
+| Q02 | Bootstrap the tracked baseline from the implemented checker's complete empty-baseline output, review every finding, and hand-author only accepted residual records. | Step 3 baseline finalization and acceptance coverage. | Seeding from approximate counts, and an automatic baseline-writing mode. |
+| Q03 | A human maintainer must repair the tracked design-review transcript before Step 3 baseline finalization or gate wiring; agents only verify the result. | Step 3 prerequisite and completion criteria. | Wiring a knowingly red gate, and baselining the transcript defect. |
+
 ## Shared execution checklist for every v0.11.0 Markdown-check step
 
 1. Count physical lines before edits for every existing Python step file.
@@ -274,6 +282,9 @@ Fix intent:
 Expected outcome:
 
 - A direct run checks every tracked Markdown path once without Node or network.
+- Repository-root `markdown-check.bat` and
+  `python -m tools.markdown_check.cli` are the stable public commands, and both
+  enter the same `cli.main` boundary.
 - Growth fails, unchanged debt passes, and shrink writes an advisory without
   mutating `.markdownlint-baseline.json`.
 
@@ -375,6 +386,9 @@ Fix intent:
 - Repair the implementation-owned `MD032` source, require the recorded
   human-only transcript repair, establish the authoritative residual baseline,
   and then add the gate call.
+- Produce that baseline by running the implemented checker against an empty
+  baseline, reviewing its complete findings, and hand-authoring only accepted
+  residual records; approximate discovery counts are not baseline input.
 - Add repository-fixture acceptance tests and Diataxis reference navigation.
 
 Expected outcome:
@@ -465,135 +479,3 @@ suites are the affected set before the final `ghog day`.
 
 Time-gated status: no timeout gate is introduced or removed in Step 3; the
 groundhog duration report remains the timing evidence.
-
-## Open questions for the v0.11.0 Markdown-check implementation plan
-
-### Q01: Public direct-check invocation
-
-Question description: The design requires a documented platform-neutral Python
-entry point and a repository-root Windows launcher. The plan names
-`markdown-check.bat` and `tools/markdown_check/cli.py` but does not state the
-exact public Python command that tests and reference documentation must preserve.
-
-#### BBQ for Q01
-
-A workshop can have a front door for local staff and a loading entrance for
-drivers on any platform, but both entrances must lead to the same inspection
-desk. In this picture: the front door is `markdown-check.bat`, the loading
-entrance is the Python command, and the inspection desk is `cli.main`.
-
-#### Options for Q01
-
-- Option A1: Publish `markdown-check.bat` for Windows and
-  `python -m tools.markdown_check.cli` for every platform.
-  - pro: Gives both launch forms stable names while keeping one Python boundary.
-  - con: Documentation and acceptance tests must cover two commands.
-- Option A2: Publish only a repository-root `markdown-check.py` and let
-  `check.bat` call it directly.
-  - pro: Uses one visible command file on every platform.
-  - con: Drops the required repository-root Windows launcher contract.
-- Option A3: Publish only `bin/markdown_check.bat` and treat direct Python use as
-  internal.
-  - pro: Matches many existing wrapper locations.
-  - con: Neither satisfies the repository-root launcher nor documents the
-    platform-neutral entry point.
-
-#### Recommended option for Q01 (with arguments for this choice)
-
-Option A1: Keep repository-root `markdown-check.bat` and publish
-`python -m tools.markdown_check.cli`. Both commands meet an explicit requirement,
-share `cli.main`, and can be checked against identical fixtures. The module
-carries a `__main__` guard that calls `main`, so the public command and internal
-entry point cannot diverge.
-
-#### Answer to Q01: option A1 (with reason why it must be accepted as the answer)
-
-Option A1: Accept both stable commands because the Windows shared gate and
-non-Windows direct use need different launch surfaces but one policy authority.
-
-### Q02: Authoritative baseline bootstrap
-
-Question description: The requirement carries approximate residual counts,
-including 61 `MD033` findings, while later inspection showed that multiline code
-spans can make an approximation overcount raw HTML. How should Step 3 produce
-the first tracked `.markdownlint-baseline.json` without turning estimates into
-accepted debt?
-
-#### BBQ for Q02
-
-A stock ledger should be filled from crates counted at the warehouse door, not
-from an estimate made before the delivery arrived. In this picture: the crates
-are actual checker findings, the early estimate is the requirement measurement,
-and the signed stock ledger is `.markdownlint-baseline.json`.
-
-#### Options for Q02
-
-- Option B1: Run the implemented checker against an empty baseline, review its
-  complete findings, and hand-author only the accepted residual records.
-  - pro: Makes the checker output authoritative and prevents approximate false
-    positives from becoming debt.
-  - con: Adds a deliberate review task before the first green repository run.
-- Option B2: Seed the baseline from the counts written in the requirement and
-  reduce it after the checker runs.
-  - pro: Produces a candidate file before the runner is complete.
-  - con: Can admit nonexistent findings and weakens the first comparison.
-- Option B3: Add a baseline-writing mode that rewrites the file from every
-  current finding.
-  - pro: Automates the initial record creation.
-  - con: Conflicts with the design boundary that checker execution never edits
-    its baseline and can accept findings without review.
-
-#### Recommended option for Q02 (with arguments for this choice)
-
-Option B1: Bootstrap from the completed checker's empty-baseline output and
-review each residual path and rule before writing JSON. This preserves the
-accepted `MD033` scope while requiring actual evidence for every allowance.
-
-#### Answer to Q02: option B1 (with reason why it must be accepted as the answer)
-
-Option B1: Accept reviewed authoritative output because baseline debt must
-describe real enforced findings, not a scanner approximation or an automatic
-snapshot.
-
-### Q03: Human transcript-repair checkpoint
-
-Question description: The design assigns one `MD032` transcript repair to a
-human because agents cannot edit protocol-owned review evidence. That transcript
-is already committed at `a0b6cc6` with the finding intact, so the repair is now
-a pending human edit to a tracked file. At what exact Step 3 checkpoint must it
-be present so baseline finalization and gate wiring can complete without debt or
-an intentionally red result?
-
-#### BBQ for Q03
-
-A safety inspector can connect the alarm only after the building owner clears a
-blocked exit that contractors are forbidden to touch. In this picture: the
-alarm is the `check.bat` Markdown gate, the blocked exit is the transcript
-`MD032` finding, and the building owner is the human maintainer.
-
-#### Options for Q03
-
-- Option C1: Require the human maintainer's tracked-file repair before Step 3
-  baseline finalization or gate wiring.
-  - pro: The first authoritative baseline and first gate run can both be green.
-  - con: Step 3 pauses until the external edit is present.
-- Option C2: Wire the gate first and accept a red result until the human repair
-  arrives.
-  - pro: Gate integration can be written without waiting.
-  - con: The step cannot reach its completion criteria and produces avoidable
-    red workflow runs.
-- Option C3: Baseline the transcript temporarily and remove the entry later.
-  - pro: Lets the gate pass before the external repair.
-  - con: Contradicts the settled zero-start decision and grants debt to an
-    append-only protocol artifact.
-
-#### Recommended option for Q03 (with arguments for this choice)
-
-Option C1: Check for the human maintainer's pending tracked-file repair before
-baseline finalization or `check.bat` wiring. The pause is explicit, keeps
-protocol ownership intact, and gives Step 3 a green first authoritative run.
-
-#### Answer to Q03: option C1 (with reason why it must be accepted as the answer)
-
-Option C1: Accept the precondition because no agent may perform the repair and
-the settled baseline contract forbids hiding it behind an allowance.
