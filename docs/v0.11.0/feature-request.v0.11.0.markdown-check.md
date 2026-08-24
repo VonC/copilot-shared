@@ -22,6 +22,11 @@ the same shared gate as other lint errors.
 - MD032 is omitted from `.markdownlint.json` and therefore remains enabled. The
   checker must enforce blank lines before and after lists so list markers cannot
   merge accidentally with adjacent prose.
+- MD038 is also omitted and remains enabled. It reports unnecessary spaces next
+  to inline-code delimiters, but it must preserve markdownlint-compatible
+  exceptions when the parsed code value genuinely contains boundary whitespace,
+  when the span contains only spaces, or when matching delimiter padding is
+  needed around literal backticks.
 - `instructions/review-requestor.md` requires one top-level transcript title
   and unique heading text, and it forbids disabling MD024 or MD025 to make a
   transcript pass.
@@ -116,8 +121,11 @@ mandatory even if a later configuration edit attempts to disable them. The
 published supported rule catalog is the enabled set: every catalog rule runs
 unless the configuration disables it, configuration may only disable or
 configure catalog rules, and a key outside the catalog stops the checker with a
-clear error. MD032 belongs to that supported catalog and applies its
-blanks-around-lists semantics to every checked file.
+clear error. MD032 and MD038 belong to that supported catalog. MD032 applies its
+blanks-around-lists semantics to every checked file. MD038 reports only
+unnecessary inner padding; it ignores spaces that are part of the parsed
+inline-code value, space-only code spans, and the matching single-space padding
+used to delimit code content that begins or ends with a backtick.
 
 ### Runtime independence for markdown-check
 
@@ -144,7 +152,8 @@ records every enforced rule with residual findings after adapter
 classification. Any new finding fails, and the baseline must shrink or remain
 unchanged. The measured initial baseline contains one `LS001` entry, 17 `LS002`
 entries, and 61 MD033 findings across 11 files; MD024, MD001, and `LS003` remain
-at zero and therefore have no baseline entries.
+at zero. MD038 also has no baseline entry after its genuine-code-space
+exceptions are applied; any remaining MD038 finding must be repaired.
 
 ## Requirement clarifications
 
@@ -186,6 +195,9 @@ at zero and therefore have no baseline entries.
 
 - MD013 remains disabled under the current repository configuration.
 - MD032 reports a list without a blank line before or after its list block.
+- MD038 reports one-sided or otherwise unnecessary space next to an inline-code
+  delimiter, but does not report a genuine boundary space, a space-only code
+  span, or matching delimiter padding around literal backticks.
 - MD033 permits `img` and reports other raw HTML elements under the current
   repository configuration.
 - Every reported violation includes path, line, rule, and reason.

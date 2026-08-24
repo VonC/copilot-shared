@@ -10,10 +10,11 @@ runner, then connect that same command to the repository gate.
 - **One observable result**: expose a direct launcher and make `check.bat`
   record the same exit status.
 
-> Markdown lint note: never leave a space immediately inside an inline code span
-> (MD038); when a snippet starts or ends with a space, write that space as the
-> literal token `[space]`. End a line made only of italic text with punctuation
-> after the closing marker (MD036).
+> Markdown lint note: avoid unnecessary spaces immediately inside an inline code
+> span (MD038), but keep spaces that genuinely belong to the parsed code value,
+> space-only spans, and matching delimiter padding around literal backticks. End
+> a line made only of italic text with punctuation after the closing marker
+> (MD036).
 
 ## Plan goal for v0.11.0 Markdown checking
 
@@ -131,7 +132,7 @@ streams, and baseline count comparison. No time-bound `xfail` test is needed.
 | --- | --- | --- | --- |
 | Q01 | Publish repository-root `markdown-check.bat` for Windows and `python -m tools.markdown_check.cli` on every platform; both call `cli.main`. | Step 2 launcher behavior, tests, and completion criteria. | A package-only Python API, and launchers outside the repository root. |
 | Q02 | Bootstrap the tracked baseline from the implemented checker's complete empty-baseline output, review every finding, and hand-author only accepted residual records. | Step 3 baseline finalization and acceptance coverage. | Seeding from approximate counts, and an automatic baseline-writing mode. |
-| Q03 | A human maintainer must repair the tracked design-review transcript before Step 3 baseline finalization or gate wiring; agents only verify the result. | Step 3 prerequisite and completion criteria. | Wiring a knowingly red gate, and baselining the transcript defect. |
+| Q03 | Repair the tracked design-review transcript before Step 3 baseline finalization or gate wiring; the documentation update has completed that repair. | Step 3 prerequisite and completion criteria. | Wiring a knowingly red gate, and baselining the transcript defect. |
 
 ## Shared execution checklist for every v0.11.0 Markdown-check step
 
@@ -172,9 +173,12 @@ Fix intent:
 - Extract or reuse fence boundary logic through
   `tools/markdown_check/source.py` while keeping review output unchanged.
 - Add typed records and pure evaluators for MD001, MD024, MD025, MD032, MD033,
-  LS001, LS002, and LS003.
+  MD038, LS001, LS002, and LS003.
 - Record Markdown links in the source model and classify frontmatter, bounded
   pointer, fragment, and structured documents in a pure classifier.
+- Record inline-code delimiters and parsed values so MD038 can distinguish
+  accidental inner padding from genuine code whitespace, space-only spans, and
+  matching delimiter padding around literal backticks.
 
 Expected outcome:
 
@@ -218,6 +222,10 @@ Step framing:
   Markdown links, list boundaries, raw HTML, UTF-8 headings, and line locations.
 - Cover every catalog rule, adapter exemption, exact and normalized duplicate
   overlap, all six heading levels, and immediate-parent failures.
+- Cover MD038 failures when delimiter-adjacent spaces neither survive in the
+  parsed code value nor delimit literal backticks, and passing cases for genuine
+  boundary whitespace, space-only spans, and required matching padding around
+  literal backticks.
 - Generate heading streams and normalized title variants with Hypothesis.
 
 **Classes and behavior**:
@@ -233,7 +241,7 @@ Step framing:
 
 - `ghog single tests/unit/tools/test_review_markdown_headings_tdd.py tests/unit/tools/markdown_check/test_source_model/test_source_model_tdd.py tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py tests/unit/tools/markdown_check/test_rule_properties/test_rule_properties_pbt.py`
   passes.
-- `rg -n "MD001|MD024|MD025|MD032|MD033|LS001|LS002|LS003" tools/markdown_check tests/unit/tools/markdown_check`
+- `rg -n "MD001|MD024|MD025|MD032|MD033|MD038|LS001|LS002|LS003" tools/markdown_check tests/unit/tools/markdown_check`
   finds each evaluator and its tests.
 - `ghog day` reports `exit=0`.
 
@@ -383,9 +391,10 @@ Issues to address:
 
 Fix intent:
 
-- Repair the implementation-owned `MD032` source, require the recorded
-  human-only transcript repair, establish the authoritative residual baseline,
-  and then add the gate call.
+- Repair the remaining implementation-owned `MD032` source, verify the recorded
+  transcript repair, clear genuine `MD038` defects while preserving its
+  code-space exceptions, establish the authoritative residual baseline, and then
+  add the gate call.
 - Produce that baseline by running the implemented checker against an empty
   baseline, reviewing its complete findings, and hand-authoring only accepted
   residual records; approximate discovery counts are not baseline input.
@@ -399,7 +408,7 @@ Expected outcome:
 Step framing:
 
 - Design links: Windows gate connection, acceptance cases, documentation
-  contract, and human-only transcript prerequisite.
+  contract, and verified transcript repair.
 - Execution checklist: use the shared execution checklist in this plan.
 
 #### Step 3 implementation for repository rollout
@@ -408,7 +417,7 @@ Step framing:
 
 - `.claude/skills/humanizer/SKILL.md` (existing, to be updated).
 - `docs/v0.11.0/review.design-specification.v0.11.0.markdown-check.md`
-  (existing, human-only update before gate activation; agents only verify).
+  (existing, repaired during documentation consolidation; Step 3 verifies).
 - `.markdownlint-baseline.json` (new from Step 2, to be updated with
   authoritative residual counts).
 - `check.bat` (existing, to be updated).
@@ -435,27 +444,30 @@ Step framing:
   finding and zero for the checked repository state.
 - Verify every enabled zero-debt `MD*` rule has no baseline entry. Preserve only
   authoritative residual `MD033` entries allowed by the consolidated scope.
+- Cover MD038 failures when delimiter-adjacent spaces neither survive in the
+  parsed code value nor delimit literal backticks, and passing cases for genuine
+  boundary whitespace, space-only spans, and required matching padding around
+  literal backticks.
 
 **Classes and behavior**:
 
 - `check.bat`: run `markdown-check.bat`, capture its status, and call
   `record_failure markdown <status>` on failure.
 - Reference page: catalog, mandatory rules, adapter classes, `LS003`
-  normalization, MD032 authoring boundaries, streams, baseline schema, direct
-  launcher, and shared-gate name.
+  normalization, MD032 authoring boundaries, MD038 genuine-code-space
+  exceptions, streams, baseline schema, direct launcher, and shared-gate name.
 - Navigation: link the page under reference while preserving explanation,
   tutorials, how-to guides, then reference.
 
 **Completion criteria**:
 
-- A human maintainer's pending edit to the already-committed design transcript
-  is present before baseline finalization or gate wiring; an agent has not
-  edited the protocol artifact.
+- The repaired design transcript has a blank line before its list at the former
+  MD032 boundary before baseline finalization or gate wiring.
 - `ghog single tests/acceptance/markdown_check/test_markdown_check_acceptance/test_markdown_check_acceptance_tdd.py tests/acceptance/markdown_check/test_shared_gate/test_shared_gate_tdd.py`
   passes.
 - `rg -n "record_failure markdown|markdown-check.bat" check.bat` finds one gate
   call and one failure record.
-- `rg -n "Markdown checker|MD032|MD033|LS003|markdownlint-baseline" README.md wiki/README.md wiki/reference/markdown-checker.md`
+- `rg -n "Markdown checker|MD032|MD033|MD038|LS003|markdownlint-baseline" README.md wiki/README.md wiki/reference/markdown-checker.md`
   finds navigation and the reference contract.
 - `ghog day` reports `exit=0`.
 

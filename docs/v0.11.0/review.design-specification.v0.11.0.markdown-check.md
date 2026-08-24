@@ -261,6 +261,7 @@ Requested changes: - Blocking. `MD032` adoption disposition is undefined. It app
   stays at zero with no baseline entry. Note that `MD032` entered the feature
   request during consolidation, after specification review converged, so it has
   never been reviewed.
+
 - Name the tracked baseline file. Q05 chooses versioned JSON and calls it the
   public maintenance contract, but the design gives no path;
   `.markdownlint-baseline.json` at the repository root is the natural form.

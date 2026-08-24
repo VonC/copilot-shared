@@ -79,14 +79,15 @@ interpretation of headings.
 **The initial adoption population contains accepted debt**: the feature
 request records residual `LS001`, `LS002`, and `MD033` findings. Rules measured
 at zero, including `MD001`, `MD024`, and `LS003`, must remain at zero and must
-not receive baseline entries. A fence-aware review measured two `MD032`
+not receive baseline entries. Newly enforced `MD038` also starts without a
+baseline entry after its genuine-code-space exceptions are applied; any
+remaining finding is repaired. A fence-aware review measured two `MD032`
 findings across the 375 tracked and pending Markdown files that this effort will
 commit: `.claude/skills/humanizer/SKILL.md` line 260 and
 `docs/v0.11.0/review.design-specification.v0.11.0.markdown-check.md` line 264.
-The implementation repairs the skill file, and a human maintainer repairs the
-protocol-owned transcript before committing the effort. Those two prerequisites
-make `MD032` start at zero in the committed state with no baseline entry; no
-agent edits the published transcript.
+This documentation update repairs the transcript boundary, and implementation
+repairs the skill file. Together they make `MD032` start at zero in the committed
+state with no baseline entry; no separate human checkpoint remains.
 
 ---
 
@@ -136,8 +137,8 @@ per-document policy result exists in those cases.
 
 The checker owns a published catalog rather than dynamically accepting every
 markdownlint key. The first catalog contains the rules required by the feature:
-`MD001`, `MD013`, `MD024`, `MD025`, `MD032`, `MD033`, `LS001`, `LS002`, and
-`LS003`.
+`MD001`, `MD013`, `MD024`, `MD025`, `MD032`, `MD033`, `MD038`, `LS001`, `LS002`,
+and `LS003`.
 `MD013` is present so the current explicit disable is valid configuration even
 though it does not run. Each catalog entry declares its namespace, accepted
 configuration shape, default enabled state, and whether it is mandatory.
@@ -150,6 +151,13 @@ unsupported external rule cannot be silently ignored.
 `MD032` checks that every list block has a blank line before and after it. It
 applies to structured documents and adapters alike, including lists inside
 review artifacts.
+
+`MD038` checks inline-code spans for unnecessary spaces immediately inside their
+delimiters. It does not report whitespace that belongs to the parsed code value,
+spans containing only spaces, or the matching single leading and trailing source
+spaces used as delimiter padding when code content begins or ends with a
+backtick. This mirrors markdownlint's intentional code-span exceptions instead
+of replacing genuine code whitespace with prose such as `[space]`.
 
 Review transcripts are generated from caller-authored requestor and reviewer
 content without normalizing blank lines around lists. Because those transcripts
@@ -206,8 +214,9 @@ an operational diagnostic.
 
 Each file is decoded as UTF-8 and scanned once into a lightweight source model.
 The model records frontmatter bounds, fenced-code bounds, ATX headings with
-their line and level, list-block boundaries, raw HTML elements, and non-blank
-body lines. Heading-like text and list markers inside a fence are literal
+their line and level, list-block boundaries, inline-code spans with delimiter
+and parsed-value boundaries, raw HTML elements, and non-blank body lines.
+Heading-like text and list markers inside a fence are literal
 content and never enter the structural model.
 
 The scanning primitive used by `tools/review_markdown_headings.py` is reused or
@@ -320,6 +329,8 @@ walk.
 | Repeated normalized title under another parent | `LS003` at each later occurrence | Uniqueness is global across the file |
 | Exact repeated heading at one later occurrence | Both `MD024` and `LS003` at that occurrence | Mandatory literal and normalized uniqueness rules report independently |
 | List touching adjacent prose without a blank line | `MD032` at the list boundary | Every list block must be surrounded by blank lines |
+| Inline-code span with one-sided or unnecessary inner padding | `MD038` at the span | Accidental delimiter-adjacent space is rejected |
+| Inline-code span whose parsed value genuinely preserves boundary whitespace, contains only spaces, or needs matching padding around literal backticks | No `MD038` | Markdown code-span semantics require the space |
 | Raw `img` element under current configuration | No `MD033` | The configured element is allowed |
 | Raw non-`img` element with no matching allowance | `MD033` at its source line | The enabled raw-HTML rule applies |
 | Finding count above a matching baseline allowance | Checker failure | Residual debt may not grow |
@@ -345,12 +356,13 @@ mandatory rules, configuration behavior, adapter classification, direct
 launcher, diagnostic fields, `.markdownlint-baseline.json` semantics, and
 shared-gate name. It
 defines the exact `LS003` normalization and distinguishes it from `MD024`, and
-identifies hierarchy findings as `MD001` and list-boundary findings as `MD032`.
+identifies hierarchy findings as `MD001`, list-boundary findings as `MD032`, and
+the genuine-code-space exceptions to `MD038`.
 It also tells requestors and reviewers to leave a blank line before and after
 every list rendered as its own block. For requested-changes, covered-wording,
 and writer-response fields inlined behind labels, it requires an opening prose
 sentence followed by a blank line before any list. Published transcripts cannot
-be edited by an agent to repair a later `MD032` finding.
+rely on the checker to insert missing boundaries after publication.
 
 Existing Diataxis navigation links the page in the repository order:
 explanation, tutorials, how-to guides, then reference. The page remains a
@@ -368,7 +380,7 @@ alter review-exchange state, or normalize caller-authored review content.
 Historical debt remains visible and bounded without turning this effort into a
 repository-wide Markdown rewrite.
 
-Before this effort is committed, a human maintainer repairs the existing
-`MD032` finding at line 264 of the protocol-owned design-review transcript. This
-human-only prerequisite preserves the review-exchange ownership boundary and
-the decision that `MD032` has no baseline allowance.
+The existing `MD032` finding at line 264 of the design-review transcript is
+repaired during this documentation update. Step 3 therefore verifies the clean
+boundary instead of waiting at a human-only checkpoint, and `MD032` keeps no
+baseline allowance.

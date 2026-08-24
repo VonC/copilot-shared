@@ -23,6 +23,10 @@ The non-negotiable inherited constraints are:
   MD013 and MD033 limited to `img`;
 - enforce MD032 so every list is surrounded by blank lines and cannot merge
   accidentally with the prose before or after it;
+- enforce MD038 for unnecessary spaces immediately inside inline-code markers,
+  while ignoring boundary spaces that the Markdown code-span syntax preserves
+  as genuine code content or uses as required delimiter padding around
+  backticks;
 - implement the unattended check in Python because Node and a reachable package
   network are unavailable;
 - report each finding with its path, line, rule, and reason;
@@ -80,7 +84,9 @@ heading rules cannot be disabled. The checker must also validate the complete
 heading outline: one level-one document title, multiple level-two sections with
 their level-three subsections, no skipped levels, and no repeated heading title
 anywhere in the file. It must also reject lists that are not surrounded by blank
-lines under MD032.
+lines under MD032. It must reject accidental inline-code padding under MD038 but
+must not report spaces that genuinely belong to the parsed code value, including
+space-only spans and delimiter padding needed around literal backticks.
 
 The checker has to work in this environment: no Node runtime is installed, so
 the markdownlint CLI is unavailable, and package downloads fail because the
