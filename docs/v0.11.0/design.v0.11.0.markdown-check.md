@@ -165,8 +165,10 @@ line, then any list. Renderer changes remain outside this effort.
 Repository configuration is loaded before any Markdown file. A configured
 `false` disables a supported optional rule, and a rule-specific object supplies
 validated options. `MD024` and `MD025` remain mandatory at the effective-policy
-layer, so configuration cannot remove them from evaluation. The reference page
-lists mandatory rules separately from configurable rules.
+layer, so configuration cannot remove them from evaluation. An attempted
+`false` for either mandatory rule fails policy loading before any document is
+scanned. The reference page lists mandatory rules separately from configurable
+rules.
 
 Local `LS001`, `LS002`, and `LS003` behavior is defined by this design and the
 feature request. They do not impersonate markdownlint options that have
@@ -174,16 +176,17 @@ different semantics.
 
 ### Stable finding model for policy evaluation
 
-Every rule returns zero or more finding records with four required fields:
-repository-relative path, positive source line, stable rule identifier, and a
-concrete reason. Whole-file findings use line 1. Rules do not print directly;
-the runner owns ordering and rendering so parallel or refactored evaluation
-cannot change observable output accidentally.
+Every rule returns zero or more finding records rendered as
+`path:line: RULE: reason`: repository-relative path, positive source line,
+stable rule identifier, and a concrete reason. Whole-file findings use line 1.
+Rules do not print directly; the runner owns ordering and rendering so parallel
+or refactored evaluation cannot change observable output accidentally.
 
 Findings are ordered by normalized repository path, source line, rule
-identifier, and reason. The direct process exits successfully only when policy
-loading succeeds and every emitted finding is covered without growth by the
-baseline.
+identifier, and reason and written to standard output. Operational errors and
+passing baseline-debt advisories are written to standard error. The direct
+process exits successfully only when policy loading succeeds and every emitted
+finding is covered without growth by the baseline.
 
 ## Document model for the v0.11.0 repository Markdown checker
 
@@ -220,10 +223,13 @@ a bounded canonical pointer in one of the approved adapter roots, or when it is
 a reusable `templates/` fragment whose first heading is level two or deeper.
 
 The bounded pointer classifier counts at most five non-blank body lines after
-frontmatter and requires the body to contain only a canonical-instruction
-pointer plus optional explanatory pointer text. The fragment classifier has no
-line bound. Classification exempts only `LS001` and `LS002`; all other enabled
-rules receive both adapter and structured documents.
+frontmatter and requires the body to contain a resolvable repository-relative
+Markdown link to a canonical instruction or rule plus optional explanatory
+pointer text. The fragment classifier has no line bound. Of the 35 current
+bounded pointer candidates, 34 already carry that link and the remaining
+template qualifies independently as a fragment, so this contract reclassifies
+no current file. Classification exempts only `LS001` and `LS002`; all other
+enabled rules receive both adapter and structured documents.
 
 ### Complete heading hierarchy and uniqueness evaluation
 
@@ -241,7 +247,8 @@ lowercasing while retaining non-ASCII characters, removing punctuation other
 than hyphens, and replacing whitespace runs with one hyphen. It reports every
 occurrence after the first normalized title across the complete file,
 regardless of heading level or parent. `MD024` remains in the mandatory catalog
-for its matching duplicate-heading semantics.
+for its matching duplicate-heading semantics. Both rules evaluate and report
+independently when one occurrence violates both contracts.
 
 ## Baseline model for the v0.11.0 repository Markdown checker
 
@@ -251,8 +258,9 @@ The repository-root `.markdownlint-baseline.json` is a tracked, versioned JSON
 document containing aggregate allowances with explicit path, rule, and count
 fields. After evaluation, the runner groups findings by the same key. A key
 fails when its actual count exceeds its allowance; a new key has an implicit
-allowance of zero. A count below the allowance passes and identifies baseline
-debt that can be reduced in a later deliberate update.
+allowance of zero. A count below the allowance passes and writes a deterministic
+debt-reduced advisory to standard error so the allowance can be lowered in a
+later deliberate update.
 
 Rules with no measured findings have no entries. The baseline cannot waive
 configuration, inventory, decoding, or baseline-format errors.
@@ -310,6 +318,17 @@ one policy authority.
 | Unknown configuration key | Checker failure before file evaluation | Unsupported policy cannot be ignored |
 | Direct launcher invoked without environment setup | Complete deterministic run | The launcher owns environment resolution |
 
+## Design decisions for the v0.11.0 repository Markdown checker
+
+| Question | Decision | Integrated in | Rejected alternatives |
+| --- | --- | --- | --- |
+| Q01 | Evaluate and report `MD024` and `LS003` independently. | Complete heading hierarchy and uniqueness evaluation | Suppress `MD024` behind `LS003`; partition exact and normalized collisions |
+| Q02 | Reject configuration that attempts to disable `MD024` or `MD025`. | Configuration precedence for mandatory heading protection | Ignore the conflict with or without an advisory |
+| Q03 | Require a resolvable repository-relative Markdown link for bounded pointer adapters. | Adapter classification before structured checks | Accept path-like prose; classify every short file by location |
+| Q04 | Pass a reduced baseline count with a debt-reduced advisory on standard error. | No-growth comparison for residual findings | Fail on shrink; pass silently |
+| Q05 | Store explicit records in repository-root `.markdownlint-baseline.json`. | Baseline model for the v0.11.0 repository Markdown checker | Use a tab-separated file; mix debt into `.markdownlint.json` |
+| Q06 | Emit `path:line: RULE: reason` findings on standard output and health messages on standard error. | Stable finding model for policy evaluation | Mix messages on standard output; emit JSON Lines |
+
 ## Documentation contract for the v0.11.0 repository Markdown checker
 
 One focused page under `wiki/reference/` lists the supported rule catalog,
@@ -344,264 +363,3 @@ Before this effort is committed, a human maintainer repairs the existing
 `MD032` finding at line 264 of the protocol-owned design-review transcript. This
 human-only prerequisite preserves the review-exchange ownership boundary and
 the decision that `MD032` has no baseline allowance.
-
-## Open questions for the v0.11.0 repository Markdown checker design
-
-### Q01: Overlapping duplicate-heading findings
-
-Question description: `MD024` remains mandatory for matching markdownlint
-duplicate-heading semantics, while `LS003` applies a stronger normalized,
-document-wide equality rule. An exact repeated heading can therefore satisfy
-both rules. Should the checker report both findings or assign each repeated
-heading to only one rule?
-
-#### BBQ for Q01
-
-Two inspectors can reject the same mislabeled box for different reasons. One
-checks whether the printed label is literally repeated, while the other checks
-whether labels become equal after normalizing their typography. Recording both
-inspections preserves both controls, but it can look like one physical defect
-was counted twice. In this picture: the box is a heading occurrence, the
-literal-label inspector is `MD024`, the normalized-label inspector is `LS003`,
-and the inspection record is the emitted finding set.
-
-#### Options for Q01
-
-- Option A1: Evaluate and report both rules independently.
-  - pro: Preserves an observable result for every mandatory rule and matches
-    the supported-catalog model.
-  - con: One repeated heading can produce two diagnostics and two baseline
-    dimensions.
-- Option A2: Report `LS003` only whenever the same occurrence also matches
-  `MD024`.
-  - pro: Produces one concise diagnostic for the strongest rule.
-  - con: Makes mandatory `MD024` enforcement invisible for overlapping cases.
-- Option A3: Report `MD024` for exact duplicates and reserve `LS003` for
-  normalization-only collisions.
-  - pro: Produces one finding while keeping both identifiers observable across
-    their distinct populations.
-  - con: `LS003` no longer literally reports every normalized repeat described
-    by the requirement.
-
-#### Recommended option for Q01 (with arguments for this choice)
-
-Option A1: Evaluate both rules independently. The requirement deliberately
-keeps `MD024` mandatory while introducing `LS003` under a different namespace,
-and a rule catalog is clearest when each rule has an independent result. Stable
-ordering and keyed baseline counts make the additional diagnostic manageable.
-
-#### Answer to Q01: option A1 (with reason why it must be accepted as the answer)
-
-Option A1: Accept independent findings because it preserves the exact contract
-of both rule identifiers and prevents a reporting optimization from silently
-weakening the mandatory `MD024` control.
-
-### Q02: Mandatory-rule configuration conflict
-
-Question description: The effective policy must not allow configuration to
-disable `MD024` or `MD025`, but the requirement does not say whether an attempted
-disable is an invalid configuration or a valid configuration whose `false`
-value is ignored. Which boundary should the checker expose?
-
-#### BBQ for Q02
-
-A building has two fire doors that must never be locked. A facilities file that
-says to lock one door can either stop the opening inspection immediately or be
-accepted while the inspector silently leaves the door unlocked. In this
-picture: the facilities file is `.markdownlint.json`, the fire doors are
-`MD024` and `MD025`, and opening inspection is effective-policy loading.
-
-#### Options for Q02
-
-- Option B1: Reject the configuration before scanning documents.
-  - pro: Makes an invalid weakening attempt explicit and immediately
-    actionable.
-  - con: A repository with otherwise valid Markdown cannot pass until the
-    configuration is repaired.
-- Option B2: Ignore `false` for mandatory rules and continue with an advisory.
-  - pro: Keeps the safety rule active and still completes the document scan.
-  - con: The committed configuration does not describe the effective policy.
-- Option B3: Ignore `false` silently and always force mandatory rules on.
-  - pro: Has the smallest runtime surface.
-  - con: Hides a policy conflict and can mislead maintainers.
-
-#### Recommended option for Q02 (with arguments for this choice)
-
-Option B1: Treat the attempted disable as a policy-loading error. This follows
-the existing decision that unknown keys fail clearly and makes the declared
-configuration trustworthy instead of maintaining a silent override layer.
-
-#### Answer to Q02: option B1 (with reason why it must be accepted as the answer)
-
-Option B1: Accept fail-fast validation because a mandatory policy and a
-contradictory configuration must not coexist behind a green checker result.
-
-### Q03: Canonical pointer adapter recognition
-
-Question description: A short file under an approved adapter root is exempt
-only when it serves as a pointer to canonical instructions. What structural
-signal should distinguish a true pointer from an underspecified short document?
-Of the 35 current bounded pointer candidates, 34 already contain a
-repository-relative Markdown link. The remaining
-`templates/code-review-answer.template.md` independently qualifies as a
-`templates/` fragment because its first heading is level two, so the explicit
-link contract reclassifies no current file.
-
-#### BBQ for Q03
-
-A sign in a lobby may point visitors to the full handbook, while a similarly
-short note may merely omit important instructions. The exemption should apply
-only when the destination is unambiguous. In this picture: the sign is the
-bounded Markdown adapter, the handbook is the canonical instruction document,
-and the destination test is the pointer classifier.
-
-#### Options for Q03
-
-- Option C1: Require at least one repository-relative Markdown link to a
-  canonical instruction or rule, allowing only brief explanatory prose around
-  it.
-  - pro: Is deterministic and preserves useful human-readable adapter text.
-  - con: A future pointer adapter using a different link form would need repair
-    or an intentional classifier change.
-- Option C2: Accept any body containing a path-like reference to another
-  Markdown file.
-  - pro: Supports several current prose styles.
-  - con: Path-like text can classify an ordinary short document accidentally.
-- Option C3: Classify every file within the approved roots and five-line bound
-  as a pointer.
-  - pro: Is simple and predictable by location.
-  - con: Turns the line bound into a broad path exemption and stops verifying
-    that the file is actually an adapter.
-
-#### Recommended option for Q03 (with arguments for this choice)
-
-Option C1: Require a resolvable repository-relative Markdown link to a
-canonical instruction or rule and permit only explanatory prose around it. The
-explicit link supplies machine evidence for the exemption while retaining the
-bounded adapter style.
-
-#### Answer to Q03: option C1 (with reason why it must be accepted as the answer)
-
-Option C1: Accept the explicit-link contract because adapter status should be
-proved by content as well as location and size.
-
-### Q04: Reduced baseline debt behavior
-
-Question description: An actual finding count below its baseline allowance is
-valid no-growth progress, but the baseline is then stale. Should that shrink be
-a passing advisory, a failing maintenance obligation, or silent success?
-
-#### BBQ for Q04
-
-A warehouse permit allows ten stored crates, and an inspection finds only six.
-The site is compliant, but the permit can now be tightened. In this picture:
-the crates are residual findings, the permit is the baseline allowance, and
-the inspection result is the checker outcome.
-
-#### Options for Q04
-
-- Option D1: Pass and emit a distinct debt-reduced advisory for each stale key.
-  - pro: Rewards cleanup while making the safe baseline reduction visible.
-  - con: Adds non-finding output that consumers must distinguish.
-- Option D2: Fail until every allowance equals the actual count.
-  - pro: Guarantees the tracked baseline is always minimal.
-  - con: Makes fixing a Markdown defect fail the gate for a separate metadata
-    edit.
-- Option D3: Pass silently whenever actual count is below the allowance.
-  - pro: Keeps the checker output limited to failures.
-  - con: Baseline debt can remain overstated indefinitely.
-
-#### Recommended option for Q04 (with arguments for this choice)
-
-Option D1: Pass with a deterministic debt-reduced advisory. A no-growth
-baseline should never punish cleanup, while visible shrink gives maintainers a
-clear follow-up without automatic file mutation.
-
-#### Answer to Q04: option D1 (with reason why it must be accepted as the answer)
-
-Option D1: Accept a passing advisory because it preserves green no-growth
-semantics and still prevents obsolete allowances from becoming invisible.
-
-### Q05: Tracked baseline representation
-
-Question description: The baseline needs a versioned schema keyed by path,
-rule, and count. Which tracked representation should be the public maintenance
-contract?
-
-#### BBQ for Q05
-
-A stock ledger can be a structured register, a simple row list, or a set of
-settings grouped by item. All can count inventory, but they differ in how well
-people and tools detect malformed or duplicated entries. In this picture: the
-stock ledger is the baseline file, an inventory row is one path-rule allowance,
-and the auditor is the checker parser.
-
-#### Options for Q05
-
-- Option E1: Use versioned JSON with an array of explicit path, rule, and count
-  records.
-  - pro: Supports strict schema validation and clear future evolution.
-  - con: Manual edits require JSON punctuation and quoting.
-- Option E2: Use a line-oriented tab-separated format with a version header.
-  - pro: Is compact and easy to diff or generate.
-  - con: Needs a custom escaping and parsing contract for unusual paths.
-- Option E3: Extend `.markdownlint.json` with repository-local baseline data.
-  - pro: Keeps policy inputs in one file.
-  - con: Mixes external rule configuration with measured repository debt and
-    complicates unknown-key validation.
-
-#### Recommended option for Q05 (with arguments for this choice)
-
-Option E1: Use a separate repository-root `.markdownlint-baseline.json` with a
-versioned schema and explicit records. It keeps measured debt separate from
-rule configuration and gives the checker a strict, extensible validation
-boundary.
-
-#### Answer to Q05: option E1 (with reason why it must be accepted as the answer)
-
-Option E1: Accept repository-root `.markdownlint-baseline.json` because baseline
-integrity is easier to validate and review when every key component and the
-public maintenance path are explicit.
-
-### Q06: Diagnostic channel and line syntax
-
-Question description: Every finding must contain path, line, rule, and reason,
-but the precise syntax and the separation between findings, advisories, and
-operational failures are not yet fixed. What output contract should launchers
-and future tools rely on?
-
-#### BBQ for Q06
-
-A station display separates scheduled departures from service alerts while
-using one predictable layout for every train. Mixing the two makes automation
-and passengers guess what each line means. In this picture: departures are
-Markdown findings, service alerts are operational errors or debt advisories,
-and the display layout is the command-line output contract.
-
-#### Options for Q06
-
-- Option F1: Write findings as `path:line: RULE: reason` to standard output and
-  write operational errors and debt advisories to standard error.
-  - pro: Is source-locator friendly and gives consumers a stable channel split.
-  - con: Capturing a complete human report requires both streams.
-- Option F2: Write every message to standard output with textual severity
-  prefixes.
-  - pro: Produces one complete stream for logs.
-  - con: Automated consumers must parse message kinds before extracting
-    findings.
-- Option F3: Emit JSON Lines for all result records.
-  - pro: Gives automation a strongly structured interface.
-  - con: Is less convenient for direct terminal use and editor navigation.
-
-#### Recommended option for Q06 (with arguments for this choice)
-
-Option F1: Use `path:line: RULE: reason` for ordered findings on standard output
-and reserve standard error for operational errors and passing advisories. This
-matches common source-locator expectations while keeping non-finding events out
-of the finding stream.
-
-#### Answer to Q06: option F1 (with reason why it must be accepted as the answer)
-
-Option F1: Accept the split text contract because it satisfies the human
-diagnostic requirement, remains editor-friendly, and avoids treating checker
-health messages as Markdown violations.
