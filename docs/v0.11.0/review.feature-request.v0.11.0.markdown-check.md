@@ -278,7 +278,9 @@ to change.
 
 ### Requested changes for feature-request markdown-check round 1
 
-Requested changes: - Blocking. Q01: define what an enabled rule is under markdownlint default-on
+Requested changes:
+
+- Blocking. Q01: define what an enabled rule is under markdownlint default-on
   semantics, and reconcile that definition with A2's unknown-rule stop so the
   repository's own two-key `.markdownlint.json` remains valid.
 - Blocking. Q05: extend the structured-document classification to the one-title
@@ -595,7 +597,9 @@ decision.
 
 ### Requested changes for feature-request markdown-check round 2
 
-Requested changes: - Blocking. Q05: the frontmatter-`description` criterion exempts 117 of 156
+Requested changes:
+
+- Blocking. Q05: the frontmatter-`description` criterion exempts 117 of 156
   title-less files and leaves 39 failing, 31 of them one-line pointer adapters
   in `.agents/llm-shared/instructions` that the umbrella mandates. Replace the
   criterion with a stated classification covering frontmatter-identified files
@@ -869,7 +873,9 @@ change.
 
 ### Requested changes for feature-request markdown-check round 3
 
-Requested changes: - Q05 classification: the single five-non-blank-line bound gates both adapter
+Requested changes:
+
+- Q05 classification: the single five-non-blank-line bound gates both adapter
   shapes, but the repository's reusable fragments are the three review templates
   at 11, 28, and 29 non-blank lines, each starting at `##` because it is
   substituted into a parent document. Keep the line bound for pointer adapters
@@ -1122,7 +1128,9 @@ clause is bounded.
 
 ### Requested changes for feature-request markdown-check round 4
 
-Requested changes: - Blocking, and caused by the reviewer's own round 3 wording rather than by the
+Requested changes:
+
+- Blocking, and caused by the reviewer's own round 3 wording rather than by the
   writer. Bound the fragment adapter clause: change "its first heading is level
   two or deeper" to "it is under `templates/` and its first heading is level two
   or deeper", keeping the absence of a line-count bound, in the classification
@@ -1133,6 +1141,7 @@ Requested changes: - Blocking, and caused by the reviewer's own round 3 wording 
   371 tracked files is `LICENSE.md`, the one such file. Scoping to `templates/`
   changes no current classification, since all three fragments already live
   there. A `*.template.md` name bound is an equally acceptable alternative.
+
 - Consequence of the same fix: the acceptance case "A structured document with
   no `#` title reports a finding" is currently unsatisfiable by any document
   containing headings, and becomes testable again once the clause is bounded.
