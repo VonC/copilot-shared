@@ -111,8 +111,12 @@ reporting capability is impaired.
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because policy loading, baseline
-comparison, the runner, and the direct launcher do not exist yet.
+Yes. Step 2 has been fully implemented.
+
+Step 2 now provides strict policy loading, immutable baseline
+comparison, one tracked-Markdown inventory, deterministic diagnostics, the
+platform-neutral CLI, and the repository-root Windows launcher. The focused
+Step 2 suite and the full Groundhog day both pass.
 
 ### Goal for Step 2 checker execution
 
@@ -128,27 +132,68 @@ baseline comparison, deterministic diagnostics, and a repository-root launcher.
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- Added closed-catalog `.markdownlint.json` loading with mandatory `MD024` and
+  `MD025` enforcement and the confirmed `MD033` `img` allowance.
+- Added strict version-1 baseline parsing, normalized aggregate path/rule
+  allowances, no-growth failures, and deterministic `debt-reduced`
+  advisories without baseline mutation.
+- Added a single `git ls-files` Markdown inventory, strict UTF-8 source reads,
+  inventory-backed bounded-pointer refinement, deterministic evaluation, and
+  `path:line: RULE: reason` rendering.
+- Added `python -m tools.markdown_check.cli` and root `markdown-check.bat`
+  entry points that converge on `cli.main`.
+- Added the accepted legacy baseline for LS001, LS002, and MD033 only. MD032
+  and MD038 remain unallowlisted and are therefore still enforced for Step 3.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+- `MarkdownPolicy` models validated enabled rules and allowed HTML elements.
+- `BaselineAllowance`, `BaselineComparison`, and `Baseline` model immutable
+  aggregate debt and comparison results.
+- `CheckerResult` and `CheckerRunner` compose the inventory, parser, rule
+  engine, baseline comparison, and output streams.
+- `PolicyError`, `BaselineError`, and `InventoryError` preserve fail-closed
+  operational boundaries.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Pass. Configuration, baseline, inventory/evaluation, and CLI responsibilities
+are separated into `policy.py`, `baseline.py`, `runner.py`, and `cli.py`.
+The Step 1 classifier gained only repository-relative target resolution; the
+runner owns the inventory existence check. Both public commands enter the
+same `cli.main` boundary, and no Node or network dependency was introduced.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Pass. The runner executes one Git inventory command and reads each selected
+Markdown source once. Groundhog duration profiling moved repository setup out
+of measured test calls: the real inventory call dropped from 1.13 seconds to
+below the reporting threshold, and the CLI stream call dropped from 1.09
+seconds to below 0.01 seconds. The irreducible real batch-to-Python launcher
+integration dropped from 1.73 to 0.85 seconds and is recorded at that measured
+baseline through `ghog exclude`; its assertions remain unchanged.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Pass. The exact four-file completion command ran 34 focused tests with no
+failures. Policy, malformed baseline, growth/shrink, Git failure and decoding,
+path containment, pointer refinement, deterministic streams, direct CLI, and
+clean-environment launcher paths are covered. The final detached `ghog day`
+completed with `exit=0`, 1,987 passing tests, and 100 percent coverage.
+
+No unit-tested class is below 100 percent or needs completing.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+Pass. A direct checker run with the populated baseline suppresses only the
+confirmed LS001, LS002, and MD033 legacy counts. Its remaining output contains
+only MD032 and MD038 findings, proving those rules were not weakened or folded
+into the baseline ahead of the Step 3 repository repair. The baseline remains
+an input artifact and is never rewritten by the checker.
 
 ## Step 3. Shared gate and documentation validation
 
