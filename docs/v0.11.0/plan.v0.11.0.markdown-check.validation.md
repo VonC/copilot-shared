@@ -22,8 +22,12 @@ implementation check has taken place yet.
 
 ### Analysis of Step 1 implementation state
 
-Not started. Step 1 is not implemented because the checker source model, rule
-engine, and focused tests do not exist yet.
+Yes. Step 1 has been fully implemented.
+
+The shared source model, pure document classifier, complete Step 1 rule catalog,
+review-heading fence integration, focused examples, and property coverage are
+present. The completed forced Groundhog walk reported `fail=0`, `warn=0`,
+`xfail=0`, `cov=100`, `outliers=0`, `excluded=0`, and `exit=0`.
 
 ### Goal for Step 1 source and rules
 
@@ -39,27 +43,69 @@ Create one fence-aware parsed source model and pure evaluators for the supported
 
 ### What was implemented for Step 1
 
-_(empty — no check has taken place yet.)_.
+- Added immutable source and finding records in
+  `tools/markdown_check/models.py`.
+- Added one fence-aware parse in `tools/markdown_check/source.py` for
+  frontmatter, headings, list boundaries, raw HTML, Markdown links, inline code,
+  source lines, and body metadata.
+- Added the pure bounded-adapter classifier in
+  `tools/markdown_check/classifier.py`.
+- Added pure evaluators for MD001, MD024, MD025, MD032, MD033, MD038, LS001,
+  LS002, and LS003 in `tools/markdown_check/rules.py`; MD001 compares
+  consecutive headings and leaves first-heading policy to MD041.
+- Reused `fenced_line_numbers` from the shared parser in
+  `tools/review_markdown_headings.py`, preserving existing heading-rendering
+  behavior.
+- Added focused source-model and rule tests plus Hypothesis coverage for invalid
+  consecutive heading increments, a fragment beginning at level two, and
+  normalized heading collisions under `tests/unit/tools/markdown_check/`.
 
 ### New types or classes introduced for Step 1
 
-_(empty — no check has taken place yet.)_.
+- `SourceLine`, `Frontmatter`, `Heading`, `ListBlock`, `RawHtml`,
+  `MarkdownLink`, `InlineCode`, `MarkdownSource`, and `Finding` are immutable
+  records for parsed source and diagnostics.
+- `DocumentKind` and `DocumentClassification` represent the pure structured or
+  adapter classification and its reason.
 
 ### Architecture check for Step 1
 
-_(empty — no check has taken place yet.)_.
+The source adapter owns Markdown tokenization, the classifier consumes only the
+immutable source model, and the rules consume only source and classification
+values. Rule evaluation performs no filesystem access or output, while the
+existing review-heading module depends only on the shared fence boundary
+function. This preserves clear parsing, policy, and presentation boundaries and
+introduces no DDD-Hexagonal dependency inversion or layer leak.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 1
 
-_(empty — no check has taken place yet.)_.
+Each source is split and parsed once. Fence, frontmatter, heading, list, HTML,
+link, and inline-code scans are linear in source size or token count; pure rule
+evaluation is linear in the collected tokens. No new quadratic or `O(n log n)`
+source traversal is present.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 1
 
-_(empty — no check has taken place yet.)_.
+The unit suites cover the source-model records through parser results, both
+document classifications, every supported rule, adapter exemptions, MD038 edge
+cases, clean rule paths, both fence styles, UTF-8 headings, line locations,
+level-two fragment starts, and property-generated hierarchy and normalization
+cases. The completed forced full walk reported `cov=100`, with no uncovered
+Step 1 line.
+
+No unit-tested class is below 100 percent or needs completing.
 
 ### Feature integrity for Step 1
 
-_(empty — no check has taken place yet.)_.
+The existing `tests/unit/tools/test_review_markdown_headings_tdd.py` suite passed
+with the shared fence scanner, including backtick and tilde fences and
+idempotent round qualification. The forced full suite passed with no failures,
+warnings, xfails, duration outliers, or exclusions, so no existing feature or
+reporting capability is impaired.
 
 ## Step 2. Policy, baseline, and launcher validation
 
