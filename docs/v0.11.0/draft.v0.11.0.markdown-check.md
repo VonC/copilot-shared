@@ -21,6 +21,8 @@ The non-negotiable inherited constraints are:
 
 - use the repository's declared `.markdownlint.json` policy, including disabled
   MD013 and MD033 limited to `img`;
+- enforce MD032 so every list is surrounded by blank lines and cannot merge
+  accidentally with the prose before or after it;
 - implement the unattended check in Python because Node and a reachable package
   network are unavailable;
 - report each finding with its path, line, rule, and reason;
@@ -77,7 +79,8 @@ A Diátaxis reference page should state which rules are enforced and why the two
 heading rules cannot be disabled. The checker must also validate the complete
 heading outline: one level-one document title, multiple level-two sections with
 their level-three subsections, no skipped levels, and no repeated heading title
-anywhere in the file.
+anywhere in the file. It must also reject lists that are not surrounded by blank
+lines under MD032.
 
 The checker has to work in this environment: no Node runtime is installed, so
 the markdownlint CLI is unavailable, and package downloads fail because the

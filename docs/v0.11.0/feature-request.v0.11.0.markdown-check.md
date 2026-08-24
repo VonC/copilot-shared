@@ -19,6 +19,9 @@ the same shared gate as other lint errors.
   Markdownlint treats rules omitted from that file as enabled by default, while
   the bounded Python catalog needs an explicit interpretation of which rules
   are enabled for this checker.
+- MD032 is omitted from `.markdownlint.json` and therefore remains enabled. The
+  checker must enforce blank lines before and after lists so list markers cannot
+  merge accidentally with adjacent prose.
 - `instructions/review-requestor.md` requires one top-level transcript title
   and unique heading text, and it forbids disabling MD024 or MD025 to make a
   transcript pass.
@@ -113,7 +116,8 @@ mandatory even if a later configuration edit attempts to disable them. The
 published supported rule catalog is the enabled set: every catalog rule runs
 unless the configuration disables it, configuration may only disable or
 configure catalog rules, and a key outside the catalog stops the checker with a
-clear error.
+clear error. MD032 belongs to that supported catalog and applies its
+blanks-around-lists semantics to every checked file.
 
 ### Runtime independence for markdown-check
 
@@ -181,6 +185,7 @@ at zero and therefore have no baseline entries.
 ### Repository-policy acceptance cases for markdown-check
 
 - MD013 remains disabled under the current repository configuration.
+- MD032 reports a list without a blank line before or after its list block.
 - MD033 permits `img` and reports other raw HTML elements under the current
   repository configuration.
 - Every reported violation includes path, line, rule, and reason.
