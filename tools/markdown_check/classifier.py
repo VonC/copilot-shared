@@ -44,22 +44,25 @@ def _in_pointer_root(path: PurePosixPath) -> bool:
     return any(normalized.startswith(root) for root in _POINTER_ROOTS)
 
 
-def _relative_markdown_target(source_path: PurePosixPath, target: str) -> bool:
-    """Validate one syntactic repository-relative Markdown link target."""
+def resolve_markdown_target(
+    source_path: PurePosixPath,
+    target: str,
+) -> PurePosixPath | None:
+    """Resolve one syntactic repository-relative Markdown link target."""
     parsed = urlsplit(target)
     if parsed.scheme or parsed.netloc or not parsed.path or parsed.path.startswith("/"):
-        return False
+        return None
     if PurePosixPath(parsed.path).suffix.lower() != ".md":
-        return False
+        return None
     parts = list(source_path.parent.parts)
     for part in PurePosixPath(parsed.path).parts:
         if part == "..":
             if not parts:
-                return False
+                return None
             parts.pop()
             continue
         parts.append(part)
-    return bool(parts)
+    return PurePosixPath(*parts) if parts else None
 
 
 def _is_bounded_pointer(source: MarkdownSource) -> bool:
@@ -68,7 +71,7 @@ def _is_bounded_pointer(source: MarkdownSource) -> bool:
         _in_pointer_root(source.path)
         and len(source.body_lines) <= _MAX_POINTER_LINES
         and any(
-            _relative_markdown_target(source.path, link.target)
+            resolve_markdown_target(source.path, link.target) is not None
             for link in source.links
         )
     )
@@ -91,7 +94,12 @@ def classify_document(source: MarkdownSource) -> DocumentClassification:
     return DocumentClassification(DocumentKind.STRUCTURED, "default")
 
 
-__all__ = ["DocumentClassification", "DocumentKind", "classify_document"]
+__all__ = [
+    "DocumentClassification",
+    "DocumentKind",
+    "classify_document",
+    "resolve_markdown_target",
+]
 
 
 # eof
