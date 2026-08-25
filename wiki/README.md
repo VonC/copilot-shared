@@ -192,6 +192,7 @@ Exact descriptions of commands, formats, files, and supported behavior.
 
 ### AI-assisted development workflow reference
 
+- 🤖 [Markdown checker](reference/markdown-checker.md)
 - 🤖 [Skills catalog](reference/skills-catalog.md)
 - 🔁 [pw launcher](reference/pw-launcher.md)
 - 📝 [Artifact files and naming conventions](reference/artifact-files.md)

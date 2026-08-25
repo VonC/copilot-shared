@@ -25,14 +25,20 @@ be handed directly as context.
 ## 📚 The wiki: documentation on the Diátaxis model
 
 The [wiki](wiki/README.md) is the full documentation, organized on the
-[Diátaxis](https://diataxis.fr/) model: tutorials to learn the workflow by
-doing, how-to guides for one precise goal each, references for the exact
-commands and formats, and explanations for the reasoning behind the
-design. Each page carries the emoji of its main theme: 📝 the document
+[Diátaxis](https://diataxis.fr/) model: explanations for the reasoning behind
+the design, tutorials to learn the workflow by doing, how-to guides for one
+precise goal each, then references for exact commands and formats. Each page
+carries the emoji of its main theme: 📝 the document
 pipeline, 🔁 self-review and handoff, 🧪 the groundhog test gate, 📊 the
 shared trail, or 🤖 llm-shared as a whole.
 
 This README stays the at-a-glance tour; the wiki is where to go deeper.
+
+Repository Markdown is checked against the supported local policy by
+`markdown-check.bat` and the shared `check.bat` gate. See the
+[Markdown checker reference](wiki/reference/markdown-checker.md) for the rule
+catalog, MD032, MD038, and MD050 boundaries, diagnostic streams, baseline
+schema, and direct commands.
 
 For a separate-agent assessment, start with
 [why independent review mode separates authority](wiki/explanation/independent-review-mode-and-human-authority.md).
