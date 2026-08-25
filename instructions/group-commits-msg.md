@@ -42,7 +42,7 @@ The context that can inform how you will group those files can be:
 
 5. Replace the content of the project-root `a.commit` (`%PRJ_DIR%\a.commit`, never a copy under `docs/` or another subfolder) with the generated groups and commit messages. Each group must be separated by an empty line in `a.commit`.
 
-6. Format `a.commit` with the `wrap_commit` tool so each ```log block fits within 80 characters and follows the inline-backtick rules. This keeps the file canonically formatted before the user reviews it.
+6. Format `a.commit` with the `wrap_commit` tool so each fenced `log` block fits within 80 characters and follows the inline-backtick rules. This keeps the file canonically formatted before the user reviews it.
 
    Before running the formatting command, read [`../rules/run_commands.md`](../rules/run_commands.md).
 

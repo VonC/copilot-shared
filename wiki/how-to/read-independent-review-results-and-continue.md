@@ -40,12 +40,15 @@ returned `paths` object even when a neighbouring filename looks predictable.
 3. Resume the owning skill rather than composing a direct launcher sequence:
 
    - specification: run `$llm-shared:spec-review-requestor` to replay the
-     authorized consolidation;
+     authorized consolidation; its owning workflow commits the answered
+     specification alone before changing or stripping it;
    - code: run `$llm-shared:code-review-requestor on <plan-path> step <n>` to
      replay the authorized commit.
 
 4. Do not ask the human again when durable authorization is already pending.
-5. The requestor completes the exchange only after the owning action succeeds.
+5. For specification consolidation, verify that the snapshot commit contains
+   only the reviewed document and that the index is empty before the fold.
+6. The requestor completes the exchange only after the owning action succeeds.
    On failure, leave authorization pending for a later replay.
 
 For an expired or stopped exchange, use

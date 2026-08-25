@@ -93,6 +93,17 @@ disabled to make a transcript pass.
 
 ## Automated requestor sequence
 
+Intermediate rounds use reciprocal active waits across the two agent sessions.
+After the requestor publishes a request, it waits for the answer. After the
+reviewer publishes a `changes-requested` answer, that same reviewer invocation
+waits for the replacement request. The requestor consumes the answer, updates
+the reviewed work, continues the round, and publishes that replacement while
+the reviewer is already waiting. No human prompt or new reviewer invocation
+belongs between those actions. Each role runs one bounded protocol wait for its
+counterpart rather than an external polling loop. A convergence answer ends
+this automatic exchange at the durable human gate instead of starting the
+reviewer's next wait.
+
 1. Call `status` with the exact context. Exit `3` with outcome `disabled` means
    the calling workflow follows its existing non-review path and creates no
    exchange artifacts.
@@ -110,7 +121,9 @@ disabled to make a transcript pass.
 6. For an intermediate answer, call `consume-answer` with
    `--reviewed-work-changed true` or `false` and add `--disagreement` only for
    an explicit disagreement. If automation remains active, call `continue`,
-   author the replacement request, publish it, and wait again.
+   author the replacement request, publish it, and wait again. The reviewer is
+   already in its post-answer `wait-request`; successful replacement
+   publication releases that wait into the next reviewer assessment.
 7. At convergence, retain the answer and present the specialized assessment,
    reviewer recommendation, identity summary, and registered labels to the
    human. The reviewer cannot call `confirm`.

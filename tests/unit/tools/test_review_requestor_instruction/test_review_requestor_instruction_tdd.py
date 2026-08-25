@@ -12,19 +12,34 @@ from tools import prompt_workflow_steps as steps
 _MAX_WORKFLOW_LINES = 15
 
 
+def _assert_contains_all(content: str, fragments: tuple[str, ...]) -> None:
+    """Report every required fragment missing from one requestor instruction."""
+    missing = tuple(fragment for fragment in fragments if fragment not in content)
+    assert not missing, f"missing requestor fragments: {missing!r}"
+
+
 def test_canonical_requestor_delegates_every_mutation_to_launcher() -> None:
     """The canonical body names the launcher and core without copying a table."""
     root = steps.llm_shared_dir()
     content = (root / "instructions/review-requestor.md").read_text(encoding="utf-8")
+    normalized = " ".join(content.split())
 
-    assert "review_exchange.bat" in content
-    assert "ReviewExchangeCore" in content
-    assert "--content-file" in content
-    assert "--summary-file" in content
-    assert "--guidance-file" in content
-    assert "one final JSON object" in content
-    assert "standard error" in content
+    _assert_contains_all(
+        content,
+        (
+            "review_exchange.bat",
+            "ReviewExchangeCore",
+            "--content-file",
+            "--summary-file",
+            "--guidance-file",
+            "one final JSON object",
+            "standard error",
+            "reciprocal active waits",
+            "No human prompt or new reviewer invocation",
+        ),
+    )
     assert "| Request | Answer |" not in content
+    assert "reviewer is already in its post-answer `wait-request`" in normalized
 
 
 def test_provider_files_redirect_directly_to_canonical_instruction() -> None:

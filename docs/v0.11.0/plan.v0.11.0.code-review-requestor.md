@@ -303,7 +303,7 @@ Step framing:
 **Classes and behavior**:
 
 - `prompt_workflow_code_review`: derive exact plan-step context, inspect only exact code-exchange paths, and render/resume specialized routes.
-- `render_step_command`: append the literal trailing form ` step <id>` after the ordinary `<skill> on <document>` command, preserving the ordinary command as a byte-identical strict prefix.
+- `render_step_command`: append a literal space followed by `step <id>` after the ordinary `<skill> on <document>` command, preserving the ordinary command as a byte-identical strict prefix.
 - CLI/skill modules: delegate parser and route work to the focused module.
 - Writer instructions: sample marker once after grouping and run the exact `pw` output.
 

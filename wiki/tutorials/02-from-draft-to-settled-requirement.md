@@ -90,11 +90,13 @@ item branch, and keeps the umbrella intact. The child records its parent:
 - Umbrella: docs/v10.0.0/draft.v10.0.0.sentinel.md
 ```
 
-The continuation then presents the complete focused draft and stops. Review the
-derived boundary before any requirement is written. Comments revise only the
-child and return to the same pause; say `Go ahead` only when the draft expresses
-the intended item. The skill then hands that approved child to
-`/write-requirement`.
+The continuation writes that child as the canonical
+`<effort-dir>/draft.vX.Y.Z.<item-slug>.md` file in the item branch, reads it
+back to verify it exists, and then stops. Review the file itself before any
+requirement is written. The complete copy shown in conversation is only a
+preview. Comments revise only the on-disk child and return to the same pause;
+say `Go ahead` only when that file expresses the intended item. The skill then
+hands the approved child to `/write-requirement`.
 
 After the item's last implementation check, the umbrella row becomes
 `completed` and records the requirement and validation-plan paths. Once that
@@ -118,12 +120,14 @@ the chat, for example: `Q01: option A2. Q02: option B1.`
 ## 5. Consolidate and settle
 
 Run (or accept) `/consolidate-then-review-ask-questions on docs\...`. The
-skill folds each answer into the document body, records them in a decision
-table, strips the open-questions section, and either asks a new round or
+skill first clears the index without touching the working tree and commits the
+requirement alone with its answered questions. It verifies that the index is
+empty, then folds each answer into the document body, records the decisions in
+a table, strips the open-questions section, and either asks a new round or
 declares the document settled. When it settles, `pw skill` hands off to
-`/write-design`. The design writer then uses `pw skill --after-write design`
-to force design review, and the plan writer uses `pw skill --after-write plan`
-to force plan review. Bare `pw skill` remains the state-based handoff after a
+`/write-design`. The design writer then uses `pw skill --after-write design` to
+force design review, and the plan writer uses `pw skill --after-write plan` to
+force plan review. Bare `pw skill` remains the state-based handoff after a
 review or consolidation has actually settled a document.
 
 ## 6. Look at what landed on disk
@@ -131,6 +135,7 @@ review or consolidation has actually settled a document.
 ```txt
 docs\vX.Y.Z\draft.vX.Y.Z.<slug>.md            the classified draft
 docs\vX.Y.Z\feature-request.vX.Y.Z.<slug>.md  the requirement with its decision table
+Git history                                      one-file snapshot of the answered questions
 a.prompt_memory                                the branch-locked workflow state
 ```
 

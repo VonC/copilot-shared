@@ -64,7 +64,10 @@ imagine it finds that the route-warning requirement never says what happens
 when a trail has no severity value.
 
 The reviewer does not edit the specification or choose for the human. Its
-published answer becomes durable exchange evidence.
+published answer becomes durable exchange evidence. Because the disposition is
+`changes-requested`, the reviewer immediately enters its next bounded
+`wait-request` in the same session. Leave it running; do not invoke the
+reviewer skill again for round 2.
 
 ## 4. Apply the answer and publish round 2
 
@@ -77,19 +80,16 @@ records the change in its writer response.
 
 The requestor consumes that intermediate answer, continues the same exchange,
 and publishes round 2. The round number changes; the umbrella and reviewed
-specification identity do not.
+specification identity do not. That publication releases the reviewer session
+that is already waiting.
 
 ### Reviewer agent session — assess specification round 2
 
-Run the reviewer skill again in the reviewer session:
-
-```text
-$llm-shared:spec-reviewer
-```
-
-This time the reviewer finds the questions and answers complete and publishes a
-convergence recommendation. Exit `3` is the expected stop at the human gate,
-not an authorization or a failed review.
+Without another command from you, the active reviewer reads the returned round
+2 request, finds the questions and answers complete, and publishes a
+convergence recommendation. It does not start another wait after convergence.
+Exit `3` is the expected stop at the human gate, not an authorization or a
+failed review.
 
 ## 5. Make the human choice
 
@@ -104,13 +104,16 @@ its own assessment, and exactly these choices:
 Only your `Consolidate` choice authorizes the owning workflow to fold the
 settled answers into the specification. The recommendation alone does not
 authorize consolidation. Choose `Revise and review again` when another
-independent round is needed.
+independent round is needed. After authorization, the owning workflow first
+commits the answered specification alone, then performs the fold and completes
+the exchange.
 
 ## What you learned
 
 One specification exchange keeps the umbrella, reviewed specification, and
-round visible; moves from the requestor's bounded wait to a separate reviewer;
-returns through `paths.answer`; and stops at a human-owned consolidation gate.
+round visible; alternates automatically through requestor and reviewer waits;
+returns exact paths for each counterpart artifact; and stops at a human-owned
+consolidation gate.
 
 This page describes the observable journey. The canonical
 [specification-requestor instruction](../../instructions/spec-review-requestor.md)

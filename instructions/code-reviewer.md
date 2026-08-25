@@ -2,8 +2,9 @@
 
 Use this instruction only when `pw` routes one exact implementation plan and
 step to `code-reviewer`. The reviewer independently assesses the staged step,
-may make bounded attributable repairs, and publishes one paired advisory
-answer. It never authorizes a commit or takes requestor or human authority.
+may make bounded attributable repairs, and publishes paired advisory answers
+across automatic intermediate rounds. It never authorizes a commit or takes
+requestor or human authority.
 
 Read and follow `instructions/review-requestor.md` and
 `instructions/implementation-check.md` in full before running any operation.
@@ -37,9 +38,10 @@ and exact paths returned by the launchers.
    once, require `request-pending` with the same identity and round, and then
    continue. This applies whether the expired request is first seen cold or
    the lease expires during the same reviewer session.
-2. Run one bounded `wait-request` through `bin/review_exchange.bat` with that
-   context. Read only the returned `paths.request` after access is granted.
-   Never add a polling loop or reconstruct an artifact path.
+2. Run one bounded `wait-request` per round through
+   `bin/review_exchange.bat` with that context. Read only the returned
+   `paths.request` after access is granted. Never add a polling loop or
+   reconstruct an artifact path.
 3. Validate the request envelope and its human-readable umbrella or `none`,
    plan, step, round, request-time index tree, resolved validation set, and
    optional literal `Human guidance:` block. Read the exact plan, named step,
@@ -69,9 +71,23 @@ and exact paths returned by the launchers.
     output through `--content-file` and the paired summary through
     `--summary-file`. Never publish or append either output by hand.
 11. When the final JSON reports `outcome: published`, retire the manifest
-    through `bin/code_review_evidence.bat` and stop. Publication exits `0` for
+    through `bin/code_review_evidence.bat`. Publication exits `0` for
     `changes-requested` and exit `3` for `commit-ready` at the convergence gate;
     both are successful publication outcomes.
+12. After a `changes-requested` publication returns `answer-pending`,
+    immediately run the next bounded `wait-request` in this same reviewer
+    session. Do not report the round as finished, return control to the user,
+    or require another reviewer invocation. Waiting does not transfer requestor
+    authority: the requestor still consumes the answer, assesses repairs,
+    continues the exchange, and publishes the replacement request.
+13. When the wait returns `found` with `request-pending`, require the same code
+    identity and step, the next reviewer-owned round, and a positive exchange
+    occurrence. Read only the returned `paths.request` and continue at Step 3.
+    Repeat the assess, publish, and wait cycle for every intermediate round.
+14. After `commit-ready` publication returns `convergence-gate`, stop for the
+    human commit choice instead of starting another wait. Also stop on any
+    terminal wait outcome under the shared timeout, escalation, and recovery
+    contract.
 
 ## Exact evidence delegation
 
@@ -186,5 +202,8 @@ artifacts by hand.
 
 Do not run a `commit`, invoke batch commit, consume the answer, confirm the
 convergence gate, complete the exchange, edit the transcript, or perform the
-requestor's owning workflow. Stop after the publication result and return
-control to the requestor.
+requestor's owning workflow. Remaining active in `wait-request` after a
+`changes-requested` publication does not cross that boundary: the reviewer
+observes until the requestor publishes the next round, then resumes only its
+reviewer-owned assessment. Stop after a convergence publication or any shared
+terminal result.

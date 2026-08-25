@@ -146,7 +146,8 @@ Connect post-grouping activation, explicit step transport, live exchange routing
 - Added an exact-path code-review routing adapter with the settled family
   policy, marker-gated cold entry, live-state precedence, and fail-closed
   identity validation.
-- Added step-aware command rendering using the literal ` step <id>` suffix
+- Added step-aware command rendering using a literal space followed by the
+  `step <id>` suffix
   while preserving ordinary rendering byte-for-byte.
 - Integrated the specialized requestor route and `code-review-commit` command
   into `pw`, delegating successful authorization to the existing strict batch

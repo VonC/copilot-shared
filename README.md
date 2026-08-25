@@ -25,20 +25,31 @@ be handed directly as context.
 ## 📚 The wiki: documentation on the Diátaxis model
 
 The [wiki](wiki/README.md) is the full documentation, organized on the
-[Diátaxis](https://diataxis.fr/) model: tutorials to learn the workflow by
-doing, how-to guides for one precise goal each, references for the exact
-commands and formats, and explanations for the reasoning behind the
-design. Each page carries the emoji of its main theme: 📝 the document
+[Diátaxis](https://diataxis.fr/) model: explanations for the reasoning behind
+the design, tutorials to learn the workflow by doing, how-to guides for one
+precise goal each, then references for exact commands and formats. Each page
+carries the emoji of its main theme: 📝 the document
 pipeline, 🔁 self-review and handoff, 🧪 the groundhog test gate, 📊 the
 shared trail, or 🤖 llm-shared as a whole.
 
 This README stays the at-a-glance tour; the wiki is where to go deeper.
 
+Repository Markdown is checked against the supported local policy by
+`markdown-check.bat` and the shared `check.bat` gate. See the
+[Markdown checker reference](wiki/reference/markdown-checker.md) for the rule
+catalog, MD032, MD038, and MD050 boundaries, diagnostic streams, baseline
+schema, and direct commands.
+
 For a separate-agent assessment, start with
 [why independent review mode separates authority](wiki/explanation/independent-review-mode-and-human-authority.md).
 That opt-in exchange is distinct from the established
 [self-review loop](wiki/explanation/why-the-llm-reviews-its-own-work.md) inside
-the normal document and implementation workflow.
+the normal document and implementation workflow. Its main purpose is an
+automatic requestor-reviewer exchange across intermediate rounds: the
+requestor waits after publishing each request, and the reviewer waits after
+publishing each change request, so replacement rounds continue in the same two
+sessions without another human prompt. Only convergence, recovery, or a bounded
+wait failure stops that exchange.
 
 ---
 
@@ -99,13 +110,13 @@ after the trigger completes.
 | Phase | Trigger | Output artifact |
 | --- | --- | --- |
 | Draft capture | Author writes free-form notes | a raw draft note |
-| Process draft | `/process-draft` | a direct draft classified and branched; an umbrella child also pauses for human approval before requirement writing |
+| Process draft | `/process-draft` | a direct draft classified and branched; an umbrella continuation writes and verifies the focused child Markdown file in the item branch before pausing for human approval |
 | Split (optional) | `/split-and-define` | `List of feature-requests and issues to create` section appended to the draft |
 | Define each item | `/write-requirement <type> vX.Y.Z <topic>` | `docs\feature-request.vX.Y.Z.<topic>.md` or `docs\issue.vX.Y.Z.<topic>.md` |
-| Review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` | Open questions folded into a decision table; document approved |
+| Review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` | one-file Git snapshot of the answered questions, then questions folded into a decision table; document approved |
 | Design | `/write-design` | `docs\design.vX.Y.Z.<topic>.md` with acceptance scenarios |
 | Plan | `/write-plans` | `docs\plan.vX.Y.Z.<topic>.md` + `docs\plan.vX.Y.Z.<topic>.validation.md` |
-| Plan review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` on the plan | Plan open questions folded into a decision table; plan approved (the validation plan is left untouched) |
+| Plan review loop | `/review-ask-questions` then `/consolidate-then-review-ask-questions` on the plan | one-file Git snapshot of the answered plan questions, then questions folded into a decision table; plan approved (the validation plan is left untouched) |
 | Implement and check | `/implement-step N`, then `pw handoff` chains `/implementation-check N` | Code, tests, and updates to the validation document |
 | Group commits | `pw handoff after-check` routes a `Yes` step to `/group-commits-msg`; `gcba` replays | `a.commit` with one conventional commit per group, replayed by `gcba` |
 | Merge and reword | Merge a feature into `develop`, or work into `main`, with `--no-ff`; then run `/update-merge-commit-msg` and `grmc` | Merge commit with a conventional message tied to the merged docs |
@@ -120,11 +131,15 @@ see [Automated implement cycle with pw handoff](#-automated-implement-cycle-with
 
 The document rows above (define  --  review  --  consolidate  --  design  --
 plan) chain the same way through `pw skill`: each writer runs its explicit
-`pw skill --after-write <role>` handoff, while consolidation runs bare
-`pw skill`, and both follow the command printed, so the only trigger the author
-types is the first one. A direct draft stops at `/review-ask-questions`; a
-focused child derived from an umbrella first stops for the author to approve or
-revise that draft before requirement writing  --  see
+`pw skill --after-write <role>` handoff. Before consolidation changes any
+requirement, design, or plan, it resets the index, commits that document alone
+with its answered questions, verifies the index is empty, then folds the
+answers and runs bare `pw skill`. Both handoffs follow the command printed, so
+the only trigger the author types is the first one. A direct draft stops at
+`/review-ask-questions`; a
+focused child derived from an umbrella is first written and verified as a real
+file in the item branch, then stops for the author to review, approve, or revise
+that file before requirement writing  --  see
 [Automated document phase with pw skill](#-automated-document-phase-with-pw-skill).
 
 ---
@@ -274,24 +289,24 @@ Legend for the transitions:
                   +-----------------+
                   |                 |----+  == pw skill ==> /review-ask-questions
                   | requirement doc |    |  [STOP] a human answers the Q0x | Title |
-                  |                 |<---+  Recommended table; /consolidate folds them
-                  +--------+--------+       and loops here, or settles
+                  |                 |<---+  table; /consolidate snapshots this doc alone,
+                  +--------+--------+       then folds them and loops or settles
                            |
                            |  settled == pw skill ==> /write-design
                            v
                   +-----------------+
                   |                 |----+  == pw skill ==> /review-ask-questions
                   |   design doc    |    |  [STOP] a human answers the Q0x table;
-                  |                 |<---+  /consolidate loops here, or settles
-                  +--------+--------+
+                  |                 |<---+  /consolidate snapshots this doc alone,
+                  +--------+--------+       then loops here or settles
                            |
                            |  settled == pw skill ==> /write-plans
                            v
                   +-----------------+
                   |     plan +      |----+  == pw skill ==> /review-ask-questions
                   | validation plan |    |  [STOP] a human answers the Q0x table
-                  |                 |<---+  (plan only); /consolidate loops or settles
-                  +--------+--------+
+                  |                 |<---+  (plan only); /consolidate snapshots the plan
+                  +--------+--------+       alone, then loops or settles
                            |
                            |  settled == pw skill ==> /implement-step N (enters chain)
                            v
@@ -390,9 +405,11 @@ the items differ in dependency order, or when the author wants the skill
 to suggest a slug per item.
 
 For a later umbrella item, `/process-draft ... based on <slug>` creates the
-focused child and item branch, presents the complete child for review, and
-waits. Corrections revise only that child and return to the same pause; an
-explicit `Go ahead` releases the handoff to `/write-requirement`.
+item branch, writes and verifies the canonical focused child Markdown file, and
+waits while the author reviews that file. A copy shown in conversation is only
+a preview, never the review artifact. Corrections revise only the on-disk child
+and return to the same pause; an explicit `Go ahead` releases the handoff to
+`/write-requirement`.
 
 ---
 

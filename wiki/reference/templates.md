@@ -87,7 +87,7 @@ Their identity, artifact, and result relationships are summarized in the
 ## 🏷️ prepare-release-notes.version-txt.template.txt
 
 Plain text, not markdown. First line
-`X.Y.Z-SNAPSHOT -- Release notes summary for version X.Y.Z` (the ` -- `
+`X.Y.Z-SNAPSHOT -- Release notes summary for version X.Y.Z` (the space-delimited `--`
 separator is load-bearing), three witty title and subtitle pairs, the
 main theme paragraph, an optional secondary theme, and a
 `### Key changes` list of three bullets. After the title choice, line one

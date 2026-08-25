@@ -64,7 +64,11 @@ and developed further in [Why the LLM reviews its own work](explanation/why-the-
 An opt-in **independent review mode** adds a separate requestor, reviewer, and
 human gate around settled specification and implementation work. Start with
 [why independent review mode separates authority](explanation/independent-review-mode-and-human-authority.md)
-to see how it differs from the self-review loop.
+to see how it differs from the self-review loop. Its main goal is the automatic
+exchange between those two agent sessions: the requestor actively waits after a
+request, the reviewer actively waits after a change-request answer, and each
+replacement round wakes the counterpart without another user instruction.
+Convergence still stops at the human gate.
 
 ## Four officially supported AI environments
 
@@ -188,6 +192,7 @@ Exact descriptions of commands, formats, files, and supported behavior.
 
 ### AI-assisted development workflow reference
 
+- 🤖 [Markdown checker](reference/markdown-checker.md)
 - 🤖 [Skills catalog](reference/skills-catalog.md)
 - 🔁 [pw launcher](reference/pw-launcher.md)
 - 📝 [Artifact files and naming conventions](reference/artifact-files.md)

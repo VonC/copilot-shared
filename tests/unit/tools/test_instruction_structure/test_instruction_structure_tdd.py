@@ -28,6 +28,12 @@ def _read(name: str) -> str:
     return (_INSTRUCTIONS / name).read_text(encoding="utf-8")
 
 
+def _assert_contains_all(content: str, fragments: tuple[str, ...]) -> None:
+    """Report every required fragment missing from one instruction slice."""
+    missing = tuple(fragment for fragment in fragments if fragment not in content)
+    assert not missing, f"missing instruction fragments: {missing!r}"
+
+
 def test_writing_and_consolidate_instructions_carry_a_handoff() -> None:
     """The four writing and consolidation instructions run pw skill in a ## Handoff."""
     for name in (
@@ -39,6 +45,37 @@ def test_writing_and_consolidate_instructions_carry_a_handoff() -> None:
         content = _read(name)
         assert "## Handoff" in content
         assert "pw skill" in content
+
+
+def test_consolidation_commits_one_question_snapshot_before_editing() -> None:
+    """Every document type records its answered questions before the fold."""
+    content = _read("consolidate-then-review-ask-questions.md")
+    snapshot = content.index("## Pre-consolidation question snapshot")
+    integration = content.index("You need to remove `Qxx:` sections")
+    snapshot_contract = " ".join(content[snapshot:integration].split())
+
+    assert snapshot < integration
+    for document_type in (
+        "feature request",
+        "issue",
+        "design",
+        "implementation plan",
+    ):
+        assert document_type in snapshot_contract
+    for required_text in (
+        "plain `git reset`",
+        "git diff --cached --name-only",
+        "git add -A <document-path>",
+        "prints exactly `<document-path>` and no other path",
+        "docs: record pre-consolidation questions",
+        "group-commits-msg.template.md",
+        "wac.bat",
+        "gcba.bat",
+        "--root-a-commit --non-interactive",
+        "do not present another commit menu",
+        "Leave any unrelated working-tree changes unstaged",
+    ):
+        assert required_text in snapshot_contract
 
 
 def test_review_instruction_leaves_the_consolidation_hint() -> None:
@@ -67,11 +104,59 @@ def test_umbrella_child_stops_for_review_before_requirement_handoff() -> None:
     )[1].split("## Design decisions for process-draft", 1)[0]
     umbrella = " ".join(umbrella.split())
 
-    assert "stop for human review" in umbrella
-    assert "Do not run `pw skill`, enter Step 8" in umbrella
-    assert "only an explicit `Go ahead`" in umbrella
-    assert "update only the focused child draft" in umbrella
+    _assert_contains_all(
+        umbrella,
+        (
+            "stop for human review",
+            "Do not run `pw skill`, enter Step 8",
+            "only an explicit `Go ahead`",
+            "update only the focused child draft",
+            "Write this source as an actual Markdown file",
+            "verify that it is a real file",
+            "git status --short -- <child-path>",
+            "path-scoped status is clean",
+            "Recovery exception",
+            "truthful, material focused-draft change",
+            "lead with the exact path-scoped Git status entry",
+            "review the file itself",
+            "conversation copy is only a convenience",
+        ),
+    )
+    _assert_contains_all(
+        content,
+        (
+            "produce a real Markdown child draft on disk",
+            "new working-tree result of the current continuation",
+            "Merely finding an unchanged tracked file",
+        ),
+    )
     assert "run the selection straight away" in initial_handoff
+
+
+def test_process_draft_docs_keep_the_on_disk_umbrella_child_contract() -> None:
+    """README and Diataxis pages keep the file-backed child review gate."""
+    root = steps.llm_shared_dir()
+    pages = {
+        "README": (root / "README.md").read_text(encoding="utf-8"),
+        "tutorial": (
+            root / "wiki/tutorials/02-from-draft-to-settled-requirement.md"
+        ).read_text(encoding="utf-8"),
+        "how-to": (root / "wiki/how-to/split-a-mixed-draft.md").read_text(
+            encoding="utf-8",
+        ),
+        "reference": (root / "wiki/reference/artifact-files.md").read_text(
+            encoding="utf-8",
+        ),
+    }
+
+    assert "writes and verifies the canonical focused child Markdown file" in pages[
+        "README"
+    ]
+    assert "Review the file itself" in pages["tutorial"]
+    assert "Review that file itself" in pages["how-to"]
+    assert "required on-disk artifact" in pages["reference"]
+    for content in pages.values():
+        assert "preview" in content
 
 
 def test_process_draft_offers_and_passes_every_docs_layout() -> None:

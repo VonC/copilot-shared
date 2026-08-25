@@ -10,6 +10,45 @@ section. Read [`../rules/docs_layout.md`](../rules/docs_layout.md) and preserve
 the document's effort directory. Do not leave the questions and their options;
 consolidation integrates the chosen answers into the document.
 
+## Pre-consolidation question snapshot
+
+Before changing the document or running any `oqm` mode, commit the exact
+`<document-path>` alone so Git retains the answered questions as they appeared
+immediately before consolidation. This applies equally to a feature request,
+issue, design, or implementation plan. Read
+[`group-commits-msg.md`](group-commits-msg.md),
+[`../templates/group-commits-msg.template.md`](../templates/group-commits-msg.template.md),
+[`../rules/blacklist.md`](../rules/blacklist.md), and
+[`../rules/run_commands.md`](../rules/run_commands.md) before creating the
+snapshot.
+
+Run this sequence from the project root:
+
+1. Run plain `git reset` to clear the index without changing the working tree.
+   Never use `--hard`, restore a file, or discard an unrelated change. Confirm
+   that `git diff --cached --name-only` prints nothing.
+2. Run `git add -A <document-path>` for the exact document only. Confirm that
+   `git diff --cached --name-only` prints exactly `<document-path>` and no other
+   path. The document must have a staged change; do not manufacture an empty
+   snapshot commit when it is already identical to `HEAD`.
+3. Replace the project-root `a.commit` with exactly one group following the
+   group-commit template. Use this conventional title:
+   `docs: record pre-consolidation questions`. The `Why:` text must explain
+   that consolidation will remove the answered question blocks; the `What:`
+   list must name only `<document-path>` and state that its answered questions
+   are recorded unchanged.
+4. Run `& "<LLM_SHARED_DIR>\bin\wac.bat"` to format `a.commit`, then run
+   `& "<LLM_SHARED_DIR>\bin\gcba.bat" --root-a-commit --non-interactive`.
+   This one-file snapshot is part of the already-requested or durably authorized
+   consolidation, so do not present another commit menu.
+5. Confirm that the batch command succeeded, the new `HEAD` commit contains
+   exactly `<document-path>`, and `git diff --cached --name-only` again prints
+   nothing. Leave any unrelated working-tree changes unstaged.
+
+If any check fails, stop before editing or stripping the questions. Report the
+exact failure and keep the pre-consolidation document intact. Only a successful
+one-file snapshot commit grants the next consolidation step.
+
 You need to remove `Qxx:` sections and integrate their answers within the
 document. Once every answer is integrated, remove the whole `## Open questions`
 section with `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"`

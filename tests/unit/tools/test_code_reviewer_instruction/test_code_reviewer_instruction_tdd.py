@@ -13,6 +13,12 @@ def _content() -> str:
     return _INSTRUCTION.read_text(encoding="utf-8")
 
 
+def _assert_contains_all(content: str, fragments: tuple[str, ...]) -> None:
+    """Report every required fragment missing from one policy document."""
+    missing = tuple(fragment for fragment in fragments if fragment not in content)
+    assert not missing, f"missing policy fragments: {missing!r}"
+
+
 def test_instruction_delegates_every_executable_boundary_to_launchers() -> None:
     """The instruction sequences launchers instead of cloning their behavior."""
     content = _content()
@@ -34,22 +40,27 @@ def test_instruction_delegates_every_executable_boundary_to_launchers() -> None:
         assert forbidden_clone not in content
 
 
-def test_instruction_pins_policy_identity_and_one_bounded_wait() -> None:
-    """Reviewer entry uses one exact code-family request and fixed policy."""
+def test_instruction_pins_policy_identity_and_reciprocal_bounded_waits() -> None:
+    """Reviewer entry and later rounds use exact bounded counterpart waits."""
     content = _content()
-    for policy in (
-        "--family code",
-        "--convergence-signal commit-ready",
-        '--another-round-label "Rework and review again"',
-        '--continue-owning-workflow-label "Commit"',
-        "--implementation-step <exact-plan-step>",
-    ):
-        assert policy in content
-    assert content.count("bounded `wait-request`") == 1
-    assert "Read only the returned `paths.request`" in content
+    _assert_contains_all(
+        content,
+        (
+            "--family code",
+            "--convergence-signal commit-ready",
+            '--another-round-label "Rework and review again"',
+            '--continue-owning-workflow-label "Commit"',
+            "--implementation-step <exact-plan-step>",
+            "one bounded `wait-request` per round",
+            "immediately run the next bounded `wait-request`",
+            "same reviewer session",
+            "continue at Step 3",
+            "Read only the returned `paths.request`",
+            "whether the expired request is first seen cold",
+            "Require the reclaimed state to be",
+        ),
+    )
     assert "Do not read the versioned transcript" in " ".join(content.split())
-    assert "whether the expired request is first seen cold" in content
-    assert "Require the reclaimed state to be" in content
 
 
 def test_instruction_covers_assessment_repairs_validation_and_early_rejection() -> None:
@@ -84,8 +95,9 @@ def test_instruction_covers_manifest_recovery_and_both_publication_exits() -> No
 
 
 def test_instruction_forbids_writer_human_and_commit_authority() -> None:
-    """The reviewer stops after publication without crossing role authority."""
+    """The reviewer can wait again without crossing role authority."""
     content = _content()
+    normalized = " ".join(content.split())
     for operation in (
         "consume-answer",
         "continue",
@@ -99,6 +111,8 @@ def test_instruction_forbids_writer_human_and_commit_authority() -> None:
     ):
         assert f"`{operation}`" in content
     assert "never authorizes a commit" in content
+    assert "Waiting does not transfer requestor authority" in normalized
+    assert "Stop after a convergence publication" in normalized
 
 
 # eof

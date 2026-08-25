@@ -31,13 +31,18 @@ final JSON `paths` member returned by the active skill.
    $llm-shared:spec-reviewer
    ```
 
-5. Return to the requestor after the wait ends. Read only the exact answer at
+5. Leave the reviewer session active. After each `changes-requested` answer it
+   immediately waits for the replacement request; do not invoke the reviewer
+   skill again for later intermediate rounds.
+6. Return to the requestor after its wait ends. Read only the exact answer at
    `paths.answer`, apply accepted changes, and let the requestor publish another
-   round when needed.
+   round when needed. That publication releases the already-waiting reviewer,
+   which assesses the next round automatically.
 
 Stop when the requestor presents `Consolidate` and
 `Revise and review again`. A convergence recommendation and exit `3` do not
-authorize consolidation.
+authorize consolidation. Convergence ends the reviewer's automatic wait cycle
+at the human gate.
 
 ## Resume a specification review
 

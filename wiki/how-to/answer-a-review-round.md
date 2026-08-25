@@ -56,12 +56,17 @@ This is a deliberate stop: nothing runs until a human answers.
    /consolidate-then-review-ask-questions on docs/<type>.vX.Y.Z.<slug>.md
    ```
 
-4. The skill integrates each answer into the document body, records it in
+4. The skill runs plain `git reset`, stages only the exact document, writes a
+   single-group root `a.commit`, and batch-commits
+   `docs: record pre-consolidation questions`. It stops before the fold if the
+   commit contains another path or the index is not empty afterward.
+
+5. The skill integrates each answer into the document body, records it in
    a decision table (named for the type: requirement clarifications,
    design decisions, implementation decisions), and strips the
    open-questions section with `oqm.bat --strip`.
 
-5. Two endings are possible:
+6. Two endings are possible:
 
    - new questions are needed — the skill appends a fresh round and stops
      with a new `Q0x` table; go back to step 1,
@@ -100,8 +105,10 @@ and the command it prints, skipping the consolidation round. The same
 
 ## ✅ Check after the fold
 
-The document has no `## Open questions` section left, its decision table
-references every `Qxx`, and `pw skill` prints the next phase's command.
+The snapshot commit immediately before the fold contains only the answered
+document. The document then has no `## Open questions` section left, its
+decision table references every `Qxx`, and `pw skill` prints the next phase's
+command.
 
 Related: [Why the LLM reviews its own work](../explanation/why-the-llm-reviews-its-own-work.md),
 [Where the human stays in the loop](../explanation/where-the-human-stays-in-the-loop.md).

@@ -137,3 +137,32 @@ def test_step_5_connected_set_closes_links_terms_logos_and_gates(
     assert "Revise and review again" in read_declared(docs_root, _SPEC_TUTORIAL)
     assert "Commit" in read_declared(docs_root, _CODE_TUTORIAL)
     assert "Rework and review again" in read_declared(docs_root, _CODE_TUTORIAL)
+
+
+def test_reviewer_rounds_use_reciprocal_active_waits_across_the_docs(
+    docs_root: Path,
+) -> None:
+    """README and each Diataxis purpose present automatic intermediate rounds."""
+    readme = read_declared(docs_root, "README.md")
+    wiki_home = read_declared(docs_root, "wiki/README.md")
+    explanation = read_declared(docs_root, _EXPLANATION)
+    spec_tutorial = read_declared(docs_root, _SPEC_TUTORIAL)
+    code_tutorial = read_declared(docs_root, _CODE_TUTORIAL)
+    spec_how_to = read_declared(
+        docs_root,
+        "wiki/how-to/run-specification-review.md",
+    )
+    code_how_to = read_declared(
+        docs_root,
+        "wiki/how-to/run-implementation-code-review.md",
+    )
+    reference = read_declared(docs_root, _REFERENCE)
+
+    assert "automatic requestor-reviewer exchange" in readme
+    assert "main goal is the automatic" in wiki_home
+    assert "reciprocal waiting is the default" in explanation
+    assert "Without another command from you" in spec_tutorial
+    assert "Without another command from you" in code_tutorial
+    assert "do not invoke the reviewer" in spec_how_to
+    assert "do not invoke the reviewer" in code_how_to
+    assert "reciprocal bounded waits" in reference
