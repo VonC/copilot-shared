@@ -136,10 +136,12 @@ adapter is the only component that renders stdout and stderr.
 
 ### Root and plan input resolution for the checker
 
-The service accepts an explicit repository root from its adapter after normal
-project-root discovery. It resolves only `<root>/a.commit`; it does not accept
-an alternate plan path because the public feature is specifically the root
-commit-plan readiness check.
+The adapter discovers the project root upward from the current directory by
+default. An optional `--root <path>` overrides that discovery for tests and
+automation; either route resolves and validates one canonical repository root
+before calling the service. The service resolves only `<root>/a.commit`; it
+does not accept an alternate plan path because the public feature is
+specifically the root commit-plan readiness check.
 
 Input handling distinguishes:
 
@@ -155,7 +157,7 @@ operational failure rather than an invalid plan.
 
 ### Typed result boundary for the checker
 
-The proposed checker result wraps, rather than changes,
+The checker uses an immutable result that wraps, rather than changes,
 `CommitPlanValidation`. It carries:
 
 - a stable result state such as `valid`, `missing-plan`, `empty-plan`,
@@ -226,7 +228,8 @@ action, including redirection to an ignored root `a.*` file.
 ## Output contracts for commit-plan evidence
 
 Human and structured output are projections of the same checker result. The
-adapter runs the service once per invocation, then selects one renderer.
+adapter runs the service once per invocation, then selects one renderer. Both
+entry points accept `--format human|json`, with `human` as the default.
 
 ### Human-readable commit-plan report
 
@@ -362,322 +365,14 @@ validation inside commit execution.
 - Keep root batch execution and its `--root-a-commit --dry-run` rejection
   unchanged.
 
-## Open questions for the v0.11.0 commit-plan-check design
-
-### Q01: Where should the shared staged-path inventory live?
-
-Question description: The batch workflow's `_staged_paths(root)` function has
-the required `--no-renames -z` behavior, but it is private and absent from the
-module's `__all__`. The design must choose whether to extract a public support
-boundary, export the existing helper from the committing module, or duplicate
-the Git call in the checker.
-
-#### BBQ for Q01
-
-Two inspectors need the same warehouse manifest. They can move the manifest to
-a shared desk, let the second inspector reach into the shipping office, or make
-a copy that can drift. In this picture: the inspectors are batch execution and
-read-only checking, the manifest is staged-path inventory, the shared desk is a
-public support boundary, and the shipping office is the committing workflow.
-
-#### Options for Q01
-
-- Option A1: Extract staged inventory into a public commit-plan support
-  boundary used by both workflows.
-  - pro: Validation and committing depend on one neutral inventory authority.
-  - con: Existing batch imports and tests must move or use a compatibility
-    wrapper.
-- Option A2: Export `_staged_paths(root)` directly from the batch workflow.
-  - pro: It is the smallest change to existing code.
-  - con: A read-only tool depends on a module whose main responsibility is
-    mutation and commit execution.
-- Option A3: Recreate the Git inventory call inside the checker.
-  - pro: The new checker stays independent of batch internals.
-  - con: Two implementations can diverge on renames, delimiters, or path
-    normalization.
-
-#### Recommended option for Q01 (with arguments for this choice)
-
-Option A1: Extract a neutral public boundary. The inventory semantics are part
-of both workflows, while commit execution is not. One shared function gives
-the checker a proper dependency direction and keeps exact parity testable.
-
-#### Answer to Q01: option A1 (with reason why it must be accepted as the answer)
-
-Option A1: Accept extraction because the requirement forbids semantic drift
-and already identifies export or extraction as the real reuse cost. A neutral
-boundary does not make read-only checking depend on the committing adapter.
-
-### Q02: How should checker-specific input states relate to the public validator result?
-
-Question description: `CommitPlanValidation` contains groups and diagnostics
-for parsed inputs, while the new command must also distinguish a missing plan,
-an empty plan, an empty staged set, and operational failure. The design must
-decide whether to wrap the validator result, extend its public model, or express
-these states through exceptions and renderer-specific values.
-
-#### BBQ for Q02
-
-A laboratory result covers the sample that reached the machine, but reception
-also needs to report a missing vial or a broken refrigerator. Reception can add
-a cover sheet, rewrite the laboratory form, or pass loose notes. In this
-picture: the laboratory form is `CommitPlanValidation`, the cover sheet is a
-checker result, and the reception conditions are input and operational states.
-
-#### Options for Q02
-
-- Option B1: Add a checker result that wraps the unchanged validator result and
-  carries the broader state taxonomy.
-  - pro: The validator stays narrow while adapters receive one typed outcome.
-  - con: Callers must traverse one additional model layer.
-- Option B2: Extend `CommitPlanValidation` with input and operational states.
-  - pro: Every caller uses one public model.
-  - con: A pure parsed-plan validator becomes coupled to filesystem, Git, and
-    command-boundary concerns.
-- Option B3: Keep the validator model and express other states through
-  exceptions or untyped renderer data.
-  - pro: It adds the fewest model declarations.
-  - con: Human and JSON renderers can classify the same failure differently.
-
-#### Recommended option for Q02 (with arguments for this choice)
-
-Option B1: Wrap the validator result in a checker-specific immutable model.
-The validator remains reusable by batch execution, and the checker gains one
-typed source for state, readiness, groups, staged paths, and diagnostics.
-
-#### Answer to Q02: option B1 (with reason why it must be accepted as the answer)
-
-Option B1: Accept a wrapper because orchestration failures do not belong in a
-function that validates already-parsed blocks against already-collected paths.
-The separate model preserves that boundary without leaving adapters to guess.
-
-### Q03: How should callers select structured output?
-
-Question description: The requirement mandates default human-readable output
-and a stable structured form but does not name the selection interface. The
-choice affects compatibility, future renderings, help text, and test shape for
-both the batch launcher and Python module entry point.
-
-#### BBQ for Q03
-
-A ticket machine can offer a format selector, a single JSON button, or a second
-machine for coded tickets. In this picture: the ticket is checker evidence, the
-selector is `--format`, the JSON button is `--json`, and the second machine is a
-separate structured-output command.
-
-#### Options for Q03
-
-- Option C1: Use `--format human|json`, with `human` as the default.
-  - pro: The interface names both contracts and can add a future format without
-    another boolean flag.
-  - con: It is more typing than a single `--json` switch.
-- Option C2: Use an optional `--json` flag and human output otherwise.
-  - pro: It is concise and familiar for a two-format command.
-  - con: Adding another format later creates more mutually exclusive flags.
-- Option C3: Expose a separate command or module for structured output.
-  - pro: Each entry point has one stream shape.
-  - con: Separate commands can drift and weaken the one-service public surface.
-
-#### Recommended option for Q03 (with arguments for this choice)
-
-Option C1: Use `--format human|json`. It makes the default explicit in help,
-keeps both adapters identical, and treats output shape as one extensible value
-rather than a growing set of switches.
-
-#### Answer to Q03: option C1 (with reason why it must be accepted as the answer)
-
-Option C1: Accept the format selector because the two required renderings are
-peer projections of one result. An explicit value is stable for automation and
-clear in acceptance tests.
-
-### Q04: Which boundary must enforce requestor-side validation?
-
-Question description: The requirement says publication must refuse an invalid
-plan. The design proposes enforcement in the specialized code-review renderer,
-which blocks the canonical renderer-to-publication path. Shared
-`publish-request` accepts matching hand-authored envelope content without
-proving the renderer ran, so the design must either accept that deliberate
-bypass, couple the family-neutral exchange core to commit-plan policy, or leave
-the check as an instruction-only duty.
-
-#### BBQ for Q04
-
-A parcel can be weighed at the packing station, at the central mail gate, or by
-asking the clerk to remember. In this picture: the parcel is the code-review
-request, the packing station is the specialized renderer, the mail gate is the
-shared exchange core, and the clerk's reminder is an instruction-only check.
-
-#### Options for Q04
-
-- Option D1: Enforce checking in the specialized code-review renderer before it
-  writes paired request artifacts.
-  - pro: Invalid evidence cannot enter the canonical publication sequence, and
-    the family-neutral core stays free of commit-plan policy.
-  - con: The renderer gains a dependency on the checker service and repository
-    state.
-  - con: A caller can deliberately bypass the gate by hand-authoring a matching
-    request envelope and calling `publish-request` directly.
-- Option D2: Enforce checking inside shared `publish-request` for code-family
-  identities.
-  - pro: No caller can publish through the protocol without the check.
-  - con: The role-neutral exchange core must understand `a.commit`, staged Git
-    state, and code-review-specific evidence.
-- Option D3: Run the command from the requestor instruction immediately before
-  publication.
-  - pro: It changes no renderer or protocol code.
-  - con: The duty is documented but not enforced by the executable boundary.
-
-#### Recommended option for Q04 (with arguments for this choice)
-
-Option D1: Put the gate in the specialized renderer. That adapter already
-captures request-time index evidence and must succeed before the requestor can
-publish its paired artifacts, while the shared core remains role neutral. This
-accepts the direct hand-authored publication bypass rather than making the core
-read `a.commit` and staged Git state.
-
-#### Answer to Q04: option D1 (with reason why it must be accepted as the answer)
-
-Option D1: Accept renderer enforcement because it is the narrowest executable
-boundary that owns code-review evidence and can stop publication without
-teaching the shared protocol about commit plans. The residual applies only to a
-caller that deliberately avoids the canonical renderer and supplies a valid
-envelope directly to `publish-request`; it is recorded rather than hidden.
-
-### Q05: Should the checker reuse the batch missing-file precheck?
-
-Question description: Exact staged inventory includes deletions, while the
-batch root workflow separately calls `_validate_missing_files_for_blocks`. Its
-underlying `_check_missing_files` flags a path only when the worktree file is
-absent, the path is untracked, and the path is absent from `HEAD`, so a staged
-deletion of a committed file already passes. The checker must decide whether
-that broader worktree-and-HEAD precondition belongs in a read-only index
-membership decision.
-
-#### BBQ for Q05
-
-A warehouse has an index manifest and a separate form that flags a missing box
-only when no earlier ledger shows it belongs there. A new inspector can ignore
-that form, quote it as advice, or make it part of entry approval. In this
-picture: the manifest is the Git index, the earlier ledger is `HEAD`, the
-separate form is the batch missing-file precheck, and entry approval is checker
-readiness.
-
-#### Options for Q05
-
-- Option E1: Do not call the working-file existence precheck from the read-only
-  checker; rely on parser and exact staged membership validation.
-  - pro: Staged deletions remain valid plan members and checker policy stays
-    aligned with the index it claims to inspect.
-  - con: The checker does not predict the batch precheck's rejection of an
-    absent path that is also untracked and absent from `HEAD`.
-- Option E2: Run the batch precheck for informational diagnostics without
-  making it part of checker readiness.
-  - pro: The report can expose a likely later batch obstacle while preserving
-    index-and-validator authority.
-  - con: The output gains a second diagnostic source outside the required
-    validator contract.
-- Option E3: Reuse the batch precheck unchanged as a checker readiness gate.
-  - pro: The checker mirrors that additional batch precondition exactly.
-  - con: Read-only validity becomes coupled to worktree tracking and `HEAD`
-    history beyond the requirement's staged-membership boundary.
-
-#### Recommended option for Q05 (with arguments for this choice)
-
-Option E1: Keep the checker on plan syntax and exact index membership. The
-feature's authority is `validate_commit_plan`, not the committing workflow's
-separate absent-untracked-and-not-in-`HEAD` precondition. Batch-only readiness
-rules remain outside this command unless a separate requirement brings them
-into the checker contract.
-
-#### Answer to Q05: option E1 (with reason why it must be accepted as the answer)
-
-Option E1: Accept membership-only checking because the requirement explicitly
-preserves the staged inventory without filtering. The current batch precheck
-already accepts committed deletions, and a read-only validator still should not
-consult worktree and `HEAD` state to make an index-membership decision.
-
-### Q06: How much checker evidence should the code-review request carry?
-
-Question description: The requestor must pass the checker before publication
-and the reviewer must rerun it, but the requirement does not state whether the
-request artifact embeds the full structured result, only a validity marker, or
-no checker output at all.
-
-#### BBQ for Q06
-
-A sender can attach the full packing list, attach only a passed-inspection
-stamp, or keep the inspection private. In this picture: the packing list is the
-structured checker result, the stamp is a readiness boolean, and the parcel is
-the published code-review request.
-
-#### Options for Q06
-
-- Option F1: Embed the full structured checker result beside the request-time
-  index tree and resolved validation set.
-  - pro: The request records exactly which groups, paths, and diagnostics the
-    requestor saw, and the reviewer can compare its rerun.
-  - con: Request artifacts become larger and must carry a versioned schema.
-- Option F2: Embed only a passed marker and the index tree.
-  - pro: The request stays compact while proving the gate ran.
-  - con: The reviewer cannot compare requestor group and path evidence without
-    reconstructing it from `a.commit`.
-- Option F3: Embed no checker evidence and use the result only as a publication
-  gate.
-  - pro: Existing request content changes minimally.
-  - con: The transcript cannot show what mechanical decision permitted the
-    request to be published.
-
-#### Recommended option for Q06 (with arguments for this choice)
-
-Option F1: Embed the structured result. The review workflow is evidence driven,
-and the existing request already carries typed index and validation data. Full
-checker evidence makes requestor and reviewer parity directly auditable.
-
-#### Answer to Q06: option F1 (with reason why it must be accepted as the answer)
-
-Option F1: Accept the full result because the command exists to produce stable,
-quotable evidence. Keeping that evidence out of the durable request would leave
-only an unverifiable assertion that the gate passed.
-
-### Q07: How should automation select the repository root?
-
-Question description: The command must run from a repository context and use
-the project-root `a.commit`, while the platform-neutral entry point also needs
-testability and use from automation. The public CLI can rely only on current-
-directory discovery, accept an optional root flag, or require a positional
-repository path.
-
-#### BBQ for Q07
-
-A courier can infer the depot from the street, accept an optional depot address,
-or require the address on every trip. In this picture: the depot is the Git
-project root, street inference is upward discovery from the current directory,
-and the explicit address is a CLI root argument.
-
-#### Options for Q07
-
-- Option G1: Discover from the current directory by default and accept an
-  optional `--root <path>` override.
-  - pro: Local use stays short while tests and automation can name an exact
-    repository without changing process working directory.
-  - con: The adapter must define precedence and validate the explicit path.
-- Option G2: Support only current-directory project-root discovery.
-  - pro: It matches the shortest repository command contract.
-  - con: Automation must change process working directory to target another
-    repository.
-- Option G3: Require a repository path on every invocation.
-  - pro: The target is always explicit.
-  - con: It makes the common root command noisy and diverges from existing
-    self-locating launchers.
-
-#### Recommended option for Q07 (with arguments for this choice)
-
-Option G1: Combine discovery with an optional root override. Both paths resolve
-to the same validated root before calling the checker, so testability does not
-create a second policy path.
-
-#### Answer to Q07: option G1 (with reason why it must be accepted as the answer)
-
-Option G1: Accept the optional root flag because it preserves simple local use
-and gives platform-neutral automation an explicit target through the same
-adapter and service.
+## Design decisions for v0.11.0 commit-plan checking
+
+| Question | Decision | Integrated in | Rejected alternatives |
+| --- | --- | --- | --- |
+| Q01 | Extract staged inventory into a neutral public commit-plan support boundary used by checking and committing. | Shared staged inventory for commit-plan parity | Exporting the batch-private helper or duplicating the Git call |
+| Q02 | Wrap the unchanged public validator result in an immutable checker-specific result. | Typed result boundary for the checker | Expanding the validator with orchestration states or using exceptions and renderer-specific values |
+| Q03 | Select output with `--format human|json`, defaulting to `human`. | Output contracts for commit-plan evidence | A `--json` boolean or a separate structured-output command |
+| Q04 | Enforce the requestor gate in the specialized code-review renderer and accept the documented direct-publication bypass. | Enforced requestor publication gate | Coupling shared `publish-request` to commit plans or relying on instructions alone |
+| Q05 | Exclude the batch missing-file precheck and decide readiness from parsing plus exact staged membership. | Rename and deletion semantics for staged membership | Advisory reuse or readiness-gate reuse of worktree and `HEAD` checks |
+| Q06 | Embed the full structured checker result in the code-review request. | Enforced requestor publication gate | A validity marker only or no durable checker evidence |
+| Q07 | Discover the root from the current directory by default and accept optional `--root <path>`. | Root and plan input resolution for the checker | Discovery only or a mandatory repository argument |
