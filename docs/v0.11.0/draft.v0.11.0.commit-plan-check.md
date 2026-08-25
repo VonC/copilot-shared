@@ -1,53 +1,98 @@
 # Expose commit-plan validation without committing
 
 - Type: feature-request
+- Version: v0.11.0
+- Slug: `commit-plan-check`
 - Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
 
-`validate_commit_plan(blocks, staged_paths)` is already the public,
-side-effect-free validation API. Step 2 of the code-reviewer effort created it
-precisely so that review and batch execution share one commit-plan decision, and
-`tools/git_batch_commit_workflow.py` calls it before changing the index. No
-launcher exposes it, so a reviewer who must assess `a.commit` cannot run it.
+## Boundary inherited from the review-mode umbrella
 
-## Why a reviewer needs it
+This effort exposes read-only validation of the root `a.commit` plan against
+the exact staged file set. It belongs outside the reviewer role because it is
+a reusable commit-plan tool, and outside batch execution because validation
+must not depend on taking the committing path.
 
-Every code-review request carries the same scope sentence: inspect and amend
-`a.commit` only when membership, grouping, order, scope, or the conventional
-subject no longer matches the staged work, and do not commit. The canonical
-reviewer instruction turns that into a readiness-floor result, requiring the
-reviewer to keep "staged membership, ordering, scope, and conventional subjects
-accurate" and to classify `a.commit` as one of six floor results.
+The effort depends on the completed `review-exchange-core` and `code-reviewer`
+requirements. It must reuse the existing public `validate_commit_plan` API
+rather than reproduce its grouping or diagnostic rules.
 
-Both statements ask for a decision that the shipped validator already makes, and
-neither names a command that produces it. That is the same shape as the Step 3
-finding about the implementation check: an instruction describing in prose what
-an executable boundary should decide. A reviewer following the instruction today
-either eyeballs the plan or writes a throwaway script that imports the validator.
+## Missing commit-plan validation entry point
 
-The one shipped entry point cannot help, because it commits. `--root-a-commit`
-runs the root plan workflow and refuses to combine with `--dry-run`:
+The repository already validates commit plans during batch execution, but a
+reviewer cannot invoke the same readiness floor directly without entering a
+path associated with committing. The missing behavior is a launcher that
+checks the current root plan and staged set while leaving repository state
+unchanged.
 
-```text
-Cannot combine --root-a-commit with --dry-run
-```
+### Root plan input for the validation command
 
-So the only way to reach the validator on the root plan is the path that resets
-and commits, which the reviewer is explicitly forbidden to take.
+The command reads the project-root `a.commit` and parses it with
+`interactive=False`. It obtains the exact staged paths and passes the parsed
+blocks and paths to `validate_commit_plan(blocks, staged_paths)`.
 
-## Shape of the need
+### Read-only repository contract for plan checking
 
-A launcher that validates the root `a.commit` against the exact staged path set
-and reports the typed groups and diagnostics without touching the index, plus
-the reviewer instruction naming it where it currently says to assess `a.commit`.
+The command must never reset, add, remove, or otherwise modify index entries.
+It must not create a commit. Running it repeatedly against unchanged inputs
+must leave both the index and working tree unchanged.
 
-## Questions for the requirement and design phases
+## Required validation report
 
-- Whether this is a new launcher over the existing public validator or a
-  `--root-a-commit --dry-run` combination inside the batch-commit tool, which
-  today is rejected.
-- What the output contract is, given that the reviewer must quote it as
-  readiness-floor evidence and the requestor must act on it.
-- Whether the writer-side `group-commits-msg` step should use the same command
-  before publishing a request, so both roles judge the plan identically.
-- Whether the check belongs in the shared gate at all, since `a.commit` is a
-  transient working file rather than committed content.
+The result must report the typed commit groups and every validation diagnostic
+in a stable form that a reviewer can quote as readiness-floor evidence. A
+failure must remain attributable to the affected group, staged path, or plan
+rule instead of being reduced to an undifferentiated exit status.
+
+### Typed group evidence in the report
+
+Each parsed group must retain the group identity and commit-message type that
+the public validator recognizes, together with its relationship to the exact
+staged set.
+
+### Diagnostic evidence in the report
+
+Every validator diagnostic must be emitted without weakening or reinterpreting
+the shared rules. The launcher is an adapter over the public API, not a second
+validator with independent behavior.
+
+## Entry-point decision to settle
+
+The shipped entry point currently refuses `--root-a-commit` together with
+`--dry-run`. The requirement and design must decide whether to add a focused
+launcher or lift that restriction while preserving an unmistakably read-only
+interface.
+
+### Dedicated launcher option
+
+A new launcher can expose only the validation operation and keep committing
+flags out of its interface. This makes the no-mutation promise explicit but
+adds another command users and documentation must discover.
+
+### Existing launcher extension option
+
+Lifting the current option restriction can reuse an established entry point.
+The resulting contract must still make it impossible for the validation call
+to fall through to index mutation or commit execution.
+
+## Shared requestor and reviewer evidence
+
+The requirement must decide whether `group-commits-msg` should call the same
+read-only command before publishing a code-review request. If it does, the
+requestor and reviewer will judge `a.commit` against the same staged set and
+the same validator diagnostics.
+
+### Pre-publication validation question
+
+Calling the command before publication gives both roles identical evidence and
+finds an invalid plan earlier. Keeping it reviewer-only avoids adding another
+automatic step to grouping but permits requestor and reviewer readiness checks
+to differ.
+
+## Scope boundaries for commit-plan checking
+
+- Do not reimplement `validate_commit_plan` rules in the launcher.
+- Do not stage, unstage, reset, commit, or rewrite repository files.
+- Do not move commit-plan validation into an assessment skill.
+- Do not couple the read-only command to batch commit execution.
+- Do not include active-review status or interrupted-review resumption, which
+  remain separate umbrella topics.
