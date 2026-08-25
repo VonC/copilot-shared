@@ -1,9 +1,10 @@
 # v0.11.0 Markdown checker implementation tracking and validation
 
-No, it is not implemented.
+Yes, it is implemented.
 
-This initial skeleton tracks the three planned implementation slices; no
-implementation check has taken place yet.
+All three planned implementation slices are complete: the shared rule engine,
+policy and launcher composition, and repository-wide gate rollout now pass the
+focused and full validation contracts.
 
 ## File-based IO cost clarification for v0.11.0 Markdown-check validation
 
@@ -199,8 +200,12 @@ an input artifact and is never rewritten by the checker.
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because zero-debt repairs, gate wiring,
-acceptance coverage, and reference documentation are still absent.
+Yes. Step 3 has been fully implemented.
+
+Step 3 repairs the remaining zero-debt Markdown findings, connects the direct
+checker to the shared gate, publishes its reference contract, and covers the
+repository and failure paths with acceptance tests. The exact focused suite and
+the final Groundhog day both pass.
 
 ### Goal for Step 3 repository rollout
 
@@ -216,24 +221,65 @@ reference documentation.
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Repaired MD032 list boundaries and genuine MD038 padding defects across the
+  tracked corpus while preserving spaces that belong to parsed inline-code
+  values and list-indented fenced-code content.
+- Added zero-debt MD050 strong-style enforcement and code-delimited every
+  `__init__.py` path in the existing code-review transcript.
+- Kept the authoritative baseline limited to reviewed LS001, LS002, and MD033
+  residual debt; MD032, MD038, and MD050 have no baseline entries.
+- Added one `markdown-check.bat` call to `check.bat`, captured its exit status,
+  and routed failures through `record_failure markdown`.
+- Added repository-fixture acceptance coverage for structured documents,
+  bounded adapters, overlapping rules, configuration failure, baseline growth
+  and shrink, the public launcher, the shared gate, and zero-debt invariants.
+- Added the Markdown checker reference page and linked it from the root and
+  Diataxis navigation pages in explanation, tutorials, how-to guides, then
+  reference order.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+None. Step 3 extends `MarkdownSource` with masked prose lines, composes the
+existing checker types, and adds acceptance fixtures, gate wiring, corpus
+repairs, and reference documentation.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Pass. `check.bat` remains the shared aggregator and delegates Markdown work to
+the root launcher, which still converges on `CheckerRunner`. The source-model
+repair stays inside its parsing boundary, while acceptance tests use the public
+launcher for integration coverage and inject a fixed inventory only for focused
+rule and baseline scenarios already covered by real Git-inventory tests. MD050
+reuses the source model's fence and inline-code masks rather than rescanning raw
+Markdown independently.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Pass. The checker retains one tracked-path query and one source read per file.
+Profiling identified Git repository setup and repeated inventory subprocesses
+inside two measured acceptance calls; fixture setup and fixed focused
+inventories moved both call phases below the 0.50-second floor without removing
+assertions. The final full run reports zero duration outliers.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Pass. The source-model change has a focused unit regression for list-indented
+fenced code. The exact two-file acceptance command ran seven tests with no
+failures, and the final detached `ghog day` completed with `exit=0`, 2,001
+passing tests, 100 percent coverage, and no duration outliers.
+
+No unit-tested class is below 100 percent or needs completing.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+Pass. The direct launcher, `check.bat` integration, and repository baseline now
+agree on one clean result. A fixture with unbaselined debt still fails, baseline
+growth remains fatal, shrink remains advisory, configuration errors fail before
+evaluation, and MD032 and MD038 remain zero-debt rules. Existing reporting is
+preserved through the shared `record_failure` aggregator. MD050 also remains
+zero debt and ignores underscore-bearing filenames only when Markdown code
+delimiters make them code rather than strong-style prose.
