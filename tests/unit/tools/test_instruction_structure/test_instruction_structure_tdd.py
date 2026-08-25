@@ -120,6 +120,8 @@ def test_umbrella_child_stops_for_review_before_requirement_handoff() -> None:
             "lead with the exact path-scoped Git status entry",
             "review the file itself",
             "conversation copy is only a convenience",
+            "never surround it with Markdown backticks",
+            "cause an `umbrella does not exist` error",
         ),
     )
     _assert_contains_all(
