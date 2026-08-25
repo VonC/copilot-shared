@@ -83,6 +83,7 @@ class MarkdownSource:
     raw_html: tuple[RawHtml, ...]
     links: tuple[MarkdownLink, ...]
     inline_code: tuple[InlineCode, ...]
+    prose_lines: tuple[str, ...]
     body_lines: tuple[SourceLine, ...]
     fenced_lines: frozenset[int]
 

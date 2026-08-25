@@ -21,7 +21,7 @@ from tools.markdown_check.models import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-_FENCE_RE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})")
+_FENCE_RE = re.compile(r"^[ \t]*(?P<fence>`{3,}|~{3,})")
 _HEADING_RE = re.compile(
     r"^[ \t]{0,3}(?P<marks>#{1,6})[ \t]+"
     r"(?P<title>.*?)(?:[ \t]+#+[ \t]*)?$",
@@ -33,7 +33,7 @@ _DESCRIPTION_RE = re.compile(r"^[ \t]*description[ \t]*:[ \t]*(?P<value>.*)$")
 
 
 def fenced_line_numbers(lines: Sequence[str]) -> frozenset[int]:
-    """Return one-based line numbers occupied by fenced code blocks."""
+    """Return line numbers in root or list-indented fenced code blocks."""
     fenced: set[int] = set()
     fence_character: str | None = None
     fence_length = 0
@@ -288,9 +288,10 @@ def parse_markdown(path: str | PurePosixPath, markdown: str) -> MarkdownSource:
     fenced = fenced_line_numbers(lines)
     visible_text, line_map = _visible_text(lines, fenced, frontmatter)
     inline_code, code_ranges = _inline_code(visible_text, line_map)
+    prose_lines = _mask_ranges(visible_text, code_ranges)
     headings, raw_html, links = _structural_tokens(
         lines,
-        _mask_ranges(visible_text, code_ranges),
+        prose_lines,
         fenced,
         frontmatter,
     )
@@ -303,6 +304,7 @@ def parse_markdown(path: str | PurePosixPath, markdown: str) -> MarkdownSource:
         raw_html=raw_html,
         links=links,
         inline_code=inline_code,
+        prose_lines=prose_lines,
         body_lines=_body_lines(lines, frontmatter),
         fenced_lines=fenced,
     )

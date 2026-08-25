@@ -121,11 +121,15 @@ mandatory even if a later configuration edit attempts to disable them. The
 published supported rule catalog is the enabled set: every catalog rule runs
 unless the configuration disables it, configuration may only disable or
 configure catalog rules, and a key outside the catalog stops the checker with a
-clear error. MD032 and MD038 belong to that supported catalog. MD032 applies its
+clear error. MD032, MD038, and MD050 belong to that supported catalog. MD032 applies its
 blanks-around-lists semantics to every checked file. MD038 reports only
 unnecessary inner padding; it ignores spaces that are part of the parsed
 inline-code value, space-only code spans, and the matching single-space padding
 used to delimit code content that begins or ends with a backtick.
+
+MD050 requires asterisk-delimited strong style in prose. Underscore-bearing
+filenames such as `__init__.py` must be enclosed in inline-code delimiters, and
+content already inside inline or fenced code is not evaluated as strong style.
 
 ### Runtime independence for markdown-check
 
@@ -198,6 +202,9 @@ exceptions are applied; any remaining MD038 finding must be repaired.
 - MD038 reports one-sided or otherwise unnecessary space next to an inline-code
   delimiter, but does not report a genuine boundary space, a space-only code
   span, or matching delimiter padding around literal backticks.
+- MD050 reports underscore-delimited strong style in prose, including an
+  unquoted `__init__.py` token, while accepting asterisk strong style and code
+  spans.
 - MD033 permits `img` and reports other raw HTML elements under the current
   repository configuration.
 - Every reported violation includes path, line, rule, and reason.

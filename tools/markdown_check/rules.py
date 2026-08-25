@@ -11,6 +11,7 @@ from tools.markdown_check.models import Finding, InlineCode, MarkdownSource
 
 _LINK_LABEL_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
 _HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
+_UNDERSCORE_STRONG_RE = re.compile(r"(?<![\\_])__(?=\S).+?(?<=\S)__(?!_)")
 _WHITESPACE_RE = re.compile(r"\s+")
 _SECTION_LEVEL = 2
 _MIN_SECTION_COUNT = 2
@@ -133,6 +134,20 @@ def check_md038(source: MarkdownSource) -> tuple[Finding, ...]:
     )
 
 
+def check_md050(source: MarkdownSource) -> tuple[Finding, ...]:
+    """Require asterisks rather than underscores for strong emphasis."""
+    return tuple(
+        _finding(
+            source,
+            line_number,
+            "MD050",
+            "strong style [Expected: asterisk; Actual: underscore]",
+        )
+        for line_number, line in enumerate(source.prose_lines, start=1)
+        if _UNDERSCORE_STRONG_RE.search(line) is not None
+    )
+
+
 def check_ls001(
     source: MarkdownSource,
     classification: DocumentClassification,
@@ -209,6 +224,7 @@ def evaluate_rules(
         *check_md032(source),
         *check_md033(source, allowed_elements=allowed_html),
         *check_md038(source),
+        *check_md050(source),
         *check_ls001(source, classification),
         *check_ls002(source, classification),
         *check_ls003(source),
@@ -225,6 +241,7 @@ __all__ = [
     "check_md032",
     "check_md033",
     "check_md038",
+    "check_md050",
     "evaluate_rules",
 ]
 

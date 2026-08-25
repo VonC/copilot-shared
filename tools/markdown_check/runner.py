@@ -31,6 +31,7 @@ from tools.markdown_check.rules import (
     check_md032,
     check_md033,
     check_md038,
+    check_md050,
 )
 from tools.markdown_check.source import parse_markdown
 
@@ -116,6 +117,7 @@ def _evaluate(
         "MD025": check_md025,
         "MD032": check_md032,
         "MD038": check_md038,
+        "MD050": check_md050,
         "LS003": check_ls003,
     }
     for rule, evaluator in simple.items():

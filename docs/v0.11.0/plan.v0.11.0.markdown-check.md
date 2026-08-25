@@ -393,8 +393,9 @@ Fix intent:
 
 - Repair the remaining implementation-owned `MD032` source, verify the recorded
   transcript repair, clear genuine `MD038` defects while preserving its
-  code-space exceptions, establish the authoritative residual baseline, and then
-  add the gate call.
+  code-space exceptions, add zero-debt `MD050` strong-style enforcement and
+  repair unquoted underscore-bearing filenames, establish the authoritative
+  residual baseline, and then add the gate call.
 - Produce that baseline by running the implemented checker against an empty
   baseline, reviewing its complete findings, and hand-authoring only accepted
   residual records; approximate discovery counts are not baseline input.
@@ -415,7 +416,18 @@ Step framing:
 
 **Files involved**:
 
+- `tools/markdown_check/models.py` (existing, to be updated).
+- `tools/markdown_check/source.py` (existing, to be updated).
+- `tools/markdown_check/policy.py` (existing, to be updated).
+- `tools/markdown_check/rules.py` (existing, to be updated).
+- `tools/markdown_check/runner.py` (existing, to be updated).
+- `tests/unit/tools/markdown_check/test_policy/test_policy_tdd.py` (existing,
+  to be updated).
+- `tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py` (existing, to
+  be updated).
 - `.claude/skills/humanizer/SKILL.md` (existing, to be updated).
+- `docs/v0.11.0/review.code.v0.11.0.markdown-check.md` (existing, to be
+  updated).
 - `docs/v0.11.0/review.design-specification.v0.11.0.markdown-check.md`
   (existing, repaired during documentation consolidation; Step 3 verifies).
 - `.markdownlint-baseline.json` (new from Step 2, to be updated with
@@ -448,6 +460,9 @@ Step framing:
   parsed code value nor delimit literal backticks, and passing cases for genuine
   boundary whitespace, space-only spans, and required matching padding around
   literal backticks.
+- Cover MD050 failure for underscore-delimited strong style and an unquoted
+  `__init__.py` filename, plus passing asterisk, inline-code, fenced-code, and
+  escaped cases.
 
 **Classes and behavior**:
 
@@ -455,7 +470,8 @@ Step framing:
   `record_failure markdown <status>` on failure.
 - Reference page: catalog, mandatory rules, adapter classes, `LS003`
   normalization, MD032 authoring boundaries, MD038 genuine-code-space
-  exceptions, streams, baseline schema, direct launcher, and shared-gate name.
+  exceptions, MD050 strong-style and code-span boundaries, streams, baseline
+  schema, direct launcher, and shared-gate name.
 - Navigation: link the page under reference while preserving explanation,
   tutorials, how-to guides, then reference.
 
@@ -467,7 +483,7 @@ Step framing:
   passes.
 - `rg -n "record_failure markdown|markdown-check.bat" check.bat` finds one gate
   call and one failure record.
-- `rg -n "Markdown checker|MD032|MD033|MD038|LS003|markdownlint-baseline" README.md wiki/README.md wiki/reference/markdown-checker.md`
+- `rg -n "Markdown checker|MD032|MD033|MD038|MD050|LS003|markdownlint-baseline" README.md wiki/README.md wiki/reference/markdown-checker.md`
   finds navigation and the reference contract.
 - `ghog day` reports `exit=0`.
 

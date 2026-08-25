@@ -18,6 +18,7 @@ from tools.markdown_check.rules import (
     check_md032,
     check_md033,
     check_md038,
+    check_md050,
     evaluate_rules,
 )
 from tools.markdown_check.source import parse_markdown
@@ -39,6 +40,7 @@ Prose.
 Following prose.
 <div>raw</div>
 ` padded `
+__strong__
 """,
     )
     classification = DocumentClassification(DocumentKind.STRUCTURED, "default")
@@ -46,7 +48,16 @@ Following prose.
     findings = evaluate_rules(source, classification, allowed_html=frozenset({"img"}))
 
     rules = {finding.rule for finding in findings}
-    assert rules == {"MD001", "MD024", "MD025", "MD032", "MD033", "MD038", "LS003"}
+    assert rules == {
+        "MD001",
+        "MD024",
+        "MD025",
+        "MD032",
+        "MD033",
+        "MD038",
+        "MD050",
+        "LS003",
+    }
     assert any(finding.rule == "MD001" and finding.line == 2 for finding in findings)
     assert any(finding.rule == "MD032" and finding.line == 7 for finding in findings)
     assert any(finding.rule == "MD033" and finding.line == 9 for finding in findings)
@@ -94,6 +105,28 @@ def test_md038_distinguishes_padding_from_genuine_code_space(
     assert bool(check_md038(source)) is has_finding
 
 
+@pytest.mark.parametrize(
+    ("markdown", "has_finding"),
+    [
+        ("__strong__", True),
+        ("- tests/unit/__init__.py", True),
+        ("**strong**", False),
+        ("`__init__.py`", False),
+        ("```text\n__strong__\n```", False),
+        (r"\__strong__", False),
+    ],
+)
+def test_md050_requires_asterisk_strong_style_only_in_prose(
+    markdown: str,
+    *,
+    has_finding: bool,
+) -> None:
+    """MD050 ignores code and escapes while rejecting underscore strong style."""
+    source = parse_markdown("docs/strong.md", markdown)
+
+    assert bool(check_md050(source)) is has_finding
+
+
 def test_individual_rules_cover_clean_and_configured_paths() -> None:
     """Clean sources and the configured img element produce no findings."""
     source = parse_markdown(
@@ -114,6 +147,7 @@ Text with <img src="logo.png"> and `code`.
         check_md025,
         check_md032,
         check_md038,
+        check_md050,
         check_ls003,
     )
     assert all(rule(source) == () for rule in rules)

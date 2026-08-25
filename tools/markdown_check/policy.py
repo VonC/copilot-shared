@@ -18,6 +18,7 @@ SUPPORTED_RULES = frozenset(
         "MD032",
         "MD033",
         "MD038",
+        "MD050",
         "LS001",
         "LS002",
         "LS003",

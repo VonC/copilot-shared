@@ -27,6 +27,8 @@ The non-negotiable inherited constraints are:
   while ignoring boundary spaces that the Markdown code-span syntax preserves
   as genuine code content or uses as required delimiter padding around
   backticks;
+- enforce MD050 so prose uses asterisks for strong style and underscore-bearing
+  filenames such as `__init__.py` are written as inline code;
 - implement the unattended check in Python because Node and a reachable package
   network are unavailable;
 - report each finding with its path, line, rule, and reason;

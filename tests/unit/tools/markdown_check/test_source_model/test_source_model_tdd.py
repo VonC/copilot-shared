@@ -76,6 +76,17 @@ def test_source_model_handles_unclosed_frontmatter_and_inline_delimiters() -> No
     assert [span.raw_content for span in source.inline_code] == ["a``b``c"]
 
 
+def test_source_model_hides_list_indented_fenced_code() -> None:
+    """Backticks inside a nested fenced block never become inline-code spans."""
+    source = parse_markdown(
+        "docs/nested.md",
+        "- item\n\n    ```bash\n    echo ` padded `\n    ```\n",
+    )
+
+    assert source.inline_code == ()
+    assert source.fenced_lines == frozenset({3, 4, 5})
+
+
 def test_source_model_extends_lists_across_blank_indented_content() -> None:
     """A continued list may cross blanks and may end with trailing blanks."""
     source = parse_markdown(

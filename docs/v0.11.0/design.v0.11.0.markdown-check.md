@@ -137,8 +137,8 @@ per-document policy result exists in those cases.
 
 The checker owns a published catalog rather than dynamically accepting every
 markdownlint key. The first catalog contains the rules required by the feature:
-`MD001`, `MD013`, `MD024`, `MD025`, `MD032`, `MD033`, `MD038`, `LS001`, `LS002`,
-and `LS003`.
+`MD001`, `MD013`, `MD024`, `MD025`, `MD032`, `MD033`, `MD038`, `MD050`, `LS001`,
+`LS002`, and `LS003`.
 `MD013` is present so the current explicit disable is valid configuration even
 though it does not run. Each catalog entry declares its namespace, accepted
 configuration shape, default enabled state, and whether it is mandatory.
@@ -158,6 +158,11 @@ spans containing only spaces, or the matching single leading and trailing source
 spaces used as delimiter padding when code content begins or ends with a
 backtick. This mirrors markdownlint's intentional code-span exceptions instead
 of replacing genuine code whitespace with prose such as `[space]`.
+
+`MD050` requires asterisks for strong emphasis in prose. The shared source model
+masks inline and fenced code before this evaluator runs, so an underscore-bearing
+filename such as `__init__.py` must be written as code and is then exempt from
+strong-style evaluation.
 
 Review transcripts are generated from caller-authored requestor and reviewer
 content without normalizing blank lines around lists. Because those transcripts
@@ -331,6 +336,8 @@ walk.
 | List touching adjacent prose without a blank line | `MD032` at the list boundary | Every list block must be surrounded by blank lines |
 | Inline-code span with one-sided or unnecessary inner padding | `MD038` at the span | Accidental delimiter-adjacent space is rejected |
 | Inline-code span whose parsed value genuinely preserves boundary whitespace, contains only spaces, or needs matching padding around literal backticks | No `MD038` | Markdown code-span semantics require the space |
+| Underscore-delimited strong emphasis in prose | `MD050` at the source line | Strong style uses asterisks |
+| Underscore-bearing filename inside inline or fenced code | No `MD050` | Code content is not strong-style prose |
 | Raw `img` element under current configuration | No `MD033` | The configured element is allowed |
 | Raw non-`img` element with no matching allowance | `MD033` at its source line | The enabled raw-HTML rule applies |
 | Finding count above a matching baseline allowance | Checker failure | Residual debt may not grow |

@@ -24,7 +24,7 @@ def test_policy_loads_disabled_md013_and_md033_allowance(tmp_path: Path) -> None
     policy = load_policy(path)
 
     assert "MD013" not in policy.enabled_rules
-    assert {"MD024", "MD025"} <= policy.enabled_rules
+    assert {"MD024", "MD025", "MD050"} <= policy.enabled_rules
     assert policy.allowed_html == frozenset({"img"})
 
 
