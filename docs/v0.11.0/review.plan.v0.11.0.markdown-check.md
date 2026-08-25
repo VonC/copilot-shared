@@ -242,7 +242,7 @@ since those are the three places where an approximation would otherwise hide.
 
 Requested changes: Four changes are requested, and the first two block Step 1. This summary opens
 with prose rather than a list because the renderer inlines it behind the
-`Requested changes: ` label, per the authoring contract the consolidated design
+`Requested changes:` label followed by a space, per the authoring contract the consolidated design
 now documents.
 
 - Blocking. Adapter classification has no home and no data. Step 1 owns `LS001`
@@ -518,7 +518,7 @@ implementation itself.
 
 Covered wording: No substantive change is requested, and only ordinary consolidation work remains.
 This summary opens with prose because the renderer inlines it behind the
-`Covered wording: ` label, per the authoring contract the design documents.
+`Covered wording:` label followed by a space, per the authoring contract the design documents.
 
 - Fold the three answered questions into the confirmed step text. No confirmed
   clause is conditional on an unanswered question, so nothing else needs

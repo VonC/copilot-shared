@@ -278,7 +278,7 @@ The [`group-commits-msg.md`](../instructions/group-commits-msg.md) instruction g
 
 `Group the changed files and write one conventional commit message per group.`
 
-The completed body states the count and lists the staged files (Q22). The delivered body reads `... per group for those 26 files:` followed by a blank line and a ```log block such as:
+The completed body states the count and lists the staged files (Q22). The delivered body reads `... per group for those 26 files:` followed by a blank line and a fenced `log` block such as:
 
 ```log
 M  docs/plan.v9.8.0.resources_isolation.validation.md

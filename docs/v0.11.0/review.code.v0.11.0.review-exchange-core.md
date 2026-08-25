@@ -193,7 +193,7 @@ Two gaps were found and repaired by the reviewer, both staged:
 2. The step-qualified round headings amended into the design and this
    transcript were not implemented in `_render_transcript_entry`, so future
    core-written entries would have regressed `MD024`. The renderer now appends
-   ` - Step <identifier>` when the context carries an implementation step, and
+   a space followed by `- Step <identifier>` when the context carries an implementation step, and
    the store test pins the qualified heading.
 
 The validation record documents both repairs, `a.commit` gained matching feat

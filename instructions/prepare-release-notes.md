@@ -75,9 +75,8 @@ Read the generated `a.md` and analyse the `## vX.Y.Z changelog` and
 Write `<PRJ_DIR>/version.txt` following the template
 [`prepare-release-notes.version-txt.template.txt`](../templates/prepare-release-notes.version-txt.template.txt):
 
-- The first line is `X.Y.Z-SNAPSHOT -- Release notes summary for
-  version X.Y.Z` (keep the ` -- ` separator: the changelog tooling
-  splits the version and the title on it).
+- The first line starts with `X.Y.Z-SNAPSHOT`, then the space-delimited `--`
+  separator, then the release-notes summary for version `X.Y.Z`.
 - Then three witty title / sub-title pairs.
 - Then the main theme paragraph, and an optional secondary theme
   paragraph, with concrete and specific terms — no generalities.

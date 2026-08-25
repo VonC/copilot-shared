@@ -73,7 +73,7 @@ rather than implementation detail.
 
 The first is that Q01's chosen mechanism cannot carry an implementation step.
 `render_command` produces exactly one host prefix, one instruction name, the
-literal ` on `, and one document path. There is no step slot. Code review needs
+the space-delimited `on` token and one document path. There is no step slot. Code review needs
 the plan and the step: the exchange core requires an implementation-step
 identifier, and this design states that the envelope and authored summary both
 carry plan, step, round, and umbrella. Q01 settles which router surface hands
@@ -152,7 +152,7 @@ Q05 -- How does the exact implementation step reach the specialized requestor?
 
 Q01 settles that `implement-step` asks `pw` for the specialized command and runs
 it verbatim, but `render_command` emits one host prefix, one instruction name,
-the literal ` on `, and one document path, with no step component. Code review
+the space-delimited `on` token and one document path, with no step component. Code review
 needs both the plan and the step, since the exchange core requires an
 implementation-step identifier and this design states that both the envelope and
 the authored summary carry plan, step, round, and umbrella.

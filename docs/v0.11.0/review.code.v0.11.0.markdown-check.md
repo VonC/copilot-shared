@@ -277,12 +277,12 @@ Repairs made:
 Paths staged:
 
 - docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md
-- tests/unit/tools/markdown_check/__init__.py
-- tests/unit/tools/markdown_check/test_rule_properties/__init__.py
+- `tests/unit/tools/markdown_check/__init__.py`
+- `tests/unit/tools/markdown_check/test_rule_properties/__init__.py`
 - tests/unit/tools/markdown_check/test_rule_properties/test_rule_properties_pbt.py
-- tests/unit/tools/markdown_check/test_rules/__init__.py
+- `tests/unit/tools/markdown_check/test_rules/__init__.py`
 - tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py
-- tests/unit/tools/markdown_check/test_source_model/__init__.py
+- `tests/unit/tools/markdown_check/test_source_model/__init__.py`
 - tests/unit/tools/markdown_check/test_source_model/test_source_model_tdd.py
 - tests/unit/tools/test_code_review_validation/test_code_review_validation_tdd.py
 - tests/unit/tools/test_code_reviewer_instruction/test_code_reviewer_instruction_tdd.py
@@ -292,7 +292,7 @@ Paths staged:
 - tests/unit/tools/test_review_requestor_instruction/test_review_requestor_instruction_tdd.py
 - tools/code_review_request.py
 - tools/code_review_validation.py
-- tools/markdown_check/__init__.py
+- `tools/markdown_check/__init__.py`
 - tools/markdown_check/classifier.py
 - tools/markdown_check/models.py
 - tools/markdown_check/rules.py
@@ -731,12 +731,12 @@ Repairs made:
 Paths staged:
 
 - docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md
-- tests/unit/tools/markdown_check/__init__.py
-- tests/unit/tools/markdown_check/test_rule_properties/__init__.py
+- `tests/unit/tools/markdown_check/__init__.py`
+- `tests/unit/tools/markdown_check/test_rule_properties/__init__.py`
 - tests/unit/tools/markdown_check/test_rule_properties/test_rule_properties_pbt.py
-- tests/unit/tools/markdown_check/test_rules/__init__.py
+- `tests/unit/tools/markdown_check/test_rules/__init__.py`
 - tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py
-- tests/unit/tools/markdown_check/test_source_model/__init__.py
+- `tests/unit/tools/markdown_check/test_source_model/__init__.py`
 - tests/unit/tools/markdown_check/test_source_model/test_source_model_tdd.py
 - tests/unit/tools/test_code_review_validation/test_code_review_validation_tdd.py
 - tests/unit/tools/test_code_reviewer_instruction/test_code_reviewer_instruction_tdd.py
@@ -746,7 +746,7 @@ Paths staged:
 - tests/unit/tools/test_review_requestor_instruction/test_review_requestor_instruction_tdd.py
 - tools/code_review_request.py
 - tools/code_review_validation.py
-- tools/markdown_check/__init__.py
+- `tools/markdown_check/__init__.py`
 - tools/markdown_check/classifier.py
 - tools/markdown_check/models.py
 - tools/markdown_check/rules.py
@@ -859,3 +859,551 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 3
+
+- Recorded: 2026-08-25T09:27:53+02:00
+- Exchange: code/code/v0.11.0/markdown-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.markdown-check.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 markdown-check (round 1)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.markdown-check.md
+Implementation step: 3
+Review round: 1
+
+### Code review evidence for step 3 markdown-check (round 1)
+
+request_index_tree: 3f6b8230c4f17d36c66bc4e1dd799c0adfd16115
+resolved_validation_set:
+
+- ghog day (sources: project)
+- ghog single tests/acceptance/markdown_check/test_markdown_check_acceptance/test_markdown_check_acceptance_tdd.py tests/acceptance/markdown_check/test_shared_gate/test_shared_gate_tdd.py (sources: plan)
+- rg -n -e record_failure.markdown -e markdown-check.bat check.bat (sources: plan)
+- rg -n -e Markdown.checker -e MD032 -e MD033 -e MD038 -e MD050 -e LS003 -e markdownlint-baseline README.md wiki/README.md wiki/reference/markdown-checker.md (sources: plan)
+- pytest tests/unit/tools/markdown_check/test_policy/test_policy_tdd.py tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py --no-cov -p no:testmon -q (sources: request)
+
+### Requestor assessment for step 3 markdown-check (round 1)
+
+Step 3 is fully implemented against its amended plan. The staged work repairs
+the remaining MD032 and MD038 corpus findings, adds zero-debt MD050 enforcement,
+connects the direct checker to `check.bat`, adds repository acceptance coverage,
+and publishes the checker reference.
+
+The final detached Groundhog day completed 2,001 tests with 100 percent
+coverage, no duration outliers, and exit 0. The direct Markdown checker also
+returns zero after the transcript repair and validation update. Production
+modules remain below the plan line limits, and the rule engine continues to use
+one shared source model rather than rule-specific file reads.
+
+Review MD050 closely: underscore-delimited strong prose must fail, while
+asterisk strong style, escaped delimiters, inline code, fenced code, and every
+code-delimited `__init__.py` path must pass.
+
+### Implementation report for step 3 markdown-check (round 1)
+
+The implementation adds `MD050` to the closed policy catalog and runner. The
+source model now retains prose lines after fence and inline-code masking, and
+the pure MD050 evaluator reports underscore-delimited strong style without
+interpreting code content as prose. The fence classifier also recognizes
+list-indented fenced blocks.
+
+The tracked Step 1 review transcript now wraps all ten `__init__.py` list paths
+in backticks. MD032 and genuine MD038 defects are repaired without baseline
+entries. The baseline remains limited to reviewed LS001, LS002, and MD033 debt.
+
+`check.bat` invokes `markdown-check.bat` once and records failures under the
+`markdown` component. Acceptance tests cover the public launcher, shared gate,
+adapters, overlapping rules, configuration errors, baseline growth and shrink,
+zero-debt policy, MD038 exceptions, asterisk strong style, and a code-delimited
+`__init__.py` example. Root and wiki navigation link the new reference page.
+
+### Change summary for step 3 markdown-check (round 1)
+
+The staged index contains these 41 paths:
+
+- `.claude/skills/humanizer/SKILL.md`
+- `.vscode/settings.json`
+- `README.md`
+- `check.bat`
+- `docs/design.v0.1.0.pw_handoff.md`
+- `docs/v0.11.0/design.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/draft.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/draft.v0.11.0.review-mode.md`
+- `docs/v0.11.0/feature-request.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/plan.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/plan.v0.11.0.code-review-requestor.validation.md`
+- `docs/v0.11.0/plan.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md`
+- `docs/v0.11.0/plan.v0.11.0.review-exchange-core.validation.md`
+- `docs/v0.11.0/review.code.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/review.code.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/review.code.v0.11.0.review-exchange-core.md`
+- `docs/v0.11.0/review.design-specification.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/review.design-specification.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/review.plan.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/review.plan.v0.11.0.markdown-check.md`
+- `instructions/group-commits-msg.md`
+- `instructions/prepare-release-notes.md`
+- `instructions/prepare-release.md`
+- `tests/acceptance/__init__.py`
+- `tests/acceptance/markdown_check/__init__.py`
+- `tests/acceptance/markdown_check/test_markdown_check_acceptance/__init__.py`
+- `tests/acceptance/markdown_check/test_markdown_check_acceptance/test_markdown_check_acceptance_tdd.py`
+- `tests/acceptance/markdown_check/test_shared_gate/__init__.py`
+- `tests/acceptance/markdown_check/test_shared_gate/test_shared_gate_tdd.py`
+- `tests/unit/tools/markdown_check/test_policy/test_policy_tdd.py`
+- `tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py`
+- `tests/unit/tools/markdown_check/test_source_model/test_source_model_tdd.py`
+- `tools/markdown_check/models.py`
+- `tools/markdown_check/policy.py`
+- `tools/markdown_check/rules.py`
+- `tools/markdown_check/runner.py`
+- `tools/markdown_check/source.py`
+- `wiki/README.md`
+- `wiki/reference/markdown-checker.md`
+- `wiki/reference/templates.md`
+
+The root `a.commit` contains six groups in dependency order:
+
+1. `feat(markdown-check): enforce strong style`
+2. `fix(markdown-check): clear Markdown debt`
+3. `feat(markdown-check): wire shared gate`
+4. `test(markdown-check): cover gate rollout`
+5. `docs(markdown-check): publish checker reference`
+6. `docs(markdown-check): record step 3 validation`
+
+### Human guidance and writer response for step 3 markdown-check (round 1)
+
+Human guidance:
+
+Pay particular attention to MD050 parity and the repaired Step 1 transcript.
+Every `__init__.py` list path must be code-delimited, underscore strong prose
+must report MD050, and inline or fenced code must remain exempt. Also verify
+that the request and transcript describe Step 3 only and do not claim a Step 2
+review occurred.
+
+Writer response: There is no earlier Step 3 reviewer answer. After the premature commit gate, the
+human identified two omissions: the existing transcript had unquoted
+`__init__.py` paths that trigger MD050, and Step 3 had not entered code review.
+Both issues are addressed before this round: MD050 is now implemented and the
+transcript paths are repaired.
+
+The missing Step 2 pre-commit review is not represented as completed or repaired
+by this Step 3 request. Step 2 was already committed, so its original staged
+review subject no longer exists. This request covers only the exact staged Step
+3 implementation.
+
+### Reviewer focus for step 3 markdown-check (round 1)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-3-round-1 -->
+
+## Round 1 by reviewer - Step 3
+
+- Recorded: 2026-08-25T09:40:39+02:00
+- Exchange: code/code/v0.11.0/markdown-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.markdown-check.md
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed index identity for step 3 markdown-check (exchange 1) (round 1)
+
+Baseline index tree: 3f6b8230c4f17d36c66bc4e1dd799c0adfd16115
+
+Assessed index tree: 3f6b8230c4f17d36c66bc4e1dd799c0adfd16115
+
+### Implementation check for step 3 markdown-check (exchange 1) (round 1)
+
+Result: Reviewer assessment result for Step 3: **Yes**. Every claim was reproduced
+rather than accepted, and the effort's final step is complete.
+
+The decisive check is the baseline itself. Running the shipped checker against
+an empty baseline gives the repository's true residual set, and it matches the
+tracked baseline exactly.
+
+| Rule | Empty-baseline run | Tracked allowance |
+| --- | --- | --- |
+| `LS001` | 1 | 1 |
+| `LS002` | 17 | 17 |
+| `MD033` | 7 | 7 |
+| `MD001`, `MD024`, `MD025`, `MD032`, `MD038`, `MD050`, `LS003` | 0 | none |
+
+Twenty-five findings measured, twenty-five allowed, nothing more. That is
+exactly the Q02 contract: the baseline records reviewed checker output rather
+than an estimate, and every zero-debt rule was repaired instead of grandfathered.
+`test_zero_debt_markdown_rules_have_no_baseline_entries` locks that in by
+asserting the `MD*` allowance set equals `{"MD033"}`.
+
+Both public entry points work. `markdown-check.bat` and
+`python -m tools.markdown_check.cli` each exit 0 against the current repository.
+The shared gate wires the launcher through the same `record_failure markdown
+<status>` pattern every other check uses, with `markdown_status` initialised at
+line 17 and cleared in `:check_unset` at line 208, so the new step follows the
+established gate lifecycle rather than inventing one.
+
+The forced walk reports `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0
+exit=0` and prints `Objective reached`, completing in 1m 56.7s. The plan's two
+`rg` contracts both match: the gate wiring in `check.bat`, and the catalog and
+baseline terms across `README.md`, `wiki/README.md`, and
+`wiki/reference/markdown-checker.md`.
+
+The reference page carries the full catalog with per-rule sections for `MD032`,
+`MD038`, and `MD050`, states that `MD024` and `MD025` are mandatory and that a
+configuration attempting to disable either fails before inventory evaluation,
+and documents the invocation model, finding and stream contract, and versioned
+baseline. `MD041` is absent, consistent with first-heading policy staying out of
+this catalog.
+
+The umbrella change is one line: row 7 flips from `pending` to `completed` with
+its requirement and validation-plan paths, matching rows 1 to 6. That is the
+writer-owned final-step action `implementation-check` mandates once the
+validation plan reads `Yes, it is implemented.`, which it now does with all
+three steps at Yes. It is not a boundary violation, and the reviewer confirmed
+the applicable umbrella digest did not move during this assessment.
+
+Validation plan effects: The validation plan received exactly one staged change and no side effect.
+
+`docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md` is staged as a
+modification in the trailing commit group. Its digest is
+`bb1ace1f2d861726b8023a0befeb3ca0c5d71bba266dda6203371bd12cc6827a` both before
+and after the reviewer assessment, so executing the resolved validation set
+produced no tracked validation side effect, no untracked validation artifact,
+and no ignored artifact beyond the `a.ghog.*` run logs.
+
+Its content now records Step 3 as fully implemented and carries the
+document-level status `Yes, it is implemented.` with all three step sections
+reading `Yes`. That flip is the precondition `implementation-check` requires
+before the matching umbrella row may be completed, and the staged umbrella diff
+performs exactly that single row change.
+
+### Pre-repair mandatory checks and coverage for step 3 markdown-check (exchange 1) (round 1)
+
+Validation state was captured before assessment and compared after it, and the
+two are identical.
+
+Captured path set: `docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md`.
+
+Before assessment the tracked digest was
+`bb1ace1f2d861726b8023a0befeb3ca0c5d71bba266dda6203371bd12cc6827a` at index tree
+`3f6b8230c4f17d36c66bc4e1dd799c0adfd16115`, with no untracked and no ignored
+validation files. After running the full resolved validation set, including the
+forced walk and both launcher invocations, the digest, index tree, and both
+empty lists are unchanged.
+
+No repair was attempted, so no pre-repair blob was recorded and no reviewer patch
+was attributed. The retained manifest carries identical baseline and assessed
+index trees with empty recorded-blob and repair-path lists.
+
+### Resolved validation set and sources for step 3 markdown-check (exchange 1) (round 1)
+
+The reviewer ran the union of the request validation set and the current
+resolver set. The two agree, so the union adds nothing beyond the request.
+
+- `ghog day`, source project. Run forced to avoid the testmon short-circuit.
+  Completed in 1m 56.7s reporting `fail=0 warn=0 xfail=0 cov=100 outliers=0
+  excluded=0 exit=0` and printing `Objective reached`.
+- The Step 3 acceptance `ghog single` command over the checker-acceptance and
+  shared-gate modules, source plan. Covered by the forced walk, which runs the
+  complete suite.
+- `rg -n -e record_failure.markdown -e markdown-check.bat check.bat`, source
+  plan. Matched the launcher invocation at line 125 and the
+  `record_failure markdown` call at line 131.
+- The documentation `rg` contract over `README.md`, `wiki/README.md`, and
+  `wiki/reference/markdown-checker.md`, source plan. Matched in all three files.
+- `pytest tests/unit/tools/markdown_check/test_policy/test_policy_tdd.py
+  tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py --no-cov
+  -p no:testmon -q`, source request. Covered by the forced walk.
+
+Beyond the declared set the reviewer ran `markdown-check.bat` and
+`python -m tools.markdown_check.cli`, which both exit 0; ran the checker once
+against an empty baseline in the scratch directory to establish the true
+residual set; and exercised the `MD050` evaluator against ten constructed
+boundary cases. None of those runs mutated the repository.
+
+No resolver drift was observed between the request-time set and the current set.
+
+### Resolver drift and direction for step 3 markdown-check (exchange 1) (round 1)
+
+No resolver drift.
+
+The request-time resolved validation set carries five commands and the current
+resolution produces the same five with the same source labels: `ghog day` from
+the project, the Step 3 acceptance `ghog single` command, the gate-wiring `rg`
+contract, and the documentation `rg` contract from the plan, plus the focused
+policy and rules `pytest` command from the request. Nothing was added, dropped,
+or relabelled.
+
+The request-time index tree `3f6b8230c4f17d36c66bc4e1dd799c0adfd16115` also
+matches the working index tree captured before assessment, so the review subject
+did not move under the request.
+
+### Repository state around validation for step 3 markdown-check (exchange 1) (round 1)
+
+The repository is byte-identical before and after this review.
+
+- Index tree: `3f6b8230c4f17d36c66bc4e1dd799c0adfd16115` at request time, at
+  baseline capture, and again after assessment.
+- Applicable umbrella digest:
+  `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c` before and
+  after the implementation-check result. The staged single-row umbrella change
+  was made by the writer before the request and is the mandated final-step
+  completion action; the reviewer did not move it.
+- Validation-state path set: one tracked file at digest
+  `bb1ace1f2d861726b8023a0befeb3ca0c5d71bba266dda6203371bd12cc6827a` before and
+  after, with empty untracked and ignored lists both times.
+- Staged set: 41 paths before and after, with no reviewer patch staged and no
+  pre-existing unstaged overlap left behind.
+
+The only filesystem effects are ignored root artifacts: the reviewer's own
+`a.code-reviewer.*` inputs, the retained manifest at
+`a.code-review-evidence.v0.11.0.markdown-check.step-3.json`, and the `a.ghog.*`
+logs from executing the declared validation set. The empty baseline used to
+establish the true residual set was written to the session scratch directory
+outside the repository, so no tracked or ignored repository file was added for
+it.
+
+### Repair inventory for step 3 markdown-check (exchange 1) (round 1)
+
+Repairs made:
+
+- No repairs were made and nothing was staged by the reviewer.
+- Every claim in the request reproduced on first check, so there was nothing both
+- safe and unambiguous left to repair in step.
+- The repository is unchanged by this review. The index tree is
+- `3f6b8230c4f17d36c66bc4e1dd799c0adfd16115` at request time, at baseline capture,
+- and after assessment. The applicable umbrella digest is
+- `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c` before and
+- after the implementation-check result, so the umbrella boundary was not crossed
+- by the reviewer. The validation-plan digest is unchanged at
+- `bb1ace1f2d861726b8023a0befeb3ca0c5d71bba266dda6203371bd12cc6827a`, with no
+- tracked validation side effect and no untracked or ignored validation artifact
+- beyond the ordinary `a.ghog.*` run logs.
+
+Paths staged:
+
+- `.claude/skills/humanizer/SKILL.md`
+- `.vscode/settings.json`
+- `README.md`
+- `check.bat`
+- `docs/design.v0.1.0.pw_handoff.md`
+- `docs/v0.11.0/design.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/draft.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/draft.v0.11.0.review-mode.md`
+- `docs/v0.11.0/feature-request.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/plan.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/plan.v0.11.0.code-review-requestor.validation.md`
+- `docs/v0.11.0/plan.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md`
+- `docs/v0.11.0/plan.v0.11.0.review-exchange-core.validation.md`
+- `docs/v0.11.0/review.code.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/review.code.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/review.code.v0.11.0.review-exchange-core.md`
+- `docs/v0.11.0/review.design-specification.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/review.design-specification.v0.11.0.markdown-check.md`
+- `docs/v0.11.0/review.plan.v0.11.0.code-review-requestor.md`
+- `docs/v0.11.0/review.plan.v0.11.0.markdown-check.md`
+- `instructions/group-commits-msg.md`
+- `instructions/prepare-release-notes.md`
+- `instructions/prepare-release.md`
+- `tests/acceptance/__init__.py`
+- `tests/acceptance/markdown_check/__init__.py`
+- `tests/acceptance/markdown_check/test_markdown_check_acceptance/__init__.py`
+- `tests/acceptance/markdown_check/test_markdown_check_acceptance/test_markdown_check_acceptance_tdd.py`
+- `tests/acceptance/markdown_check/test_shared_gate/__init__.py`
+- `tests/acceptance/markdown_check/test_shared_gate/test_shared_gate_tdd.py`
+- `tests/unit/tools/markdown_check/test_policy/test_policy_tdd.py`
+- `tests/unit/tools/markdown_check/test_rules/test_rules_tdd.py`
+- `tests/unit/tools/markdown_check/test_source_model/test_source_model_tdd.py`
+- `tools/markdown_check/models.py`
+- `tools/markdown_check/policy.py`
+- `tools/markdown_check/rules.py`
+- `tools/markdown_check/runner.py`
+- `tools/markdown_check/source.py`
+- `wiki/README.md`
+- `wiki/reference/markdown-checker.md`
+- `wiki/reference/templates.md`
+
+### Commit plan assessment for step 3 markdown-check (exchange 1) (round 1)
+
+`a.commit` is accurate and needs no amendment.
+
+Its six groups name exactly the 41 staged paths, with nothing staged but
+unplanned and nothing planned but unstaged. All six subjects are conventional
+and correctly typed: three `feat` and `fix` implementation groups, one `test`,
+and two `docs`.
+
+The dependency order is right for a rollout step. `MD050` enforcement lands
+first, then the corpus debt it and the other rules require, then the shared-gate
+wiring that depends on a clean corpus, then the acceptance coverage of that
+wiring, then the published reference, and finally the Step 3 validation record
+as the trailing durable evidence.
+
+Group membership matches the work each subject describes. The umbrella row flip
+travels with the validation record rather than with the implementation groups,
+which is correct because it is the completion bookkeeping that the validation
+status flip authorizes.
+
+The reviewer did not amend the plan and made no staged change of any kind.
+
+### Findings and boundaries for step 3 markdown-check (exchange 1) (round 1)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Human guidance response for step 3 markdown-check (exchange 1) (round 1)
+
+Human guidance: Pay particular attention to MD050 parity and the repaired Step 1 transcript.
+Every `__init__.py` list path must be code-delimited, underscore strong prose
+must report MD050, and inline or fenced code must remain exempt. Also verify
+that the request and transcript describe Step 3 only and do not claim a Step 2
+review occurred.
+
+Guidance response: All three guidance items were checked directly, and all three hold.
+
+**MD050 parity.** The reviewer exercised the evaluator against ten constructed
+cases covering every boundary the guidance names, and each behaved as specified.
+
+| Case | Expected | Result |
+| --- | --- | --- |
+| `__bold text__` in prose | reports | reports |
+| Bare `__init__.py` in prose | reports | reports |
+| Bare path in a list item | reports | reports |
+| `**bold text**` asterisk strong | exempt | exempt |
+| Underscore path inside inline code | exempt | exempt |
+| Underscore path inside a fenced block | exempt | exempt |
+| Escaped delimiters | exempt | exempt |
+| Code-delimited path in a list item | exempt | exempt |
+| `_italic_` single-underscore emphasis | exempt | exempt |
+| `snake_case_name` intraword underscores | exempt | exempt |
+
+The pattern `(?<![\\_])__(?=\S).+?(?<=\S)__(?!_)` earns those last two exemptions
+deliberately: the lookbehind rejects an escaped or run-on delimiter and the
+trailing lookahead rejects a longer underscore run, so intraword and emphasis
+forms never reach the finding path. Masking happens in the source model, so
+`prose_lines` excludes fenced and inline code before the rule ever sees a line,
+which is why code content cannot be misread as prose.
+
+**The repaired Step 1 transcript.** Every `__init__.py` mention in
+`docs/v0.11.0/review.code.v0.11.0.markdown-check.md` is code-delimited: 19
+occurrences in total, 19 wrapped in backticks, including the ten list paths
+across both Step 1 rounds at lines 280 to 295 and 734 to 749. The whole-corpus
+run confirms the consequence, with `MD050` reporting zero findings and holding no
+baseline allowance.
+
+**Step 3 scope and the absent Step 2 review.** The request and the transcript
+describe Step 3 only. `Step 2` appears in the transcript exactly twice outside
+this guidance block, both inside the writer's own response, and it states plainly
+that the missing Step 2 pre-commit review "is not represented as completed or
+repaired by this Step 3 request" because Step 2 was already committed and its
+staged subject no longer exists. No section claims a Step 2 review occurred, and
+no evidence in this round is attributed to one.
+
+The reviewer records the gap as a fact rather than a Step 3 defect: Step 2 of
+this plan was committed without passing through the code-review exchange. Nothing
+in the current staged work can repair that, and the honest disclosure is the
+correct handling. Whether the effort needs any retrospective action for Step 2 is
+a human decision that belongs at the commit gate, not a reviewer judgment.
+
+### Writer instructions for step 3 markdown-check (exchange 1) (round 1)
+
+No changes are requested. Step 3 is complete against its plan and verified.
+
+Two facts to carry to the commit gate, neither of which is a defect in the
+staged work.
+
+1. Step 2 of this plan was committed without passing through the code-review
+   exchange. This request discloses that plainly and does not claim otherwise,
+   and nothing in the staged Step 3 work can repair it because Step 2's staged
+   subject no longer exists. Whether the effort needs any retrospective action
+   is a human decision.
+2. This step completes the effort. The staged umbrella row 7 flip to
+   `completed` is the mandated final-step bookkeeping and depends on the
+   validation plan's `Yes, it is implemented.` status, which is also staged.
+   Committing the two together keeps that pair consistent.
+
+A correction to this reviewer's earlier Step 1 round 2 notes, so the record is
+accurate: the figures of 82 `MD033` findings and 29 `MD038` findings were
+wrong. They came from calling the rule evaluators directly and bypassing policy
+loading, so `MD033` counted the `img` elements the configuration allows. Under
+the shipped runner the true values are 7 and 0. Q02's decision to make the
+implemented checker the sole authority for baseline records is exactly what
+guards against that class of error.
+
+A commit-ready recommendation is advisory and authorizes nothing. The human
+commit choice remains the only authority to commit.
+
+One forward-looking note about `MD050` and the review tooling, found while
+preparing this answer. The code-review answer renderer emits the caller's staged
+path inventory verbatim, and the natural way to produce that inventory is
+`git diff --cached --name-only`, which yields bare paths. Any step whose staged
+set contains an `__init__.py` file will therefore introduce `MD050` findings
+into its own review transcript unless the caller code-delimits each path first.
+This reviewer hit exactly that: the first render of this answer would have added
+four `MD050` findings to the transcript at the four staged `__init__.py` paths.
+They were code-delimited before publication and the merged transcript now
+reports no findings under any rule.
+
+Since `MD050` carries no baseline allowance by design, that mistake turns the
+shared gate red on the next run. The requestor already code-delimits paths in
+its own change summary. Worth stating in the reference page's `MD050` section
+that review-artifact authors must code-delimit file paths, so the obligation is
+documented rather than rediscovered.
+
+### Decision rationale for step 3 markdown-check (exchange 1) (round 1)
+
+The disposition is an advisory commit-ready recommendation. It does not
+authorize a commit; only the human commit choice does that.
+
+All six readiness-floor results pass. Identity passes: envelope, umbrella, plan,
+step, round, and exchange occurrence agree, and the request-time index tree
+matched the working index before and after assessment. Completeness passes: the
+catalog now carries `MD050`, the corpus debt it and the other zero-debt rules
+require is repaired, the gate is wired, acceptance coverage exists, and the
+reference is published. Validation and coverage passes: the forced walk reports
+`cov=100` with no failures, warnings, xfails, outliers, or exclusions and exits
+0, and both launcher forms exit 0. Staged attribution passes: 41 of 41 paths
+staged with no reviewer patch and no unstaged overlap. Unresolved findings are
+empty. `a.commit` passes unamended.
+
+The recommendation rests on reproduced evidence. The strongest single check is
+the empty-baseline run: the repository's true residual set is 1 `LS001`, 17
+`LS002`, and 7 `MD033` findings, and the tracked baseline allows exactly those
+25 and nothing else. Every rule the design requires to start at zero reports
+zero, and an acceptance test now asserts that the `MD*` allowance set is
+`{"MD033"}`, so the zero-debt contract cannot silently erode later.
+
+The human guidance was answered on its own terms. `MD050` behaved correctly on
+all ten boundary cases the reviewer constructed, the Step 1 transcript has all
+19 `__init__.py` mentions code-delimited, and neither the request nor the
+transcript claims a Step 2 review occurred.
+
+No repair was made this round, so nothing finished in the same round that
+changed the work.
+
+### Final reviewer decision for step 3 markdown-check (exchange 1) (round 1)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-3-round-1 -->
+
+## Round 1 by human - Step 3 - human-confirmation
+
+- Recorded: 2026-08-25T09:50:16+02:00
+- Exchange: code/code/v0.11.0/markdown-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.markdown-check.md
+- Implementation step: 3
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->

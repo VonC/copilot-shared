@@ -379,7 +379,7 @@ the shared exchange core. It derives one plan-step identity, checks only fixed
 artifact paths, preserves marker-off routing, resumes durable live state, and
 fails closed on identity or step disagreement.
 
-The shared renderer now provides the literal ` step <id>` suffix without
+The shared renderer now provides a literal space followed by the `step <id>` suffix without
 changing ordinary rendering. The skill router and CLI expose the specialized
 requestor and `code-review-commit`; the latter delegates exactly once to the
 existing strict batch-commit command and completes the exchange only after a
@@ -518,7 +518,7 @@ the shared exchange core. It derives one plan-step identity, checks only fixed
 artifact paths, preserves marker-off routing, resumes durable live state, and
 fails closed on identity or step disagreement.
 
-The shared renderer now provides the literal ` step <id>` suffix without
+The shared renderer now provides a literal space followed by the `step <id>` suffix without
 changing ordinary rendering. The skill router and CLI expose the specialized
 requestor and `code-review-commit`; the latter delegates exactly once to the
 existing strict batch-commit command and completes the exchange only after a

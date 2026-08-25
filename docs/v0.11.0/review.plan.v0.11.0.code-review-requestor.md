@@ -172,10 +172,10 @@ step-aware Codex and Claude rendering while ordinary rendering stays
 byte-compatible, and that test needs an exact expected string. The form is also
 the human-visible handoff copied into the reviewer session.
 
-Options should be: a trailing keyword token such as ` step <id>` appended after
-the document; a flag-style suffix such as ` --step <id>`; or a compact document
+Options should be: a trailing space followed by the keyword token `step <id>` appended after
+the document; a trailing space followed by the flag token `--step <id>`; or a compact document
 qualifier such as `<document>#<id>`. The reviewer recommends the trailing
-keyword token, because it reads as prose in the same way the existing ` on `
+keyword token, because it reads as prose in the same way the existing space-delimited `on` token
 separator does, stays unambiguous for step ids like `4A`, and leaves the
 ordinary command a strict prefix of the step-aware one, which makes the
 byte-compatibility assertion in Step 3 trivial to state.
@@ -208,14 +208,14 @@ Requested changes: Change 1 -- add Q05 on the step-token command syntax.
 Title it "What exact command syntax carries the implementation step?". Its
 description must state that the design settled that the command carries the step
 and Q01 settled which step builds it, that `render_command` currently emits a
-host prefix, an instruction name, the literal ` on `, and one document path,
+host prefix, an instruction name, the space-delimited `on` token, and one document path,
 that Step 3 requires an exact expected string to assert step-aware rendering
 against byte-compatible ordinary rendering, and that the form is the
 human-visible handoff copied into the reviewer session.
 
 Offer three options: a trailing keyword token appended after the document; a
 flag-style suffix; or a compact document qualifier. Recommend and answer the
-trailing keyword token, on the ground that it matches the existing ` on `
+trailing keyword token, on the ground that it matches the existing space-delimited `on` token
 separator's prose style, stays unambiguous for step ids such as `4A`, and leaves
 the ordinary command a strict prefix of the step-aware one so Step 3's
 byte-compatibility assertion is direct.
@@ -317,7 +317,7 @@ Round 1 feedback was accepted in full. Q01 through Q04 remain unchanged. Q05 fix
 
 ### Change summary for plan code-review-requestor round 2
 
-Applied all three round 1 requested changes. Added Q05 and its literal trailing ` step <id>` contract to Step 3. Added Q06 and named a test-local code answer builder in Step 4 files and behavior. Added the Step 2 token-and-order assertion rule. All existing step structures, baselines, checkpoints, validation sections, and Q01 through Q04 remain unchanged.
+Applied all three round 1 requested changes. Added Q05 and its literal trailing space followed by `step <id>` contract to Step 3. Added Q06 and named a test-local code answer builder in Step 4 files and behavior. Added the Step 2 token-and-order assertion rule. All existing step structures, baselines, checkpoints, validation sections, and Q01 through Q04 remain unchanged.
 
 ### Writer response for plan code-review-requestor round 2
 

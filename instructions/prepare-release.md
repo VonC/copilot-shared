@@ -968,7 +968,7 @@ conventional subject is part of the release history and changelog input.
 
 Read the first line of `<PRJ_DIR>/version.txt`. When its first word is not
 the target `X.Y.Z-SNAPSHOT`, rewrite that first word to `X.Y.Z-SNAPSHOT`,
-keeping the ` -- ` separator and the rest of the line. This is the form
+keeping the space-delimited `--` separator and the rest of the line. This is the form
 `prepare_release_notes` and `brel` both expect.
 
 ### Step 10 — Prepare the release notes and the changelog

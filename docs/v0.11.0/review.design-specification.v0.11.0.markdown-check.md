@@ -532,7 +532,7 @@ altitude with implementation sequencing left to the plan.
 
 Requested changes: Two changes are requested, both arising from one measured finding. This summary
 opens with prose rather than a list because the renderer inlines it behind the
-`Requested changes: ` label, which is the exact constraint item 2 asks the design
+`Requested changes:` label followed by a space, which is the exact constraint item 2 asks the design
 to document.
 
 - Blocking. The `MD032` zero-start claim is scoped to the tracked set and breaks
@@ -547,7 +547,7 @@ to document.
   because no agent may edit a published transcript.
 - The reference-page authoring obligation cannot be followed as written. For
   fields the renderers inline behind a label, `tools/spec_review_answer.py` line
-  188 applies `.strip()` before prefixing `Requested changes: `, so a leading
+  188 applies `.strip()` before prefixing the `Requested changes:` label and a space, so a leading
   blank line the author adds is removed. Replace the single blank-line rule with
   the two-case rule: block-rendered caller content keeps the blank lines, while
   label-inlined content, namely the requested-changes, covered-wording, and
@@ -584,7 +584,7 @@ the guidance side.
    after every list in caller-authored review content. For the fields the
    renderers inline behind a literal label, that instruction has no effect,
    because `tools/spec_review_answer.py` line 188 applies `.strip()` to the
-   caller content before prefixing `Requested changes: `, removing any leading
+   caller content before prefixing the `Requested changes:` label and a space, removing any leading
    blank line the author added.
 
    Replace it with the two-case rule. Caller content rendered as its own block
@@ -785,7 +785,7 @@ commands to the plan as it should.
 
 Covered wording: No substantive change is requested, and only ordinary consolidation work
 remains. This summary opens with prose because the renderer inlines it behind
-the `Covered wording: ` label, which is the contract the design now documents.
+the `Covered wording:` label followed by a space, which is the contract the design now documents.
 
 - Fold the six answered questions into the confirmed text. The design's confirmed
   sections contain no clause conditional on an unanswered question, so there is
