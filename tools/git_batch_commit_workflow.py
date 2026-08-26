@@ -20,6 +20,9 @@ earlier auto-backgrounded run.
 
 Step 2 routes root-plan staged membership, group order, and conventional
 subjects through the same side-effect-free validator used by code review.
+
+Step 1 delegates exact staged-path inventory to the neutral commit-plan support
+boundary so committing and read-only checking cannot diverge.
 """
 
 from __future__ import annotations
@@ -30,7 +33,7 @@ import sys
 from pathlib import Path
 from typing import NoReturn
 
-from tools import find_project_root
+from tools import commit_plan_support, find_project_root
 from tools.git_batch_commit_git import (
     block_has_staged_changes as _block_has_staged_changes,
 )
@@ -62,7 +65,6 @@ from tools.git_batch_commit_parsing import (
     parse_clipboard_content,
 )
 from tools.git_batch_commit_validation import validate_commit_plan
-from tools.git_command import GitCommandOptions, run_cross_platform_git_command
 
 LOGGER = logging.getLogger("git_batch_commit")
 
@@ -190,13 +192,8 @@ def _run_root_a_commit_workflow(
 
 
 def _staged_paths(root: Path) -> tuple[str, ...]:
-    """Return exact staged paths, counting both sides of a rename."""
-    result = run_cross_platform_git_command(
-        ("diff", "--cached", "--name-only", "--no-renames", "-z"),
-        cwd=root,
-        options=GitCommandOptions(capture_output=True, encoding="utf-8"),
-    )
-    return tuple(path for path in result.stdout.split("\0") if path)
+    """Return the shared exact staged inventory through a compatibility seam."""
+    return commit_plan_support.staged_paths(root)
 
 
 def _validate_commit_plan_for_root(blocks: list[CommitBlock], root: Path) -> None:
