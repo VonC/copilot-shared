@@ -36,8 +36,11 @@ performance check.
 
 ### Analysis of Step 1 implementation state
 
-Not started. Step 1 is not implemented because no implementation check has
-taken place yet.
+Yes. Step 1 has been fully implemented.
+
+The exact staged-path inventory now has one public implementation, the batch
+workflow preserves its private compatibility seam through delegation, and the
+focused and global verification evidence covers the complete planned contract.
 
 ### Goal for Step 1
 
@@ -52,26 +55,74 @@ make the committing workflow delegate without changing its behavior.
 
 ### What was implemented for Step 1
 
-_(empty — no check has taken place yet.)_.
+- **Shared inventory boundary**: `tools/commit_plan_support.py` owns the exact
+  `git diff --cached --name-only --no-renames -z` invocation and returns the
+  ordered nonempty NUL-decoded path tuple.
+- **Batch compatibility**: `git_batch_commit_workflow._staged_paths(root)` now
+  delegates directly to `commit_plan_support.staged_paths(root)`, while
+  `_validate_commit_plan_for_root` continues to pass that result to the
+  unchanged public validator before mutation.
+- **Focused verification**: the new support tests pin the Git arguments, root,
+  capture and encoding options, whitespace preservation, deletion membership,
+  both rename sides, order, and empty-segment handling. The updated workflow
+  test proves the compatibility helper returns the public result unchanged.
+- **Repository gate evidence**: the final forced `ghog day --force` bypassed
+  the cached green no-op and completed with
+  `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`.
+
 ### New types or classes introduced for Step 1
 
-_(empty — no check has taken place yet.)_.
+- `commit_plan_support.staged_paths(root)`: public read-only function for exact
+  staged membership shared by committing and checking workflows.
+- `test_commit_plan_support_tdd.py`: focused test suite for the subprocess and
+  NUL-decoding boundary.
+
+No new production class or domain type was needed; the step is a function
+extraction with compatibility wiring.
 
 ### Architecture check for Step 1
 
-_(empty — no check has taken place yet.)_.
+- **Boundary direction**: the neutral support module depends only on the
+  existing cross-platform Git command adapter. The committing workflow depends
+  on that support boundary and no reverse dependency exists.
+- **Responsibility placement**: Git inventory and decoding remain together;
+  parser, validator, rendering, and commit execution responsibilities were not
+  moved into the support module.
+- **File girth**: the new support module is 38 lines, the workflow is 481 lines,
+  the focused test is 135 lines, and the updated workflow test is 347 lines,
+  all within their advisory budgets and the 650-line ceiling.
+
+No, there is nothing that needs to be addressed for Step 1.
 
 ### Performance check for Step 1
 
-_(empty — no check has taken place yet.)_.
+`staged_paths(root)` performs exactly one Git subprocess call and one linear
+split-and-filter pass over its NUL-delimited output. It adds no per-path file
+probe, nested scan, sorting, O(n log n) work, or O(n^2) work.
+
+No, there is no performance issue that needs to be addressed for Step 1.
 
 ### Unit test coverage check for Step 1
 
-_(empty — no check has taken place yet.)_.
+- **`commit_plan_support.staged_paths`**: focused tests execute the sole Git
+  seam, nonempty and empty decoding branches, whitespace paths, deletions, and
+  two-sided rename membership; the global coverage gate reports 100%.
+- **Batch delegate and validator wiring**: existing and updated workflow tests
+  cover delegation, successful validation input, diagnostics, and unchanged
+  commit control flow.
+
+No, there is no unit-tested class below 100% that needs completing for Step 1.
 
 ### Feature integrity for Step 1
 
-_(empty — no check has taken place yet.)_.
+- **Existing batch behavior**: the public validator still receives the same
+  ordered tuple through `_staged_paths`, and commit execution remains unchanged.
+- **Rename and deletion reporting**: `--no-renames` continues to expose both
+  rename sides, while deleted worktree paths remain exact staged members.
+- **Regression evidence**: all 2,010 full-suite tests pass with no warning,
+  expected failure, coverage gap, or duration outlier.
+
+No existing feature or reporting capability appears impaired by Step 1.
 
 ---
 
