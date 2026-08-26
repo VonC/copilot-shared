@@ -1,8 +1,8 @@
-"""Lifecycle acceptance for the complete implementation review requestor.
+"""Lifecycle acceptance for authorized implementation-review cleanup.
 
 Step 4 composes marker routing, exact step rendering, staged repair evidence,
 shared exchange rounds, human override, durable commit authorization, replay,
-and cleanup. Deferred reviewer answers come from the test-local strict builder;
+and clean completion. Deferred answers come from the test-local strict builder;
 only the final batch subprocess boundary is replaced. Renderer-only journeys
 use one deterministic valid tree object; the real Git capture boundary has its
 own temporary-repository tests.
@@ -32,6 +32,8 @@ from tools.review_exchange_models import (
 from tools.review_exchange_paths import derive_artifact_paths
 from tools.review_exchange_store import ReviewExchangeStore
 
+# Test doubles intentionally replace functions with smaller signatures.
+# pyright: reportUnknownLambdaType=false, reportUnknownArgumentType=false
 from .code_answer_builder import build_code_answer
 
 if TYPE_CHECKING:
@@ -428,6 +430,7 @@ def test_commit_authorization_replays_once_then_cleans_live_state(
         return subprocess.CompletedProcess(arguments, 0)
 
     monkeypatch.setattr(code_review, "run_batch_commit", successful)
+    monkeypatch.setattr(code_review.git, "status_entries", lambda _root: [])
     assert code_review.continue_authorized_commit(
         effort.root,
         effort.topic,

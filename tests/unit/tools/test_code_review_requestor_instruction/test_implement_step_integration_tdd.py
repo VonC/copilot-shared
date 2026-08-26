@@ -30,7 +30,7 @@ def test_implement_step_samples_review_mode_after_grouping_and_delegates() -> No
 
 
 def test_grouping_instruction_has_a_dedicated_authorized_entry() -> None:
-    """Durable authorization bypasses the choice display, not batch validation."""
+    """Authorization covers reviewed and residual batches up to a clean tree."""
     content = _content("group-commits-msg.md")
     start = content.index("Authorized code-review continuation")
     block = content[start:]
@@ -45,4 +45,29 @@ def test_grouping_instruction_has_a_dedicated_authorized_entry() -> None:
     assert positions == sorted(positions)
     assert "do not present" in block
     assert "authorization remains pending" in block
+    normalized = " ".join(block.split())
+    for token in (
+        "git add -A",
+        "Steps 1 through 6",
+        "pw code-review-commit --residual",
+        "git status --porcelain",
+        "clean working tree",
+        "do not run `pw skill`",
+    ):
+        assert token in normalized
 
+
+def test_code_review_requestor_requires_clean_residual_completion() -> None:
+    """The convergence Commit choice retains authority through cleanup."""
+    content = _content("code-review-requestor.md")
+    start = content.index("Authorized commit replay")
+    block = content[start:]
+    for token in (
+        "reviewed root `a.commit`",
+        "git add -A",
+        "group-commits-msg",
+        "pw code-review-commit --residual",
+        "git status --porcelain",
+        "Never proceed to `pw skill`",
+    ):
+        assert token in block

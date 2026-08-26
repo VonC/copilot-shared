@@ -87,10 +87,24 @@ This is a dedicated entry used only after the code-review requestor observes
 `owning-action-pending` and verifies `owning_action_authorized: true`. Run
 `pw code-review-commit`; it runs the canonical batch entry with
 `--root-a-commit` and `--non-interactive`, reusing the root `a.commit`
-validation and batch execution above exactly once. In this route, do not present the commit
-choices again and do not issue private Git commands. The continuation calls the
-exchange `complete` only after the batch succeeds; on failure, authorization remains pending
-for a later replay.
+validation and batch execution above for the reviewed commit plan first. In
+this route, do not present the commit choices again and do not issue private
+Git commit commands.
+
+After that reviewed batch succeeds, the continuation checks the complete
+repository status. When changes remain, it runs repository-wide `git add -A`,
+retains the durable owning authorization, and reports that residual grouping is
+required. Generate and format a replacement root `a.commit` for every staged
+residual path through Steps 1 through 6 above. The existing `Commit` choice
+already authorizes this bounded cleanup batch, so do not present the Step 7
+menu. Then run `pw code-review-commit --residual`; it executes the replacement
+plan through the same `--root-a-commit --non-interactive` batch entry.
+
+The residual continuation must run `git status --porcelain` after that batch
+and require empty output. Only a successful batch followed by a clean working
+tree may call the exchange `complete`. On a batch failure or a non-clean final
+status, authorization remains pending for repair and replay; do not run
+`pw skill`, begin another step, or claim completion.
 
 ## Authorized consolidation continuation
 

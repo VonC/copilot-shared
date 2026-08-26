@@ -1,7 +1,8 @@
 """Tests for exact-path code-review routing and authorized commit replay.
 
 The suite pins one plan-step context, marker-gated cold entry, live exchange
-precedence, fail-closed identity checks, and the single batch-commit boundary.
+precedence, fail-closed identity checks, and the reviewed batch boundary before
+the separately tested residual cleanup phase.
 """
 
 from __future__ import annotations
@@ -324,6 +325,7 @@ def test_successful_authorized_continuation_completes_exchange(
         "run_batch_commit",
         lambda *_args, **_kwargs: subprocess.CompletedProcess([], 0),
     )
+    monkeypatch.setattr(code_review.git, "status_entries", lambda _root: [])
     assert code_review.continue_authorized_commit(tmp_path, topic, state, record) == 0
     assert not store.paths.coordination.exists()
 
@@ -384,7 +386,7 @@ def test_skill_delegates_live_forced_and_authorized_routes(
     monkeypatch.setattr(
         code_review,
         "continue_authorized_commit",
-        lambda *_args: continuation_exit,
+        lambda *_args, **_kwargs: continuation_exit,
     )
     assert skill.run_authorized_code_review_commit(tmp_path) == continuation_exit
     monkeypatch.setattr(skill.handoff, "resolve_current_topic", lambda *_args: None)

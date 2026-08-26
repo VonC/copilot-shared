@@ -1,9 +1,10 @@
-"""Skill-mode command rendering and disk-derived routing for ``pw skill``.
+"""Skill routing plus phase-safe authorized code-review commit replay.
 
 Commands use the detected Claude or Codex prefix and point at the next document
 workflow action. Post-write routing reviews the new artifact explicitly,
 post-commit routing advances implementation steps, and post-merge routing walks
 an umbrella collection in its declared order before allowing release work.
+Authorized review commits can resume their reviewed or residual batch phase.
 """
 
 from __future__ import annotations
@@ -354,8 +355,8 @@ def run_skill(  # noqa: PLR0913
     return _emit(command, error)
 
 
-def run_authorized_code_review_commit(root: Path) -> int:
-    """Resume one durable code-review commit without displaying another gate."""
+def run_authorized_code_review_commit(root: Path, *, residual: bool = False) -> int:
+    """Resume one authorized reviewed or residual commit without another gate."""
     branch = git.current_branch(root)
     record = memory.read_memory(root)
     topic = handoff.resolve_current_topic(root, branch, record)
@@ -363,7 +364,13 @@ def run_authorized_code_review_commit(root: Path) -> int:
         message = "authorized code-review commit has no resolved workflow topic"
         raise code_review.CodeReviewRoutingError(message)
     state = steps.compute_state(root, topic, None)
-    return code_review.continue_authorized_commit(root, topic, state, record)
+    return code_review.continue_authorized_commit(
+        root,
+        topic,
+        state,
+        record,
+        residual=residual,
+    )
 
 
 def post_merge_command(
