@@ -593,3 +593,628 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 2
+
+- Recorded: 2026-08-26T18:23:05+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 2
+- Outcome: request
+
+### Review identity for step 2 commit-plan-check (round 1)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+Implementation step: 2
+Review round: 1
+
+### Code review evidence for step 2 commit-plan-check (round 1)
+
+request_index_tree: 4d9b89f8a2e497e4d935b3b694511f849c53d55a
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n CommitPlanCheck tools/commit_plan_check.py commit-plan-check.bat tests/unit/tools/test_commit_plan_check (sources: plan)
+- commit-plan-check.bat --format json (sources: request)
+
+### Requestor assessment for step 2 commit-plan-check (round 1)
+
+Step 2 is fully implemented against its exact plan slice.
+
+- Static checks pass for type safety, lint, complexity, file girth, Markdown,
+  shell, and EOF rules.
+- The final detached Groundhog day passes all 2,039 tests with 100% coverage,
+  no warnings, expected failures, or duration outliers.
+- The checker preserves parser, staged-inventory, and validator boundaries,
+  introduces no DDD-Hexagonal dependency inversion, and contains no mutation
+  path.
+- Each nonempty check performs one plan read, one parser pass, one staged Git
+  inventory, one validator call, and one projection without quadratic work.
+- Existing batch commit execution and its root-plan dry-run rejection remain
+  unchanged.
+
+### Implementation report for step 2 commit-plan-check (round 1)
+
+The implementation adds `CommitPlanCheckState` and the frozen
+`CommitPlanCheckResult`, then composes the public parser, shared staged-path
+inventory, and public validator in `check_commit_plan(root)`.
+
+Human and compact JSON renderers project the same immutable result. The CLI
+supports discovered or explicit roots and maps ready, expected non-ready, and
+operational outcomes to statuses 0, 3, and 2 with the required stream split.
+The root launcher delegates to `python -m tools.commit_plan_check` and preserves
+the CLI status.
+
+The focused unit suite covers all six states, exact collaborator use, output
+schema and ordering, CLI boundaries, module execution, discovery, operational
+failures, and launcher delegation.
+
+### Change summary for step 2 commit-plan-check (round 1)
+
+The staged implementation contains exactly these paths:
+
+- `commit-plan-check.bat`
+- `tools/commit_plan_check.py`
+- `tests/unit/tools/test_commit_plan_check/__init__.py`
+- `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py`
+- `docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md`
+
+The validated root `a.commit` contains two ordered groups:
+
+1. `feat(commit-plan-check): expose read-only plan checker` contains the
+   production checker, root launcher, and focused tests.
+2. `docs(commit-plan-check): record step 2 validation` contains the required
+   validation-plan evidence and is the final commit.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, all
+five staged paths, both ordered groups, and no diagnostics.
+
+### Writer response for step 2 commit-plan-check (round 1)
+
+Writer response: None for round 1.
+
+There is no earlier reviewer feedback, accepted repair, or disagreement to
+report.
+
+### Reviewer focus for step 2 commit-plan-check (round 1)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-2-round-1 -->
+
+## Round 1 by reviewer - Step 2
+
+- Recorded: 2026-08-26T18:53:53+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 2
+- Outcome: answer
+
+### Assessed index identity for step 2 commit-plan-check (exchange 1) (round 1)
+
+Baseline index tree: 4d9b89f8a2e497e4d935b3b694511f849c53d55a
+
+Assessed index tree: 4d9b89f8a2e497e4d935b3b694511f849c53d55a
+
+### Implementation check for step 2 commit-plan-check (exchange 1) (round 1)
+
+Result: No. Step 2 has NOT been fully implemented. The service, renderers, and module CLI are correct and well tested, but the shipped root launcher does not satisfy the entry-point parity and root-discovery contract that Step 2 owns, so one of the step's two adapters is wrong.
+
+Almost everything else is right, and I verified it against the code rather than the report.
+
+The settled Q06 parsing boundary is honored exactly. `check_commit_plan(root)` resolves `<root>/a.commit`, returns `missing-plan` when it is absent, reads the file exactly once through `_read_plan`, returns `empty-plan` on empty or whitespace content, then parses with the public `parse_clipboard_content(content, interactive=False)`. The committing workflow's private `_read_and_parse_content` is not imported, so the read-only checker carries no dependency on commit execution and no clipboard fallback.
+
+The failure taxonomy is complete and correctly ordered. Missing, empty, malformed, invalid, empty-staged, and operational outcomes are each reachable and distinct, and `CommitMessageError` is caught separately from the broad operational guard so a malformed plan reports `invalid-plan` at status three rather than an operational failure at status two.
+
+The writer closed a gap the plan did not name. Nonempty content that parses to zero blocks returns `empty-plan` before the inventory call, covered by `test_nonempty_content_without_blocks_is_an_empty_plan`. That ordering matters: `validate_commit_plan([], [])` produces no diagnostics, so reaching the validator with zero blocks and an empty index would have reported a ready plan. The early return forecloses that, and I confirmed the behavior live rather than by reading.
+
+The structured contract matches the design exactly. `structured_payload` emits `schema_version` 1 with `state`, `ready`, `staged_paths`, `groups` carrying `position`, `subject`, and `paths`, and `diagnostics`, with deterministic ordering. `_result_from_validation` checks the empty inventory before validity, so a nonempty plan against an empty index reports `empty-staged-set` as the design's acceptance table requires.
+
+The module CLI status and stream mapping is correct. Operational failures write one stable diagnostic to stderr and return `2`, while ready and expected non-ready results write the complete rendered evidence to stdout and return `0` or `3`, so automation can parse evidence before observing status three.
+
+Architecture, performance, and feature integrity are clean. The checker depends only on the neutral inventory boundary, the public parser, the public validator, and shared root discovery, with no reverse dependency. There is no reset, add, remove, commit, or file write anywhere in the production path, and the only repository access is one plan read and one read-only index query. Each nonempty call performs one read, one parse, one inventory, one validation, and one projection, with no per-path probe and no added sort.
+
+The defect is confined to `commit-plan-check.bat`. Its `pushd` to the launcher directory replaces the caller's working directory, so the launcher and the module report different repositories from the same starting point. That is a Step 2 deliverable failing a Step 2 contract, which is why this check is a No rather than a Yes with an observation. The details, the demonstration, and a verified fix are in the findings.
+
+Validation plan effects: I made no change to the validation plan. Reviewer mode may write only the reviewed step's rows, and I am reporting a No verdict that the writer must reconcile with their own recorded Yes, so editing their rows underneath them would obscure the disagreement rather than resolve it.
+
+The recorded rows state `Yes. Step 2 has been fully implemented.` My independent assessment is `No. Step 2 has NOT been fully implemented.`, because the shipped root launcher does not satisfy the entry-point parity and root-discovery contract that Step 2 owns. When the launcher is fixed, the writer's verdict becomes correct and the rows will need only the evidence corrections below.
+
+Two recorded claims currently overstate what is proven. The focused-verification bullet lists "launcher delegation" among covered behavior, but the only launcher test reads the batch file as text and asserts four substrings, all of which pass against the defective launcher. The file-girth bullet states that the files "remain below their split triggers and the 650-line repository ceiling", which is true, but omits that `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py` is 497 lines against the 420-line advisory estimate at `docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:468`. The plan's shared execution checklist item 8 requires that variance to be recorded as evidence.
+
+Under the writer-owned contract, a No verdict also requires a `### Missing work for Step 2` section listing each missing element concretely. That section does not exist, which is consistent with the writer having reached a Yes. The concrete work list is supplied in my writer instructions so it can be transferred directly if the verdict is revised.
+
+The rest of the rows are accurate and should be kept. The typed service, shared orchestration, equivalent evidence, architecture, performance, and coverage sections all match what I found in the code, and the gate evidence line correctly reports the detached full walk.
+
+The document-level status line is correctly `No, it is not implemented.` Steps 3 and 4 still read `Not started`, so no flip was due regardless of this step's verdict.
+
+No umbrella row was completed and reviewer mode correctly suppressed that section. The umbrella digest is unchanged at `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c`, confirmed by `umbrella-digest compare` reporting `changed: false`.
+
+### Pre-repair mandatory checks and coverage for step 2 commit-plan-check (exchange 1) (round 1)
+
+The repository gate is green with real margin, and I forced the walk rather than trusting a cached verdict.
+
+`ghog day --force` reported `ghog full done fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` with `Objective reached` across 2,039 tests. Correctness, warnings, expected failures, coverage, and duration all pass.
+
+The duration axis is comfortable rather than marginal. The suite's slowest call is `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py::test_module_main_and_root_launcher_delegate_to_the_same_cli` at `0.29s` against the `0.50s` floor, which is 42 percent below it. That call is the new subprocess-based test added by this step, and it is well inside budget. The Step 1 lifecycle call that flapped in the previous exchange no longer appears in the slow list at all, so the fixture repair has held across a further round of changes.
+
+`ghog single` on the focused Step 2 test file is green, with nothing still failing in focus and nothing passing in focus while failing in the full suite.
+
+Both `rg` checks pass. The narrowed request form matches, and the wider plan pattern returns 73 lines with all six otherwise-dropped terms present in the production module, evidencing the composed service, `interactive=False` parsing, the format flag, the versioned schema, and the status contract.
+
+`commit-plan-check.bat --format json` returned `state=valid`, `ready=true`, five staged paths, two ordered groups, and zero diagnostics, at status `0`. That result is accurate for this repository, and I used the shipped checker itself as my commit-plan evidence.
+
+The single validation caveat is the one this round is blocking on. That launcher result is correct only because validation ran with the working directory at the llm-shared root. From any other working directory the same command describes llm-shared rather than the caller, which I demonstrated live. So the gate evidence proves the service and the module CLI, and does not yet prove the launcher.
+
+I also ran the repository Markdown gate, which reports no finding for the plan, the validation plan, or either review transcript, so MD024 and MD025 continue to hold.
+
+I performed no repair, so there is no pre-repair versus post-repair difference to report beyond this baseline.
+
+### Resolved validation set and sources for step 2 commit-plan-check (exchange 1) (round 1)
+
+The request resolved three commands. The current plan-derived resolver set adds
+two more, so I ran five in total as the union.
+
+- `ghog day` — source `project`. Run as `ghog day --force`, because a plain
+  invocation short-circuits to `cov=skipped` when no Python file changed since
+  the last green walk and cannot re-prove a recorded result.
+- `rg -n CommitPlanCheck tools/commit_plan_check.py commit-plan-check.bat tests/unit/tools/test_commit_plan_check` — source `request`, narrowed relative to the plan.
+- `commit-plan-check.bat --format json` — source `request`.
+- `rg -n "CommitPlanCheck|check_commit_plan|interactive=False|--format|schema_version|return 3|return 2" tools/commit_plan_check.py commit-plan-check.bat tests/unit/tools/test_commit_plan_check` — source `plan`, at `docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:449`, added by the union.
+- `ghog single tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py` — source `plan`, at `docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:481`, added by the union.
+
+Every command ran and every command passed. Nothing was unavailable, so there
+is no missing mandatory evidence on the availability axis.
+
+One passing command carries a caveat that matters. `commit-plan-check.bat
+--format json` returned `state=valid`, `ready=true`, five staged paths, two
+ordered groups, and no diagnostics, which is correct. It is correct only
+because the working directory during validation was the llm-shared root. The
+same command from any other working directory reports llm-shared rather than
+the caller, so its standing as evidence depends on the launcher fix requested
+in this round.
+
+### Resolver drift and direction for step 2 commit-plan-check (exchange 1) (round 1)
+
+Two drifts were found, both narrowing the request relative to the plan, and both are the same pattern I reported and saw corrected during Step 1.
+
+The `rg` command is narrowed. The request carries:
+
+```text
+rg -n CommitPlanCheck tools/commit_plan_check.py commit-plan-check.bat tests/unit/tools/test_commit_plan_check
+```
+
+The plan's Step 2 completion criteria at `docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:449` specify:
+
+```text
+rg -n "CommitPlanCheck|check_commit_plan|interactive=False|--format|schema_version|return 3|return 2" tools/commit_plan_check.py commit-plan-check.bat tests/unit/tools/test_commit_plan_check
+```
+
+Direction: the request is a strict subset. It keeps only the type-name term and drops `check_commit_plan`, `interactive=False`, `--format`, `schema_version`, `return 3`, and `return 2`. Those dropped terms are precisely the evidence that the service is composed as settled, that Q06's `interactive=False` parsing is used, that the format flag exists, that the structured schema is versioned, and that the status contract is implemented. The narrowed form would pass on a module that had the right class names and none of that behavior.
+
+The `ghog single` command is missing. The plan's Step 2 timing-run readiness at `docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:481` specifies `ghog single tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py`, and the resolved set does not contain it.
+
+I ran the union rather than the resolved set alone. The full plan pattern returns 73 matching lines, with all six dropped terms present in the production module, so the composition and status contract are evidenced. `ghog single` on the focused test file is green with nothing failing in focus and no focus-versus-suite interaction.
+
+This is the second consecutive first round in which the resolved set arrives narrower than the plan. It was corrected for Step 1 in round two, and the same correction is due here. The reliable fix is to derive the plan-sourced commands from the plan text rather than re-authoring them per request.
+
+### Repository state around validation for step 2 commit-plan-check (exchange 1) (round 1)
+
+My assessment produced no repository side effect. I made no repair, so the only writes were ignored root `a.*` reviewer evidence files and ignored validation artifacts.
+
+Index identity held throughout. The request-time `request_index_tree` is `4d9b89f8a2e497e4d935b3b694511f849c53d55a`, and `capture-index-tree` returned that identical value both before assessment and after the forced gate walk, the focused run, and every probe. No early rejection applied and no staged change occurred during review.
+
+The umbrella is untouched. `umbrella-digest compare` returns `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c` before and after with `changed: false`.
+
+The validation-state comparison is clean. Using the same ordered five-path set before and after, `validation-state compare` returns `acceptable: true` with empty `tracked_paths`, `untracked_paths`, and `ignored_paths`.
+
+My entry-point probes ran entirely outside the repository. To demonstrate the launcher divergence I created a scratch Git repository under the session scratchpad, outside this working tree, and ran both entry points against it with `PRJ_DIR` cleared. That repository is not inside the project, nothing was written into the project, and the checker itself performed no write in either invocation, which independently exercises the read-only contract.
+
+Ignored validation artifacts were refreshed as expected by the forced walk, including `.coverage`, `.testmondata`, `a.ghog.log`, and `a.ghog.outliers`. The contract accepts differences confined to ignored validation artifacts, and none is tracked or staged.
+
+One tracked path outside the staged set is modified and correctly so. `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` carries the appended Step 2 request and is not staged while this round is open, exactly as in the Step 1 exchange. The `git add -A` grouping pass at the commit gate will pick it up.
+
+### Repair inventory for step 2 commit-plan-check (exchange 1) (round 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 2 commit-plan-check (exchange 1) (round 1)
+
+`a.commit` is accurate, and I verified it with the checker this step just shipped rather than by reading it. `commit-plan-check.bat --format json` from the repository root returns `state=valid`, `ready=true`, five staged paths, two ordered groups, and zero diagnostics at status `0`.
+
+Group membership matches the staged set exactly:
+
+- Group 1 `feat(commit-plan-check): expose read-only plan checker` carries `commit-plan-check.bat`, `tools/commit_plan_check.py`, and the two focused test paths.
+- Group 2 `docs(commit-plan-check): record step 2 validation` carries the validation plan and is the final commit.
+
+Ordering is least to most dependent and correct, since the validation record documents the implementation that precedes it. Both subjects are conventional commits with accurate scopes, and both bodies describe what the diffs actually do.
+
+This plan uses a different authored shape from the Step 1 plan, with `git add -- <path>` lines and unfenced message bodies rather than `## Group N` headings, `git add -A <path>` lines, and fenced blocks. The public parser accepts both, and the shipped checker confirms this one parses into exactly two ordered groups with exact membership, so the difference is presentational rather than a defect. It is worth keeping in mind only because the two shapes now coexist in this effort's history.
+
+I did not amend `a.commit`. Membership, ordering, scope, and subjects are all accurate, so an amendment would have been a substantive change to commit grouping with no defect to correct.
+
+One consequence of the launcher finding reaches this assessment honestly. The command I used as commit-plan evidence produced a correct answer only because my working directory was the llm-shared root. That does not weaken the conclusion for this repository, since the module entry point and my own validator run agree with it, but it does mean the same command is not yet trustworthy as the shared readiness floor Step 4 intends it to be.
+
+### Findings and boundaries for step 2 commit-plan-check (exchange 1) (round 1)
+
+Unresolved findings:
+
+- The root launcher discards the caller's working directory, so the two shipped entry points disagree about which repository they check. `commit-plan-check.bat` runs `pushd "%COMMIT_PLAN_CHECK_ROOT%"` before `python -m tools.commit_plan_check`, which makes `find_project_root(Path.cwd())` resolve to the llm-shared repository rather than the caller's. I demonstrated the divergence directly, from one working directory in a scratch repository with `PRJ_DIR` cleared so environment precedence could not mask it: the module entry point returned `{"state":"empty-plan","ready":false}` with status `3`, describing that repository correctly, while the launcher returned `{"state":"valid","ready":true}` with status `0`, describing llm-shared instead.
+- This breaks three settled contracts. The plan's Step 2 expected outcome requires that "Both entry points emit identical ordered evidence without changing Git or repository files". The design's first acceptance row requires that a valid root plan makes "Both entry points report identical ordered groups and return `0`". Design Q07 settles root resolution as "Discover the root from the current directory by default and accept optional `--root <path>`", and the `pushd` removes that default.
+- The consequence is a false green on a readiness gate, which is the most damaging way this feature can fail. Step 4 will place `commit-plan-check.bat` in the code reviewer's readiness floor and in `group-commits-msg` before commit grouping. llm-shared is a shared tooling repository consumed by other projects through `LLM_SHARED_DIR`, so a reviewer or grouping run whose working directory sits in a consuming project would receive `ready=true` and status `0` describing llm-shared's plan while the caller's own `a.commit` is missing, empty, or mismatched.
+- A fix is available and I verified it works before recommending it. Replacing the `pushd` with a `PYTHONPATH` entry that points at the launcher directory keeps the caller's working directory intact: running the module with `PYTHONPATH` set to the llm-shared root and the working directory left in the scratch repository returned `{"state":"empty-plan","ready":false}` with status `3`, exactly matching the module entry point. The `--root` passthrough already works and returned the same correct result, so it remains a usable workaround but cannot substitute for a correct default.
+- The launcher delegation test cannot detect this class of defect because it never executes the launcher. `test_module_main_and_root_launcher_delegate_to_the_same_cli` reads `commit-plan-check.bat` as text and asserts that it contains `-m tools.commit_plan_check`, `%ERRORLEVEL%`, `exit /b 2`, and `exit /b`. Every one of those assertions passes against the current defective launcher. Its module half runs only `--help` with `cwd=root`, so it exercises neither discovery nor parity. Step 2's own test list claims "root-launcher delegation" coverage and the validation plan repeats that claim, but what is proven is file content rather than behavior.
+- The Step 2 test file exceeds its advisory line estimate without the variance being recorded. `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py` measures 497 physical lines against the plan's advisory estimate of 420 at `docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:468`. That is not a failure, since the file stays below the 550 risk band and the 650 ceiling, but the plan's shared execution checklist item 8 requires that a file exceeding only an advisory estimate has "the variance recorded as evidence". The validation plan states that the files "remain below their split triggers and the 650-line repository ceiling" without acknowledging the overrun.
+
+Boundary-crossing work:
+
+- Fixing the launcher is inside Step 2 rather than across a boundary, since `commit-plan-check.bat` is named by the step and is already staged. I did not repair it anyway, and the reason is scope quality rather than ownership: the correct fix pairs a launcher change with a replacement test that executes both entry points against one temporary repository, and that test is the evidence the step is missing. Writing the fix without its test would hand back a change whose only proof is my prose, and writing both would be a substantive repair that cannot validly finish this round in any case.
+- The mechanism also carries a small decision the writer should own. Preserving the caller's working directory can be done by prepending the launcher directory to `PYTHONPATH`, which I verified works, or by capturing `%CD%` before the `pushd` and injecting it as `--root` only when the caller did not pass one. I recommend the first as simpler and side-effect-free, but choosing between them is a design call at the adapter boundary rather than an unambiguous repair.
+- The label-inlining renderer defect carried over from the Step 1 exchange is still present and still deferred by agreement. It affects `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, and the correct idiom already exists at `tools/code_review_answer.py:288`. It remains outside Step 2, and `tools/code_review_request.py` is a Step 3 file, so repairing it here would still collide with Step 3. It is recorded in the Step 1 commit history as agreed.
+- The unimplemented caller-authored heading shift contract in `instructions/review-requestor.md` is likewise unchanged and deferred with the same tooling work.
+- The repeated narrowing of plan-sourced validation commands between the plan text and the resolved set is a requestor-side concern rather than implementation work. I report it with its direction and ran the union; I did not alter the resolved set, which belongs to the requestor.
+
+### Writer instructions for step 2 commit-plan-check (exchange 1) (round 1)
+
+The service, renderers, module CLI, and test matrix are good work and need no rework. The requested changes are confined to the launcher, one test, and two recorded claims.
+
+Fix the launcher so it stops discarding the caller's working directory. In `commit-plan-check.bat`, the `pushd "%COMMIT_PLAN_CHECK_ROOT%"` and matching `popd` exist so `python -m tools.commit_plan_check` can resolve the `tools` package, but they also destroy the cwd that Q07 makes the default root. Prepend the launcher directory to `PYTHONPATH` instead and drop the `pushd` and `popd` pair, keeping the `%ERRORLEVEL%` capture and `exit /b` passthrough exactly as they are. I verified this before recommending it: with the working directory left in a scratch repository and `PYTHONPATH` pointing at the llm-shared root, the module returned `{"state":"empty-plan","ready":false}` and status `3`, identical to the module entry point run the same way, where the current launcher returned `{"state":"valid","ready":true}` and status `0`.
+
+Do not copy `markdown-check.bat` here. That launcher uses the same `pushd`, and for it the behavior is harmless because scanning llm-shared's own tree is its purpose. Step 2's checker is the opposite case: its subject is whichever repository the caller is standing in, so the pattern must diverge deliberately. It is worth a short comment in the launcher saying why, so a later reader does not "restore consistency" with the other root launcher.
+
+Replace the text-matching launcher test with one that executes the launcher. `test_module_main_and_root_launcher_delegate_to_the_same_cli` currently reads `commit-plan-check.bat` and asserts it contains `-m tools.commit_plan_check`, `%ERRORLEVEL%`, `exit /b 2`, and `exit /b`. All four assertions pass against the defective launcher, so the test cannot fail for the reason it exists. Make it run both entry points from one temporary Git repository with its own `a.commit` and assert that the JSON payloads and the exit statuses are identical. Guard it for Windows if needed, since the launcher is a batch file. Step 4 already plans real-repository parity acceptance, so if you prefer to keep the unit test lightweight, say explicitly in the Step 2 evidence that launcher parity is proven in Step 4 rather than claiming it here.
+
+Correct two claims that currently overstate what is proven. The Step 2 focused-verification bullet in the validation plan lists "launcher delegation" among covered behavior; until the test above exists, that reads as behavioral coverage which does not exist. Also record the line-budget variance: `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py` is 497 lines against the 420-line advisory estimate at `docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:468`. The file is comfortably below the 550 risk band and the 650 ceiling, so nothing needs splitting, but the plan's shared execution checklist item 8 requires the variance to be recorded as evidence rather than passed over. The current wording only states that the files remain below their split triggers and the ceiling.
+
+Re-run the evidence after the launcher change. `commit-plan-check.bat --format json` is in the resolved validation set and currently produces a correct result only because the working directory happens to be the llm-shared root, so its value as evidence depends on the fix.
+
+Two things deliberately need no change. The `a.commit` plan is accurate as it stands, with two ordered groups, exact membership, and conventional subjects, and I confirmed it with the shipped checker itself. The zero-block early return you added ahead of the inventory call is not in the plan text but is correct and worth keeping, because reaching the validator with zero blocks and an empty index would otherwise report a ready plan.
+
+### Decision rationale for step 2 commit-plan-check (exchange 1) (round 1)
+
+I am publishing `changes-requested`, and I made no repair, so nothing here prevents a commit-ready recommendation in the next round.
+
+This is a disagreement about one deliverable, not about the step's quality. The requestor assessed Step 2 as fully implemented, and most of it plainly is: the typed result, the six-state taxonomy, the Q06 parsing boundary, the versioned structured schema, the status and stream contract, the architecture direction, and a genuinely strong 21-case test matrix all hold up under independent checking. The writer also closed a gap the plan never named, returning `empty-plan` for nonempty content that parses to zero blocks, which forecloses a real hole where `validate_commit_plan([], [])` would otherwise have reported a ready plan.
+
+The blocking reason is that one of Step 2's two shipped entry points is wrong. `commit-plan-check.bat` runs `pushd` to its own directory before invoking the module, which replaces the caller's working directory and defeats the root discovery that design Q07 settles as the default. I did not infer this from reading the batch file. I built a scratch repository outside the project, cleared `PRJ_DIR` so environment precedence could not mask the behavior, and ran both entry points from the same working directory: the module returned `empty-plan` at status `3`, describing that repository, while the launcher returned `valid` with `ready=true` at status `0`, describing llm-shared. That directly contradicts the plan's Step 2 outcome that both entry points emit identical evidence and the design's first acceptance row requiring both to report identical groups.
+
+The consequence is what makes it blocking rather than a note. Step 4 will place this exact launcher in the code reviewer's readiness floor and in `group-commits-msg` ahead of commit grouping. llm-shared is consumed by other projects through `LLM_SHARED_DIR`, so a run whose working directory sits in a consuming project would return `ready=true` and status `0` for llm-shared's plan while the caller's own `a.commit` is missing, empty, or mismatched. A readiness gate that reports a false green is the worst available failure mode for this feature, and it would be inherited by Steps 3 and 4 rather than caught there.
+
+The existing test cannot catch it, which is why the green gate is not reassurance here. `test_module_main_and_root_launcher_delegate_to_the_same_cli` reads the batch file as text and asserts four substrings that all appear in the defective launcher, and its module half runs only `--help` with the working directory already set to the root. The full walk is genuinely green at `cov=100 outliers=0 exit=0` across 2,039 tests with comfortable duration margin, and it still proves nothing about launcher parity.
+
+I did not repair it, and I want the reason on the record. The launcher is in scope, so ownership was not the obstacle. The fix belongs with a test that executes both entry points against one temporary repository, and that test is precisely the missing evidence; shipping the change without it would leave my prose as its only proof. The mechanism is also a small adapter-boundary decision between a `PYTHONPATH` entry and injecting `--root` from a captured `%CD%`. I verified the `PYTHONPATH` approach produces output identical to the module from a foreign working directory, so the recommendation is grounded rather than speculative, but the choice is the writer's.
+
+Two smaller items ride along. The resolved validation set again arrived narrower than the plan, dropping five terms from the `rg` pattern and omitting `ghog single` entirely; I ran the union and both additions pass. The Step 2 test file is 497 lines against a 420-line advisory, which needs no split but does need its variance recorded under the plan's own checklist item 8.
+
+This assessment is advisory and authorizes nothing. Only the human may choose `Commit` or `Rework and review again`.
+
+### Final reviewer decision for step 2 commit-plan-check (exchange 1) (round 1)
+
+Decision: changes-requested. The writer must address the concrete instructions and publish another review round. This advisory answer does not authorize a commit.
+
+<!-- review-entry-id: answer-step-2-round-1 -->
+
+## Round 2 by requestor - Step 2
+
+- Recorded: 2026-08-26T19:27:32+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 2
+- Outcome: request
+
+### Review identity for step 2 commit-plan-check (round 2)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+Implementation step: 2
+Review round: 2
+
+### Code review evidence for step 2 commit-plan-check (round 2)
+
+request_index_tree: b99b838d31fa916c508eb3e3720f014fc5abf283
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n --regexp CommitPlanCheck --regexp check_commit_plan --regexp interactive=False --regexp=--format --regexp schema_version --regexp return\s+3 --regexp return\s+2 tools/commit_plan_check.py commit-plan-check.bat tests/unit/tools/test_commit_plan_check (sources: plan)
+- ghog single tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py (sources: plan)
+- commit-plan-check.bat --format json (sources: request)
+
+### Requestor assessment for step 2 commit-plan-check (round 2)
+
+Step 2 is fully implemented after the round-1 corrections.
+
+- The batch launcher now preserves the caller's working directory and exposes
+  llm-shared imports through `PYTHONPATH`, so default root discovery and
+  `--root` remain module-equivalent.
+- A real Windows parity test runs both entry points from the same temporary Git
+  repository with `PRJ_DIR` cleared and asserts identical status and JSON.
+- The final detached Groundhog day passes all 2,039 tests at 100% coverage,
+  with no warnings, expected failures, or duration outliers.
+- Static, architecture, performance, mutation, and feature-integrity evidence
+  remains green.
+
+### Implementation report for step 2 commit-plan-check (round 2)
+
+Round 2 preserves the complete checker service and changes only the adapter
+boundary and its evidence.
+
+`commit-plan-check.bat` no longer changes directories. It prepends its own root
+to `PYTHONPATH`, invokes the same module from the caller's cwd, captures the
+module status, and returns it unchanged.
+
+Executable adapter coverage moved into a dedicated test leaf. Its parity test
+creates one real repository, runs the module and batch launcher from that
+foreign cwd, and compares their statuses and structured results. Real process
+setup is module-scoped so the measured assertion call remains below the suite
+duration floor without dropping any assertion.
+
+The validation plan now records executable parity and the focused service
+test's 33-line advisory variance.
+
+### Change summary for step 2 commit-plan-check (round 2)
+
+The reviewed index contains exactly six staged paths:
+
+- `commit-plan-check.bat`
+- `tools/commit_plan_check.py`
+- `tests/unit/tools/test_commit_plan_check/__init__.py`
+- `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py`
+- `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_adapter_tdd.py`
+- `docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md`
+
+The amended and validated root `a.commit` still contains two ordered groups.
+The implementation group now includes the split adapter test; the final group
+remains `docs(commit-plan-check): record step 2 validation`.
+
+The live checker reports `state=valid`, `ready=true`, all six staged paths,
+both ordered groups, and no diagnostics.
+
+### Writer response for step 2 commit-plan-check (round 2)
+
+Writer response: Accepted all round-1 findings with no disagreement.
+
+- Replaced launcher `pushd` and `popd` with caller-cwd-preserving `PYTHONPATH`
+  setup.
+- Replaced text-only launcher assertions with executable module-to-batch parity
+  from a foreign temporary repository.
+- Split adapter coverage into a dedicated test leaf before approaching the
+  550-line risk threshold.
+- Recorded the 453-line service test's 33-line advisory variance and corrected
+  the launcher-coverage claim.
+- Re-ran both focused tests, the complete Groundhog day, and the amended
+  commit-plan check successfully.
+
+### Reviewer focus for step 2 commit-plan-check (round 2)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-2-round-2 -->
+
+## Round 2 by reviewer - Step 2
+
+- Recorded: 2026-08-26T19:35:54+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 2
+- Outcome: answer
+
+### Assessed index identity for step 2 commit-plan-check (exchange 1) (round 2)
+
+Baseline index tree: b99b838d31fa916c508eb3e3720f014fc5abf283
+
+Assessed index tree: b99b838d31fa916c508eb3e3720f014fc5abf283
+
+### Implementation check for step 2 commit-plan-check (exchange 1) (round 2)
+
+Result: Yes. Step 2 has been fully implemented. This reverses my round-one No, and the reversal rests on my own re-execution of the failing scenario rather than on the change summary.
+
+The launcher defect is genuinely fixed. `commit-plan-check.bat` no longer changes directory; it prepends its own root to `PYTHONPATH`, preserving an existing value when one is set, and invokes the same module from the caller's working directory while still capturing and returning the module status. The file carries a comment stating why it must differ from the other root launcher, which is what stops a later reader from "restoring consistency" with `markdown-check.bat`.
+
+I re-ran the exact scenario that failed in round one. From a scratch repository outside this project, with `PRJ_DIR` cleared so environment precedence could not mask the result, both entry points now agree on every path I exercised. On a plan with no groups, both returned `{"state":"empty-plan","ready":false}` at status `3`. On an unparseable plan, both returned identical `invalid-plan` evidence at status `3`. On a valid plan with matching staged membership, both returned `{"state":"valid","ready":true}` with the same single group and staged path at status `0`. In round one the same ready comparison produced `empty-plan` at status `3` from the module and `valid` at status `0` from the launcher, so the design's first acceptance row is now satisfied where it previously failed.
+
+I also confirmed the stream contract holds under a noisy path, which I had not tested before. When the parser rejects a plan it writes its own explanatory prose, and that prose goes to stderr: stdout carried nothing but the JSON object and parsed cleanly. Automation can therefore read structured evidence before observing status three, as the design requires.
+
+The replacement test is real coverage rather than restated intent. `test_module_and_root_launcher_check_the_same_caller_repository` builds a real Git repository with a staged file and a matching plan, clears `PRJ_DIR`, exposes imports through `PYTHONPATH` without overriding root discovery, runs both adapters from that foreign working directory, and asserts equal return codes, equal empty stderr, and equal parsed JSON. It would have failed against the round-one launcher, because the two payloads would have described different repositories. That is the property the old text-matching test could not express.
+
+The extraction into a second file in the same leaf follows the plan's own split guidance and the repository's convention, where leaves such as `tests/unit/tools/test_review_exchange_lifecycle/` already hold several test files. Module-scoped process setup keeps the subprocess cost outside the measured call without dropping an assertion, and `tmp_path_factory` supports that scope, so unlike the Step 1 case a broader scope was available and was used.
+
+The service itself is unchanged and still correct. `tools/commit_plan_check.py` remains at 247 lines with the same Q06 parsing boundary, the same six-state taxonomy and ordering, the same versioned structured schema, and the same status and stream mapping I accepted in round one.
+
+Every budget holds. The checker is 247 lines against a 360 advisory, the launcher 27 against 35, the package marker 2 against 5, the focused service test 453 against a 420 advisory, and the new adapter leaf 131 lines. Nothing reaches the 550 risk band or the 650 ceiling.
+
+Architecture, performance, and feature integrity are unchanged and clean. The dependency direction still runs one way, the production path still contains no reset, add, remove, commit, or file write, and each nonempty call still performs one read, one parse, one inventory, one validation, and one projection.
+
+Validation plan effects: I made no change to the validation plan. The requestor's rows are now correct, and my verdict agrees with theirs, so reviewer mode had nothing to write.
+
+The round-one disagreement is resolved. Their rows record `Yes. Step 2 has been fully implemented.` and my independent assessment now reaches the same verdict, because the launcher defect that made it a No is fixed and verified. No `### Missing work for Step 2` section is required, and none is present.
+
+Both overstated claims are corrected. The focused-verification bullet now describes "executable module-to-launcher parity from a foreign Git repository" rather than generic launcher delegation, which matches what the new adapter test actually proves. The file-girth bullet now records the variance explicitly, stating that the focused service test at 453 lines exceeds its 420-line advisory estimate by 33 lines and that the recorded variance remains below the split trigger and the ceiling. That satisfies the plan's shared execution checklist item 8, which requires the variance to be recorded rather than passed over.
+
+The remaining rows are accurate against the code. The launcher line count is recorded as 27 and measures 27, the checker as 247 and measures 247, and the evidence-parity row correctly states that expected non-readiness emits complete evidence on stdout, which I verified independently including under parser rejection.
+
+The document-level status line is correctly `No, it is not implemented.` Steps 3 and 4 still read `Not started`, so no flip was due.
+
+No umbrella row was completed and reviewer mode correctly suppressed that section. The umbrella digest is unchanged at `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c`, confirmed by `umbrella-digest compare` reporting `changed: false`.
+
+### Pre-repair mandatory checks and coverage for step 2 commit-plan-check (exchange 1) (round 2)
+
+The repository gate is green with comfortable margin, and I forced the walk rather than accepting a cached verdict.
+
+`ghog day --force` reported `ghog full done fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` with `Objective reached` across 2,039 tests.
+
+The duration axis is healthy. The slowest call is `tests/unit/tools/test_review_exchange_recovery_acceptance/test_review_exchange_recovery_acceptance_tdd.py::test_abandoned_request_is_reclaimed_by_a_fresh_session` at `0.28s` against the `0.50s` floor, which is 44 percent below it. The new adapter parity test does not appear in the slow list at all, so its module-scoped subprocess setup succeeded in keeping real process cost out of the measured call. The Step 1 lifecycle call that flapped two exchanges ago is likewise absent.
+
+The suite count is unchanged at 2,039, which is consistent rather than suspicious. The text-only delegation test was replaced by the executable parity test and the module-guard test was moved to the new leaf, so the net change is zero.
+
+`ghog single` on the focused service test is green.
+
+Both `rg` forms pass and are equivalent, each returning 75 lines, and all six terms the round-one command dropped are present in the production module.
+
+`commit-plan-check.bat --format json` returns `state=valid`, `ready=true`, six staged paths, two ordered groups, and zero diagnostics at status `0`.
+
+The round-one caveat on that last command is now discharged. Its result no longer depends on the working directory, because I confirmed from a scratch repository outside the project, with `PRJ_DIR` cleared, that the launcher and the module produce identical JSON and identical status on the empty-plan, invalid-plan, and valid paths. I also confirmed that parser prose goes to stderr and stdout carries only parseable JSON.
+
+The repository Markdown gate reports no finding for the plan, the validation plan, or either review transcript, so MD024 and MD025 continue to hold.
+
+I performed no repair, so there is no pre-repair versus post-repair difference beyond this baseline.
+
+### Resolved validation set and sources for step 2 commit-plan-check (exchange 1) (round 2)
+
+The request resolved four commands and I ran all four. The current plan-derived
+resolver set adds nothing this round, so the union equals the resolved set.
+
+- `ghog day` — source `project`. Run as `ghog day --force`, because a plain
+  invocation short-circuits to `cov=skipped` and cannot re-prove a result.
+- `rg -n --regexp CommitPlanCheck --regexp check_commit_plan --regexp interactive=False --regexp=--format --regexp schema_version --regexp return\s+3 --regexp return\s+2 tools/commit_plan_check.py commit-plan-check.bat tests/unit/tools/test_commit_plan_check` — source `plan`, now carrying every parity term.
+- `ghog single tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py` — source `plan`, restored this round.
+- `commit-plan-check.bat --format json` — source `request`.
+
+Every command ran and every command passed.
+
+The `rg` command is now equivalent to the plan's canonical alternation at
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:449`. I ran both forms and each
+returns exactly 75 matching lines, so the `--regexp` spelling with `return\s+3`
+and `return\s+2` loses no coverage. All six previously dropped terms are present
+in the production module.
+
+`ghog single` on the focused service test is green, with nothing failing in
+focus and no focus-versus-suite interaction.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, six
+staged paths, two ordered groups, and no diagnostics at status `0`. Unlike round
+one this result no longer depends on the working directory being the llm-shared
+root, since I verified the same command agrees with the module entry point from
+a foreign repository.
+
+### Resolver drift and direction for step 2 commit-plan-check (exchange 1) (round 2)
+
+No drift this round. Both round-one drifts are corrected.
+
+The `rg` command now carries every parity term. The resolved form uses explicit
+`--regexp` flags with `return\s+3` and `return\s+2` where the plan at
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:449` uses a quoted alternation
+with `return 3` and `return 2`. I ran both forms rather than assuming
+equivalence, and each returns exactly 75 matching lines over the same three
+paths, so the spelling difference costs no coverage. As in Step 1, the
+`--regexp` form is the safer command line, because `--regexp=--format` cannot be
+mistaken for an option the way a bare `--format` alternative inside a quoted
+pattern can.
+
+`ghog single tests/unit/tools/test_commit_plan_check/test_commit_plan_check_tdd.py`
+is restored to the resolved set from the `plan` source, matching
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:481`.
+
+Comparing the round-two request set against the current plan-derived resolver
+set, the union adds nothing, so I ran the resolved set as given.
+
+One process note rather than a finding. This is the second effort in which the
+first round arrived narrower than the plan and the second round corrected it.
+Deriving the plan-sourced commands from the plan text, rather than re-authoring
+them per request, would remove the class rather than the instance.
+
+### Repository state around validation for step 2 commit-plan-check (exchange 1) (round 2)
+
+My assessment produced no repository side effect. I made no repair, so the only writes were ignored root `a.*` reviewer evidence files and ignored validation artifacts.
+
+Index identity held throughout. The request-time `request_index_tree` is `b99b838d31fa916c508eb3e3720f014fc5abf283`, and `capture-index-tree` returned that identical value both before assessment and after the forced gate walk, the focused run, the Markdown gate, and every entry-point probe. No early rejection applied and no staged change occurred during review.
+
+The umbrella is untouched. `umbrella-digest compare` returns `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c` before and after with `changed: false`.
+
+The validation-state comparison is clean. Using the same ordered six-path set before and after, `validation-state compare` returns `acceptable: true` with empty `tracked_paths`, `untracked_paths`, and `ignored_paths`.
+
+My parity probes ran entirely outside the repository. I created a scratch Git repository under the session scratchpad, exercised the empty-plan, invalid-plan, and valid paths through both entry points with `PRJ_DIR` cleared, and removed it afterwards. Nothing was written into this project, and the checker performed no write in any invocation, which independently exercises the read-only contract from a second direction.
+
+Ignored validation artifacts were refreshed as expected by the forced walk, including `.coverage`, `.testmondata`, `a.ghog.log`, and `a.ghog.outliers`. The contract accepts differences confined to ignored validation artifacts, and none is tracked or staged.
+
+One tracked path outside the staged set is modified and correctly so. `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` carries the appended Step 2 rounds and is not staged while this round is open.
+
+### Repair inventory for step 2 commit-plan-check (exchange 1) (round 2)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 2 commit-plan-check (exchange 1) (round 2)
+
+`a.commit` is accurate after its amendment, and I verified it with the checker this step ships rather than by reading it. `commit-plan-check.bat --format json` returns `state=valid`, `ready=true`, six staged paths, two ordered groups, and zero diagnostics at status `0`.
+
+The amendment is correct and minimal. Group 1 `feat(commit-plan-check): expose read-only plan checker` now also carries `tests/unit/tools/test_commit_plan_check/test_commit_plan_check_adapter_tdd.py` alongside the launcher, the checker module, the package marker, and the focused service test. Group 2 `docs(commit-plan-check): record step 2 validation` still carries the validation plan alone and remains the final commit.
+
+Membership matches the index exactly, with all six staged paths planned and no planned path absent. Ordering is least to most dependent, since the validation record documents the implementation that precedes it. Both subjects are conventional commits with accurate scopes, and both bodies describe what the diffs actually do.
+
+Placing the new adapter test in the implementation group rather than a separate one is the right call. It is part of the same deliverable and would not stand alone as a coherent commit.
+
+I did not amend `a.commit`. Membership, ordering, scope, and subjects are all accurate, so an amendment would have been a substantive change to commit grouping with no defect to correct, and it would have invalidated a commit-ready recommendation in this same round.
+
+Unlike round one, my commit-plan evidence no longer carries a working-directory caveat. The command I used is now trustworthy from any directory, which I confirmed against a scratch repository, so the same command can serve as the shared readiness floor Step 4 intends.
+
+One carry-forward for the commit gate, unchanged in shape from the Step 1 exchange and needing no action now. `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` is tracked, carries this exchange's appended rounds, and is deliberately unstaged while the round is open. The `git add -A` grouping pass at the commit gate will pick it up.
+
+### Findings and boundaries for step 2 commit-plan-check (exchange 1) (round 2)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 2 commit-plan-check (exchange 1) (round 2)
+
+No change is required. Every round-one item is addressed and I am requesting nothing further.
+
+Do not rework Step 2. The launcher fix, the executable parity test, the test-leaf split, and both evidence corrections are all correct as they stand.
+
+Two things are worth keeping deliberately, so a later cleanup does not undo them. The comment in `commit-plan-check.bat` explaining why it preserves the caller's directory should stay, because the original defect came from copying `markdown-check.bat`, and without that note the `pushd` is likely to be restored in the name of consistency. The module scope on the adapter fixture should also stay, since it is what keeps real subprocess cost out of the measured call and off the duration floor.
+
+Two items remain deferred by agreement rather than dropped, and should reach the pending review-mode requirements rather than being lost. The first is the label-inlining defect in `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, where the correct idiom already exists at `tools/code_review_answer.py:288`; sequence it after Step 3, which modifies `tools/code_review_request.py`. The second is the unimplemented caller-authored heading shift and qualification contract in `instructions/review-requestor.md`.
+
+One process note for Step 3, offered rather than requested. Both first rounds in this effort arrived with a plan-sourced validation command narrower than the plan text, and both were corrected in round two. Deriving those commands from the plan rather than re-authoring them per request would remove the pattern.
+
+At the commit gate, remember that the `git add -A` grouping pass will pick up `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md`, which carries this exchange's rounds and is deliberately unstaged while the round is open.
+
+If the human selects `Commit`, run the existing commit step. If the human selects `Rework and review again`, there is no outstanding scope from me; treat any human guidance as the full scope of that round.
+
+### Decision rationale for step 2 commit-plan-check (exchange 1) (round 2)
+
+I am recommending `commit-ready`, and I made no repair in either round, so nothing in this exchange invalidates the recommendation.
+
+All six readiness-floor results pass. Identity is exact, with the envelope, human-readable identity, plan, step, round, and exchange occurrence in agreement and the request-time index tree `b99b838d31fa916c508eb3e3720f014fc5abf283` matching the live index before and after all validation. Implementation completeness is now a Yes, reversing my round-one No. Mandatory validation and coverage pass with margin. Staged attribution is clean across six paths. No unresolved finding remains against this step. The `a.commit` grouping is valid with zero diagnostics.
+
+The reversal is earned by re-execution, not by the change summary. I rebuilt the failing scenario from round one: a scratch repository outside this project, `PRJ_DIR` cleared so environment precedence could not mask the result, both entry points invoked from that foreign working directory. Where round one produced `empty-plan` at status `3` from the module against `valid` with `ready=true` at status `0` from the launcher, the two now agree byte for byte on the empty-plan path, the invalid-plan path, and the valid path, statuses included. The design's first acceptance row, which round one failed, now holds.
+
+The fix is also the right shape rather than merely effective. The launcher preserves the caller's working directory by extending `PYTHONPATH` instead of changing directory, preserves an existing `PYTHONPATH` when present, still captures and returns the module status, and carries a comment explaining why it must diverge from `markdown-check.bat`. That comment matters more than it looks, because the defect originated in copying that pattern.
+
+The replacement test can now fail for the reason it exists. The old assertion read the batch file as text and passed against the defective launcher. The new one builds a real repository, runs both adapters from a foreign working directory, and compares statuses, stderr, and parsed JSON, so it would have caught the original divergence. Module-scoped setup keeps the real process cost outside the measured call, and the gate confirms it: the parity test does not appear in the slow list, and the suite's slowest call sits 44 percent below the floor.
+
+Two smaller round-one items are also closed. The advisory variance is now recorded explicitly at 453 against 420 lines, satisfying the plan's checklist item 8, and the launcher-coverage claim now says what the test actually proves. The resolved validation set carries every parity term and the restored `ghog single`; I ran both `rg` spellings and confirmed they return identical counts rather than assuming equivalence.
+
+I checked one thing this round that I had not tested before, because a fix can shift a stream contract. When the parser rejects a plan it writes explanatory prose, and that prose goes to stderr: stdout carried only the JSON object and parsed cleanly. Automation can read structured evidence before observing status three, as the design requires.
+
+One item remains deferred by agreement and the human should see it at this gate. The label-inlining defect in `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py` is unchanged, with the correct idiom already present at `tools/code_review_answer.py:288`, and the unimplemented caller-authored heading contract in `instructions/review-requestor.md` travels with it. Neither is caused by Step 2, neither touches Step 2 code, and `tools/code_review_request.py` belongs to Step 3, so repairing either here would cross the boundary and collide with planned work. Both are recorded in the Step 1 commit history. I classify them as tracked future work for the pending review-mode requirements rather than unresolved findings against Step 2, and I would not block this commit on them.
+
+This recommendation is advisory and authorizes nothing. A green gate, a valid commit plan, and verified entry-point parity are mechanical evidence only. Only the human may choose `Commit` or `Rework and review again`.
+
+### Final reviewer decision for step 2 commit-plan-check (exchange 1) (round 2)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-2-round-2 -->
+
+## Round 2 by human - Step 2 - human-confirmation
+
+- Recorded: 2026-08-26T20:06:06+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 2
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->
