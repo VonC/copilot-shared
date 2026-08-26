@@ -108,11 +108,20 @@ the reviewed commit plan. The reviewer recommendation does not cross the commit
 boundary. Choose `Rework and review again` when code or evidence needs another
 round.
 
+After `Commit`, the requestor runs the prepared root `a.commit` first. If that
+batch leaves any non-ignored path, the same authorization stages the complete
+remainder and invokes `group-commits-msg` without another human menu. The
+requestor executes that residual plan and completes the exchange only after
+`git status --porcelain` is empty. A failed batch or dirty final status keeps
+the authorization pending for safe replay.
+
 ## What you learned
 
 Code review binds one implementation step to immutable staged evidence,
 alternates intermediate rounds through reciprocal active waits, returns exact
-counterpart paths, and leaves the final commit decision with the human.
+counterpart paths, and leaves the final commit decision with the human. That
+single decision covers the reviewed batch and any bounded residual cleanup,
+but never permits a dirty tree to advance.
 
 This page describes observable behavior. The canonical
 [code-review requestor instruction](../../instructions/code-review-requestor.md)

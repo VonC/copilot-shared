@@ -41,14 +41,20 @@ returned `paths` object even when a neighbouring filename looks predictable.
 
    - specification: run `$llm-shared:spec-review-requestor` to replay the
      authorized consolidation; its owning workflow commits the answered
-     specification alone before changing or stripping it;
+     specification alone before changing or stripping it, then groups every
+     post-fold change and requires a clean tree before handoff;
    - code: run `$llm-shared:code-review-requestor on <plan-path> step <n>` to
-     replay the authorized commit.
+     replay the authorized reviewed commit. If it reports residual changes,
+     run `group-commits-msg` for that staged remainder without another menu,
+     then run `pw code-review-commit --residual`.
 
 4. Do not ask the human again when durable authorization is already pending.
 5. For specification consolidation, verify that the snapshot commit contains
    only the reviewed document and that the index is empty before the fold.
-6. The requestor completes the exchange only after the owning action succeeds.
+6. For either family, require `git status --porcelain` to be empty after every
+   authorized batch. Do not run `pw skill` or another implementation step from
+   a dirty tree.
+7. The requestor completes the exchange only after the owning action succeeds.
    On failure, leave authorization pending for a later replay.
 
 For an expired or stopped exchange, use
