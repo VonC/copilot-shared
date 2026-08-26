@@ -228,7 +228,9 @@ as Q06 and Q07 in the writer instructions.
 
 ### Requested changes for plan commit-plan-check round 1
 
-Requested changes: 1. Add Q06 deciding the checker's plan-parsing boundary, with the three
+Requested changes:
+
+1. Add Q06 deciding the checker's plan-parsing boundary, with the three
    options and the accepted Option 6A answer described in the writer
    instructions.
 2. Update Step 2 "Classes and behavior" so `check_commit_plan(root)` states
