@@ -130,8 +130,11 @@ No existing feature or reporting capability appears impaired by Step 1.
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because no implementation check has
-taken place yet.
+Yes. Step 2 has been fully implemented.
+
+The checker now exposes one immutable service result through deterministic
+human and JSON projections, a platform-neutral module CLI, and a focused root
+launcher while preserving the required read-only and status contracts.
 
 ### Goal for Step 2
 
@@ -148,27 +151,106 @@ mutation.
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Typed checker service**: `tools/commit_plan_check.py` defines the six stable
+  result states and one immutable result carrying ordered groups, staged paths,
+  diagnostics, and derived readiness.
+- **Shared orchestration**: `check_commit_plan(root)` reads only the canonical
+  root `a.commit`, parses with `interactive=False`, inventories staged paths
+  through `commit_plan_support.staged_paths`, and delegates exact membership
+  rules to `validate_commit_plan`.
+- **Equivalent evidence**: the human and compact JSON renderers project the
+  same in-memory result, including the exact versioned structured key set,
+  ordered groups, ordered paths, and complete diagnostics.
+- **Command boundaries**: `main(argv)` supports upward root discovery,
+  `--root`, and `--format human|json`, with statuses `0`, `3`, and `2` mapped to
+  the required stdout and stderr contracts. `commit-plan-check.bat` runs the
+  same module without changing the caller's working directory and preserves
+  its status, including status `2` for launcher bootstrap failure.
+- **Focused verification**: 21 parameterized and boundary tests cover ready,
+  missing, empty, empty-staged, malformed, invalid, unreadable, Git failure,
+  invalid invocation, unexpected failure, both projections, module execution,
+  root discovery, and executable module-to-launcher parity from a foreign Git
+  working directory.
+- **Repository gate evidence**: the final detached `ghog day` completed with
+  all 2,039 tests passing and
+  `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+- `CommitPlanCheckState`: string enumeration for `valid`, `missing-plan`,
+  `empty-plan`, `empty-staged-set`, `invalid-plan`, and
+  `operational-failure`.
+- `CommitPlanCheckResult`: frozen evidence value containing the state, ordered
+  typed groups, ordered diagnostics, and exact staged paths, with derived
+  readiness and the versioned structured projection.
+- `_ArgumentParser` and `_InvocationError`: narrow command-adapter types that
+  convert invalid arguments into the stable status-two contract without
+  terminating imported callers.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Dependency direction**: the command adapter depends on the neutral staged
+  inventory boundary, existing parser, existing validation API, and shared root
+  discovery. None of those boundaries depends back on the checker.
+- **Responsibility separation**: the service returns data without writing
+  streams; renderers only project the result; the CLI alone owns stream and
+  status mapping; the batch launcher only selects Python and delegates.
+- **Mutation boundary**: production imports and service calls contain no Git
+  reset, add, remove, commit, or file-writing operation. The only repository
+  file access is the exact root plan read and the shared read-only index query.
+- **File girth**: the Python checker is 247 lines, the batch launcher is 27
+  lines, the package marker is 2 lines, the focused service test is 453 lines,
+  and the split adapter test is 131 lines. The service test exceeds its
+  420-line advisory estimate by 33 lines; this recorded variance remains below
+  the 550-line split-risk threshold and the 650-line repository ceiling, while
+  executable adapter coverage has been extracted into its own conventional
+  test leaf.
+
+No, there is nothing that needs to be addressed for Step 2.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Each nonempty checker call performs one exact plan read, one parser pass, one
+shared staged-inventory subprocess, one validator call, and one selected
+projection. Accumulation is linear in groups and paths; it adds no per-path
+file probes, repeated scans, duplicated sorting, O(n log n) work, or O(n^2)
+work beyond the unchanged validator behavior.
+
+No, there is no performance issue that needs to be addressed for Step 2.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Checker states and service seams**: focused unit tests cover every stable
+  state, exact collaborator arguments and call counts, ordered evidence, parser
+  failure, operational boundaries, and derived readiness.
+- **Renderers and CLI**: focused unit tests cover the exact structured schema,
+  deterministic human evidence, both format paths, every status/stream class,
+  invalid arguments, explicit and discovered roots, unexpected failure, and
+  the module main guard.
+- **Launcher**: the focused adapter test executes both entry points from the
+  same temporary Git repository, with `PRJ_DIR` cleared, and proves identical
+  JSON evidence and status while the launcher preserves the caller's working
+  directory.
+- **Coverage evidence**: the repository Groundhog gate reports 100% coverage
+  for all affected production statements.
+
+No, there is no unit-tested class below 100% that needs completing for Step 2.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Existing validator authority**: group, subject, command, duplicate, and
+  membership rules remain in `validate_commit_plan`; the checker wraps its
+  typed result without changing it.
+- **Existing commit execution**: the committing launcher and its incompatible
+  root-plan dry-run behavior are unchanged, and no commit-side API is imported
+  by the checker.
+- **Evidence parity**: expected non-readiness emits complete evidence on stdout
+  before status `3`, while operational inability emits a stable diagnostic on
+  stderr with status `2`.
+- **Regression evidence**: the complete suite passes with no warning, expected
+  failure, coverage gap, or duration outlier.
+
+No existing feature or reporting capability appears impaired by Step 2.
 
 ---
 
