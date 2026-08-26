@@ -32,11 +32,14 @@ Run this sequence from the project root:
    path. The document must have a staged change; do not manufacture an empty
    snapshot commit when it is already identical to `HEAD`.
 3. Replace the project-root `a.commit` with exactly one group following the
-   group-commit template. Use this conventional title:
-   `docs: record pre-consolidation questions`. The `Why:` text must explain
-   that consolidation will remove the answered question blocks; the `What:`
-   list must name only `<document-path>` and state that its answered questions
-   are recorded unchanged.
+   group-commit template. Derive a required scope from the document identity:
+   prefer its topic slug when the complete title remains within the 52-character
+   limit; otherwise use the normalized document-type scope `feature`, `issue`,
+   `design`, or `plan`. Use the conventional title
+   `docs(<scope>): record pre-consolidation questions`. The `Why:` text must
+   explain that consolidation will remove the answered question blocks; the
+   `What:` list must name only `<document-path>` and state that its answered
+   questions are recorded unchanged.
 4. Run `& "<LLM_SHARED_DIR>\bin\wac.bat"` to format `a.commit`, then run
    `& "<LLM_SHARED_DIR>\bin\gcba.bat" --root-a-commit --non-interactive`.
    This one-file snapshot is part of the already-requested or durably authorized
@@ -153,13 +156,61 @@ This step is mandatory, not optional: when a consolidation round raises new ques
 
 The full options, their pros and cons, and the `Answer to Qxx` line stay in the document and its companion (the [`open-question.template.md`](../templates/open-question.template.md) shape); the table is the at-a-glance summary, not a replacement. Use the compact table form of [`../rules/markdown.md`](../rules/markdown.md): one space around each cell, exactly three dashes in each header separator.
 
+## Post-consolidation grouped commits and clean-tree gate
+
+Apply this gate only when consolidation settles the document: every existing
+answer is integrated, the decision table is present, the `## Open questions`
+section is stripped, and no follow-up question remains. It runs after the
+one-file pre-consolidation snapshot and after every consolidation edit, but
+before any `pw skill`, review-exchange completion, or next-phase command.
+
+The human's `Consolidate` choice, or a direct human invocation of this skill,
+authorizes both the pre-consolidation snapshot commit and these final grouped
+commits. Do not present another commit menu or ask for another go-ahead. Apply
+the canonical [`group-commits-msg.md`](group-commits-msg.md) process through
+its authorized consolidation continuation.
+
+Run this sequence from the project root:
+
+1. Run `git status --porcelain` to inventory every remaining non-ignored
+   working-tree change. If it prints nothing, the repository already satisfies
+   the clean-tree gate; continue to the final verification below.
+2. When changes remain, run `git add -A` with no path restriction. This scope
+   is intentional: every tracked, untracked, concurrent, or outside-origin
+   non-ignored change must be included so consolidation cannot leave a dirty
+   working tree. Confirm that `git diff --cached --name-only` is nonempty,
+   while `git diff --name-only` and
+   `git ls-files --others --exclude-standard` both print nothing. Never omit,
+   restore, discard, or unstage a path merely to make the gate pass.
+3. Run the `group-commits-msg` skill for the complete staged set (in Codex,
+   `$llm-shared:group-commits-msg for all staged changes`). It must inspect and
+   group every path from `git diff --cached --name-only`, write and format the
+   project-root `a.commit`, and preserve the canonical dependency ordering and
+   commit-message rules.
+4. Because consolidation already has durable human authority, skip the normal
+   group-commit menu. Run `& "<LLM_SHARED_DIR>\bin\gcba.bat" --root-a-commit --non-interactive`.
+   Do not manually replay, combine, or amend the generated groups.
+5. Confirm that the batch command succeeded and
+   `git diff --cached --name-only` prints nothing. Then run
+   `git status --porcelain`; it must print nothing.
+6. If the final porcelain check reports a remaining path, do not run
+   `pw skill`. Stage every remaining non-ignored change and repeat the same
+   `group-commits-msg` plus non-interactive batch process once as a recovery
+   pass. If `git status --porcelain` is still nonempty afterward, stop and
+   report every remaining status entry. Never claim consolidation complete,
+   complete a live review exchange, or enter the next phase with a dirty tree.
+
+Only a successful grouped-commit pass followed by an empty
+`git status --porcelain` grants the handoff below. Do not make another
+non-ignored working-tree change between that clean check and `pw skill`.
+
 ## Handoff
 
 Before using or showing a host-prefixed workflow command, read
 [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md) and use its
 prefix rule.
 
-When the consolidation settles the document — every open question answered, no new one raised, the `## Open questions` section stripped (step 1 above) and the decisions table in place — hand the cycle on to the next phase, with no menu and no go-ahead. From the project root, in a PowerShell shell, run `pw skill` through its launcher (see [`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw` alias does not resolve in a tool shell):
+When the consolidation settles the document — every open question answered, no new one raised, the `## Open questions` section stripped (step 1 above), the decisions table in place, all remaining changes committed through `group-commits-msg`, and `git status --porcelain` empty — hand the cycle on to the next phase, with no menu and no go-ahead. From the project root, in a PowerShell shell, run `pw skill` through its launcher (see [`run-pw.md`](run-pw.md) for the non-interactive invocation; the bare `pw` alias does not resolve in a tool shell):
 
 - `pw skill`
 

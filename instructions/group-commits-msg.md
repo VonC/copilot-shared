@@ -92,6 +92,23 @@ choices again and do not issue private Git commands. The continuation calls the
 exchange `complete` only after the batch succeeds; on failure, authorization remains pending
 for a later replay.
 
+## Authorized consolidation continuation
+
+Use this continuation only when
+`consolidate-then-review-ask-questions.md` delegates its settled
+post-consolidation working tree after the human selected `Consolidate`, or
+directly invoked that consolidation skill. The consolidation instruction owns
+the repository-wide staging scope, the final clean-tree check, and any bounded
+recovery pass.
+
+Generate and format `a.commit` through Steps 1 through 6 above for every staged
+path. The existing consolidation choice already authorizes the generated
+commits, so do not present the Step 7 menu or request another go-ahead. Run
+`& "<LLM_SHARED_DIR>\bin\gcba.bat" --root-a-commit --non-interactive` exactly
+once, then return control to the consolidation instruction. Never issue private
+Git commit commands or claim a clean tree here: consolidation verifies
+`git status --porcelain` and decides whether its one recovery pass is required.
+
 ## Commit message rules for groups
 
 Each commit message must follow the template provided in [`group-commits-msg.template.md`](../templates/group-commits-msg.template.md).
