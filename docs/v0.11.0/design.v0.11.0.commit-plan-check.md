@@ -281,6 +281,24 @@ two when no trustworthy checker result exists.
 The root batch launcher's current status behavior is unchanged. These statuses
 belong to the new read-only command boundary only.
 
+## File-based IO cost clarification for v0.11.0 commit-plan checking
+
+The checker keeps repository loading to a tiny exact-input phase:
+
+- root discovery performs only the bounded parent lookup needed to identify
+  one repository root;
+- the service reads `<root>/a.commit` once and obtains staged membership with
+  one shared Git index command;
+- parsing, validation, and both renderers operate on the resulting in-memory
+  blocks, paths, and typed result without rescanning files; and
+- request rendering surrounds the checker with the two required index-tree
+  captures, then writes paired artifacts only after readiness and tree
+  stability are established.
+
+The operation is linear in plan content and staged-path inventory outside the
+existing validator's deterministic mismatch sorting. It introduces no
+per-path file reads, documentation-tree scan, or command-owned write.
+
 ## Code-review integration for commit-plan evidence
 
 The checker is mechanical evidence. Requestors and reviewers still own their

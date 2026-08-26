@@ -109,6 +109,18 @@ The existing batch launcher's `--root-a-commit --dry-run` combination remains
 unsupported. Root-plan mode there continues to mean validate and commit, so a
 flag combination inside that interface is not the public read-only boundary.
 
+## File-based IO cost clarification for commit-plan checking
+
+- Plan loading is one exact read of `<root>/a.commit`; it must not scan the
+  documentation tree or preload repository metadata.
+- Staged membership comes from one exact Git index inventory using
+  `git diff --cached --name-only --no-renames -z`, not from per-path worktree
+  probes.
+- One checker call parses and projects the plan and inventory in memory after
+  those bounded reads. Human and structured output reuse the same result.
+- The requestor gate may capture the index tree before and after checking, but
+  it must not add directory traversal or command-owned repository writes.
+
 ## Shared review evidence for commit-plan checking
 
 The code-reviewer instruction must name the resulting command where it
