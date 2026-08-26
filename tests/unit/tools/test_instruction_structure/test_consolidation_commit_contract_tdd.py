@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from tools import prompt_workflow_steps as steps
 
+_MINIMUM_STATUS_CHECK_COUNT = 4
+
 
 def _instruction(name: str) -> str:
     """Read one canonical workflow instruction."""
@@ -55,7 +57,7 @@ def test_pw_handoff_requires_an_empty_porcelain_status() -> None:
     gate = " ".join(content[grouped:handoff].split())
     handoff_text = " ".join(content[handoff:].split())
 
-    assert gate.count("git status --porcelain") >= 4
+    assert gate.count("git status --porcelain") >= _MINIMUM_STATUS_CHECK_COUNT
     assert "do not run `pw skill`" in gate
     assert "repeat the same `group-commits-msg`" in gate
     assert "once as a recovery pass" in gate
