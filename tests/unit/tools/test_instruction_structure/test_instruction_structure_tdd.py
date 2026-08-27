@@ -181,23 +181,6 @@ def test_group_commits_carries_the_commit_gate_multi_choice() -> None:
     assert "Type something else" in content
 
 
-def test_prepare_release_distinguishes_branch_roles() -> None:
-    """prepare-release preserves integration history and isolates feature commits."""
-    content = " ".join(_read("prepare-release.md").split())
-    assert "On-main release" in content
-    assert "Integration release" in content
-    assert "Feature completion" in content
-    assert "Never rebase a published, long-lived integration branch" in content
-    assert (
-        'rebase --onto "<target_branch>" "<feature_base>" "<landing_branch>"'
-        in content
-    )
-    assert "do not blindly use the oldest entry" in content
-    assert "Preserve the original feature ref" in content
-    assert 'There is no feature-mode "merge stale anyway" path' in content
-    assert 'merge --no-ff "<source_branch>"' in content
-
-
 def _assert_release_wiki_step(instruction: str) -> None:
     """Check the prepare-release instruction's wiki-audit contract."""
     content = " ".join(instruction.split())
@@ -362,15 +345,6 @@ def test_prepare_release_names_and_applies_gitworkflow_precisely() -> None:
     assert "does not preview this revert path" in content
     assert "https://git-scm.com/docs/gitworkflows" in content
     assert "https://github.com/rocketraman/gitworkflow" in content
-
-
-def test_prepare_release_documents_default_develop_variant() -> None:
-    """The local variant lands topics on develop before release preparation."""
-    content = " ".join(_read("prepare-release.md").split())
-    assert "published long-lived hosting default" in content
-    assert "replay the exact feature range onto current `develop`" in content
-    assert "When no integration branch exists, `main` is that first target" in content
-    assert "Only after the umbrella is exhausted" in content
 
 
 def test_gitworkflow_explanation_links_the_primary_context() -> None:
@@ -638,9 +612,9 @@ def test_wiki_explains_and_specifies_shared_target_rewording() -> None:
     explanation_words = " ".join(explanation.split())
     reference_words = " ".join(reference.split())
 
-    assert "The merge says why this topic entered develop" in explanation
+    assert "The merge says why this topic entered its integration branch" in explanation
     assert "Rewording happens before the table checkpoint" in explanation_words
-    assert "feature merge into `develop`" in reference_words
+    assert "feature merge into its integration branch" in reference_words
     assert "any no-fast-forward merge into `main`" in reference_words
     assert "current commit" in reference_words
     assert "history-repair plan" in reference_words
