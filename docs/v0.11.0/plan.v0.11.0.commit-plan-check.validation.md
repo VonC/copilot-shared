@@ -1,9 +1,9 @@
 # v0.11.0 commit-plan-check implementation tracking and validation
 
-No, it is not implemented.
+Yes, it is implemented.
 
-This skeleton tracks later implementation review for the four ordered slices
-of read-only commit-plan readiness evidence.
+This validation records the completed four-step implementation of read-only
+commit-plan readiness evidence and its review-workflow adoption.
 
 ---
 
@@ -381,8 +381,12 @@ No existing feature or reporting capability appears impaired by Step 3.
 
 ### Analysis of Step 4 implementation state
 
-Not started. Step 4 is not implemented because no implementation check has
-taken place yet.
+Yes. Step 4 has been fully implemented.
+
+The canonical reviewer and grouping instructions now use the read-only checker
+without transferring commit authority. Real-repository acceptance coverage
+proves adapter parity, failure taxonomy, rename semantics, caller-owned
+redirection, request rejection, and repository-state preservation.
 
 ### Goal for Step 4
 
@@ -400,24 +404,100 @@ tests.
 
 ### What was implemented for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Independent reviewer gate**: `instructions/code-reviewer.md` runs
+  `commit-plan-check.bat --format json` before broader assessment, records the
+  complete mechanical result, blocks on statuses `2` and `3`, and states that
+  status `0` neither proves the other readiness-floor results nor authorizes a
+  commit.
+- **Grouping readiness gate**: `instructions/group-commits-msg.md` runs the
+  focused checker after formatting and staging. Non-ready diagnostics return
+  to plan repair, operational failure stops the flow, and the final batch still
+  validates again before mutation.
+- **Instruction contracts**: focused unit tests pin the independent rerun,
+  status handling, authority boundary, ordering before the human menu, and the
+  updated seven-step authorized residual and consolidation continuations.
+- **Adapter and taxonomy acceptance**: a real-Git parametrized fixture covers
+  valid, missing-plan, empty-plan, empty-staged-set, and membership-mismatch
+  states through both human and JSON formats on the module and root launcher.
+- **Repository immutability**: every parametrized ready or non-ready call
+  compares `HEAD`, index tree, staged paths, tracked worktree diff, exact
+  `a.commit` bytes, and ignored root inventory before and after.
+- **Boundary acceptance**: focused scenarios cover both paths of a staged
+  rename, failed Git inventory with stable status `2`, caller-owned redirected
+  evidence as the only observable change, and requestor rejection of invalid
+  checker evidence and index drift without paired outputs.
+- **Repository gate evidence**: the final detached `ghog day` completed with
+  `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`.
 
 ### New types or classes introduced for Step 4
 
-_(empty — no check has taken place yet.)_.
+No production type was introduced. Acceptance coverage adds the frozen
+`_RepositoryState` snapshot type plus local repository, adapter, evidence, and
+request-input fixtures. These test-only helpers keep setup deterministic and
+leave checker and requestor production boundaries unchanged.
 
 ### Architecture check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Canonical source boundary**: workflow behavior remains in root
+  `instructions/` files; no provider-specific adapter copies were added or
+  changed.
+- **Responsibility boundary**: instructions call the shipped checker and react
+  to its stable statuses without copying parser, inventory, or validation
+  logic into Markdown.
+- **Authority boundary**: checker success remains mechanical evidence only.
+  Human or durable authorization still controls every committing batch, and
+  the batch retains its final defensive validation.
+- **Dependency direction**: acceptance code calls the public module and root
+  launcher against temporary repositories. No production dependency points
+  from commit-plan services into reviewer or grouping workflows.
+- **File girth**: `instructions/code-reviewer.md` is 223 lines, inside its
+  225-line advisory. `instructions/group-commits-msg.md` is 169 lines, 34 above
+  its 135-line advisory after earlier continuation growth. The acceptance leaf
+  is 418 lines, 38 above its 380-line advisory and below the 550-line helper
+  extraction point. Both focused instruction test files remain inside their
+  advisories, and every Python file remains below the 650-line ceiling.
+
+No, there is nothing that needs to be addressed for Step 4.
 
 ### Performance check for Step 4
 
-_(empty — no check has taken place yet.)_.
+Checker and snapshot work is linear over exact plan, path, and evidence sets;
+no nested per-path scan or sort was added. The initial request-rejection test
+call measured 4.69 seconds because required repository setup and Git subprocess
+boundaries ran in its assertion phase. Profiling placed 3.47 seconds in
+caller-path ignore checks, so the full rejection exercise moved to fixture
+setup without dropping an assertion. The isolated result reports 5.21 seconds
+of setup while the measured call stays below the 0.50-second floor, and the
+final full run reports zero outliers.
+
+No, there is no performance issue that needs to be addressed for Step 4.
 
 ### Unit test coverage check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Instruction contracts**: unit tests cover the independent reviewer rerun,
+  mechanical-only result, statuses `2` and `3`, grouping order, final batch
+  validation, and authorized continuation renumbering.
+- **Production classes**: Step 4 changes no production Python class, so no new
+  class-specific unit-test leaf is required.
+- **Acceptance boundary**: real-repository tests are acceptance coverage and do
+  not carry a class-level unit coverage target.
+- **Coverage evidence**: the complete Groundhog gate reports 100% coverage for
+  all affected production statements.
+
+No, there is no unit-tested class below 100% that needs completing for Step 4.
 
 ### Feature integrity for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Reviewer behavior**: the six-part readiness floor, repair ownership,
+  reciprocal waits, and advisory-only convergence decision remain present.
+- **Grouping behavior**: normal menus, authorized review cleanup,
+  consolidation cleanup, batch parsing, and clean-tree postconditions remain
+  intact around the new read-only precheck.
+- **Checker behavior**: acceptance results match across entry points and
+  formats for every planned readiness state without entering commit execution.
+- **Requestor behavior**: invalid plans and index drift still fail before either
+  caller-owned request artifact is created.
+- **Regression evidence**: the complete suite passes with no warning, expected
+  failure, coverage gap, or duration outlier.
+
+No existing feature or reporting capability appears impaired by Step 4.
