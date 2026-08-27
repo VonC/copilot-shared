@@ -1,4 +1,8 @@
-"""Content contracts for the canonical implementation code reviewer."""
+"""Content contracts for the canonical implementation code reviewer.
+
+Step 4 requires an independent read-only commit-plan check while keeping
+mechanical readiness separate from assessment and human commit authority.
+"""
 
 from __future__ import annotations
 
@@ -113,6 +117,27 @@ def test_instruction_forbids_writer_human_and_commit_authority() -> None:
     assert "never authorizes a commit" in content
     assert "Waiting does not transfer requestor authority" in normalized
     assert "Stop after a convergence publication" in normalized
+
+
+def test_instruction_requires_independent_commit_plan_readiness_evidence() -> None:
+    """The reviewer reruns the checker without treating success as authority."""
+    content = " ".join(_content().split())
+    _assert_contains_all(
+        content,
+        (
+            "`commit-plan-check.bat --format json`",
+            "independent",
+            "status `3`",
+            "status `2`",
+            "mechanical",
+            "does not prove implementation completeness",
+            "never authorizes a commit",
+            "six readiness-floor results",
+        ),
+    )
+    assert content.index("`commit-plan-check.bat --format json`") < content.index(
+        "six readiness-floor results",
+    )
 
 
 # eof

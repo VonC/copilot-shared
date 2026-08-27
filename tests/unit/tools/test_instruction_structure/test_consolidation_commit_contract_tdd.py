@@ -1,4 +1,4 @@
-"""Commit and clean-tree contracts for canonical question consolidation."""
+"""Commit, readiness, and clean-tree contracts for question consolidation."""
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ def test_grouping_skill_has_the_authorized_consolidation_continuation() -> None:
     continuation = content.split("## Authorized consolidation continuation", 1)[1]
 
     assert "consolidate-then-review-ask-questions.md" in continuation
-    assert "Steps 1 through 6" in continuation
-    assert "do not present the Step 7 menu" in continuation
+    assert "Steps 1 through 7" in continuation
+    assert "do not present the Step 8 menu" in continuation
     assert "--root-a-commit --non-interactive" in continuation
     assert "consolidation verifies" in continuation

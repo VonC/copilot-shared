@@ -1,7 +1,7 @@
-"""Contract tests for Step 3 instruction integration.
+"""Contract tests for Step 3 and Step 4 instruction integration.
 
 The checks pin only required trigger, delegation, and continuation tokens plus
-their order, leaving prose free to improve without weakening the workflow.
+their order, including the Step 4 readiness gate before authorized batches.
 """
 
 from pathlib import Path
@@ -48,7 +48,7 @@ def test_grouping_instruction_has_a_dedicated_authorized_entry() -> None:
     normalized = " ".join(block.split())
     for token in (
         "git add -A",
-        "Steps 1 through 6",
+        "Steps 1 through 7",
         "pw code-review-commit --residual",
         "git status --porcelain",
         "clean working tree",
