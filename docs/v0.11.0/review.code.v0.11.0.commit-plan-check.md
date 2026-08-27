@@ -1588,7 +1588,7 @@ Decision: changes-requested. The writer must address the concrete instructions a
 
 ## Round 2 by requestor - Step 3
 
-- Recorded: 2026-08-27T10:49:07+02:00
+- RecordedI : 2026-08-27T10:49:07+02:00
 - Exchange: code/code/v0.11.0/commit-plan-check
 - Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
 - Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
@@ -1939,3 +1939,355 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 4
+
+- Recorded: 2026-08-27T14:52:14+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 4
+- Outcome: request
+
+### Review identity for step 4 commit-plan-check (round 1)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+Implementation step: 4
+Review round: 1
+
+### Code review evidence for step 4 commit-plan-check (round 1)
+
+request_index_tree: 9fcd0968a43c8f20c826f67e9f1927a67b746eaf
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n -e commit-plan-check -e status -e readiness -e never.authorizes -e independent instructions/code-reviewer.md instructions/group-commits-msg.md tests/unit/tools/test_code_reviewer_instruction tests/unit/tools/test_group_commit_message_prompt_tdd.py tests/acceptance/commit_plan_check (sources: plan)
+- ghog single tests/unit/tools/test_code_reviewer_instruction/test_code_reviewer_instruction_tdd.py tests/unit/tools/test_group_commit_message_prompt_tdd.py tests/acceptance/commit_plan_check/test_commit_plan_check_acceptance/test_commit_plan_check_acceptance_tdd.py (sources: plan)
+- commit-plan-check.bat --format json (sources: request)
+- git diff --cached --check (sources: request)
+
+commit_plan_result:
+
+```text
+state: valid
+ready: true
+group 1: chore(editor): add workflow vocabulary
+group 1 path: .vscode/settings.json
+group 2: docs(commit-plan-check): fix format example
+group 2 path: docs/v0.11.0/design.v0.11.0.commit-plan-check.md
+group 3: docs(commit-plan-check): wire readiness checks
+group 3 path: instructions/code-reviewer.md
+group 3 path: instructions/group-commits-msg.md
+group 4: test(commit-plan-check): cover readiness rollout
+group 4 path: tests/acceptance/commit_plan_check/__init__.py
+group 4 path: tests/acceptance/commit_plan_check/test_commit_plan_check_acceptance/__init__.py
+group 4 path: tests/acceptance/commit_plan_check/test_commit_plan_check_acceptance/test_commit_plan_check_acceptance_tdd.py
+group 4 path: tests/unit/tools/test_code_review_requestor_instruction/test_implement_step_integration_tdd.py
+group 4 path: tests/unit/tools/test_code_reviewer_instruction/test_code_reviewer_instruction_tdd.py
+group 4 path: tests/unit/tools/test_group_commit_message_prompt_tdd.py
+group 4 path: tests/unit/tools/test_instruction_structure/test_consolidation_commit_contract_tdd.py
+group 5: docs(commit-plan-check): record step 4 validation
+group 5 path: docs/v0.11.0/draft.v0.11.0.review-mode.md
+group 5 path: docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md
+staged path: .vscode/settings.json
+staged path: docs/v0.11.0/design.v0.11.0.commit-plan-check.md
+staged path: docs/v0.11.0/draft.v0.11.0.review-mode.md
+staged path: docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md
+staged path: instructions/code-reviewer.md
+staged path: instructions/group-commits-msg.md
+staged path: tests/acceptance/commit_plan_check/__init__.py
+staged path: tests/acceptance/commit_plan_check/test_commit_plan_check_acceptance/__init__.py
+staged path: tests/acceptance/commit_plan_check/test_commit_plan_check_acceptance/test_commit_plan_check_acceptance_tdd.py
+staged path: tests/unit/tools/test_code_review_requestor_instruction/test_implement_step_integration_tdd.py
+staged path: tests/unit/tools/test_code_reviewer_instruction/test_code_reviewer_instruction_tdd.py
+staged path: tests/unit/tools/test_group_commit_message_prompt_tdd.py
+staged path: tests/unit/tools/test_instruction_structure/test_consolidation_commit_contract_tdd.py
+```
+
+### Requestor assessment for step 4 commit-plan-check (round 1)
+
+Step 4 is fully implemented.
+
+- Scope: the code-reviewer and commit-grouping instructions independently run the JSON commit-plan checker and handle statuses 0, 3, and 2 without treating mechanical readiness as commit authority.
+- Tests: the planned unit instruction contracts and real-Git acceptance suite pass, including valid, missing, empty, mismatched, renamed, failed, redirected, immutable, and requestor-drift cases.
+- Static checks and coverage: the final detached Groundhog run completed with no failures, warnings, expected failures, coverage gaps, or duration outliers.
+- Architecture: the rollout reuses the existing checker launchers and review request renderer; no parallel validation implementation was introduced.
+- Performance: the requestor-rejection test moved repository setup into its fixture after profiling found the measured call dominated by Git ignore probes. Its setup is reported separately and the measured call stays below the duration floor.
+- Feature integrity: the implementation-check record marks Step 4 fully implemented and the umbrella row links the completed requirement and validation plan.
+
+### Implementation report for step 4 commit-plan-check (round 1)
+
+Step 4 completes the commit-plan-check rollout at the review and commit boundaries.
+
+- `instructions/code-reviewer.md` adds an independent JSON checker call to the six-part readiness floor, branches on all three statuses, and states that success is mechanical evidence rather than authority.
+- `instructions/group-commits-msg.md` runs the read-only checker after staging and formatting, repairs status 3, stops on status 2, and reaches its menu only on status 0.
+- The acceptance suite exercises both launchers and both formats in real repositories while comparing repository state before and after each read-only call.
+- Unit instruction contracts cover the new reviewer and grouping sequence plus requestor and consolidation compatibility.
+- The validation plan records the implementation, performance investigation, and successful global gate; the umbrella row is completed.
+
+### Change summary for step 4 commit-plan-check (round 1)
+
+The staged index contains 13 paths organized by the prepared `a.commit` into five ordered groups.
+
+1. `chore(editor): add workflow vocabulary`
+   - `.vscode/settings.json`
+2. `docs(commit-plan-check): fix format example`
+   - `docs/v0.11.0/design.v0.11.0.commit-plan-check.md`
+3. `docs(commit-plan-check): wire readiness checks`
+   - `instructions/code-reviewer.md`
+   - `instructions/group-commits-msg.md`
+4. `test(commit-plan-check): cover readiness rollout`
+   - the three acceptance package and test paths under `tests/acceptance/commit_plan_check/`
+   - the four affected instruction-contract test paths under `tests/unit/tools/`
+5. `docs(commit-plan-check): record step 4 validation`
+   - `docs/v0.11.0/draft.v0.11.0.review-mode.md`
+   - `docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md`
+
+The JSON readiness checker reports `state=valid`, `ready=true`, and no diagnostics for this exact staged inventory.
+
+### Writer response for step 4 commit-plan-check (round 1)
+
+Writer response: This is the first code-review round for Step 4. There is no earlier reviewer feedback or disagreement to record.
+
+### Reviewer focus for step 4 commit-plan-check (round 1)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-4-round-1 -->
+
+## Round 1 by reviewer - Step 4
+
+- Recorded: 2026-08-27T15:05:53+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 4
+- Outcome: answer
+
+### Assessed index identity for step 4 commit-plan-check (exchange 1) (round 1)
+
+Baseline index tree: 9fcd0968a43c8f20c826f67e9f1927a67b746eaf
+
+Assessed index tree: 9fcd0968a43c8f20c826f67e9f1927a67b746eaf
+
+### Implementation check for step 4 commit-plan-check (exchange 1) (round 1)
+
+Result: Yes. Step 4 has been fully implemented. This is the effort's final step, and I checked the completion machinery as carefully as the rollout itself, because a wrong umbrella transition would outlive this review.
+
+The reviewer instruction wiring matches the settled design. `instructions/code-reviewer.md` inserts an independent `commit-plan-check.bat --format json` run as step 6, before grouping, ordering, scope, or subjects are assessed, and requires the state, ready value, ordered groups, staged paths, and every diagnostic to be recorded in reviewer evidence. It branches on all three statuses, treats status three as mechanical non-readiness and status two as an untrustworthy decision, and blocks a commit-ready recommendation on either. The added prose states that status zero satisfies only the mechanical `a.commit` result of the six-part readiness floor and never authorizes a commit, which is exactly the boundary the design draws.
+
+The grouping instruction matches it too. `instructions/group-commits-msg.md` runs the checker after formatting and staging, repairs on status three using the returned diagnostics and reruns, stops and reports on status two without presenting choices, and reaches the human menu only on status zero. It states explicitly that this earlier read-only gate does not replace the final batch validation before mutation.
+
+One detail there is worth calling out as correct rather than incidental. The instruction invokes the checker as `"%LLM_SHARED_DIR%\commit-plan-check.bat"` from the project root, which depends on the launcher preserving the caller's working directory. That is precisely the defect I blocked in Step 2 round one, so this usage is only safe because that fix landed, and it now exercises it in the workflow rather than only in tests.
+
+The renumbering consequences were followed through rather than left dangling. Inserting the checker as step 7 shifted the menu to step 8, and both affected contract tests were updated in step: `test_implement_step_integration_tdd.py` now asserts "Steps 1 through 7" and `test_consolidation_commit_contract_tdd.py` asserts "Steps 1 through 7" and "do not present the Step 8 menu". Those two files are outside the plan's Step 4 list, but they are necessary compatibility updates rather than scope creep.
+
+The acceptance suite covers every row of the design's acceptance table. The parameterized fixture runs valid, missing-plan, empty-plan, empty-staged-set, and mismatch scenarios across both adapters and both formats, which is four runs per scenario. Separate tests cover the staged rename with both sides, the failed Git inventory with a stable operational diagnostic, caller-owned redirection as the only observable change, and requestor rejection on both invalid plan and index drift with no outputs written. The reviewer-rerun row is covered by the instruction contract test.
+
+The immutability proof matches what the design demands. `_RepositoryState` snapshots `head`, `index_tree`, `staged_paths`, `worktree_diff`, `plan_bytes`, and `ignored_root` before and after each call, which is the exact set the design names, and the comparison runs for both valid and invalid calls.
+
+The final-step completion machinery is correct in every particular I could check. All four `### Analysis of Step N implementation state` sections now open with the exact Yes sentence, so the document-level line correctly flipped from `No, it is not implemented.` to `Yes, it is implemented.` Umbrella row 8 moved from `pending` to `completed` with the requirement and validation-plan paths filled in, and I re-read both named files: they exist, and the validation plan's first non-title line is `Yes, it is implemented.` Row order, type, key title, and slug are unchanged, rows 9 and 10 are untouched, and the requirement-detail subsections are unmodified.
+
+The design-document edit is a Markdown repair rather than a design change. `--format human|json` inside a table cell splits that cell on the unescaped pipe, and the change to `human/json` restores the table. I note the accuracy cost separately, but nothing about Q03's decision, its integration point, or its rejected alternatives changed.
+
+Line budgets are all accounted for. `instructions/code-reviewer.md` at 223 lines is inside its 225 advisory, and the two overruns are recorded as the plan's shared checklist item 8 requires: `instructions/group-commits-msg.md` at 169 lines is 34 above its 135 advisory, and the acceptance leaf at 418 lines is 38 above its 380 advisory and well below the 550-line helper-extraction trigger, so no `conftest.py` split is due.
+
+Architecture, performance, and feature integrity are clean. The rollout adds no parallel validation implementation, reusing the shipped launcher and the existing request renderer. The instructions add one bounded command call rather than a scan or poll. Existing batch execution still validates before mutation, and the reviewer and grouping roles keep their distinct authority boundaries.
+
+Validation plan effects: I made no change to the validation plan. The requestor's rows are correct and my verdict agrees with theirs, so reviewer mode had nothing to write.
+
+The recorded rows state `Yes. Step 4 has been fully implemented.` and my independent assessment reaches the same verdict, so no `### Missing work for Step 4` section is required and none is present.
+
+The document-level status flip is correct and I verified its precondition rather than assuming it. All four `### Analysis of Step N implementation state` sections now open with the exact `Yes. Step N has been fully implemented.` sentence, so the opening line rightly moved from `No, it is not implemented.` to `Yes, it is implemented.` This is the one step in the effort where that flip was due, and it happened here rather than early.
+
+The girth row is accurate and complete against my own measurements, and it records both overruns as the plan's shared execution checklist item 8 requires. `instructions/code-reviewer.md` at 223 lines is inside its 225-line advisory. `instructions/group-commits-msg.md` at 169 lines is recorded as 34 above its 135-line advisory. The acceptance leaf at 418 lines is recorded as 38 above its 380-line advisory and below the 550-line helper-extraction trigger, so no `conftest.py` split is due and none was made.
+
+The evidence rows describe what the code and instructions actually do rather than what was intended. The scope, tests, architecture, performance and feature-integrity entries each match something I checked directly, including the acceptance suite's scenario list and the reviewer and grouping status branches.
+
+One row records a performance investigation rather than a bare result, which is the right shape. The requestor-rejection test moved its repository setup into a fixture after profiling attributed the measured call to Git ignore probes, and the setup cost is reported separately. That is the same technique `instructions/fix_slow_test.md` prescribes and that Step 1 used, applied with a stated cause rather than by trial.
+
+Reviewer mode correctly did not complete the umbrella row itself. The writer completed it, which is the writer-owned behavior for a final step, and my role was to verify it rather than perform it. The umbrella digest is unchanged across my assessment at `dea13b3adfb5027e4bb2d826619634049e044befb09319a142ed2c9dbcb0a353`, confirmed by `umbrella-digest compare` reporting `changed: false`, so nothing I did altered it.
+
+### Pre-repair mandatory checks and coverage for step 4 commit-plan-check (exchange 1) (round 1)
+
+The repository gate passes with margin, and I ran it twice because this is the effort's final step and the umbrella transition rides on it.
+
+Both forced walks agree. `ghog day --force` reported `ghog full done fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` with `Objective reached` on each run, reaching the check, affected, and full phases every time.
+
+The static check phase passes cleanly, which matters here because it is where Step 3 round one failed. `ghog check done ... exit=0`, with markdown-check among the passing steps, and I confirmed separately that markdown-check reports no finding for the plan, the design, the validation plan, the umbrella draft, or either review transcript.
+
+The duration axis is comfortable. The slowest call across the two walks is `tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_transcript_identity_tdd.py::test_answer_occurrence_follows_a_restarted_request_without_prior_answer` at `0.38s` and then `0.30s` against the `0.50s` floor, so between 24 and 40 percent below it with zero outliers on both runs. The Markdown property test I flagged as a watch item in Step 3 did not surface in either walk.
+
+`ghog single` across the two instruction contract files and the acceptance leaf is green, with nothing failing in focus and nothing passing in focus while failing in the full suite.
+
+Both `rg` forms pass and are equivalent, each returning 60 matching lines over the same five paths, so the resolved `-e` spelling loses nothing against the plan's alternation.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, thirteen staged paths, five ordered groups, and zero diagnostics.
+
+`git diff --cached --check` exits `0` with no whitespace or conflict-marker finding across the thirteen staged paths.
+
+I performed no repair, so there is no pre-repair versus post-repair difference beyond this baseline.
+
+### Resolved validation set and sources for step 4 commit-plan-check (exchange 1) (round 1)
+
+The request resolved five commands and I ran all five. The current plan-derived
+resolver set adds nothing, so the union equals the resolved set.
+
+- `ghog day` — source `project`. Run as `ghog day --force`, twice, because a
+  plain invocation short-circuits to `cov=skipped` and because this is the final
+  step of the effort.
+- `rg -n -e commit-plan-check -e status -e readiness -e never.authorizes -e independent instructions/code-reviewer.md instructions/group-commits-msg.md tests/unit/tools/test_code_reviewer_instruction tests/unit/tools/test_group_commit_message_prompt_tdd.py tests/acceptance/commit_plan_check` — source `plan`.
+- `ghog single tests/unit/tools/test_code_reviewer_instruction/test_code_reviewer_instruction_tdd.py tests/unit/tools/test_group_commit_message_prompt_tdd.py tests/acceptance/commit_plan_check/test_commit_plan_check_acceptance/test_commit_plan_check_acceptance_tdd.py` — source `plan`.
+- `commit-plan-check.bat --format json` — source `request`.
+- `git diff --cached --check` — source `request`.
+
+Every command ran and every command passed.
+
+Both forced walks completed every phase with `cov=100 outliers=0 excluded=0
+exit=0` and `Objective reached`.
+
+Both `rg` spellings return exactly 60 matching lines, so the resolved form and
+the plan's alternation are equivalent.
+
+`ghog single` over the two instruction contract files and the acceptance leaf is
+green.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`,
+thirteen staged paths, five ordered groups, and no diagnostics.
+
+`git diff --cached --check` exits `0`.
+
+There is a pleasing symmetry worth recording. The command this effort built is
+now part of the evidence set that reviews the effort's own final step, and the
+instruction this step wires makes that rerun mandatory for every future code
+review rather than a habit I adopted voluntarily from Step 2 onward.
+
+### Resolver drift and direction for step 4 commit-plan-check (exchange 1) (round 1)
+
+No drift this round.
+
+The `rg` command carries every term the plan specifies. I ran both the resolved
+`-e` spelling and the plan's quoted alternation at
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:726`, and each returns exactly
+60 matching lines over the same five paths, so the two forms are equivalent.
+
+`ghog single` is present with the plan's exact three-file list for this step.
+
+`git diff --cached --check` remains in the set from the `request` source, where
+it was restored during Step 3 round two after having quietly left the set since
+Step 1. It stayed this round, which is the outcome I asked for.
+
+Comparing the request set against the current plan-derived resolver set, the
+union adds nothing, so I ran the resolved set as given.
+
+Across the effort the pattern is now settled. Steps 1, 2 and 3 each opened with
+a plan-sourced command narrower than the plan text and corrected it in round
+two; Step 4 opened correct. Whatever changed in how the set is derived is
+working, and it is worth keeping for the remaining umbrella requirements.
+
+### Repository state around validation for step 4 commit-plan-check (exchange 1) (round 1)
+
+My assessment produced no repository side effect. I made no repair, so the only writes were ignored root `a.*` reviewer evidence files and ignored validation artifacts.
+
+Index identity held throughout. The request-time `request_index_tree` is `9fcd0968a43c8f20c826f67e9f1927a67b746eaf`, and `capture-index-tree` returned that identical value both before assessment and after two forced walks, the focused run, the Markdown gate, and every inspection. No early rejection applied and no staged change occurred during review.
+
+The umbrella needs a word of its own this round, because it is staged rather than merely present. `docs/v0.11.0/draft.v0.11.0.review-mode.md` carries the completed row 8 and is part of the reviewed index, which is correct for a final step. My baseline captured it in that state, and `umbrella-digest compare` returns `dea13b3adfb5027e4bb2d826619634049e044befb09319a142ed2c9dbcb0a353` before and after with `changed: false`, so my assessment left it untouched. Reviewer mode never completed or edited that row; the writer did, and I verified the result.
+
+The validation-state comparison is clean. Using the same ordered thirteen-path set before and after, `validation-state compare` returns `acceptable: true` with empty `tracked_paths`, `untracked_paths`, and `ignored_paths`.
+
+Ignored validation artifacts were refreshed as expected by the two walks, including `.coverage`, `.testmondata`, `a.ghog.log`, and `a.ghog.outliers`. The contract accepts differences confined to ignored validation artifacts, and none is tracked or staged.
+
+One tracked path outside the staged set is modified, as in every round of this effort. `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` carries the appended Step 4 request and is correctly unstaged while the round is open. It passes the repository Markdown gate, so the `git add -A` grouping pass at the commit gate will stage a clean file.
+
+### Repair inventory for step 4 commit-plan-check (exchange 1) (round 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 4 commit-plan-check (exchange 1) (round 1)
+
+`a.commit` is accurate, and I verified it with the checker this effort shipped rather than by reading it. `commit-plan-check.bat --format json` returns `state=valid`, `ready=true`, thirteen staged paths, five ordered groups, and zero diagnostics.
+
+Group membership matches the index exactly:
+
+- Group 1 `chore(editor): add workflow vocabulary` carries `.vscode/settings.json`.
+- Group 2 `docs(commit-plan-check): fix format example` carries the design document.
+- Group 3 `docs(commit-plan-check): wire readiness checks` carries the two instruction files.
+- Group 4 `test(commit-plan-check): cover readiness rollout` carries the three acceptance package paths and the four instruction-contract test paths.
+- Group 5 `docs(commit-plan-check): record step 4 validation` carries the umbrella draft and the validation plan.
+
+The grouping decisions are good, and two deserve saying so explicitly. Isolating `.vscode/settings.json` into its own `chore(editor)` group is correct: it is unrelated editor configuration swept in by the repository-wide handoff, and the grouping rule requires ranking it by its own dependencies with an honest subject rather than folding it into the rollout. Separating the design-document Markdown repair into its own `docs` group is also right, since it is a rendering fix rather than part of the readiness wiring and would have been misleading inside group 3.
+
+Placing the umbrella draft beside the validation plan in the final group is required rather than merely tidy. The implementation-check contract states that the umbrella edit belongs in the same grouped commit as the final validation update, so the later feature merge carries the status transition into the integration branch. Group 5 does exactly that, and it is last.
+
+Ordering is least to most dependent throughout: unrelated editor configuration, then an independent documentation repair, then the instruction wiring, then the tests that cover it, then the validation and umbrella record that documents the whole. All five subjects are conventional commits with accurate scopes, and each body describes what its diff actually does.
+
+I did not amend `a.commit`. Membership, ordering, scope, and subjects are all accurate, so an amendment would have been a substantive change to commit grouping with no defect to correct, and it would have invalidated a commit-ready recommendation in this same round.
+
+One carry-forward for the commit gate, unchanged in shape across this effort. `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` is tracked, modified, and deliberately unstaged while the round is open, so the `git add -A` grouping pass at the gate will stage it. It currently passes the repository Markdown gate, so staging it is safe.
+
+### Findings and boundaries for step 4 commit-plan-check (exchange 1) (round 1)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 4 commit-plan-check (exchange 1) (round 1)
+
+No change is required. I am requesting nothing, and Step 4 needs no rework.
+
+One optional accuracy point, offered rather than requested. The design-document repair changed `--format human|json` to `--format human/json` inside a table cell. The repair is warranted, because an unescaped pipe splits the cell, but the replacement no longer matches the CLI's real syntax, and the design is the document later readers will treat as reference. Escaping the pipe as `human\|json` renders as `human|json` and keeps both the table and the accuracy. Apply it or leave it; it does not need another round.
+
+Two things are worth keeping deliberately, so a later cleanup does not undo them. The grouping instruction invokes the checker through `%LLM_SHARED_DIR%` from the caller's project root, which is only correct because the Step 2 launcher preserves the caller's working directory; anyone tempted to "simplify" either side should read the Step 2 round-one findings first. And the acceptance suite's `_RepositoryState` snapshot fields are the exact set the design requires for its immutability proof, so trimming them would silently weaken that proof.
+
+Two items remain deferred by agreement rather than dropped, and this is a good moment to schedule them. The label-inlining defect affects `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, with the correct idiom already at `tools/code_review_answer.py:288`. The unimplemented caller-authored heading shift and qualification contract in `instructions/review-requestor.md` travels with it. Both are review-mode tooling work, both are now free of any collision with this effort, and umbrella rows 9 and 10 remain pending as natural homes.
+
+One caution for whoever writes those rounds, learned the hard way in this exchange. Inline triple-backtick runs in authored prose pair with each other across the whole document, so removing one can unbalance the rest and turn two lint findings into many. Write a literal fence marker as a fenced example or describe it in words rather than inlining it.
+
+At the commit gate, the `git add -A` grouping pass will stage `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md`, which carries this exchange's rounds and currently passes the Markdown gate.
+
+If the human selects `Commit`, run the existing commit step. Note that this commit carries the completed umbrella row, so it is the one that moves requirement 8 to done for the later feature merge. If the human selects `Rework and review again`, there is no outstanding scope from me; treat any human guidance as the full scope of that round.
+
+### Decision rationale for step 4 commit-plan-check (exchange 1) (round 1)
+
+I am recommending `commit-ready`, and I made no repair, so nothing in this round invalidates the recommendation.
+
+All six readiness-floor results pass. Identity is exact, with the envelope, human-readable identity, plan, step, round, and exchange occurrence in agreement and the request-time index tree `9fcd0968a43c8f20c826f67e9f1927a67b746eaf` matching the live index before and after all validation. Implementation completeness is a Yes I derived independently. Mandatory validation and coverage pass, confirmed across two forced walks. Staged attribution is clean across thirteen paths. No unresolved finding remains. The `a.commit` grouping is valid with zero diagnostics.
+
+This is the first step of the effort I am recommending on the first round, and the reason is that the things that blocked earlier rounds were all done correctly here without being asked. The evidence claim reproduces rather than needing a forced re-run to contradict it. The resolved validation set arrived carrying every plan term rather than a narrowed subset. Both line-budget overruns are recorded under checklist item 8 rather than passed over. The renumbering that inserting a step forced was followed through into both affected contract tests rather than left to fail later.
+
+The rollout matches the design at both boundaries. The reviewer instruction runs the checker independently before assessing anything, records the full result, branches on all three statuses, and states that status zero satisfies only the mechanical `a.commit` part of the readiness floor and never authorizes a commit. The grouping instruction runs it after formatting and staging, repairs on status three, stops on status two, reaches the menu only on status zero, and says plainly that it does not replace the final batch validation.
+
+One detail closes a loop from earlier in this effort. The grouping instruction invokes the checker through `%LLM_SHARED_DIR%` from the caller's project root, which only produces the caller's readiness because the Step 2 launcher preserves the working directory. That was the defect I blocked in Step 2 round one, and this step is what puts the fixed behavior into the workflow rather than only into tests.
+
+The acceptance suite covers every row of the design's table, including the two empty states that must stay distinct and the caller-redirection case, and it proves immutability with exactly the snapshot fields the design names, across both adapters and both formats. That is the evidence the feature is ultimately judged by, and it is complete.
+
+Because this is the final step, I checked the completion machinery as carefully as the rollout. All four step verdicts now read Yes, so the document-level flip to `Yes, it is implemented.` was due. Umbrella row 8 moved from pending to completed with both paths filled in, and I re-read both named files and confirmed the validation plan's first non-title line is `Yes, it is implemented.` Row order, key title, slug, neighbouring rows, and the requirement-detail subsections are untouched. Reviewer mode did not perform that transition; the writer did, and my job was to verify it, which I did.
+
+Two observations carry no request and should not hold up the gate. The design-document edit is a genuine Markdown table repair, since an unescaped pipe splits the cell, but `--format human/json` no longer matches the CLI's actual `--format human|json` syntax; escaping the pipe would have preserved both, and it is worth a moment's thought before the design is read as reference. Separately, the label-inlining defect in the four renderer modules and the unimplemented caller-authored heading contract remain deferred by agreement, are unrelated to Step 4, and now have no remaining collision with planned work in this effort.
+
+I should also record my own error from the previous exchange plainly, since it touched the artifact this step commits. My Step 3 round-two answer introduced MD038 findings into the review transcript through inline fence markers in prose, which failed the gate and was repaired by amending the Step 3 review commit. The transcript now passes, and I verified that before recommending here.
+
+This recommendation is advisory and authorizes nothing. Completing the umbrella row does not commit it, and a green gate is mechanical evidence rather than authority. Only the human may choose `Commit` or `Rework and review again`.
+
+### Final reviewer decision for step 4 commit-plan-check (exchange 1) (round 1)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-4-round-1 -->
+
+## Round 1 by human - Step 4 - human-confirmation
+
+- Recorded: 2026-08-27T17:06:48+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 4
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->
