@@ -389,7 +389,7 @@ validation inside commit execution.
 | --- | --- | --- | --- |
 | Q01 | Extract staged inventory into a neutral public commit-plan support boundary used by checking and committing. | Shared staged inventory for commit-plan parity | Exporting the batch-private helper or duplicating the Git call |
 | Q02 | Wrap the unchanged public validator result in an immutable checker-specific result. | Typed result boundary for the checker | Expanding the validator with orchestration states or using exceptions and renderer-specific values |
-| Q03 | Select output with `--format human|json`, defaulting to `human`. | Output contracts for commit-plan evidence | A `--json` boolean or a separate structured-output command |
+| Q03 | Select output with `--format human\|json`, defaulting to `human`. | Output contracts for commit-plan evidence | A `--json` boolean or a separate structured-output command |
 | Q04 | Enforce the requestor gate in the specialized code-review renderer and accept the documented direct-publication bypass. | Enforced requestor publication gate | Coupling shared `publish-request` to commit plans or relying on instructions alone |
 | Q05 | Exclude the batch missing-file precheck and decide readiness from parsing plus exact staged membership. | Rename and deletion semantics for staged membership | Advisory reuse or readiness-gate reuse of worktree and `HEAD` checks |
 | Q06 | Embed the full structured checker result in the code-review request. | Enforced requestor publication gate | A validity marker only or no durable checker evidence |
