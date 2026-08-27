@@ -35,10 +35,10 @@ prerequisites already satisfied.
 | `/group-commits-msg` | the staged diff | `a.commit`, one message per group |
 | `/update-merge-commit-msg` | the current no-fast-forward merge | `a.docs`, `a.commit`, current merge reworded before push |
 | `/prepare_release_notes` | `version.txt`, git history | `a.md`, `version.txt` summary, `CHANGELOG.md` |
-| `/prepare-release` | `main`, integration, or an isolated effort branch | feature merged and reworded on integration plus the next umbrella handoff, or full release artifacts and one `chore(release): prepare` commit when no pending umbrella item remains |
+| `/prepare-release` | `main`, integration, or an isolated effort branch | collection feature returned to its umbrella-slug integration branch plus the next handoff, or standalone/full release artifacts and one `chore(release): prepare` commit |
 
-`/update-merge-commit-msg` runs immediately after a feature merge into
-`develop` or any no-fast-forward merge into `main`. The merge must still be the
+`/update-merge-commit-msg` runs immediately after a feature merge into its
+integration branch or any no-fast-forward merge into `main`. The merge must still be the
 current commit, and the target branch must not be pushed or used for later
 integration work first. Rewording a historical merge requires a separate
 history-repair plan.
