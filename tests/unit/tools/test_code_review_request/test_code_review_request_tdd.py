@@ -15,6 +15,7 @@ import pytest
 
 from tools import code_review_request as requestor
 from tools.code_review_validation import resolve_code_review_validation
+from tools.commit_plan_check import CommitPlanCheckResult, CommitPlanCheckState
 from tools.review_exchange_models import (
     ExchangeIdentity,
     ReviewContext,
@@ -34,6 +35,7 @@ _TIMESTAMP = "2026-08-13T10:15:00+02:00"
 _RENDER_ROUND = 2
 _FATAL_EXIT = 2
 _TREE = "1" * 40
+_READY_RESULT = CommitPlanCheckResult(CommitPlanCheckState.VALID)
 
 
 def _validation_set() -> requestor.ResolvedValidationSet:
@@ -69,6 +71,7 @@ def _round_input(
         writer_response="No earlier reviewer feedback exists for round 1.",
         request_index_tree=_TREE,
         resolved_validation_set=_validation_set(),
+        commit_plan_result=_READY_RESULT,
         human_guidance=guidance,
     )
 
@@ -160,6 +163,14 @@ def test_render_carries_one_canonical_evidence_object_and_round_trips(
     evidence_text = authored.split("```json\n", 1)[1].split("\n```", 1)[0]
 
     assert json.loads(evidence_text) == {
+        "commit_plan_result": {
+            "diagnostics": [],
+            "groups": [],
+            "ready": True,
+            "schema_version": 1,
+            "staged_paths": [],
+            "state": "valid",
+        },
         "request_index_tree": _TREE,
         "resolved_validation_set": {
             "commands": [
@@ -171,6 +182,7 @@ def test_render_carries_one_canonical_evidence_object_and_round_trips(
     assert json.dumps(json.loads(evidence_text), indent=2, sort_keys=True) == evidence_text
     assert parse_envelope_markdown(rendered.request_content) == (envelope, authored)
     assert f"request_index_tree: {_TREE}" in rendered.transcript_summary
+    assert "commit_plan_result:\n\n```text\nstate: valid\nready: true" in rendered.transcript_summary
     assert "resolved_validation_set:\n\n- ghog day" in rendered.transcript_summary
     assert "ghog day (sources: project)" in rendered.transcript_summary
 
@@ -378,6 +390,11 @@ def _captured_tree(_root: Path) -> str:
     return _TREE
 
 
+def _checked_plan(_root: Path) -> CommitPlanCheckResult:
+    """Return deterministic ready evidence at the command checker seam."""
+    return _READY_RESULT
+
+
 def _no_git(_name: str) -> None:
     """Represent a host where Git cannot be located."""
 
@@ -443,6 +460,7 @@ def test_cli_reads_and_writes_every_explicit_path_once(
     monkeypatch.setattr(requestor, "_is_effectively_ignored", _always_ignored)
     monkeypatch.setattr(requestor, "format_local_timestamp", lambda: _TIMESTAMP)
     monkeypatch.setattr(requestor, "capture_index_tree", _captured_tree)
+    monkeypatch.setattr(requestor, "check_commit_plan", _checked_plan)
     monkeypatch.setattr(requestor, "_read_utf8", counted_read)
     monkeypatch.setattr(requestor, "_write_utf8", counted_write)
 

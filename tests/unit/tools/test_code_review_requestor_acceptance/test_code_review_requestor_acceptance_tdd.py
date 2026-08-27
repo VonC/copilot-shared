@@ -21,6 +21,7 @@ from tools import code_review_request as request_renderer
 from tools import prompt_workflow_code_review as code_review
 from tools import prompt_workflow_skill as skill
 from tools.code_review_validation import resolve_code_review_validation
+from tools.commit_plan_check import CommitPlanCheckResult, CommitPlanCheckState
 from tools.prompt_workflow_models import MemoryRecord, Topic, WorkflowState
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
@@ -163,6 +164,7 @@ def _request(
                 ("ghog day",),
                 ("focused acceptance tests",),
             ),
+            commit_plan_result=CommitPlanCheckResult(CommitPlanCheckState.VALID),
             human_guidance=guidance,
         ),
     )

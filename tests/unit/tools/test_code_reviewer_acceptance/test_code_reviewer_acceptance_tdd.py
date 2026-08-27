@@ -39,6 +39,7 @@ from .fixtures import (
     git,
     make_effort,
     publish_rendered_request,
+    ready_commit_plan_result,
     render_assessment,
     render_early_rejection,
     render_request,
@@ -155,6 +156,7 @@ def malformed_request_rejections(tmp_path: Path) -> None:
             writer_response="response",
             request_index_tree="",
             resolved_validation_set=resolve_code_review_validation(("ghog day",), ()),
+            commit_plan_result=ready_commit_plan_result(),
         )
 
     exchange = core(effort)
