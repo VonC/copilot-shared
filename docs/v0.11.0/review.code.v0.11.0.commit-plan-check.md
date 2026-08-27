@@ -1218,3 +1218,724 @@ Human choice: Commit
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor - Step 3
+
+- Recorded: 2026-08-27T09:16:00+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 commit-plan-check (round 1)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+Implementation step: 3
+Review round: 1
+
+### Code review evidence for step 3 commit-plan-check (round 1)
+
+request_index_tree: 20f249d9c5a8a5bdb1aaf863be0f90d8ab45460b
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n -e commit_plan -e check_commit_plan -e request_index_tree -e capture_index_tree -e ready tools/code_review_request.py tests/unit/tools/test_code_review_request tests/unit/tools/test_code_review_request_commit_plan tests/unit/tools/test_code_reviewer_acceptance tests/unit/tools/test_code_review_requestor_acceptance (sources: plan)
+- ghog single tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py (sources: plan)
+- commit-plan-check.bat --format json (sources: request)
+
+commit_plan_result:
+
+```text
+state: valid
+ready: true
+group 1: chore(env): resolve Claude launcher path
+group 1 path: senv.doskey
+group 2: feat(commit-plan-check): gate review requests
+group 2 path: tools/code_review_request.py
+group 2 path: tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py
+group 2 path: `tests/unit/tools/test_code_review_request_commit_plan/__init__.py`
+group 2 path: tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py
+group 2 path: tests/unit/tools/test_code_reviewer_acceptance/fixtures.py
+group 2 path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py
+group 2 path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+group 2 path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py
+group 3: docs(commit-plan-check): record step 3 validation
+group 3 path: docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md
+staged path: docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md
+staged path: senv.doskey
+staged path: tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py
+staged path: tests/unit/tools/test_code_review_request_commit_plan/__init__.py
+staged path: tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py
+staged path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+staged path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py
+staged path: tests/unit/tools/test_code_reviewer_acceptance/fixtures.py
+staged path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py
+staged path: tools/code_review_request.py
+```
+
+### Requestor assessment for step 3 commit-plan-check (round 1)
+
+Step 3 is fully implemented against the exact publication-enforcement slice.
+
+- The final detached Groundhog walk passes static checks, focused tests, the
+  full suite, 100% coverage, and the duration gate with no warnings or expected
+  failures.
+- The specialized adapter depends on the read-only checker and neutral evidence
+  boundaries; no dependency points back from the checker or exchange core.
+- Each request adds two constant-count tree captures around one checker call,
+  with linear projections over existing typed evidence.
+- Existing envelope validation, paired writes, validation-command resolution,
+  exchange publication, and direct role-neutral publication remain intact.
+- Production and test files remain below the 650-line split trigger. The
+  validation plan records the small advisory variances for the renderer and its
+  established rendering test.
+
+### Implementation report for step 3 commit-plan-check (round 1)
+
+The implementation extends `CodeReviewRoundInput` with one required typed ready
+`CommitPlanCheckResult`. `_CodeReviewEvidence` places its full structured
+payload beside the existing request index tree and resolved validation set,
+while the transcript summary uses the shared human renderer on the same value.
+
+The command adapter now captures tree A, calls `check_commit_plan(root)` once,
+rejects non-ready or operational evidence, captures tree B, rejects drift, and
+only then renders and writes both outputs. Small validation helpers keep the
+input invariant below the repository complexity threshold.
+
+A dedicated test leaf covers direct typed-boundary rejection, exact call order,
+complete evidence, all three rejection classes, and preservation of both
+outputs. Existing renderer, reviewer, and requestor acceptance builders now
+supply typed ready evidence and retain their previous behavior.
+
+### Change summary for step 3 commit-plan-check (round 1)
+
+The staged set contains exactly these ten paths:
+
+- `senv.doskey`
+- `tools/code_review_request.py`
+- `tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py`
+- `tests/unit/tools/test_code_review_request_commit_plan/__init__.py`
+- `tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py`
+- `tests/unit/tools/test_code_reviewer_acceptance/fixtures.py`
+- `tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py`
+- `tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py`
+- `tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py`
+- `docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md`
+
+The formatted root `a.commit` contains three ordered groups:
+
+1. `chore(env): resolve Claude launcher path` isolates the pre-existing shell
+   alias change staged by the repository-wide handoff.
+2. `feat(commit-plan-check): gate review requests` contains the Step 3 adapter
+   and test implementation.
+3. `docs(commit-plan-check): record step 3 validation` contains only the
+   required trailing validation record.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, all
+ten staged paths, all three groups, and no diagnostics.
+
+### Writer response for step 3 commit-plan-check (round 1)
+
+Writer response: Writer response: None for round 1.
+
+There is no earlier reviewer feedback, accepted repair, or disagreement to
+report.
+
+### Reviewer focus for step 3 commit-plan-check (round 1)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-3-round-1 -->
+
+## Round 1 by reviewer - Step 3
+
+- Recorded: 2026-08-27T09:26:03+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed index identity for step 3 commit-plan-check (exchange 1) (round 1)
+
+Baseline index tree: 20f249d9c5a8a5bdb1aaf863be0f90d8ab45460b
+
+Assessed index tree: 20f249d9c5a8a5bdb1aaf863be0f90d8ab45460b
+
+### Implementation check for step 3 commit-plan-check (exchange 1) (round 1)
+
+Result: No. Step 3 has NOT been fully implemented. The enforcement gate itself is correct and well covered, but the same change also embeds the commit-plan human rendering into the versioned transcript without a fence, which fails the repository's Markdown gate and therefore the whole `ghog day` walk.
+
+The parts I checked independently are genuinely right, and I want that on the record before the defect.
+
+The enforced order matches the settled design exactly. `_render_from_arguments` captures tree A with `capture_index_tree(root)`, calls `_ready_commit_plan(root)` once, captures tree B, rejects any difference with `index changed during commit plan check`, constructs the typed input, renders, and only then writes both outputs. Every rejection raises before either `_write_utf8` call, so no rejected path can leave a partial or stale artifact behind.
+
+Q07 option 7B is honored precisely. `commit_plan_result` is a required field on `CodeReviewRoundInput`, placed before the defaulted `human_guidance` so the dataclass ordering stays valid, and `__post_init__` delegates to `_validate_request_evidence`, which refuses a non-ready result with `commit plan result must be ready`. Non-ready request content is therefore unconstructible, not merely unreachable through the command path.
+
+Operational failure stays separate from expected non-readiness. `_ready_commit_plan` tests `CommitPlanCheckState.OPERATIONAL_FAILURE` first and raises a distinct message, so a checker that could not decide is never reported as a plan that is not ready.
+
+Design Q06 on durable evidence is satisfied. `_CodeReviewEvidence` carries the complete `structured_payload()` beside the request index tree and resolved validation set, and its `summary()` derives the human form from the same in-memory value through `render_human` rather than reparsing JSON.
+
+Q04 is honored in the risk-band file. `tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py` gained 18 lines consisting of one import, one shared `_READY_RESULT` constant, one argument in the shared `_round_input` builder, evidence-parity assertions, and one checker seam helper. Every new gate case lives in the dedicated leaf, whose three tests cover direct typed-boundary rejection, exact call order between matching tree captures before writes, and the guarantee that a rejected gate creates or changes neither output.
+
+The complexity extraction is reasonable. Pulling `_validate_authored_inputs` and `_validate_request_evidence` out of `__post_init__` keeps that method within the repository complexity threshold without moving checker policy out of `tools/commit_plan_check.py`.
+
+Both advisory variances are recorded as the plan's shared checklist item 8 requires. `tools/code_review_request.py` is 552 lines against a 545 advisory and the renderer test is 568 against 560, and the validation plan states both overruns and their distance from the 650 split trigger accurately. The remaining five touched files sit inside their estimates.
+
+The defect is confined to how that correct evidence reaches Markdown. Because `summary()` emits `render_human` output unfenced, staged paths containing a dunder are parsed as strong emphasis and the transcript fails MD050. That is a Step 3 deliverable breaking a repository gate the umbrella declares binding, which is why this is a No rather than a Yes with an observation. The demonstration and a contained fix are in the findings and writer instructions.
+
+Validation plan effects: I made no change to the validation plan. Reviewer mode may write only the reviewed step's rows, and I am reporting a No verdict against the requestor's recorded Yes, so editing their rows underneath them would obscure the disagreement rather than resolve it.
+
+The recorded rows state `Yes. Step 3 has been fully implemented.` My independent assessment is `No. Step 3 has NOT been fully implemented.`, because the same change that adds the enforcement gate also writes unfenced command output into the versioned transcript and fails the repository's Markdown gate. When the fence lands, the writer's verdict becomes correct and the rows need only the evidence correction below.
+
+One recorded claim does not reproduce. The Step 3 rows and the round-one assessment both report a passing detached Groundhog walk covering static checks, focused tests, the full suite, coverage, and the duration gate. My forced walk stopped at the static check phase with `exit=1`, so the full suite, coverage, and duration figures were never produced for this staged state. That line needs re-running and re-recording rather than rewording.
+
+The line-girth row is accurate and complete, and satisfies the plan's shared execution checklist item 8. It records `tools/code_review_request.py` at 552 lines as seven above its 545-line advisory, and the renderer test at 568 as eight above its 560-line advisory, with both below the 650-line split trigger, and states that the other touched test files remain inside their Step 3 estimates. I measured all seven files and every figure matches.
+
+Under the writer-owned contract, a No verdict also requires a `### Missing work for Step 3` section listing each missing element concretely. That section does not exist, which is consistent with the writer having reached a Yes. The concrete work list is supplied in my writer instructions so it can be transferred directly if the verdict is revised.
+
+The document-level status line is correctly `No, it is not implemented.` Step 4 still reads `Not started`, so no flip was due regardless of this step's verdict.
+
+No umbrella row was completed and reviewer mode correctly suppressed that section. The umbrella digest is unchanged at `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c`, confirmed by `umbrella-digest compare` reporting `changed: false`.
+
+### Pre-repair mandatory checks and coverage for step 3 commit-plan-check (exchange 1) (round 1)
+
+Mandatory validation does not pass for this staged state, and the failure is in the repository gate rather than in the Step 3 tests.
+
+`ghog day --force` reported `ghog check done fail=0 warn=0 xfail=0 cov=skipped outliers=skipped excluded=skipped exit=1` and stopped there. Because the walk opens with the static check, it never ran the affected phase or the full suite, so there is no coverage figure, no duration measurement, and no full-suite result for this state. Treating a walk that ended at its first phase as evidence of a passing suite would be exactly the cached-verdict mistake I have been forcing walks to avoid.
+
+Every other static step inside that phase passed: ty, pyright, ruff, radon complexity, vulture, the 650-line big-file check, shellcheck, and the EOF check all reported OK. The single failing step is markdown-check, reported as `Failed steps for project 'llm-shared': markdown(1)`.
+
+The two markdown findings are `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md:1257` and `:1268`, both `MD050: strong style [Expected: asterisk; Actual: underscore]`. Both lines carry `tests/unit/tools/test_code_review_request_commit_plan/__init__.py`, where the dunder is parsed as underscore-strong emphasis because Step 3 embeds the commit-plan human rendering into the transcript unfenced.
+
+The rule is legitimately in force. `.markdownlint.json` disables only MD013 and constrains MD033 to `img`, so MD050 runs at its default, which is the rule set the umbrella's Markdown requirement adopts. This is a real gate failure, not a configuration artifact.
+
+The Step 3 tests themselves are healthy. `ghog single` across all five Step 3 test files is green with nothing failing in focus and no focus-versus-suite interaction, so the defect is in what the code writes into a versioned document rather than in the gate logic or its coverage.
+
+The `rg` evidence passes and shows no drift, with the resolved `-e` spelling and the plan's alternation each returning 118 lines over the same paths.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, ten staged paths, three ordered groups, and no diagnostics, so the commit plan itself is sound.
+
+`git diff --cached --check`, which I ran although it is absent from this round's set, exits `2` with `tests/unit/tools/test_code_review_request_commit_plan/__init__.py:2: new blank line at EOF`.
+
+I performed no repair, so there is no pre-repair versus post-repair difference beyond this baseline. No coverage figure can be quoted for this state until the gate reaches the full phase again.
+
+### Resolved validation set and sources for step 3 commit-plan-check (exchange 1) (round 1)
+
+The request resolved four commands and I ran all four. The current plan-derived
+resolver set adds nothing, so the union equals the resolved set.
+
+- `ghog day` — source `project`. Run as `ghog day --force`, because a plain
+  invocation short-circuits to `cov=skipped` and cannot re-prove a result.
+- `rg -n -e commit_plan -e check_commit_plan -e request_index_tree -e capture_index_tree -e ready tools/code_review_request.py tests/unit/tools/test_code_review_request tests/unit/tools/test_code_review_request_commit_plan tests/unit/tools/test_code_reviewer_acceptance tests/unit/tools/test_code_review_requestor_acceptance` — source `plan`.
+- `ghog single tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py` — source `plan`.
+- `commit-plan-check.bat --format json` — source `request`.
+
+Every command ran. Three passed and one failed.
+
+`ghog day --force` failed. It stopped in its first phase with
+`ghog check done fail=0 warn=0 xfail=0 exit=1` and never reached the affected or
+full runs, so no coverage, duration, or full-suite result exists for this
+staged state. The failing step is markdown-check.
+
+The `rg` command passes and carries no drift. I ran both the `-e` spelling from
+the resolved set and the plan's quoted alternation at
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:580`, and each returns exactly
+118 matching lines, so the two forms are equivalent.
+
+`ghog single` over all five Step 3 test files is green, with nothing failing in
+focus and nothing passing in focus while failing in the full suite.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, ten
+staged paths, three ordered groups, and no diagnostics.
+
+I additionally ran `git diff --cached --check`, which is absent from this
+round's resolved set but was request-sourced for Step 1. It reports one finding
+and exits `2`.
+
+### Resolver drift and direction for step 3 commit-plan-check (exchange 1) (round 1)
+
+No drift in the plan-sourced commands this round, which is a change from both
+earlier steps.
+
+The `rg` command carries every parity term. The resolved set uses repeated `-e`
+flags where the plan at
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:580` uses a quoted alternation.
+I ran both forms rather than assuming equivalence, and each returns exactly 118
+matching lines over the same five paths, so the spelling costs no coverage.
+
+`ghog single` is present with the plan's exact five-file list, matching
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md` for this step.
+
+Comparing the request set against the current plan-derived resolver set, the
+union adds nothing, so I ran the resolved set as given.
+
+One command has silently left the set across steps, and it is worth naming as
+drift of a different kind. `git diff --cached --check` was request-sourced for
+Step 1, where it passed and formed part of that round's evidence. It is absent
+from the Step 2 and Step 3 sets. I ran it anyway this round and it exits `2`
+with `tests/unit/tools/test_code_review_request_commit_plan/__init__.py:2: new
+blank line at EOF`. Nothing in the plan requires that command, so its absence is
+not a deviation from the plan; it is a narrowing of the request-sourced evidence
+this exchange used to carry, and restoring it costs nothing.
+
+### Repository state around validation for step 3 commit-plan-check (exchange 1) (round 1)
+
+My assessment produced no repository side effect. I made no repair, so the only writes were ignored root `a.*` reviewer evidence files and ignored validation artifacts.
+
+Index identity held throughout. The request-time `request_index_tree` is `20f249d9c5a8a5bdb1aaf863be0f90d8ab45460b`, and `capture-index-tree` returned that identical value both before assessment and after the forced walk, the focused run, and every inspection. No early rejection applied and no staged change occurred during review.
+
+The umbrella is untouched. `umbrella-digest compare` returns `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c` before and after with `changed: false`.
+
+The validation-state comparison is clean. Using the same ordered ten-path set before and after, `validation-state compare` returns `acceptable: true` with empty `tracked_paths`, `untracked_paths`, and `ignored_paths`.
+
+Ignored validation artifacts were refreshed as expected, including `a.ghog.log`. Because the walk stopped at its check phase, the coverage and duration artifacts were not regenerated this round. The contract accepts differences confined to ignored validation artifacts, and none is tracked or staged.
+
+One tracked path outside the staged set is modified, and it is the one carrying the defect. `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` holds the appended Step 3 request, including the unfenced commit-plan block that fails MD050. It is correctly unstaged while the round is open, so it is not part of the reviewed index, but it is part of the working tree the gate scans, which is why the gate fails against a staged set that is itself clean.
+
+I inspected line endings while reading the diff and record the observation here rather than as a finding, since nothing forbids it. The committed blob of `tools/code_review_request.py` is uniformly CRLF with 497 line breaks, while the staged blob is mixed with 449 CRLF and 103 bare LF, so roughly a hundred diff lines carry no textual change. `.gitattributes` declares no end-of-line policy, and the file's sibling modules in `tools/` are LF.
+
+### Repair inventory for step 3 commit-plan-check (exchange 1) (round 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 3 commit-plan-check (exchange 1) (round 1)
+
+`a.commit` is accurate, and I verified it with the shipped checker rather than by reading it. `commit-plan-check.bat --format json` returns `state=valid`, `ready=true`, ten staged paths, three ordered groups, and zero diagnostics.
+
+Group membership matches the index exactly:
+
+- Group 1 `chore(env): resolve Claude launcher path` carries `senv.doskey` alone.
+- Group 2 `feat(commit-plan-check): gate review requests` carries `tools/code_review_request.py` and the seven Step 3 test paths.
+- Group 3 `docs(commit-plan-check): record step 3 validation` carries the validation plan alone and is the final commit.
+
+Isolating `senv.doskey` into its own group is exactly right, and worth saying so explicitly. It is a pre-existing shell-alias change unrelated to Step 3 that the repository-wide handoff swept into the index. The grouping rule requires such a change to be ranked by its own dependencies and given a fitting group rather than dropped or folded into the feature, and that is what happened. Its `chore(env)` scope and subject describe it honestly rather than hiding it inside the Step 3 commit.
+
+Ordering is least to most dependent and correct: the unrelated environment change first, the feature it does not depend on second, and the validation record that documents that feature last. All three subjects are conventional commits with accurate scopes.
+
+I did not amend `a.commit`. Membership, ordering, scope, and subjects are all accurate, so an amendment would have been a substantive change to commit grouping with no defect to correct.
+
+One consequence of the blocking finding reaches the commit rather than the plan. The transcript `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` is tracked, currently modified, and deliberately unstaged while the round is open, so it is correctly absent from `a.commit`. The `git add -A` grouping pass at the commit gate will stage it, which means the commit would carry a file that fails the repository's Markdown gate unless the fence is applied first. That is another reason the fix belongs before the gate rather than after it.
+
+### Findings and boundaries for step 3 commit-plan-check (exchange 1) (round 1)
+
+Unresolved findings:
+
+- The repository gate fails, and Step 3's own new code is the cause. `ghog day --force` stops in its first phase with `ghog check done fail=0 warn=0 xfail=0 exit=1`, never reaching the affected or full runs. The failing step is markdown-check, which reports `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md:1257: MD050: strong style [Expected: asterisk; Actual: underscore]` and the same rule at line 1268. Both flagged lines are staged-path lines containing `tests/unit/tools/test_code_review_request_commit_plan/__init__.py`, where the `__init__` dunder is parsed as underscore-strong emphasis.
+- The mechanism is new in this step. `_CodeReviewEvidence.summary()` now appends `render_human(self.commit_plan_result)` to the transcript summary, and that block is emitted as bare Markdown rather than inside a fence. I confirmed it in the transcript: the `commit_plan_result:` label is followed by unfenced `state:`, `ready:`, `group N path:`, and `staged path:` lines. The paired JSON projection in the request is correctly fenced, so only the human summary path is affected. `render_human` itself is Step 2 code and is fine; it is a plain-text renderer, and the defect is embedding plain text into Markdown without a fence.
+- This is not a one-off. Every staged path containing a dunder breaks the transcript, and `__init__.py` is present in every new test leaf this effort creates, including the one Step 3 itself adds. The gate stayed green through Steps 1 and 2 only because the human commit-plan block did not yet reach the transcript. MD050 is legitimately enforced: `.markdownlint.json` disables only MD013 and constrains MD033, so every other rule runs at its default, which is exactly the rule set the umbrella's Markdown requirement adopts.
+- The requestor's recorded evidence does not reproduce. The round-one assessment states that "The final detached Groundhog walk passes static checks, focused tests, the full suite, 100% coverage, and the duration gate with no warnings or expected failures". My forced walk never reached the full suite, because the static check phase failed first. The focused runs are genuinely green, so the divergence is confined to the gate as a whole rather than to the Step 3 tests.
+- The fix is contained but carries a test consequence worth naming. Fencing the embedded human block inside `summary()` removes Markdown parsing from those lines entirely. The existing renderer test asserts the current unfenced shape with `assert "commit_plan_result:\n\nstate: valid\nready: true" in rendered.transcript_summary`, so that assertion must move with the fix, and a regression case whose staged set contains a dunder path is what would keep the gate honest afterwards.
+- `git diff --cached --check` reports one finding, and it is no longer in the resolved validation set. It returns `tests/unit/tools/test_code_review_request_commit_plan/__init__.py:2: new blank line at EOF` at exit `2`. That command was request-sourced for Step 1, where it passed, and has been absent since. The same trailing-blank shape exists in the `tests/unit/tools/test_commit_plan_check/__init__.py` that Step 2 committed, so this is a small repeated pattern rather than a new mistake, and the repository's own EOF check accepts it. I report it because the command that detects it used to be part of this exchange's evidence and quietly stopped being so.
+
+Boundary-crossing work:
+
+- Fixing the unfenced transcript block is inside Step 3, not across a boundary. `tools/code_review_request.py` is named by the step and is already staged, and the change is a few lines in `_CodeReviewEvidence.summary()`. I did not repair it for the same reason as in earlier steps: the fix belongs with the assertion that currently pins the broken shape and with a regression case covering a dunder path, and shipping the code change without that test would leave the gate depending on whether a future round happens to stage such a path. A repair of that size would also be substantive and could not finish this round in any case.
+- The label-inlining renderer defect is unchanged and still deferred by agreement, affecting `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, with the correct idiom already at `tools/code_review_answer.py:288`. Its relationship to this effort has shifted, and I note that rather than leaving my earlier advice standing unexamined: I previously recommended sequencing it after Step 3 because Step 3 modifies `tools/code_review_request.py`. Step 3 has now landed those changes, so that collision risk is largely spent and this is a reasonable point to schedule the work.
+- The unimplemented caller-authored heading shift and qualification contract in `instructions/review-requestor.md` remains deferred with the same tooling work.
+- `senv.doskey` is staged and outside Step 3's plan file list, but it required no action from me. It is a pre-existing environment change swept in by the repository-wide handoff, and the commit plan already isolates it in its own `chore(env)` group with an honest subject, which is what the grouping rule requires.
+- The `git diff --cached --check` finding in the new package marker is inside Step 3 and would be trivial to change, but the same shape is already committed in the Step 2 package marker, so altering only the new one would introduce an inconsistency without settling the convention. I report it and leave the choice to the writer rather than making a silent local decision.
+
+### Writer instructions for step 3 commit-plan-check (exchange 1) (round 1)
+
+The gate implementation is good work and needs no rework. Do not touch the enforcement order, the typed input invariant, the new test leaf, or the risk-band file, all of which are correct.
+
+Fence the embedded commit-plan human block so the transcript stops breaking Markdown. In `_CodeReviewEvidence.summary()`, the `render_human(self.commit_plan_result)` output is currently appended as bare Markdown, so any staged path containing a dunder is parsed as underscore-strong emphasis and the transcript fails MD050. Wrap that block in a fenced code span, which is also the honest representation, since the content is command output rather than prose. The paired JSON projection is already fenced in the request, so this brings the human projection into line with it rather than inventing a new convention.
+
+Move the assertion that currently pins the unfenced shape. `tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py` asserts `"commit_plan_result:\n\nstate: valid\nready: true" in rendered.transcript_summary`, which encodes exactly the form that breaks. Update it to assert the fenced shape. Keep the change inside the shared-fixture and parity budget that Q04 sets for that file; the file is already 568 lines against a 560 advisory, so this is a place to substitute rather than add.
+
+Add a regression case that would fail without the fence. The most direct one is a commit-plan result whose `staged_paths` include a dunder path such as `tests/unit/tools/test_x/__init__.py`, asserting that the rendered transcript summary keeps that path inside a fence. Put it in the dedicated leaf rather than the risk-band file. Without such a case the gate returns to depending on whether a given round happens to stage a dunder path, which is exactly how this reached round one unnoticed.
+
+Re-run `ghog day --force` after the fix and correct the recorded evidence. The round-one assessment and the validation plan both state that the walk passed the full suite and the duration gate. My forced walk stopped at the check phase with `exit=1`, so it never reached them. Once the fence lands, re-run and record the result that actually reproduces.
+
+Consider restoring `git diff --cached --check` to the resolved validation set. It was request-sourced for Step 1 and has been absent since, and it currently reports `tests/unit/tools/test_code_review_request_commit_plan/__init__.py:2: new blank line at EOF`. The finding is small and matches the shape Step 2 already committed, so fixing the file is optional; restoring the command is the part worth doing, because this exchange used to carry that evidence and silently stopped.
+
+Consider normalizing the line endings in `tools/code_review_request.py`. Its committed blob is uniformly CRLF at 497 line breaks, while the staged blob is mixed at 449 CRLF and 103 bare LF, so about a hundred lines appear in the diff with no textual change. Its sibling modules in `tools/` are LF, and the repository declares no end-of-line policy in `.gitattributes`, so nothing is violated. Normalizing the file to LF would converge it with its siblings and make this step's diff show only real changes. This is a judgement call and I am not requesting it.
+
+One wording nit that needs no round of its own. The round-one request rendered `Writer response: Writer response: None for round 1.` because the authored file opens with the same label the renderer prepends. Dropping the label from the authored text removes the duplication.
+
+Two items remain deferred by agreement rather than dropped. The label-inlining defect still affects `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, with the correct idiom already at `tools/code_review_answer.py:288`. Now that Step 3 has landed its changes to `tools/code_review_request.py`, the collision risk I raised in earlier rounds is largely spent, so this is a reasonable moment to schedule that work. The unimplemented caller-authored heading contract in `instructions/review-requestor.md` travels with it.
+
+### Decision rationale for step 3 commit-plan-check (exchange 1) (round 1)
+
+I am publishing `changes-requested`, and I made no repair, so nothing here prevents a commit-ready recommendation in the next round.
+
+This is a disagreement about one consequence of the change, not about the gate design. The requestor assessed Step 3 as fully implemented, and the enforcement work genuinely is. The order is exactly as settled, with tree A captured, one checker call, tree B captured, drift and non-readiness rejected, and both writes reached only afterwards. Q07 option 7B is honored, so non-ready request content is unconstructible rather than merely unreachable. Q04 is honored, with the 550-line risk-band file taking only an import, a shared constant, one builder argument, parity assertions, and a seam helper, while all three new gate cases live in the dedicated leaf. Both advisory variances are recorded accurately, and the commit plan is valid with `senv.doskey` correctly isolated in its own `chore(env)` group.
+
+The blocking reason is that the same change writes command output into a versioned Markdown document without a fence. `_CodeReviewEvidence.summary()` now appends `render_human(self.commit_plan_result)` as bare Markdown, so staged paths containing a dunder are parsed as underscore-strong emphasis. The transcript fails MD050 at two lines, both carrying `test_code_review_request_commit_plan/__init__.py`, and markdown-check is the one failing step inside `ghog check`, which fails the whole walk with `exit=1` before the affected or full phases run.
+
+The evidence gap matters as much as the defect. The round-one assessment and the validation plan both record a walk that passed the full suite, coverage, and the duration gate. My forced walk never reached any of those phases. The Step 3 tests are genuinely green under `ghog single`, so the divergence is confined to the gate as a whole, but no coverage or duration figure exists for this staged state, and one should not be recorded as though it does.
+
+I weighed whether this is disproportionate, because it is two lint findings on a file that is not even staged. It is not disproportionate, for three reasons. The rule is legitimately in force, since `.markdownlint.json` disables only MD013 and constrains MD033, leaving MD050 at its default in exactly the rule set the umbrella adopts. The failure is systemic rather than incidental, because every new test leaf this effort creates contains an `__init__.py`, and the gate stayed green through Steps 1 and 2 only because the human block did not yet reach the transcript. And the transcript is tracked, so the `git add -A` grouping pass at the commit gate would stage a file that fails the repository's own Markdown gate.
+
+I did not repair it, and the reason is scope quality rather than ownership. The file is in Step 3 and the fence itself is a few lines, but the existing renderer test asserts the broken shape verbatim, so the fix must move that assertion, and without a regression case covering a dunder path the gate returns to depending on what a given round happens to stage. That combination is the writer's to land, and a repair of that size would be substantive and could not finish this round regardless.
+
+Two smaller items ride along and neither blocks on its own. `git diff --cached --check` has quietly left the resolved set since Step 1 and currently reports one finding in the new package marker, matching a shape Step 2 already committed. And `tools/code_review_request.py` moved from uniformly CRLF to mixed line endings, putting about a hundred textless lines in the diff; nothing forbids it, and I flag it as a judgement call rather than a request.
+
+One correction to my own earlier advice, since it would otherwise stand unexamined. In the previous two exchanges I recommended sequencing the deferred label-inlining renderer fix after Step 3, because Step 3 modifies `tools/code_review_request.py`. Step 3 has now landed those changes, so that collision risk is largely spent and the work can reasonably be scheduled.
+
+This assessment is advisory and authorizes nothing. Only the human may choose `Commit` or `Rework and review again`.
+
+### Final reviewer decision for step 3 commit-plan-check (exchange 1) (round 1)
+
+Decision: changes-requested. The writer must address the concrete instructions and publish another review round. This advisory answer does not authorize a commit.
+
+<!-- review-entry-id: answer-step-3-round-1 -->
+
+## Round 2 by requestor - Step 3
+
+- Recorded: 2026-08-27T10:49:07+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 commit-plan-check (round 2)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+Implementation step: 3
+Review round: 2
+
+### Code review evidence for step 3 commit-plan-check (round 2)
+
+request_index_tree: a8c60932205eab12d332a4e0ad8cde8337346c78
+resolved_validation_set:
+
+- ghog day (sources: project)
+- rg -n -e commit_plan -e check_commit_plan -e request_index_tree -e capture_index_tree -e ready tools/code_review_request.py tests/unit/tools/test_code_review_request tests/unit/tools/test_code_review_request_commit_plan tests/unit/tools/test_code_reviewer_acceptance tests/unit/tools/test_code_review_requestor_acceptance (sources: plan)
+- ghog single tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py (sources: plan)
+- commit-plan-check.bat --format json (sources: request)
+- git diff --cached --check (sources: request)
+
+commit_plan_result:
+
+```text
+state: valid
+ready: true
+group 1: chore(env): resolve Claude launcher path
+group 1 path: senv.doskey
+group 2: feat(commit-plan-check): gate review requests
+group 2 path: tools/code_review_request.py
+group 2 path: tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py
+group 2 path: tests/unit/tools/test_code_review_request_commit_plan/__init__.py
+group 2 path: tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py
+group 2 path: tests/unit/tools/test_code_reviewer_acceptance/fixtures.py
+group 2 path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py
+group 2 path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+group 2 path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py
+group 3: docs(commit-plan-check): record step 3 validation
+group 3 path: docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md
+staged path: docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md
+staged path: senv.doskey
+staged path: tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py
+staged path: tests/unit/tools/test_code_review_request_commit_plan/__init__.py
+staged path: tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py
+staged path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+staged path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py
+staged path: tests/unit/tools/test_code_reviewer_acceptance/fixtures.py
+staged path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py
+staged path: tools/code_review_request.py
+```
+
+### Requestor assessment for step 3 commit-plan-check (round 2)
+
+Step 3 is complete after applying the round-1 repairs.
+
+- Review publication requires a typed, ready commit-plan result captured from
+  one index tree.
+- Index drift is rejected before any caller-owned output is written.
+- The human commit-plan projection is fenced as plain command output, so paths
+  containing dunder names cannot be parsed as Markdown emphasis.
+- The final detached Groundhog walk completed with zero failures, warnings, or
+  expected failures, 100% coverage, and no duration outliers.
+- `commit-plan-check.bat --format json` reports `state=valid` and `ready=true`.
+- `git diff --cached --check` passes.
+
+### Implementation report for step 3 commit-plan-check (round 2)
+
+Round 1 identified a Markdown integration defect in the new human commit-plan
+evidence. The following repairs were applied:
+
+- `tools/code_review_request.py` now encloses `render_human(...)` in a `text`
+  fence inside the transcript summary.
+- The renderer assertion now pins the fenced shape.
+- The dedicated commit-plan test leaf now exercises an `__init__.py` staged
+  path and verifies that it remains inside the fence.
+- The extra blank line at EOF in the new package marker was removed.
+- The validation-plan evidence and file counts were refreshed.
+- With explicit user authorization, only the two missing fence delimiters were
+  added around the already-versioned round-1 transcript evidence block. Its
+  evidence content was not rewritten.
+
+No changes were made to the enforcement order, typed-input invariant, or the
+commit-plan grouping contract.
+
+### Change summary for step 3 commit-plan-check (round 2)
+
+The prepared `a.commit` remains valid and covers all ten staged paths in three
+groups:
+
+1. `chore(env): resolve Claude launcher path` for `senv.doskey`.
+2. `feat(commit-plan-check): gate review requests` for the renderer and its
+   unit and acceptance tests.
+3. `docs(commit-plan-check): record step 3 validation` for the validation plan.
+
+Round-1 repair work changed the renderer, its tests, the new package marker,
+and validation evidence within those existing groups. The code-review
+transcript also contains the protocol entries plus the authorized two-line
+historical fence repair; it is not part of the staged Step 3 commit plan.
+
+### Writer response for step 3 commit-plan-check (round 2)
+
+Writer response: The round-1 findings are accepted.
+
+The human commit-plan result is now fenced, the existing shape assertion moved
+with it, a dunder-path regression was added in the dedicated leaf, and the new
+package marker no longer has a trailing blank line. The detached Groundhog walk
+was rerun after the repairs and is green. The historical round-1 evidence block
+received only its missing fence delimiters under explicit user authorization.
+
+The optional broad line-ending normalization was not performed because it is
+outside this focused repair and no repository policy requires it. The narrower
+`git diff --cached --check` finding was corrected and the command now passes.
+
+### Reviewer focus for step 3 commit-plan-check (round 2)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-3-round-2 -->
+
+## Round 2 by reviewer - Step 3
+
+- Recorded: 2026-08-27T11:01:43+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed index identity for step 3 commit-plan-check (exchange 1) (round 2)
+
+Baseline index tree: a8c60932205eab12d332a4e0ad8cde8337346c78
+
+Assessed index tree: a8c60932205eab12d332a4e0ad8cde8337346c78
+
+### Implementation check for step 3 commit-plan-check (exchange 1) (round 2)
+
+Result: Yes. Step 3 has been fully implemented. This reverses my round-one No, and the reversal rests on re-running the failing gate and inspecting the fix rather than on the change summary.
+
+The Markdown defect is genuinely fixed at its cause. `_CodeReviewEvidence.summary()` now encloses the `render_human` output in a `text` fence, which is also the honest representation, since that block is command output rather than prose. The paired JSON projection was already fenced, so the two projections are now consistent.
+
+I confirmed the fix on live output rather than only in the diff. The round-two request that this exchange itself produced carries its `commit_plan_result:` block inside a fenced text block, with `tests/unit/tools/test_code_review_request_commit_plan/__init__.py` sitting literally inside it on two lines. That is the same content shape that failed MD050 in round one, now rendered safely by the fixed code.
+
+The regression test would fail without the fence rather than merely describe it. `test_transcript_fences_dunder_paths_as_command_output` renders a real transcript summary whose staged paths include `tests/unit/tools/test_x/__init__.py`, splits the summary on the fence delimiter, and asserts the dunder path is inside. Without the fence that split raises rather than quietly passing, so the test cannot silently stop protecting the gate.
+
+The assertion that previously pinned the broken shape moved with the fix rather than being deleted. The renderer test now asserts that the transcript summary opens the commit-plan block with a text fence followed by the valid and ready lines, and the risk-band file stayed at 568 lines, so the change was a substitution inside the Q04 budget rather than an addition.
+
+The repository gate now passes end to end. `ghog day --force` completed every phase with `cov=100 outliers=0 excluded=0 exit=0` and reported `Objective reached`, where round one stopped at the static check with `exit=1`. markdown-check reports no finding for the plan, the validation plan, or either review transcript.
+
+The smaller round-one items are also closed. The new package marker now ends without a trailing blank line, and `git diff --cached --check` is restored to the resolved validation set and exits `0`.
+
+The enforcement work I accepted in round one is unchanged and still correct. The order remains tree A, one checker call, tree B, rejection of non-readiness, operational failure, and drift, then construction, rendering, and only then both writes. Q07 option 7B still holds, with `commit_plan_result` required and `__post_init__` refusing a non-ready result. The dedicated leaf still covers direct typed-boundary rejection, exact call order, and the guarantee that a rejected gate creates or changes neither output, and now covers the fence as well.
+
+Both advisory variances are recorded accurately against my own measurements. `tools/code_review_request.py` is 559 lines and the validation plan records it as 14 above its 545-line advisory; the renderer test is 568 and is recorded as eight above its 560-line advisory. Both remain below the 650-line split trigger, and the new leaf at 241 lines is inside its 260-line estimate. That satisfies the plan's shared execution checklist item 8.
+
+Architecture, performance, and feature integrity are unchanged from round one and remain clean. The gate adds two constant-count tree captures around one checker call, the dependency direction still runs one way, and existing envelope validation, paired writes, validation-set resolution, and role-neutral publication are all intact.
+
+Validation plan effects: I made no change to the validation plan. The requestor's rows are now correct and my verdict agrees with theirs, so reviewer mode had nothing to write.
+
+The round-one disagreement is resolved. Their rows record `Yes. Step 3 has been fully implemented.` and my independent assessment now reaches the same verdict, because the Markdown defect is fixed at its cause and the repository gate passes end to end. No `### Missing work for Step 3` section is required, and none is present.
+
+The evidence claim that failed to reproduce in round one now does. The rows record a detached walk completing with `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`, and my own forced walk produced exactly that, having reached every phase rather than stopping at the static check.
+
+The girth row is accurate and complete. It records `tools/code_review_request.py` at 559 lines as 14 above its 545-line advisory and the renderer test at 568 as eight above its 560-line advisory, both below the 650-line split trigger, and states that the other touched test files remain inside their estimates. I measured all of them and every figure matches, so the plan's shared execution checklist item 8 is satisfied.
+
+The evidence rows now describe what the code actually does. The projection row states that the human commit-plan result is rendered inside a Markdown-safe text fence, and the focused-verification row names the literal dunder path inside that fence. Both match the implementation and the test I exercised, so neither overstates coverage the way round one's launcher-style claim would have.
+
+The document-level status line is correctly `No, it is not implemented.` Step 4 still reads `Not started`, so no flip was due.
+
+No umbrella row was completed and reviewer mode correctly suppressed that section. The umbrella digest is unchanged at `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c`, confirmed by `umbrella-digest compare` reporting `changed: false`.
+
+### Pre-repair mandatory checks and coverage for step 3 commit-plan-check (exchange 1) (round 2)
+
+The repository gate now passes end to end, and I confirmed it twice rather than once, because round one failed here and a single green sample is what the tool itself warns against trusting.
+
+Both forced walks agree. `ghog day --force` reported `ghog full done fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0` with `Objective reached` on each run, having reached the check, affected, and full phases every time. In round one the same command stopped at the static check with `exit=1` and produced no coverage or duration figure at all, so this is the first Step 3 state with a complete walk behind it.
+
+markdown-check, the step that failed round one, now reports no finding for the plan, the validation plan, or either review transcript. I ran it separately as well as through the walk.
+
+`ghog single` across all five Step 3 test files is green, with nothing failing in focus and nothing passing in focus while failing in the full suite.
+
+Both `rg` forms pass and are equivalent, each returning 119 lines over the same five paths, so the resolved `-e` spelling loses nothing against the plan's alternation.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, ten staged paths, three ordered groups, and zero diagnostics.
+
+`git diff --cached --check` is back in the resolved set and exits `0`, having reported one finding in round one when it was absent from the set and I ran it anyway.
+
+One duration observation that is not a finding and not attributable to this step. The suite's slowest call on both walks is `tests/unit/tools/markdown_check/test_rule_properties/test_rule_properties_pbt.py::test_md001_matches_every_invalid_heading_increment`, measuring `0.47s` and then `0.40s` against the `0.50s` floor. Both are under the floor and `outliers` is zero on both runs, so the gate is genuinely green. The `0.47s` sample sits within six percent of the floor, which is the margin the tool describes as prone to flapping. The test is a pre-existing property-based test belonging to the Markdown checker rather than to Step 3, and nothing in this step made it slower, so I record it as a watch item for whoever owns that suite rather than as work for this round.
+
+I performed no repair, so there is no pre-repair versus post-repair difference beyond this baseline.
+
+### Resolved validation set and sources for step 3 commit-plan-check (exchange 1) (round 2)
+
+The request resolved five commands and I ran all five. The current plan-derived
+resolver set adds nothing, so the union equals the resolved set.
+
+- `ghog day` — source `project`. Run as `ghog day --force`, twice, because a
+  plain invocation short-circuits to `cov=skipped` and because round one failed
+  in this command's first phase.
+- `rg -n -e commit_plan -e check_commit_plan -e request_index_tree -e capture_index_tree -e ready tools/code_review_request.py tests/unit/tools/test_code_review_request tests/unit/tools/test_code_review_request_commit_plan tests/unit/tools/test_code_reviewer_acceptance tests/unit/tools/test_code_review_requestor_acceptance` — source `plan`.
+- `ghog single tests/unit/tools/test_code_review_request/test_code_review_request_tdd.py tests/unit/tools/test_code_review_request_commit_plan/test_code_review_request_commit_plan_tdd.py tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_io_acceptance_tdd.py` — source `plan`.
+- `commit-plan-check.bat --format json` — source `request`.
+- `git diff --cached --check` — source `request`, restored this round.
+
+Every command ran and every command passed.
+
+Both forced walks completed every phase with `cov=100 outliers=0 excluded=0
+exit=0` and `Objective reached`.
+
+Both `rg` spellings return exactly 119 matching lines, so the resolved form and
+the plan's alternation are equivalent.
+
+`ghog single` over all five Step 3 test files is green.
+
+`commit-plan-check.bat --format json` reports `state=valid`, `ready=true`, ten
+staged paths, three ordered groups, and no diagnostics.
+
+`git diff --cached --check` exits `0`. Its restoration closes the quiet
+narrowing I reported in round one, when it had been absent since Step 1 and
+reported a real finding once I ran it unprompted.
+
+### Resolver drift and direction for step 3 commit-plan-check (exchange 1) (round 2)
+
+No drift this round.
+
+The `rg` command carries every parity term. I ran both the resolved `-e`
+spelling and the plan's quoted alternation at
+`docs/v0.11.0/plan.v0.11.0.commit-plan-check.md:580`, and each returns exactly
+119 matching lines over the same five paths, so the two forms are equivalent.
+
+`ghog single` is present with the plan's exact five-file list for this step.
+
+`git diff --cached --check` is restored to the resolved set from the `request`
+source, which closes the quiet narrowing I reported in round one. It now exits
+`0`, because the trailing blank line in the new package marker was removed.
+
+Comparing the round-two request set against the current plan-derived resolver
+set, the union adds nothing, so I ran the resolved set as given.
+
+### Repository state around validation for step 3 commit-plan-check (exchange 1) (round 2)
+
+My assessment produced no repository side effect. I made no repair, so the only writes were ignored root `a.*` reviewer evidence files and ignored validation artifacts.
+
+Index identity held throughout. The request-time `request_index_tree` is `a8c60932205eab12d332a4e0ad8cde8337346c78`, and `capture-index-tree` returned that identical value both before assessment and after two forced walks, the focused run, and the Markdown gate. No early rejection applied and no staged change occurred during review.
+
+The umbrella is untouched. `umbrella-digest compare` returns `020d1d67f9a3dca50a2651e6dd7b6717b3f1a7ef5521c5eaf4a27de6e2c3b79c` before and after with `changed: false`.
+
+The validation-state comparison is clean. Using the same ordered ten-path set before and after, `validation-state compare` returns `acceptable: true` with empty `tracked_paths`, `untracked_paths`, and `ignored_paths`.
+
+The staged set is unchanged in membership from round one. The same ten paths are staged; the round-one repairs changed content inside three already-staged paths and the validation record without adding or removing any path.
+
+Ignored validation artifacts were refreshed as expected by the two walks, including `.coverage`, `.testmondata`, `a.ghog.log`, and `a.ghog.outliers`. The contract accepts differences confined to ignored validation artifacts, and none is tracked or staged.
+
+One tracked path outside the staged set is modified, and its state is now correct rather than defective. `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` carries the appended Step 3 rounds plus the two authorized fence delimiters around the round-one evidence block. It remains unstaged while the round is open. Unlike round one, it now passes the repository's Markdown gate, so the `git add -A` grouping pass at the commit gate would stage a clean file.
+
+I verified that the historical content inside those delimiters was not rewritten. The round-one block still carries `request_index_tree: 20f249d9c5a8a5bdb1aaf863be0f90d8ab45460b` with the same three groups and ten staged paths I assessed in round one.
+
+### Repair inventory for step 3 commit-plan-check (exchange 1) (round 2)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 3 commit-plan-check (exchange 1) (round 2)
+
+`a.commit` is accurate, and I verified it with the shipped checker rather than by reading it. `commit-plan-check.bat --format json` returns `state=valid`, `ready=true`, ten staged paths, three ordered groups, and zero diagnostics.
+
+Membership, grouping, order, and subjects are unchanged from round one and still correct:
+
+- Group 1 `chore(env): resolve Claude launcher path` carries `senv.doskey` alone.
+- Group 2 `feat(commit-plan-check): gate review requests` carries `tools/code_review_request.py` and the seven Step 3 test paths.
+- Group 3 `docs(commit-plan-check): record step 3 validation` carries the validation plan alone and is the final commit.
+
+The round-one repairs landed inside the existing groups rather than reshaping them, which is the right outcome. The fence change touched the renderer, its tests, and the new package marker, all already members of group 2, and the refreshed evidence stayed in group 3. No group boundary, order, or subject needed to move, and none did.
+
+Isolating `senv.doskey` in its own `chore(env)` group remains correct. It is a pre-existing environment change swept in by the repository-wide handoff, ranked by its own dependencies and given an honest subject rather than being folded into the feature commit.
+
+Ordering is least to most dependent: the unrelated environment change, then the feature that does not depend on it, then the validation record that documents that feature. All three subjects are conventional commits with accurate scopes.
+
+I did not amend `a.commit`. Membership, ordering, scope, and subjects are all accurate, so an amendment would have been a substantive change to commit grouping with no defect to correct, and it would have invalidated a commit-ready recommendation in this same round.
+
+The round-one carry-forward is now discharged rather than merely noted. The transcript `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md` is still tracked, still modified, and still correctly unstaged while the round is open, so the `git add -A` grouping pass at the commit gate will stage it. Because the historical block was fenced and the renderer fixed, that pass now stages a file that passes the repository's Markdown gate, which was not true in round one.
+
+### Findings and boundaries for step 3 commit-plan-check (exchange 1) (round 2)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 3 commit-plan-check (exchange 1) (round 2)
+
+No change is required. Every round-one item is addressed and I am requesting nothing further.
+
+Do not rework Step 3. The enforcement order, the typed-input invariant, the fence fix, the moved assertion, the dunder regression test, and the commit grouping are all correct as they stand.
+
+Two things are worth keeping deliberately, so a later cleanup does not undo them. The text fence in `_CodeReviewEvidence.summary()` is load-bearing rather than cosmetic: without it any staged dunder path breaks the versioned transcript and the repository gate. And `test_transcript_fences_dunder_paths_as_command_output` is what keeps that true, since it splits on the fence delimiter and therefore fails hard rather than silently if the fence is removed.
+
+One judgement call was declined and I agree with the reasoning. The optional line-ending normalization of `tools/code_review_request.py` was not performed because it is outside this focused repair and no repository policy requires it. That is a fair call; the file remains mixed and the diff still carries about a hundred textless lines, which is a cost worth paying only when someone chooses to normalize it deliberately.
+
+One duration item to hand on rather than act on now. The suite's slowest call is `tests/unit/tools/markdown_check/test_rule_properties/test_rule_properties_pbt.py::test_md001_matches_every_invalid_heading_increment`, measuring `0.47s` and `0.40s` against the `0.50s` floor across my two walks. It is under the floor and unrelated to Step 3, so nothing is due here, but the `0.47s` sample is close enough that it may surface as an outlier in a later step's walk. If it does, `instructions/fix_slow_test.md` is the route, and it belongs to the Markdown-checker suite rather than to this effort.
+
+Two items remain deferred by agreement rather than dropped. The label-inlining defect affects `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, with the correct idiom already at `tools/code_review_answer.py:288`. Step 3 has now landed its changes to `tools/code_review_request.py`, so the collision risk that justified deferring this is largely spent and it can reasonably be scheduled. The unimplemented caller-authored heading shift and qualification contract in `instructions/review-requestor.md` travels with it.
+
+At the commit gate, the `git add -A` grouping pass will stage `docs/v0.11.0/review.code.v0.11.0.commit-plan-check.md`, which carries this exchange's rounds and the authorized fence repair. Unlike round one, that file now passes the Markdown gate, so staging it is safe.
+
+If the human selects `Commit`, run the existing commit step. If the human selects `Rework and review again`, there is no outstanding scope from me; treat any human guidance as the full scope of that round.
+
+### Decision rationale for step 3 commit-plan-check (exchange 1) (round 2)
+
+I am recommending `commit-ready`, and I made no repair in either round, so nothing in this exchange invalidates the recommendation.
+
+All six readiness-floor results pass. Identity is exact, with the envelope, human-readable identity, plan, step, round, and exchange occurrence in agreement and the request-time index tree `a8c60932205eab12d332a4e0ad8cde8337346c78` matching the live index before and after all validation. Implementation completeness is now a Yes, reversing my round-one No. Mandatory validation and coverage pass, confirmed twice. Staged attribution is clean across the same ten paths. No unresolved finding remains against this step. The `a.commit` grouping is valid with zero diagnostics.
+
+The reversal is earned by re-running the gate that failed, not by reading the change summary. Round one stopped at the static check with `exit=1` and produced no coverage or duration figure at all. Both walks this round completed every phase with `cov=100 outliers=0 excluded=0 exit=0` and `Objective reached`, and markdown-check, the single failing step in round one, now reports nothing.
+
+The fix addresses the cause rather than the symptom. Fencing the `render_human` output in `_CodeReviewEvidence.summary()` removes Markdown parsing from that block entirely, which is also the honest representation for command output and brings the human projection into line with the already-fenced JSON one. I confirmed it on live output: the round-two request this exchange produced carries its dunder paths literally inside a text fence.
+
+The regression test can fail for the reason it exists, which is the property I asked for. `test_transcript_fences_dunder_paths_as_command_output` renders a real summary containing `tests/unit/tools/test_x/__init__.py` and splits on the fence delimiter, so without the fence it raises rather than quietly passing. The assertion that previously pinned the broken shape moved with the fix instead of being deleted, and the risk-band file stayed at 568 lines, so Q04's budget was respected by substitution rather than addition.
+
+One action needs the human's eye at this gate, and I would rather name it than let it pass as routine. The writer added two fence delimiters to the already-versioned round-one evidence block inside the review transcript, stating that this was done under explicit user authorization. I verified the change is minimal and content-preserving: the historical `request_index_tree: 20f249d9c5a8a5bdb1aaf863be0f90d8ab45460b`, the same three groups, and the same ten staged paths all survive unaltered inside the new delimiters. I cannot independently confirm the authorization, since no human input reached me during this exchange, and I record that limit rather than implying I checked it. The action was also necessary rather than convenient, because the code fix changes only future renderings and the historical block would otherwise have kept the gate red permanently.
+
+Two smaller round-one items are closed. The new package marker no longer carries a trailing blank line, and `git diff --cached --check` is restored to the resolved set and exits `0`, closing the quiet narrowing I reported.
+
+One duration observation is deliberately not a finding. The suite's slowest call on both walks is a pre-existing Markdown-checker property test, measuring `0.47s` and `0.40s` against a `0.50s` floor. Both are under the floor with zero outliers, so the gate is genuinely green, but the first sample sits within six percent of it. Nothing in Step 3 made that test slower, so I record it as a watch item for its owners rather than work for this round.
+
+Two items remain deferred by agreement, and the human should see them here. The label-inlining defect still affects `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, with the correct idiom already at `tools/code_review_answer.py:288`, and the unimplemented caller-authored heading contract in `instructions/review-requestor.md` travels with it. As I noted in round one, Step 3 has now landed its changes to `tools/code_review_request.py`, so the collision risk that justified deferring the work is largely spent and it can reasonably be scheduled. Neither is caused by Step 3, and I classify both as tracked future work rather than unresolved findings against it.
+
+This recommendation is advisory and authorizes nothing. Only the human may choose `Commit` or `Rework and review again`.
+
+### Final reviewer decision for step 3 commit-plan-check (exchange 1) (round 2)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-3-round-2 -->
+
+## Round 2 by human - Step 3 - human-confirmation
+
+- Recorded: 2026-08-27T13:10:03+02:00
+- Exchange: code/code/v0.11.0/commit-plan-check
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.commit-plan-check.md
+- Implementation step: 3
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->
