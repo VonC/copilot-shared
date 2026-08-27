@@ -78,13 +78,17 @@ Run this section before the ordinary numbered steps when the prompt contains
 4. Create a temporary unversioned child source at
    `<umbrella-dir>/draft.<item-slug>.md`. Its heading is the settled key title;
    its metadata records the settled type and the exact repository-relative
-   umbrella path in `- Umbrella: <umbrella-draft>`. Include the selected split
-   entry and the matching requirement-detail subsection plus the umbrella
-   sections, rules, examples, and constraints that entry says it
-   regroups. Preserve their meaning and concrete detail; do not pull in work
-   assigned to another item. Write this source as an actual Markdown file; do
-   not keep the derived draft only in the conversation. Never edit, rename, or
-   delete the umbrella draft.
+   umbrella path in `- Umbrella: <umbrella-draft>`. Write the value as plain
+   path text after the colon: never surround it with Markdown backticks,
+   quotation marks, angle brackets, or link syntax. `pw` consumes the exact
+   literal value, so formatting characters become part of the filename and
+   cause an `umbrella does not exist` error. Include the selected split entry
+   and the matching requirement-detail subsection plus the umbrella sections,
+   rules, examples, and constraints that entry says it regroups. Preserve
+   their meaning and concrete detail; do not pull in work assigned to another
+   item. Write this source as an actual Markdown file; do not keep the derived
+   draft only in the conversation. Never edit, rename, or delete the umbrella
+   draft.
 5. Continue at Step 7 and present only the branch-layout choice. Pass the
    temporary child source to `new_draft --from-draft` with the already settled
    slug, version, and inherited `--docs-layout` value. The tool moves that child

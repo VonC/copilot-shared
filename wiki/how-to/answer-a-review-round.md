@@ -58,8 +58,9 @@ This is a deliberate stop: nothing runs until a human answers.
 
 4. The skill runs plain `git reset`, stages only the exact document, writes a
    single-group root `a.commit`, and batch-commits
-   `docs: record pre-consolidation questions`. It stops before the fold if the
-   commit contains another path or the index is not empty afterward.
+   `docs(<scope>): record pre-consolidation questions`, using the topic slug
+   when it fits or the normalized document type otherwise. It stops before the
+   fold if the commit contains another path or the index is not empty afterward.
 
 5. The skill integrates each answer into the document body, records it in
    a decision table (named for the type: requirement clarifications,
@@ -70,10 +71,12 @@ This is a deliberate stop: nothing runs until a human answers.
 
    - new questions are needed — the skill appends a fresh round and stops
      with a new `Q0x` table; go back to step 1,
-   - the document is settled — the skill runs `pw skill` and hands off to
-     the next phase (`/write-design`, `/write-plans`, or the implement
-     chain on the plan's first step, whose id comes from the validation
-     plan and is not always `1`) with no "go ahead".
+   - the document is settled — the skill stages every remaining non-ignored
+     change with `git add -A`, groups and batch-commits the complete set without
+     another menu, and requires `git status --porcelain` to be empty. Only then
+     does it run `pw skill` and hand off to the next phase (`/write-design`,
+     `/write-plans`, or the implement chain on the plan's first step, whose id
+     comes from the validation plan and is not always `1`).
 
 Bare `pw skill` is correct here because the review or consolidation has just
 established the document's state. The writing skills use the complementary
@@ -107,8 +110,9 @@ and the command it prints, skipping the consolidation round. The same
 
 The snapshot commit immediately before the fold contains only the answered
 document. The document then has no `## Open questions` section left, its
-decision table references every `Qxx`, and `pw skill` prints the next phase's
-command.
+decision table references every `Qxx`, all post-fold changes are committed
+through `group-commits-msg`, and `git status --porcelain` is empty before
+`pw skill` prints the next phase's command.
 
 Related: [Why the LLM reviews its own work](../explanation/why-the-llm-reviews-its-own-work.md),
 [Where the human stays in the loop](../explanation/where-the-human-stays-in-the-loop.md).

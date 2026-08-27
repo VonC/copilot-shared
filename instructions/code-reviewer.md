@@ -52,39 +52,45 @@ and exact paths returned by the launchers.
 5. Otherwise capture the baseline, umbrella digest, validation state, and
    pre-repair blobs through `bin/code_review_evidence.bat`; write the stable
    retained manifest before assessment or repair.
-6. Apply `instructions/implementation-check.md` in reviewer assessment mode.
+6. Run `commit-plan-check.bat --format json` independently against the received
+   repository state before assessing grouping, ordering, scope, or subjects.
+   Record its state, ready value, ordered groups, staged paths, and every
+   diagnostic in the reviewer evidence. A status `3` result is mechanical
+   non-readiness, and a status `2` result means the checker could not make a trustworthy
+   decision; either blocks a commit-ready recommendation.
+7. Apply `instructions/implementation-check.md` in reviewer assessment mode.
    Run the union of the request validation set and the current resolver set,
    recording sources and drift. Capture validation state before and after.
-7. Make only bounded in-step repairs that satisfy the ownership rules below.
+8. Make only bounded in-step repairs that satisfy the ownership rules below.
    Record every repair and stage only the attributable reviewer patch. Amend
    `a.commit` only when necessary to keep staged membership, ordering, scope,
    and conventional subjects accurate.
-8. Re-run the evidence boundary after either a Yes or No implementation-check
+9. Re-run the evidence boundary after either a Yes or No implementation-check
    result. Classify identity, completeness, validation and coverage, staged
    attribution, unresolved findings, and `a.commit` as the six readiness-floor
    results.
-9. Write every answer-model input to a distinct ignored root `a.*` UTF-8 file.
+10. Write every answer-model input to a distinct ignored root `a.*` UTF-8 file.
    Run `bin/code_review_answer.bat` once with the exact context, round,
    `--exchange-occurrence` from `status`, disposition, evidence inputs, and two
    distinct ignored outputs: complete answer content and transcript summary.
-10. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
+11. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
     output through `--content-file` and the paired summary through
     `--summary-file`. Never publish or append either output by hand.
-11. When the final JSON reports `outcome: published`, retire the manifest
+12. When the final JSON reports `outcome: published`, retire the manifest
     through `bin/code_review_evidence.bat`. Publication exits `0` for
     `changes-requested` and exit `3` for `commit-ready` at the convergence gate;
     both are successful publication outcomes.
-12. After a `changes-requested` publication returns `answer-pending`,
+13. After a `changes-requested` publication returns `answer-pending`,
     immediately run the next bounded `wait-request` in this same reviewer
     session. Do not report the round as finished, return control to the user,
     or require another reviewer invocation. Waiting does not transfer requestor
     authority: the requestor still consumes the answer, assesses repairs,
     continues the exchange, and publishes the replacement request.
-13. When the wait returns `found` with `request-pending`, require the same code
+14. When the wait returns `found` with `request-pending`, require the same code
     identity and step, the next reviewer-owned round, and a positive exchange
     occurrence. Read only the returned `paths.request` and continue at Step 3.
     Repeat the assess, publish, and wait cycle for every intermediate round.
-14. After `commit-ready` publication returns `convergence-gate`, stop for the
+15. After `commit-ready` publication returns `convergence-gate`, stop for the
     human commit choice instead of starting another wait. Also stop on any
     terminal wait outcome under the shared timeout, escalation, and recovery
     contract.
@@ -159,6 +165,14 @@ missing mandatory evidence, never a pass. Resolver drift is reported with its
 direction; the union still runs. Do not revert or stage a tracked validation
 side effect. Recheck the umbrella digest after both a Yes and No result and
 never complete an umbrella row from reviewer mode.
+
+Treat the independent `commit-plan-check.bat --format json` rerun as the
+mechanical `a.commit` result in the six-part readiness floor. A status `0`
+satisfies only that result: it does not prove implementation completeness,
+test or coverage results, repair attribution, or accurate reviewer judgment,
+and it never authorizes a commit. A status `3` result records non-ready groups
+and diagnostics; a status `2` result records unavailable mandatory evidence. Both block a
+commit-ready recommendation.
 
 Recommend `commit-ready` only when exact identity, complete implementation,
 mandatory validation and coverage, attributable staged scope, absence of

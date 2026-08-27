@@ -71,6 +71,16 @@ def _on_main_plan(*_args: object, **_kwargs: object) -> ReleasePlan:
     return _ON_MAIN_PLAN
 
 
+def test_parser_accepts_umbrella_and_defaults_feature_target_to_auto() -> None:
+    """Feature planning carries the collection destination into the planner."""
+    args = plan_cli._parser().parse_args(  # noqa: SLF001 - focused CLI contract
+        ["--umbrella", "docs/v0.11.0/draft.v0.11.0.review-mode.md"],
+    )
+
+    assert args.umbrella.as_posix().endswith("draft.v0.11.0.review-mode.md")
+    assert args.feature_target == "auto"
+
+
 def test_main_renders_a_human_plan_for_a_repository(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -252,6 +262,7 @@ def _main_guard_plan(  # noqa: PLR0913 - mirrors the production seam exactly
     *,
     main_branch: str,
     integration_branch: str | None,
+    umbrella: Path | None,
     branch: str | None,
     feature_base: str | None,
     feature_parent: str | None,
@@ -262,6 +273,7 @@ def _main_guard_plan(  # noqa: PLR0913 - mirrors the production seam exactly
     del (
         main_branch,
         integration_branch,
+        umbrella,
         branch,
         feature_base,
         feature_parent,

@@ -118,7 +118,7 @@ ownership depends on durable coordination.
 | `transcript-repair-pending` | Interrupted transcript append | recorded actor | Retry the recorded append or repair the eligible request entry |
 | `answer-pending` | Active exchange | requestor | Consume changes or present convergence to the human |
 | `convergence-gate` | Human gate | human | Choose the registered another-round or owning-workflow label |
-| `owning-action-pending` | Authorized continuation | requestor | Perform the authorized consolidation or commit, then complete |
+| `owning-action-pending` | Authorized continuation | requestor | Perform every authorized consolidation or commit batch, require its clean-tree postcondition, then complete |
 | `escalated` | Stopped exchange | human | Choose forced reclaim, resolve, archive, or cancellation as applicable |
 | `abandoned-mid-round` | Expired lease without counterpart artifact | recorded actor or human | Reclaim the round, or human-close it with forced completion |
 | `interrupted-answer-publication` | Interrupted publication | reviewer | Resume the recorded publication transition |
@@ -244,7 +244,17 @@ registered human choice can authorize consolidation or commit.
 An authorized specification consolidation first creates a one-file Git commit
 of the answered specification. It resets and verifies the index before staging
 that file, then verifies the snapshot and an empty index before folding or
-stripping any question content.
+stripping any question content. When the fold settles the specification, the
+same authorization covers repository-wide staging, grouped commits for every
+remaining path, and one bounded recovery pass. The requestor may complete the
+exchange or run `pw skill` only after `git status --porcelain` is empty.
+
+An authorized code commit first validates and executes the reviewed root
+`a.commit`. If any non-ignored change remains, `pw code-review-commit` stages
+the complete remainder and preserves `owning-action-pending` while the
+requestor prepares a replacement `a.commit` through `group-commits-msg`
+without another human menu. `pw code-review-commit --residual` executes that
+plan, requires an empty porcelain status, and only then completes the exchange.
 
 ## Host adapter matrix
 

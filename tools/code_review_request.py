@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Render paired implementation code-review artifacts from one round input.
+"""Render checked implementation code-review artifacts from one round input.
 
-Step 1 gives the implementation request and its transcript summary one frozen
-source of truth. Pure rendering reuses the shared exchange envelope, while the
-command boundary validates exact ignored UTF-8 inputs before writing the pair.
+Step 3 binds one ready commit-plan result to a stable request index tree before
+the command writes either artifact. Pure rendering keeps the shared exchange
+envelope and both evidence projections on one frozen source of truth.
 """
 
 # ruff: noqa: EM101, EM102, TRY003
@@ -27,6 +27,12 @@ from tools.code_review_validation import (
     ResolvedValidationSet,
     load_project_validation_commands,
     resolve_code_review_validation,
+)
+from tools.commit_plan_check import (
+    CommitPlanCheckResult,
+    CommitPlanCheckState,
+    check_commit_plan,
+    render_human,
 )
 from tools.review_exchange_models import (
     ExchangeIdentity,
@@ -56,6 +62,29 @@ _TREE_OBJECT_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _FATAL_EXIT = 2
 
 
+def _validate_authored_inputs(authored: dict[str, str]) -> None:
+    """Reject blank authored fields with their stable public labels."""
+    for label, value in authored.items():
+        if not value.strip():
+            raise ReviewExchangeError(f"{label} must be non-empty")
+
+
+def _validate_request_evidence(
+    request_index_tree: str,
+    resolved_validation_set: ResolvedValidationSet,
+    commit_plan_result: CommitPlanCheckResult,
+) -> None:
+    """Reject malformed or non-ready typed request evidence."""
+    if _TREE_OBJECT_RE.fullmatch(request_index_tree) is None:
+        raise ReviewExchangeError("request index tree must be a Git tree object")
+    if resolved_validation_set.__class__ is not ResolvedValidationSet:
+        raise ReviewExchangeError("resolved validation set must be typed")
+    if commit_plan_result.__class__ is not CommitPlanCheckResult:
+        raise ReviewExchangeError("commit plan result must be typed")
+    if not commit_plan_result.ready:
+        raise ReviewExchangeError("commit plan result must be ready")
+
+
 @dataclass(frozen=True)
 class CodeReviewRoundInput:
     """Validated code-review identity and separate authored round inputs."""
@@ -69,6 +98,7 @@ class CodeReviewRoundInput:
     writer_response: str
     request_index_tree: str
     resolved_validation_set: ResolvedValidationSet
+    commit_plan_result: CommitPlanCheckResult
     human_guidance: str | None = None
 
     def __post_init__(self) -> None:
@@ -84,13 +114,12 @@ class CodeReviewRoundInput:
             "change summary": self.change_summary,
             "writer response": self.writer_response,
         }
-        for label, value in authored.items():
-            if not value.strip():
-                raise ReviewExchangeError(f"{label} must be non-empty")
-        if _TREE_OBJECT_RE.fullmatch(self.request_index_tree) is None:
-            raise ReviewExchangeError("request index tree must be a Git tree object")
-        if self.resolved_validation_set.__class__ is not ResolvedValidationSet:
-            raise ReviewExchangeError("resolved validation set must be typed")
+        _validate_authored_inputs(authored)
+        _validate_request_evidence(
+            self.request_index_tree,
+            self.resolved_validation_set,
+            self.commit_plan_result,
+        )
         if self.human_guidance is not None and not self.human_guidance.strip():
             raise ReviewExchangeError("human guidance must be non-empty when supplied")
 
@@ -114,10 +143,12 @@ class _CodeReviewEvidence:
 
     request_index_tree: str
     resolved_validation_set: ResolvedValidationSet
+    commit_plan_result: CommitPlanCheckResult
 
     def to_payload(self) -> dict[str, object]:
         """Return the canonical authored JSON object."""
         return {
+            "commit_plan_result": self.commit_plan_result.structured_payload(),
             "request_index_tree": self.request_index_tree,
             "resolved_validation_set": self.resolved_validation_set.to_payload(),
         }
@@ -132,6 +163,16 @@ class _CodeReviewEvidence:
         for entry in self.resolved_validation_set.commands:
             sources = ", ".join(entry.sources)
             lines.append(f"- {entry.command} (sources: {sources})")
+        lines.extend(
+            (
+                "",
+                "commit_plan_result:",
+                "",
+                "```text",
+                render_human(self.commit_plan_result),
+                "```",
+            ),
+        )
         return "\n".join(lines)
 
 
@@ -244,7 +285,23 @@ def _code_review_evidence(source: CodeReviewRoundInput) -> _CodeReviewEvidence:
     return _CodeReviewEvidence(
         source.request_index_tree,
         source.resolved_validation_set,
+        source.commit_plan_result,
     )
+
+
+def _ready_commit_plan(root: Path) -> CommitPlanCheckResult:
+    """Run the checker once and reject any result that cannot support a request."""
+    result = check_commit_plan(root)
+    diagnostics = "; ".join(result.diagnostics)
+    if result.state is CommitPlanCheckState.OPERATIONAL_FAILURE:
+        detail = diagnostics or result.state.value
+        raise ReviewExchangeError(f"commit plan check failed operationally: {detail}")
+    if not result.ready:
+        detail = f": {diagnostics}" if diagnostics else ""
+        raise ReviewExchangeError(
+            f"commit plan is not ready ({result.state.value}){detail}",
+        )
+    return result
 
 
 def _code_review_evidence_json(source: CodeReviewRoundInput) -> str:
@@ -457,6 +514,10 @@ def _render_from_arguments(args: argparse.Namespace, project_root: Path) -> None
         "writer_response": _read_utf8(inputs["writer_response"], "writer response file"),
     }
     request_index_tree = capture_index_tree(root)
+    commit_plan_result = _ready_commit_plan(root)
+    confirmed_index_tree = capture_index_tree(root)
+    if confirmed_index_tree != request_index_tree:
+        raise ReviewExchangeError("index changed during commit plan check")
     source = CodeReviewRoundInput(
         context=context,
         round_number=args.round_number,
@@ -467,6 +528,7 @@ def _render_from_arguments(args: argparse.Namespace, project_root: Path) -> None
         writer_response=authored_inputs["writer_response"],
         request_index_tree=request_index_tree,
         resolved_validation_set=resolved_validation_set,
+        commit_plan_result=commit_plan_result,
         human_guidance=None if guidance is None else _read_utf8(guidance, "guidance file"),
     )
     rendered = render_code_review_request(source)

@@ -1,4 +1,4 @@
-"""prompt_workflow.py.
+"""Prompt workflow routing, including clean authorized review commits.
 
 Generate the next-step LLM prompt for the current general topic and copy it to
 the clipboard.
@@ -10,6 +10,9 @@ from the documents on disk and the persisted step, offers an interactive menu to
 repeat the current step or pick a next step, then builds the prompt, writes it to
 ``a.prompt.txt``, copies it to the clipboard (falling back to stdout), and
 records the chosen step in ``a.prompt_memory``.
+
+The ``code-review-commit`` command preserves its reviewed-first commit path and
+accepts ``--residual`` only for the authorized clean-tree cleanup phase.
 
 Fix (menu order): ``build_menu_options`` sorts its rows by step number,
 descending and stable, so the next-step rows come above the repeat-current row
@@ -526,10 +529,15 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         choices=docs.DOCUMENT_TYPES,
         help="Document type to resolve.",
     )
-    subparsers.add_parser(
+    code_review_commit_parser = subparsers.add_parser(
         "code-review-commit",
         parents=[common],
-        help="Resume one durably authorized code-review batch commit.",
+        help="Resume one durably authorized clean code-review commit flow.",
+    )
+    code_review_commit_parser.add_argument(
+        "--residual",
+        action="store_true",
+        help="Execute the grouped residual commit plan and require a clean tree.",
     )
     return parser
 
@@ -558,7 +566,10 @@ def main(argv: list[str] | None = None) -> int:
             args.after_merge,
         )
     if args.command == "code-review-commit":
-        return skill.run_authorized_code_review_commit(root)
+        return skill.run_authorized_code_review_commit(
+            root,
+            residual=args.residual,
+        )
     return run(root, pick=args.pick)
 
 

@@ -43,6 +43,13 @@ Stop when the requestor presents `Commit` and `Rework and review again`. Exit
 `3` and a commit-ready recommendation do not authorize a commit. Convergence
 ends the reviewer's automatic wait cycle at the human gate.
 
+After the human chooses `Commit`, the requestor executes the prepared root
+`a.commit` through `pw code-review-commit`. If residual changes remain, that
+continuation stages all of them and preserves durable authorization. Run
+`group-commits-msg` for the staged remainder without another menu, then run
+`pw code-review-commit --residual`. Do not complete the exchange, run
+`pw skill`, or begin another step until `git status --porcelain` is empty.
+
 ## Resume an implementation code review
 
 1. Open the same repository in the requestor agent session.
@@ -53,7 +60,9 @@ ends the reviewer's automatic wait cycle at the human gate.
    do not ask again.
 4. Keep `a.commit` aligned with the staged paths after accepted repairs. Never
    commit through private Git commands.
-5. Stop on escalation, inconsistent evidence, or interrupted transition and use
+5. At `owning-action-pending`, resume `pw code-review-commit`. A residual phase
+   reuses the existing human authorization and must finish with a clean tree.
+6. Stop on escalation, inconsistent evidence, or interrupted transition and use
    [the recovery guide](recover-an-independent-review.md).
 
 The canonical [code-review requestor](../../instructions/code-review-requestor.md)

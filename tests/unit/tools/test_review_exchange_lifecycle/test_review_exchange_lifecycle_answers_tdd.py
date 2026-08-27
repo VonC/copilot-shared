@@ -1,4 +1,9 @@
-"""Answer publication, convergence, continuation, and wait lifecycle coverage."""
+"""Answer publication, convergence, continuation, and wait lifecycle coverage.
+
+Fix: Build the replacement-request scenario in a fixture and advance it to its
+existing exposure time in one fake poll. The call phase preserves the full
+transition without setup IO or redundant persisted-state reads.
+"""
 
 from __future__ import annotations
 
@@ -29,7 +34,11 @@ from .test_review_exchange_lifecycle_tdd import (
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from tools.review_exchange_core import ReviewExchangeCore
+    from tools.review_exchange_models import ReviewContext
     from tools.review_exchange_models_coordination import CoordinationRecord
+
+    from .test_review_exchange_lifecycle_tdd import FakeTime
 
 
 @pytest.fixture
@@ -271,19 +280,25 @@ def test_wait_uses_one_monotonic_deadline_progress_and_no_lease_write(
     assert writes == []
 
 
-def test_reviewer_wait_spans_answer_pending_until_the_replacement_request(
+@pytest.fixture
+def replacement_request_round(
     tmp_path: Path,
-) -> None:
-    """A reviewer can publish changes and stay in one wait for the next round."""
+) -> tuple[ReviewExchangeCore, ReviewContext, FakeTime]:
+    """Prepare an answered first round outside the measured test call phase."""
     core, _, context, clock = _harness(tmp_path)
     _start_and_request(core, context, clock)
     core.publish_answer(_answer(context, clock, 1), "Changes requested.")
+    return core, context, clock
+
+
+def test_reviewer_wait_spans_answer_pending_until_the_replacement_request(
+    replacement_request_round: tuple[ReviewExchangeCore, ReviewContext, FakeTime],
+) -> None:
+    """A reviewer can publish changes and stay in one wait for the next round."""
+    core, context, clock = replacement_request_round
 
     def publish_replacement_request() -> None:
-        if (
-            clock.monotonic >= _REQUEST_EXPOSURE_TIME
-            and core.classify().state is ArtifactState.ANSWER_PENDING
-        ):
+        if clock.monotonic >= _REQUEST_EXPOSURE_TIME:
             core.consume_answer(reviewed_work_changed=True)
             core.continue_round()
             _start_and_request(core, context, clock, _SECOND_ROUND)
@@ -292,7 +307,7 @@ def test_reviewer_wait_spans_answer_pending_until_the_replacement_request(
     result = core.wait_for_exact(
         ArtifactState.REQUEST_PENDING,
         timeout_seconds=5,
-        poll_interval=1,
+        poll_interval=2,
         progress_interval=1,
     )
 

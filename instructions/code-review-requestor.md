@@ -70,7 +70,10 @@ Only then pass the complete paired artifacts to `publish-request`.
 8. At convergence, retain the answer, apply polishing-only covered wording,
    present the human gate, and call `confirm` only with the human's exact label.
 9. After durable Commit authorization, run the canonical owning continuation.
-   Call `complete` only after that action succeeds.
+   It executes the reviewed root `a.commit` first. If it stages residual paths,
+   run the authorized residual `group-commits-msg` continuation and its second
+   batch. The owning action succeeds only after every batch succeeds and the
+   final working tree is clean; only then call `complete`.
 
 Never read the versioned transcript as working context. After a wait or status
 reports an answer, read only the exact `paths.answer` file.
@@ -163,6 +166,18 @@ authorized action.
 
 After durable authorization, invoke the canonical commit continuation that
 validates and executes the reviewed root `a.commit`. Do not construct private
-Git commands and do not present the commit choice again. If the action succeeds,
-call `complete`; if it fails, retain the authorization and report the failure so
-a later session can replay the owning action.
+Git commit commands and do not present the commit choice again.
+
+The first `pw code-review-commit` pass executes that prepared plan. If it
+reports residual changes, it has staged the complete remainder with
+repository-wide `git add -A` while retaining authorization. Follow the
+authorized code-review continuation in `group-commits-msg.md`: replace the root
+`a.commit` with groups for every residual staged path, format it, skip its human
+menu, and run `pw code-review-commit --residual`.
+
+The residual pass executes the replacement plan and requires
+`git status --porcelain` to return no entries. If the action succeeds, call
+`complete`. If either batch fails or the final tree is non-clean, retain the
+authorization and report the failure so a later session can repair and replay
+the owning action. Never proceed to `pw skill` or another implementation step
+until this clean-tree postcondition succeeds.

@@ -7,11 +7,13 @@ file.
 Fix: Cover the non-interactive path. A Git failure in non-interactive mode must
 stop the batch and return False without calling `input()`, and the add and
 commit phases must receive the `interactive` flag.
+
+Step 1 verifies that the batch compatibility helper delegates exact staged
+membership to the shared commit-plan support boundary.
 """
 
 from __future__ import annotations
 
-import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
@@ -263,36 +265,28 @@ def test_batch_validation_uses_the_public_commit_plan_validator(
     }
 
 
-def test_staged_paths_reads_exact_index_membership(
+def test_staged_paths_delegates_to_shared_index_inventory(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The batch boundary passes exact staged paths to the pure validator."""
-    captured: dict[str, object] = {}
+    """The private compatibility seam returns the public result unchanged."""
+    captured: list[Path] = []
 
-    def staged_result(
-        arguments: tuple[str, ...],
-        *,
-        cwd: Path,
-        options: object,
-    ) -> subprocess.CompletedProcess[str]:
-        captured.update(arguments=arguments, cwd=cwd, options=options)
-        return subprocess.CompletedProcess(["git", *arguments], 0, "staged.txt\0", "")
+    def shared_staged_paths(root: Path) -> tuple[str, ...]:
+        captured.append(root)
+        return ("staged.txt", "removed.txt")
 
     monkeypatch.setattr(
-        git_batch_workflow,
-        "run_cross_platform_git_command",
-        staged_result,
+        git_batch_workflow.commit_plan_support,
+        "staged_paths",
+        shared_staged_paths,
     )
-    assert git_batch_workflow._staged_paths(tmp_path) == ("staged.txt",)
-    assert captured["arguments"] == (
-        "diff",
-        "--cached",
-        "--name-only",
-        "--no-renames",
-        "-z",
+
+    assert git_batch_workflow._staged_paths(tmp_path) == (
+        "staged.txt",
+        "removed.txt",
     )
-    assert captured["cwd"] == tmp_path
+    assert captured == [tmp_path]
 
 
 def test_batch_validation_reports_public_validator_diagnostics(

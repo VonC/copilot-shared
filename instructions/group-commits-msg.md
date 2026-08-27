@@ -55,7 +55,26 @@ The context that can inform how you will group those files can be:
 
    The tool rewrites `a.commit` in place. An exit status of 0 means the file is now canonically formatted (whether or not changes were applied); a non-zero status means the file is missing or unreadable and the underlying issue must be fixed before proceeding.
 
-7. Once `a.commit` is generated and formatted, display it for user review (the author may edit it first), then read [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md), read [`../rules/interactive_menu.md`](../rules/interactive_menu.md) and present the go-ahead choices. Run `pw skill --after-commit <x>` (via its launcher, see [`run-pw.md`](run-pw.md)) from the project root, where `<x>` is the plan step this commit completes (the "step XXXX" of the cycle), to get the contextual next command. This lookup is read-only and exists only to build the commit-gate labels; it is not the go-ahead and it does not replace the commit. The concrete choices are:
+7. After `a.commit` is formatted and every intended path is staged, run the
+   focused read-only readiness checker, `commit-plan-check.bat --format json`,
+   from the project root through its full path:
+
+   ```bat
+   "%LLM_SHARED_DIR%\commit-plan-check.bat" --format json
+   ```
+
+   Status `0` means the plan is mechanically ready, but it does not authorize a
+   commit. Continue only to the existing human menu or an already-authorized
+   batch continuation. Status `3` means the plan is not ready: use every
+   returned diagnostic to repair `a.commit` or staged membership, format the
+   plan again, and rerun the checker before presenting choices. Status `2`
+   means the command could not make a trustworthy decision: stop and report
+   the operational diagnostic without presenting choices or running a batch.
+
+   This earlier read-only gate does not replace final batch validation. The
+   final batch validates the same plan again before its first mutation.
+
+8. Once `a.commit` is generated, formatted, and mechanically ready, display it for user review (the author may edit it first), then read [`../rules/command_prefix_char.md`](../rules/command_prefix_char.md), read [`../rules/interactive_menu.md`](../rules/interactive_menu.md) and present the go-ahead choices. Run `pw skill --after-commit <x>` (via its launcher, see [`run-pw.md`](run-pw.md)) from the project root, where `<x>` is the plan step this commit completes (the "step XXXX" of the cycle), to get the contextual next command. This lookup is read-only and exists only to build the commit-gate labels; it is not the go-ahead and it does not replace the commit. The concrete choices are:
 
    - `Go ahead` — commit, then stop.
    - the contextual option, when a development effort is in flight — `Go ahead, and implement step <next>` for the next plan step, or `Go ahead, and prepare-release` once every step is committed. A standalone call with no plan prints nothing and exits non-zero, so omit this row when there is no contextual option.
@@ -63,7 +82,7 @@ The context that can inform how you will group those files can be:
 
    Plain `Go ahead` commits and then stops; the contextual option commits and, only after the commit succeeds, runs `<command-prefix>implement-step` on the next step or `<command-prefix>prepare-release`, with the prefix selected by `command_prefix_char.md`. Never present the contextual option as only the printed command, such as `$prepare-release`; the choice label must start with `Go ahead, and ...` so the user can see that selecting it commits first.
 
-8. When the user selects a go-ahead entry, validate the `a.commit` file, and if it is not valid, fix any issue reported by the validation.
+9. When the user selects a go-ahead entry, validate the `a.commit` file, and if it is not valid, fix any issue reported by the validation.
 
    To validate the `a.commit` file, you can use the following sequence of bat commands:
 
@@ -87,10 +106,41 @@ This is a dedicated entry used only after the code-review requestor observes
 `owning-action-pending` and verifies `owning_action_authorized: true`. Run
 `pw code-review-commit`; it runs the canonical batch entry with
 `--root-a-commit` and `--non-interactive`, reusing the root `a.commit`
-validation and batch execution above exactly once. In this route, do not present the commit
-choices again and do not issue private Git commands. The continuation calls the
-exchange `complete` only after the batch succeeds; on failure, authorization remains pending
-for a later replay.
+validation and batch execution above for the reviewed commit plan first. In
+this route, do not present the commit choices again and do not issue private
+Git commit commands.
+
+After that reviewed batch succeeds, the continuation checks the complete
+repository status. When changes remain, it runs repository-wide `git add -A`,
+retains the durable owning authorization, and reports that residual grouping is
+required. Generate, format, and check a replacement root `a.commit` for every
+staged residual path through Steps 1 through 7 above. The existing `Commit`
+choice already authorizes this bounded cleanup batch, so do not present the Step 8
+menu. Then run `pw code-review-commit --residual`; it executes the replacement
+plan through the same `--root-a-commit --non-interactive` batch entry.
+
+The residual continuation must run `git status --porcelain` after that batch
+and require empty output. Only a successful batch followed by a clean working
+tree may call the exchange `complete`. On a batch failure or a non-clean final
+status, authorization remains pending for repair and replay; do not run
+`pw skill`, begin another step, or claim completion.
+
+## Authorized consolidation continuation
+
+Use this continuation only when
+`consolidate-then-review-ask-questions.md` delegates its settled
+post-consolidation working tree after the human selected `Consolidate`, or
+directly invoked that consolidation skill. The consolidation instruction owns
+the repository-wide staging scope, the final clean-tree check, and any bounded
+recovery pass.
+
+Generate, format, and check `a.commit` through Steps 1 through 7 above for every
+staged path. The existing consolidation choice already authorizes the generated
+commits, so do not present the Step 8 menu or request another go-ahead. Run
+`& "<LLM_SHARED_DIR>\bin\gcba.bat" --root-a-commit --non-interactive` exactly
+once, then return control to the consolidation instruction. Never issue private
+Git commit commands or claim a clean tree here: consolidation verifies
+`git status --porcelain` and decides whether its one recovery pass is required.
 
 ## Commit message rules for groups
 

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from tools import code_review_answer, code_review_request
 from tools.code_review_evidence import capture_index_tree
 from tools.code_review_validation import resolve_code_review_validation
+from tools.commit_plan_check import CommitPlanCheckResult, CommitPlanCheckState
 from tools.prompt_workflow_code_review import CODE_REVIEW_POLICY
 from tools.prompt_workflow_models import MemoryRecord, Topic, WorkflowState
 from tools.review_exchange_core import ReviewExchangeCore
@@ -33,6 +34,11 @@ if TYPE_CHECKING:
 
 _CREATED_AT = "2026-08-18T12:00:00+02:00"
 _repository_template: Path | None = None
+
+
+def ready_commit_plan_result() -> CommitPlanCheckResult:
+    """Return typed ready checker evidence for public renderer fixtures."""
+    return CommitPlanCheckResult(CommitPlanCheckState.VALID)
 
 
 @dataclass(frozen=True)
@@ -186,6 +192,7 @@ def render_request(
                 ("ghog day",),
                 ("focused Step 6 acceptance",),
             ),
+            commit_plan_result=ready_commit_plan_result(),
             human_guidance=guidance,
         ),
     )

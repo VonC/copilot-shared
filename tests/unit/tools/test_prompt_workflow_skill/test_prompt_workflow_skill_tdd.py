@@ -1,4 +1,4 @@
-"""Tests for pw host rendering, disk-derived routing, and CLI dispatch.
+"""Tests for pw routing and reviewed or residual commit CLI dispatch.
 
 The suite covers host detection and command rendering, workflow state routing,
 implementation step selection, forced commands, and not-applicable outcomes.
@@ -374,11 +374,15 @@ def test_main_dispatches_authorized_code_review_commit(
     monkeypatch.setattr(
         prompt_workflow.skill,
         "run_authorized_code_review_commit",
-        lambda _root: continuation_exit,
+        lambda _root, **_kwargs: continuation_exit,
     )
 
     assert prompt_workflow.main(
         ["--root", str(tmp_path), "code-review-commit"],
+    ) == continuation_exit
+
+    assert prompt_workflow.main(
+        ["--root", str(tmp_path), "code-review-commit", "--residual"],
     ) == continuation_exit
 
 

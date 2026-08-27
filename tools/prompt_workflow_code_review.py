@@ -1,20 +1,22 @@
-"""Bounded routing and authorized continuation for implementation code review.
+"""Bounded routing and clean commit continuation for implementation review.
 
 The adapter derives one exact plan-step context from the current workflow,
-checks only that identity's fixed exchange paths, and delegates the existing
-batch-commit action after durable human authorization. It never discovers
-documents or protocol artifacts by directory traversal.
+checks only that identity's fixed exchange paths, and delegates authorized
+batch commits. A durable phase marker separates the reviewed commit plan from
+an optional residual plan, and completion requires a clean working tree.
 """
 
 # ruff: noqa: EM101, EM102, TRY003
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Final, cast
 
+from tools import prompt_workflow_git as git
 from tools import prompt_workflow_plan as plan
 from tools import prompt_workflow_steps as steps
 from tools.code_review_request import code_review_context
@@ -43,6 +45,11 @@ CODE_REVIEW_POLICY: Final[FamilyPolicy] = FamilyPolicy(
 )
 CODE_REVIEW_REQUESTOR: Final[str] = "code-review-requestor.md"
 CODE_REVIEWER: Final[str] = "code-reviewer.md"
+RESIDUAL_GROUPING_REQUIRED: Final[int] = 3
+_COMMIT_PHASE_MARKER: Final[str] = "a.code-review-commit-phase"
+_PRIMARY_PHASE: Final[str] = "primary"
+_RESIDUAL_PHASE: Final[str] = "residual"
+LOGGER = logging.getLogger(__name__)
 
 
 class CodeReviewRoutingError(PromptWorkflowError):
@@ -247,13 +254,115 @@ def run_batch_commit(
     )
 
 
+def _phase_marker(root: Path) -> Path:
+    """Return the ignored marker that makes authorized replay phase-safe."""
+    return root.resolve() / _COMMIT_PHASE_MARKER
+
+
+def _phase_content(context: ReviewContext, phase: str) -> str:
+    """Render one exact review identity and commit phase."""
+    return (
+        f"{phase}\n{context.identity.key}\n"
+        f"{cast('str', context.implementation_step)}\n"
+    )
+
+
+def _read_phase(root: Path, context: ReviewContext) -> str | None:
+    """Read the current phase and reject a stale marker from another review."""
+    marker = _phase_marker(root)
+    if not marker.exists():
+        return None
+    content = marker.read_text(encoding="utf-8")
+    for phase in (_PRIMARY_PHASE, _RESIDUAL_PHASE):
+        if content == _phase_content(context, phase):
+            return phase
+    raise CodeReviewRoutingError("code-review commit phase marker is stale")
+
+
+def _write_phase(root: Path, context: ReviewContext, phase: str) -> None:
+    """Persist the current authorized commit phase before its mutation."""
+    _phase_marker(root).write_text(
+        _phase_content(context, phase),
+        encoding="utf-8",
+    )
+
+
+def _announce_residual_grouping() -> None:
+    """Log the single authorized next action for staged residual changes."""
+    LOGGER.info(
+        "Residual changes are staged. Run $llm-shared:group-commits-msg "
+        "without a new menu, then run pw code-review-commit --residual.",
+    )
+
+
+def _require_clean_tree(root: Path) -> None:
+    """Reject completion while any tracked or untracked change remains."""
+    entries = git.status_entries(root.resolve())
+    if entries:
+        paths = ", ".join(path for _status, path in entries)
+        raise CodeReviewRoutingError(
+            f"authorized code-review commits left a dirty working tree: {paths}",
+        )
+
+
+def _continue_residual_commit(
+    root: Path,
+    context: ReviewContext,
+    core: ReviewExchangeCore,
+) -> int:
+    """Execute the grouped residue and consume authority only when clean."""
+    if _read_phase(root, context) != _RESIDUAL_PHASE:
+        raise CodeReviewRoutingError("no staged residual commit is pending")
+    result = run_batch_commit(
+        ("--root-a-commit", "--non-interactive"),
+        cwd=root.resolve(),
+    )
+    if result.returncode != 0:
+        return result.returncode
+    _require_clean_tree(root)
+    _phase_marker(root).unlink()
+    core.complete()
+    return 0
+
+
+def _continue_primary_commit(
+    root: Path,
+    context: ReviewContext,
+    core: ReviewExchangeCore,
+) -> int:
+    """Execute the reviewed plan or resume its residual grouping handoff."""
+    phase = _read_phase(root, context)
+    if phase == _RESIDUAL_PHASE:
+        git.stage_all(root.resolve())
+        _announce_residual_grouping()
+        return RESIDUAL_GROUPING_REQUIRED
+    if phase is None:
+        _write_phase(root, context, _PRIMARY_PHASE)
+    result = run_batch_commit(
+        ("--root-a-commit", "--non-interactive"),
+        cwd=root.resolve(),
+    )
+    if result.returncode != 0:
+        return result.returncode
+    if not git.status_entries(root.resolve()):
+        _phase_marker(root).unlink()
+        core.complete()
+        return 0
+    _write_phase(root, context, _RESIDUAL_PHASE)
+    git.stage_all(root.resolve())
+    _announce_residual_grouping()
+    return RESIDUAL_GROUPING_REQUIRED
+
+
 def continue_authorized_commit(
     root: Path,
     topic: Topic,
     state: WorkflowState,
     record: MemoryRecord | None,
+    *,
+    residual: bool = False,
 ) -> int:
-    """Run one existing batch commit only for durable owning authorization."""
+    """Commit reviewed work, then one grouped residue, before completing."""
     route = resolve_code_review_route(root, topic, state, record)
     if route is None or route.state is not ArtifactState.OWNING_ACTION_PENDING:
         raise CodeReviewRoutingError("code-review commit is not authorized")
@@ -265,13 +374,10 @@ def continue_authorized_commit(
         is not ConfirmationOutcome.CONTINUE_OWNING_WORKFLOW
     ):
         raise CodeReviewRoutingError("code-review commit is not durably authorized")
-    result = run_batch_commit(
-        ("--root-a-commit", "--non-interactive"),
-        cwd=root.resolve(),
-    )
-    if result.returncode == 0:
-        core.complete()
-    return result.returncode
+
+    if residual:
+        return _continue_residual_commit(root, route.context, core)
+    return _continue_primary_commit(root, route.context, core)
 
 
 # eof

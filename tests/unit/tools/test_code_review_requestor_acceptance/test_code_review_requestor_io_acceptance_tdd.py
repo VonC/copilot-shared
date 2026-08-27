@@ -19,6 +19,7 @@ import pytest
 from tools import code_review_request as request_renderer
 from tools import prompt_workflow_code_review as code_review
 from tools.code_review_validation import resolve_code_review_validation
+from tools.commit_plan_check import CommitPlanCheckResult, CommitPlanCheckState
 from tools.prompt_workflow_models import MemoryRecord, Topic, WorkflowState
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
@@ -128,6 +129,7 @@ def test_mismatched_plan_step_round_and_umbrella_fail_closed(
             writer_response="The writer requests review.",
             request_index_tree=_REQUEST_INDEX_TREE,
             resolved_validation_set=resolve_code_review_validation(("ghog day",)),
+            commit_plan_result=CommitPlanCheckResult(CommitPlanCheckState.VALID),
         ),
     )
     core.publish_request(request.request_content, request.transcript_summary)

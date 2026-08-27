@@ -124,11 +124,13 @@ skill first clears the index without touching the working tree and commits the
 requirement alone with its answered questions. It verifies that the index is
 empty, then folds each answer into the document body, records the decisions in
 a table, strips the open-questions section, and either asks a new round or
-declares the document settled. When it settles, `pw skill` hands off to
+declares the document settled. A settled fold stages every remaining change,
+uses `group-commits-msg` to commit the complete set without another menu, and
+requires a clean working tree. Only then does `pw skill` hand off to
 `/write-design`. The design writer then uses `pw skill --after-write design` to
 force design review, and the plan writer uses `pw skill --after-write plan` to
 force plan review. Bare `pw skill` remains the state-based handoff after a
-review or consolidation has actually settled a document.
+review or consolidation has actually settled and cleanly committed a document.
 
 ## 6. Look at what landed on disk
 
@@ -136,6 +138,7 @@ review or consolidation has actually settled a document.
 docs\vX.Y.Z\draft.vX.Y.Z.<slug>.md            the classified draft
 docs\vX.Y.Z\feature-request.vX.Y.Z.<slug>.md  the requirement with its decision table
 Git history                                      one-file snapshot of the answered questions
+Git history                                      grouped commits for the settled fold
 a.prompt_memory                                the branch-locked workflow state
 ```
 
