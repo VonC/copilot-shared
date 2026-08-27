@@ -258,8 +258,12 @@ No existing feature or reporting capability appears impaired by Step 2.
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because no implementation check has
-taken place yet.
+Yes. Step 3 has been fully implemented.
+
+The specialized renderer now requires ready typed commit-plan evidence, binds
+it to one stable index tree, and rejects every planned failure class before
+writing either request artifact. Focused tests and the complete repository gate
+cover the new contract.
 
 ### Goal for Step 3
 
@@ -275,27 +279,101 @@ the specialized code-review renderer writes paired request artifacts.
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Typed request input**: `CodeReviewRoundInput` now requires one
+  `CommitPlanCheckResult` and rejects untyped or non-ready evidence in its
+  representability invariant.
+- **Paired evidence**: `_CodeReviewEvidence` carries the full versioned
+  structured checker payload beside `request_index_tree` and
+  `resolved_validation_set`; its human summary projects the same in-memory
+  result through the shared human renderer inside a Markdown-safe text fence.
+- **Publication gate**: `_render_from_arguments` captures tree A, calls
+  `check_commit_plan(root)` exactly once, rejects non-ready or operational
+  results, captures tree B, rejects drift, and only then renders and writes the
+  paired outputs.
+- **Compatibility wiring**: existing renderer, reviewer acceptance, and
+  requestor acceptance builders now supply typed ready evidence without
+  changing their exchange behavior.
+- **Focused verification**: the new commit-plan request leaf covers direct
+  typed-boundary rejection, exact call order, one checker invocation, complete
+  JSON and human evidence, non-readiness, operational failure, index drift,
+  preservation of both pre-existing outputs on every rejected path, and
+  literal dunder paths inside the human evidence fence.
+- **Repository gate evidence**: the final detached `ghog day` completed with
+  `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+No new production class was introduced. Step 3 extends the existing frozen
+`CodeReviewRoundInput` and `_CodeReviewEvidence` types, and adds three focused
+helpers:
+
+- `_validate_authored_inputs`: keeps authored-field checks outside the input
+  type's branch count.
+- `_validate_request_evidence`: owns exact tree, validation-set, and ready
+  checker-result invariants used by `CodeReviewRoundInput.__post_init__`.
+- `_ready_commit_plan`: maps the shared checker result to stable request-gate
+  rejection diagnostics.
+- `test_code_review_request_commit_plan_tdd.py`: a dedicated Step 3 test leaf
+  for commit-plan gate sequencing and failure boundaries.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Dependency direction**: the specialized code-review adapter depends on the
+  read-only checker service and shared evidence types. The checker and
+  role-neutral exchange core do not depend back on request rendering.
+- **Responsibility boundary**: `check_commit_plan` retains parsing, inventory,
+  and validation policy. The request adapter only orders the check around index
+  identity and projects the returned typed value.
+- **Write boundary**: all plan and tree checks finish before the existing two
+  `_write_utf8` calls. Direct role-neutral publication remains unchanged, so
+  the design's documented specialized-renderer boundary is preserved.
+- **File girth**: `tools/code_review_request.py` is 559 lines, 14 above its
+  545-line advisory and below the 650-line split trigger. The existing renderer
+  test is 568 lines, eight above its 560-line advisory and below the same
+  ceiling; checker-specific cases stay in the 241-line dedicated leaf. All
+  other touched test files remain inside their Step 3 advisory estimates.
+
+No, there is nothing that needs to be addressed for Step 3.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Each command call adds two constant-count index-tree captures around exactly one
+checker call. The checker remains linear in plan content and staged membership,
+and both evidence renderings traverse the already-built typed groups, paths,
+commands, and diagnostics once. No per-path subprocess, repeated parse,
+duplicated sort, O(n log n) path, or O(n^2) path was added.
+
+No, there is no performance issue that needs to be addressed for Step 3.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Typed input and evidence projections**: unit tests cover typed and ready
+  invariants plus exact full-payload parity between request JSON and the human
+  transcript summary.
+- **Command gate**: focused unit tests cover matching captures, exactly one
+  checker call, successful paired writes, status-three non-readiness,
+  operational failure, index drift, and unchanged outputs on rejection.
+- **Existing rendering and IO**: the prior unit leaf continues to cover exact
+  envelope identity, validation-set resolution, distinct ignored paths,
+  one-read/one-write behavior, malformed inputs, and stable fatal errors.
+- **Coverage evidence**: the complete Groundhog gate reports 100% coverage for
+  all affected production statements.
+
+No, there is no unit-tested class below 100% that needs completing for Step 3.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+- **Existing exchange behavior**: shared publication, envelope validation,
+  transcript rendering, and durable exchange transitions remain unchanged.
+- **Validation evidence**: the existing project, plan, and request validation
+  command set remains present beside the new complete commit-plan payload.
+- **Failure behavior**: invalid plans, operational failures, and staged-tree
+  drift fail before either paired output changes, while a stable ready result
+  retains the previous successful rendering path.
+- **Regression evidence**: the complete suite passes with no warning, expected
+  failure, coverage gap, or duration outlier.
+
+No existing feature or reporting capability appears impaired by Step 3.
 
 ---
 
