@@ -37,7 +37,7 @@ nd="%LLM_SHARED_DIR%\bin\new_draft.bat" $*$tif not errorlevel 1 echo %PRJ_DIR_NA
 ndr="%LLM_SHARED_DIR%\bin\new_draft.bat" $*$tif not errorlevel 1 echo %PRJ_DIR_NAME%: new draft done
 
 ghog="%LLM_SHARED_DIR%\bin\ghog.bat" $*
-ghd=set "GHOG_SENV_LIVE=1"$t"%LLM_SHARED_DIR%\bin\ghog.bat" day $*
+ghdy=set "GHOG_SENV_LIVE=1"$t"%LLM_SHARED_DIR%\bin\ghog.bat" day $*
 gha=set "GHOG_SENV_LIVE=1"$t"%LLM_SHARED_DIR%\bin\ghog.bat" affected $*
 ghc=set "GHOG_SENV_LIVE=1"$t"%LLM_SHARED_DIR%\bin\ghog.bat" check $*
 ghf=set "GHOG_SENV_LIVE=1"$t"%LLM_SHARED_DIR%\bin\ghog.bat" full $*
