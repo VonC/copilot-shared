@@ -484,3 +484,16 @@ If the human instead selects `Revise and review again`, treat the covered wordin
 Decision: convergence-recommended. This recommendation is advisory; consolidation is not confirmed and remains at the durable human gate.
 
 <!-- review-entry-id: answer-round-2 -->
+
+## Round 2 by human - human-confirmation
+
+- Recorded: 2026-08-28T23:31:55+02:00
+- Exchange: specification/design-specification/v0.11.0/review-status-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/design.v0.11.0.review-status-command.md
+- Outcome: human-confirmation
+
+Human choice: Consolidate
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->
