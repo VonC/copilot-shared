@@ -56,10 +56,10 @@ the matching body file directly.
 
 ```txt
 bin/                         self-locating .bat launchers: prompt_workflow (pw),
-                             ghog, gcba, gcmp, wac, oqm, covg, ghd, new_draft,
-                             python_check, review_exchange, the family review
-                             renderers, update_llm_shared_plugin, plus bundled
-                             venvs/
+                             ghog, gcba, gcmp, wac, oqm, covg, ghd, tth,
+                             new_draft, python_check, review_exchange, the
+                             family review renderers, update_llm_shared_plugin,
+                             plus bundled venvs/
 tools/                       the Python behind the launchers:
 ├─ prompt_workflow*.py       pw: menu, handoff, skill modes
 ├─ review_exchange*.py       durable exchange state and transitions
@@ -69,6 +69,7 @@ tools/                       the Python behind the launchers:
 ├─ open_questions_md.py      the oqm modes
 ├─ coverage_gap_functions*.py  covg
 ├─ wrap_commit*.py           wac
+├─ trim_thinking*.py         tth: trim an exported conversation
 ├─ groundhog/                the ghog CLI: runner, gate, snapshot, durations
 ├─ git_history_dashboard/    the ghd builder
 ├─ git_history_diagrams/     deterministic prepare-release SVG histories

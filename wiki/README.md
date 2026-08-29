@@ -125,6 +125,7 @@ their choices.
 - 📊 [Why Git history diagrams use explicit arrows](explanation/why-git-history-diagrams-use-explicit-arrows.md)
 - 📊 [Why sensitive-history replacement needs context](explanation/why-sensitive-history-needs-context.md)
 - 📊 [Why sensitive commit protection uses two hooks](explanation/why-sensitive-commit-protection-uses-two-hooks.md)
+- 🤖 [Why a trimmed export keeps three regions](explanation/why-a-trimmed-export-keeps-three-regions.md)
 
 ## 🎓 Tutorials
 
@@ -185,6 +186,7 @@ Recipes for a precise goal, for readers who already know the basics.
 - 📊 [Rebuild the presentation as PPTX and PDF](how-to/rebuild-the-presentation.md)
 - 📊 [Update a Git history diagram](how-to/update-git-history-diagrams.md)
 - 🤖 [Serve a Markdown folder as a local website](how-to/serve-a-docs-folder-as-a-website.md)
+- 🤖 [Trim an exported conversation](how-to/trim-an-exported-conversation.md)
 
 ## 📖 Reference
 
@@ -214,3 +216,4 @@ Exact descriptions of commands, formats, files, and supported behavior.
 - 📊 [Sensitive commit hooks](reference/sensitive-commit-hooks.md)
 - 📊 [Sensitive-history scanner command](reference/sensitive-history-scan.md)
 - 📊 [Git-history diagram generator](reference/git-history-diagram-generator.md)
+- 🤖 [Trim-thinking command](reference/trim-thinking-command.md)
