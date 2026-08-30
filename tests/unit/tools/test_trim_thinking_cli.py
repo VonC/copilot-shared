@@ -22,7 +22,7 @@ from tools import trim_thinking_cli as cli
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-# pyright: reportPrivateUsage=false
+# pyright: reportPrivateUsage=false, reportUnusedFunction=false
 # ruff: noqa: RUF001, RUF002, SLF001
 
 _FATAL_EXIT_CODE = 2
