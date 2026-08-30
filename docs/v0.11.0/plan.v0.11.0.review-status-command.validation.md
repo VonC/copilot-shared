@@ -161,7 +161,12 @@ No existing feature or reporting capability appears impaired for Step 1.
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because no implementation check has taken place and the planned files have not been created.
+Yes. Step 2 has been fully implemented.
+
+The collector now discovers and normalizes every reserved-prefix candidate
+through bounded read-only adapters, fails closed on damaged identity or role
+evidence, and has independent exact mapping, filesystem, configuration,
+ordering, race, and no-mutation coverage.
 
 ### Step 2 goal
 
@@ -191,27 +196,100 @@ the fixed artifact set, and detects a coordination change during observation.
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Bounded discovery service**: `collect_review_status()` resolves the root,
+  loads configuration and wall time once, enumerates only the reserved root
+  prefix, and isolates each candidate failure from its siblings.
+- **Strict candidate normalization**: candidate handling reuses
+  `parse_transient_identity`, `parse_json_markdown`,
+  `CoordinationRecord.from_dict`, canonical path derivation, the existing
+  observer, and transcript occurrence authority.
+- **Read-only race detection**: exact coordination bytes are compared before
+  and after observation, six fixed paths are projected without entering a
+  transition lock, and changed evidence becomes a damaged candidate.
+- **Pure status projection**: helpers derive lease freshness, artifact
+  applicability, next actions, trust outcomes, relative paths, and stable
+  healthy-then-damaged ordering.
+- **Initial test surface**: example and property leaves cover empty, healthy,
+  malformed, mixed, mismatch, missing-file, changed-during-read, idle,
+  projection-branch, IO-count, and ordering behavior.
+- **Fail-closed role repair**: unsupported human next actors and ambiguous
+  escalated artifact shapes now raise a stable diagnostic and are retained as
+  damaged candidates instead of inheriting the durable owner.
+- **Expanded boundary evidence**: real marker fallback and override, missing
+  serialized umbrella identity, canonical mismatch, multiple valid exchanges,
+  six named probes, and explicit mutation/transition-lock rejection are
+  covered. The generated ordering property was shortened from 1.08 seconds to
+  0.04 seconds without removing its assertion.
+- **Independent state table evidence**: the exact action and artifact
+  applicability expectations now live beside the exact role, specialization,
+  owner, lease, and outcome expectations in a dedicated projection leaf.
+- **Validation result**: focused leaves and the final repository Groundhog walk
+  complete with `fail=0 warn=0 xfail=0 cov=100 outliers=0 excluded=0 exit=0`.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+- `_StatusDependencies`: a frozen private dependency bundle that keeps the
+  public collector signature small while exposing every filesystem, observer,
+  store, and occurrence boundary to read-count and no-write tests.
+- `_StoreSpy`: a unit-test double intended to reject store mutation while
+  retaining the derived fixed paths used by normalization.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Boundary placement**: repository enumeration and observer/store adapters
+  remain in `review_status.py`, while the public immutable result vocabulary
+  remains in `review_status_models.py`; no DDD-Hexagonal dependency inversion
+  is introduced.
+- **Protocol authority**: `_role_for()` now accepts only an agent-valued next
+  actor for ordinary states and requires escalated artifact evidence to name
+  exactly one continuing side; the owner remains a separate reported fact.
+- **Module girth**: the 500-line service remains below the 650-line hard
+  ceiling and remains cohesive around one read-only adapter boundary. The
+  477-line example leaf and dedicated projection leaf keep each test
+  responsibility below the repository ceiling.
+
+No, there is nothing that needs to be addressed for Step 2.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Discovery complexity**: one root `iterdir()` pass and one per-candidate
+  normalization pass are linear in candidate count.
+- **Fixed candidate cost**: coordination fingerprinting is bounded at two
+  reads and artifact projection is constant over six kinds; there is no nested
+  candidate scan.
+- **Ordering complexity**: the sole super-linear operation is the required
+  deterministic `sorted()` call, which is `O(n log n)`.
+
+No, there is no performance issue that needs to be addressed for Step 2.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Executable-line coverage**: the dedicated example and property leaves
+  exercise every executable service line through the implementer's coverage
+  gate.
+- **Exact state coverage**: role, specialization, owner, lease, action,
+  artifact applicability, and outcome are asserted against independent
+  expected values for every active state; fail-closed human-turn and
+  ambiguous-escalation branches are explicit.
+- **Named boundary cases**: configuration propagation, absent serialized
+  umbrella identity, canonical mismatch, multiple healthy candidates, and
+  explicit no-lock/no-mutation evidence are now covered.
+
+No, there is no unit-tested class below 100% that needs completing for Step 2.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+- **Existing exchange behavior**: the implementation only observes existing
+  protocol APIs and does not change requestor, reviewer, store, or state-table
+  behavior.
+- **Status trust boundary**: malformed, concurrently changed, unsupported
+  human-turn, and ambiguous-escalation candidates are retained independently
+  without a guessed owner role.
+- **Repository compatibility**: the final Groundhog evidence reports a green
+  static gate, affected and full suites, 100% coverage, and no duration
+  outlier, exclusion, warning, or failure.
+
+No existing feature or reporting capability appears impaired for Step 2.
 
 ## Step 3 validation -- render and expose the rvw_status command
 
