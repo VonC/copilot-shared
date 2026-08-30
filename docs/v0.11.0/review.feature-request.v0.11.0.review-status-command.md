@@ -182,7 +182,9 @@ The nine placed questions are individually sound and I accept every recommended 
 
 ### Requested changes for feature-request review-status-command round 1
 
-Requested changes: 1. Add Q10 deciding which durable field establishes the continuing role, with the three options and the accepted Option J1 answer described in the writer instructions.
+Requested changes:
+
+1. Add Q10 deciding which durable field establishes the continuing role, with the three options and the accepted Option J1 answer described in the writer instructions.
 2. Add Q11 deciding whether the result reports lease freshness, with the accepted Option K1 answer.
 3. Add Q12 deciding how the command resolves the repository root, with the accepted Option L1 answer.
 4. Replace `awaiting-human-confirmation` with the implemented `convergence-gate` in the Q02 description and the Q04 option text.

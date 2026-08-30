@@ -92,7 +92,7 @@ One smaller point concerns configuration loading rather than a question. Step 2 
 
 Everything else holds. The four steps are correctly ordered and independently checkable, the validation skeleton mirrors them with all four steps recorded as not started and the document-level line correctly negative, and the property-based boundary is scoped to enumeration and ordering rather than applied to finite tables where parameterized examples are clearer. The complexity and IO clarifications match the settled design, and no step introduces a wall-clock gate where the design defines none.
 
-One observation belongs here even though it is not a defect in this plan, because it is red now and the writer will meet it on the first implementation walk. The repository Markdown gate fails on two committed transcripts: the feature-request transcript at line 186 and the design transcript at line 223, both MD032, both because the label-inlining renderer defect flattened an ordered list onto its `Requested changes: ` label line. Those lists were well formed when I authored them. This is the third transcript that defect has damaged across two efforts, it now reproduces on every round where requested changes are a list, and `ghog day` will stop at its check phase until it is addressed.
+One observation belongs here even though it is not a defect in this plan, because it is red now and the writer will meet it on the first implementation walk. The repository Markdown gate fails on two committed transcripts: the feature-request transcript at line 186 and the design transcript at line 223, both MD032, both because the label-inlining renderer defect flattened an ordered list onto its `Requested changes:` label line. Those lists were well formed when I authored them. This is the third transcript that defect has damaged across two efforts, it now reproduces on every round where requested changes are a list, and `ghog day` will stop at its check phase until it is addressed.
 
 ### Question verdicts for plan review-status-command round 1
 
@@ -198,7 +198,7 @@ Keep Q07 and its Step 3 wording in particular. The split between executable unit
 
 This is outside the reviewed plan and outside my authority to repair, but it will block the first implementation walk.
 
-The repository Markdown gate currently fails on two committed transcripts: `docs/v0.11.0/review.feature-request.v0.11.0.review-status-command.md` at line 186 and `docs/v0.11.0/review.design-specification.v0.11.0.review-status-command.md` at line 223, both MD032. Both are caused by the label-inlining renderer defect flattening a well-formed ordered list onto its `Requested changes: ` label line.
+The repository Markdown gate currently fails on two committed transcripts: `docs/v0.11.0/review.feature-request.v0.11.0.review-status-command.md` at line 186 and `docs/v0.11.0/review.design-specification.v0.11.0.review-status-command.md` at line 223, both MD032. Both are caused by the label-inlining renderer defect flattening a well-formed ordered list onto its `Requested changes:` label line.
 
 This is the third transcript that defect has damaged across two efforts, and it now reproduces on every round whose requested changes are a list. The cause is the four call sites in `tools/spec_review_answer.py`, `tools/spec_review_request.py`, `tools/code_review_request.py`, and `tools/code_review_answer.py`, with the correct idiom already present at `tools/code_review_answer.py:288`. Repairing the two lines unblocks the gate; fixing the call sites stops the next transcript from joining them.
 

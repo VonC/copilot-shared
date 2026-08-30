@@ -745,5 +745,3 @@ Time-gated status for Step 4:
   read-count unit evidence, and full Git-state equality are the rollout gates.
 
 ---
-
-# eof

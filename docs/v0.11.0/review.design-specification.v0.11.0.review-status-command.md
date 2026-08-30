@@ -219,7 +219,9 @@ The ten questions are the right ten, and I found no missing design decision. Nin
 
 ### Requested changes for design-specification review-status-command round 1
 
-Requested changes: 1. Widen Q04's state-aware resolver to cover both states in which the protocol writes a human next actor, keeping option D1: `convergence-gate` maps to `requestor`, `escalated` maps to the agent the artifact shape names, and any other human next actor remains inconsistent.
+Requested changes:
+
+1. Widen Q04's state-aware resolver to cover both states in which the protocol writes a human next actor, keeping option D1: `convergence-gate` maps to `requestor`, `escalated` maps to the agent the artifact shape names, and any other human next actor remains inconsistent.
 2. Update the Q04 description so it no longer implies the convergence gate is the only state recording a human next actor.
 3. State in the Q04 answer and the convergence acceptance row that `owner` shows `reviewer` at that gate while the continuing role is `requestor`.
 4. Reconcile the lease-freshness section of the design body with Q05's accepted option E1, removing the elapsed-or-overdue-seconds claim or changing the accepted answer.
