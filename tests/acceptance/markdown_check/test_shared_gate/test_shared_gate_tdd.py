@@ -44,19 +44,30 @@ def test_checked_repository_passes_public_launcher(
     assert repository_launcher_result.stderr == ""
 
 
-def test_zero_debt_markdown_rules_have_no_baseline_entries() -> None:
-    """Only confirmed MD033 debt may appear among Markdown rule allowances."""
+def test_markdown_baseline_contains_only_authorized_rules() -> None:
+    """Only confirmed MD033 and file-specific MD038 debt may be allowed."""
     root = steps.llm_shared_dir()
     payload = json.loads(
         (root / ".markdownlint-baseline.json").read_text(encoding="utf-8"),
     )
+    allowances = payload["allowances"]
     markdown_rules = {
         allowance["rule"]
-        for allowance in payload["allowances"]
+        for allowance in allowances
         if str(allowance["rule"]).startswith("MD")
     }
+    md038_allowances = [
+        allowance for allowance in allowances if allowance["rule"] == "MD038"
+    ]
 
-    assert markdown_rules == {"MD033"}
+    assert markdown_rules == {"MD033", "MD038"}
+    assert md038_allowances == [
+        {
+            "path": "docs/v0.11.0/review.design-specification.v0.11.0.review-status-command.md",
+            "rule": "MD038",
+            "count": 2,
+        },
+    ]
 
 
 # eof
