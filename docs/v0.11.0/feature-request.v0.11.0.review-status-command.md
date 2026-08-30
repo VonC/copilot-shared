@@ -171,6 +171,21 @@ finish an already-authorized owning action without repeating the human gate.
 The machine-readable result must remain stable enough for the later
 `rvw_resume` command to consume without parsing human prose.
 
+## File-based IO cost clarification for review status
+
+- Discover candidates with one bounded root enumeration of the reserved active
+  coordination prefix; do not scan the documentation tree or load unrelated
+  repository metadata.
+- Load review configuration once per command, then inspect only the strict
+  coordination record and fixed canonical artifact set for each candidate.
+- Keep per-candidate reads bounded independently of repository size, including
+  the before-and-after coordination fingerprint required to detect races.
+- Build both output forms from one in-memory normalized result and perform no
+  review, marker, index, working-tree, or ref write.
+
+The loading phase is therefore a small protocol-index read proportional to the
+number of active coordination candidates, not a broad metadata-loading pass.
+
 ## Read-only guarantees for `rvw_status`
 
 Running status must not:

@@ -214,6 +214,22 @@ candidate path and diagnostic even when their full identity cannot be trusted.
 The human and JSON renderers consume the same normalized result, and process
 status is derived from its overall outcome rather than from renderer text.
 
+## File-based IO cost clarification for v0.11.0 review status
+
+- Enumerate the reserved active-coordination prefix once at the resolved root;
+  never scan the documentation tree or inspect unrelated repository files.
+- Load `ReviewConfiguration` once and share it across every per-candidate
+  `ReviewExchangeObserver`.
+- For each candidate, read the coordination bytes before observation, inspect
+  only the six fixed artifact paths, then read the coordination bytes once more
+  for the required changed-during-read fingerprint check.
+- Normalize, order, and render the collected records in memory; neither renderer
+  performs another filesystem read.
+
+The scan is linear in active coordination candidates with a constant artifact
+set per candidate. It enters no transition lock and performs no protocol or Git
+write.
+
 ## Read-only trust boundary for v0.11.0 review status
 
 The status path opens artifacts for reading and performs bounded Git root
