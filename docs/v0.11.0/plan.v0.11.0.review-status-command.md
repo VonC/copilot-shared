@@ -218,6 +218,24 @@ no-write tests. Step 4 repeats the no-mutation proof through the real launcher.
 
 ---
 
+## Implementation decisions for v0.11.0 review status
+
+| Question | Decision | Integrated in | Rejected alternatives |
+| --- | --- | --- | --- |
+| Q01 | Use frozen standard-library dataclasses and string-valued enums for immutable status records, matching the surrounding exchange models without adding a dependency. | Step 1 classes and behavior | `NamedTuple` validation limits; a new runtime validation library |
+| Q02 | Give each public record an explicit `to_dict()` projection and compose those mappings at the result root so the versioned schema is deliberate. | Step 1 classes and behavior | One serializer coupled to every model; generic `dataclasses.asdict()` reflection |
+| Q03 | Keep private pure projection helpers in `review_status.py` initially and use the named `review_status_projection.py` split only when measured size requires it. | Step 2 classes and behavior; Step 2 split guidance | Immediate module extraction; moving protocol-state interpretation onto result records |
+| Q04 | Route IO through a private dependency bundle while keeping `collect_review_status(root, wall_clock)` as the small public API. | Step 2 tests first and classes and behavior | Scattered direct monkeypatches; public test-oriented collaborator parameters |
+| Q05 | Run broad permutation properties over normalized entries and retain parameterized filesystem cases for discovery integration. | Test-tree validation snapshot; Step 2 tests first | A temporary repository per generated example; fixed permutations without property coverage |
+| Q06 | Pin representative complete JSON and human outputs, then use focused assertions for finite variants. | Step 3 tests first | Complete goldens for every case; substring and parsed-field assertions alone |
+| Q07 | Test executable launcher forwarding with a controlled target in Step 3 and reserve real nested-caller repository parity for Step 4. | Step 3 tests first; Step 4 classes and behavior | Duplicated end-to-end matrices; acceptance-only launcher coverage; batch-file text matching |
+| Q08 | Create one acceptance `conftest.py` from the start for reusable repository and durable-exchange builders, leaving the scenario leaf an estimated 170 lines below the risk band. | Step 4 files, fixture behavior, budgets, and split guidance | Threshold-triggered extraction; immediate fragmentation across several helper modules |
+
+These decisions settle every implementation-detail choice raised by the plan
+review. No follow-up question is required before Step 1 can begin.
+
+---
+
 ## Shared execution command checklist for all v0.11.0 review-status steps
 
 Apply this checklist to every numbered step with its step-specific paths.
@@ -302,13 +320,19 @@ Step framing:
 
 **Classes and behavior**:
 
+- Use frozen standard-library dataclasses and string-valued enums for every
+  public status record and closed vocabulary; add no runtime model dependency.
 - `ReviewStatusOutcome`, `LeaseFreshness`, `ArtifactApplicability`, and
   `NextAction`: closed machine vocabularies from the settled design.
 - `ArtifactStatus` and `LeaseStatus`: keep raw evidence, derived state, and
   fixed timestamps together.
 - `ExchangeStatus` and `DamagedCandidateStatus`: form the tagged entry union.
+- Give each public record an explicit `to_dict()` projection, with the top-level
+  result composing those mappings so internal field names do not silently
+  define the versioned wire schema.
 - `ReviewStatusResult`: owns schema version, absolute root, ordered entries,
-  active count, error flag, JSON projection, and process-status mapping.
+  active count, error flag, composed JSON projection, and process-status
+  mapping.
 
 **Completion criteria**:
 
@@ -410,13 +434,17 @@ Step framing:
   fixed artifact probes, observer construction, store mutation methods, and
   transition-lock access.
 - Add Hypothesis coverage proving enumeration-order independence and stable
-  identity/candidate ordering for arbitrary distinct valid and malformed names.
+  identity/candidate ordering over generated normalized entries; retain focused
+  parameterized filesystem permutations for discovery integration.
 
 **Classes and behavior**:
 
 - `collect_review_status(root, wall_clock)`: load configuration and evaluation
   time once, collect candidates, normalize entries, sort them, and return one
   `ReviewStatusResult`.
+- Keep its production signature small while routing filesystem and observer
+  access through a private dependency bundle whose defaults use the real
+  repository APIs and whose test doubles count reads and reject writes.
 - Candidate parsing: use `parse_transient_identity`, `parse_json_markdown`, and
   `CoordinationRecord.from_dict`, then compare filename identity, record
   context, and `derive_artifact_paths` before observation.
@@ -426,7 +454,8 @@ Step framing:
 - Fingerprint guard: compare exact coordination bytes before and after
   observation and convert a mismatch into changed-during-read evidence.
 - Pure projection helpers: implement the settled state-aware role, lease,
-  artifact, next-action, outcome, and deterministic sort tables.
+  artifact, next-action, outcome, and deterministic sort tables privately in
+  `review_status.py`; extract them only at the named size boundary.
 
 **Completion criteria**:
 
@@ -528,11 +557,14 @@ Step framing:
   labels.
 - Cover deterministic compact JSON, Unicode/path handling, schema version,
   null standalone umbrella, tagged entries, and renderer no-IO behavior.
+- Pin complete compact JSON strings and complete representative human blocks,
+  then use focused field assertions for the remaining finite variants.
 - Cover `--format human`, `--format json`, `--root`, upward caller discovery,
   invalid roots, operational failures, stdout/stderr separation, and statuses
   `0`, `3`, and `2`.
 - Cover launcher self-location, newest llm-shared Python selection, caller
-  directory preservation, `PYTHONPATH`, and exit-code forwarding.
+  directory preservation, `PYTHONPATH`, and exit-code forwarding through a
+  controlled executable target rather than batch-file text matching.
 
 **Classes and behavior**:
 
@@ -715,340 +747,3 @@ Time-gated status for Step 4:
 ---
 
 # eof
-
-## Open questions for the v0.11.0 review-status-command implementation plan
-
-### Q01: Concrete immutable record mechanism
-
-Question description: Step 1 requires immutable typed records and closed
-vocabularies, but it does not name the concrete Python mechanism. Which
-mechanism should `tools/review_status_models.py` use so validation, comparison,
-and later JSON projection stay explicit without adding a dependency?
-
-#### BBQ for Q01
-
-The plan has specified the compartments of a toolbox but not the material used
-to make them. A rigid molded tray makes every tool location obvious, while a
-looser bag is quicker to assemble but easier to misuse. In this picture: the
-toolbox is the status result, the compartments are its typed fields, and the
-material is the Python record mechanism.
-
-#### Options for Q01
-
-- Option 1A: Use frozen standard-library dataclasses plus string-valued enums.
-  - pro: Matches the no-new-dependency constraint and gives explicit fields,
-    validation hooks, equality, and immutability.
-  - con: Requires deliberate constructor validation and serialization code.
-- Option 1B: Use `NamedTuple` records plus enums.
-  - pro: Produces compact immutable values with tuple equality.
-  - con: Makes nontrivial validation and schema evolution awkward.
-- Option 1C: Add a runtime validation library such as Pydantic.
-  - pro: Provides rich validation and serialization facilities.
-  - con: Adds a dependency and a second model convention to the repository.
-
-#### Recommended option for Q01 (with arguments for this choice)
-
-Option 1A: Frozen dataclasses and string-valued enums provide the strict typed
-boundary the plan needs while following the repository's standard-library
-model style. Their small amount of explicit validation is useful because it
-makes the status schema rules visible in the implementation.
-
-#### Answer to Q01: option 1A (with reason why it must be accepted as the answer)
-
-Option 1A: Accept frozen dataclasses plus string-valued enums because they keep
-the new public result immutable, dependency-free, and straightforward to test.
-
-### Q02: Ownership of JSON schema projection
-
-Question description: Step 1 calls for stable `to_dict()` output, and Step 3
-adds a JSON renderer. Should each model explicitly project its schema, should a
-single serializer inspect all records, or should generic dataclass conversion
-define the wire format?
-
-#### BBQ for Q02
-
-A shipping manifest can be filled out at each packing station, reconstructed by
-one clerk at the loading dock, or inferred from whatever happens to be in each
-box. In this picture: packing stations are individual model types, the loading
-dock is the JSON renderer, and the manifest is the versioned machine schema.
-
-#### Options for Q02
-
-- Option 2A: Give each public record an explicit `to_dict()` projection and let
-  the top-level result compose those projections.
-  - pro: Keeps wire names, enum values, nulls, and field order intentional and
-    close to the owning type.
-  - con: Adds repetitive projection methods across several small records.
-- Option 2B: Put all projection logic in one serializer module.
-  - pro: Centralizes the machine-format implementation.
-  - con: Couples one function to every model field and can drift from model
-    validation.
-- Option 2C: Use `dataclasses.asdict()` followed by generic enum conversion.
-  - pro: Requires the least handwritten code.
-  - con: Accidentally turns internal field layout into the public schema and
-    makes later refactoring risky.
-
-#### Recommended option for Q02 (with arguments for this choice)
-
-Option 2A: Explicit projections make the versioned output a deliberate API and
-allow tests to pin every nested shape without teaching the renderer about model
-internals. The repetition is bounded because the artifact set and record types
-are fixed.
-
-#### Answer to Q02: option 2A (with reason why it must be accepted as the answer)
-
-Option 2A: Accept per-record explicit projection because schema stability is
-more important than minimizing a small amount of deterministic mapping code.
-
-### Q03: Initial placement of pure projection helpers
-
-Question description: Step 2 estimates `tools/review_status.py` at up to 450
-lines and defers `tools/review_status_projection.py` until the service would
-exceed 650. Should role, lease, artifact, action, outcome, and ordering helpers
-start in the service or be separated immediately?
-
-#### BBQ for Q03
-
-A workshop can keep measuring tools beside the assembly bench until space runs
-out, or build a dedicated measuring station before the first product. In this
-picture: the assembly bench is `review_status.py`, the measuring tools are the
-pure projection tables, and the dedicated station is
-`review_status_projection.py`.
-
-#### Options for Q03
-
-- Option 3A: Keep private pure helpers in `review_status.py` initially and split
-  only if the repository ceiling or a clear responsibility boundary requires
-  it.
-  - pro: Keeps one cohesive collection implementation and follows the current
-    file list and advisory estimate.
-  - con: The service may become visually dense before reaching the hard limit.
-- Option 3B: Create `review_status_projection.py` in Step 2 from the start.
-  - pro: Separates pure mapping tests from filesystem orchestration immediately.
-  - con: Adds a production module and cross-module API before measured size
-    shows that it is needed.
-- Option 3C: Put the projection helpers on the result models.
-  - pro: Reduces the number of service-level helpers.
-  - con: Mixes observed protocol-state interpretation into transport records.
-
-#### Recommended option for Q03 (with arguments for this choice)
-
-Option 3A: Begin with private pure helpers in the service because the expected
-450 lines remain below the 550-line risk band and the plan already defines a
-specific extraction boundary if growth proves the estimate wrong.
-
-#### Answer to Q03: option 3A (with reason why it must be accepted as the answer)
-
-Option 3A: Accept the single initial service module because it avoids premature
-surface area while preserving a ready, responsibility-based split path.
-
-### Q04: Read-boundary injection for bounded IO tests
-
-Question description: Step 2 requires exact assertions for configuration loads,
-candidate enumeration, coordination reads, artifact probes, and forbidden
-writes. How should tests control those boundaries without complicating the
-public `collect_review_status(root, wall_clock)` API?
-
-#### BBQ for Q04
-
-To audit a meter, inspectors can replace the whole pipe network, attach a test
-panel behind the public gauge, or watch every valve with scattered cameras. In
-this picture: the gauge is `collect_review_status`, the test panel is a private
-dependency bundle, and the cameras are individual monkeypatches at filesystem
-call sites.
-
-#### Options for Q04
-
-- Option 4A: Keep the public function simple and route its IO through a small
-  private dependency bundle whose default uses the real repository APIs.
-  - pro: Enables precise deterministic counts and race simulation while keeping
-    callers unaware of test seams.
-  - con: Introduces an internal abstraction used mainly for orchestration tests.
-- Option 4B: Monkeypatch `Path`, parser, store, and observer functions directly
-  in each test.
-  - pro: Adds no production abstraction.
-  - con: Produces brittle tests coupled to import locations and makes exact
-    read accounting hard to understand.
-- Option 4C: Add optional collaborators to the public collector signature.
-  - pro: Makes every dependency explicit and directly replaceable.
-  - con: Exposes test-oriented parameters in the command's production API.
-
-#### Recommended option for Q04 (with arguments for this choice)
-
-Option 4A: A private dependency bundle gives the read-count and
-changed-during-read tests one controlled seam while the public collector keeps
-only meaningful production inputs. It also makes forbidden lock and write
-access easy to fail immediately.
-
-#### Answer to Q04: option 4A (with reason why it must be accepted as the answer)
-
-Option 4A: Accept a private IO dependency bundle because it provides strong,
-stable bounded-read evidence without widening the public command contract.
-
-### Q05: Property-based test boundary
-
-Question description: Step 2 requires Hypothesis coverage for enumeration-order
-independence across valid and malformed names. Should each generated example
-build filesystem candidates, exercise pure ordering inputs, or combine both
-levels?
-
-#### BBQ for Q05
-
-A sorter can be stress-tested with labels on a tabletop, with full parcels on a
-conveyor, or with labels for volume and a few parcels for integration. In this
-picture: labels are normalized status entries, parcels are filesystem-backed
-candidates, and the sorter is deterministic result ordering.
-
-#### Options for Q05
-
-- Option 5A: Generate normalized entries for high-volume permutation properties
-  and keep representative filesystem permutations in parameterized tests.
-  - pro: Gives broad, fast ordering coverage while preserving focused discovery
-    integration evidence.
-  - con: The property test alone does not exercise parsing and IO.
-- Option 5B: Build a temporary filesystem for every generated example.
-  - pro: Exercises the complete discovery pipeline under generated inputs.
-  - con: Makes shrinking slow and can turn an ordering property into a flaky IO
-    workload.
-- Option 5C: Test only a fixed matrix of filesystem permutations.
-  - pro: Is simple and easy to diagnose.
-  - con: Does not satisfy the plan's explicit arbitrary-order property goal.
-
-#### Recommended option for Q05 (with arguments for this choice)
-
-Option 5A: Keep the high-cardinality permutation property pure, then use
-parameterized filesystem tests to prove that discovery supplies the same
-normalized inputs. This preserves both speed and boundary coverage.
-
-#### Answer to Q05: option 5A (with reason why it must be accepted as the answer)
-
-Option 5A: Accept the layered property strategy because it proves ordering over
-many inputs without making filesystem cost dominate the test suite.
-
-### Q06: Renderer regression evidence
-
-Question description: Step 3 asks for stable human and compact JSON output but
-does not say whether tests should rely on complete golden strings, targeted
-field assertions, or a mixture. Which evidence best protects formatting and
-schema stability while keeping failures readable?
-
-#### BBQ for Q06
-
-A printer can be checked by comparing the whole proof sheet, measuring only key
-marks, or doing both at different levels. In this picture: the proof sheet is a
-complete renderer snapshot, the key marks are field assertions, and the printer
-is the pair of status renderers.
-
-#### Options for Q06
-
-- Option 6A: Assert complete compact JSON strings and complete representative
-  human blocks, with focused assertions for variant fields.
-  - pro: Pins ordering, whitespace, labels, nulls, and tags while limiting large
-    expected fixtures.
-  - con: Intentional presentation changes require updating representative
-    snapshots.
-- Option 6B: Assert every complete output for every scenario.
-  - pro: Maximizes byte-level regression detection.
-  - con: Creates repetitive fixtures and noisy failures for small formatting
-    changes.
-- Option 6C: Assert only parsed JSON fields and human substrings.
-  - pro: Produces resilient, concise tests.
-  - con: Does not prove byte stability, complete field presence, or label order.
-
-#### Recommended option for Q06 (with arguments for this choice)
-
-Option 6A: Complete representative outputs establish the stable formatting
-contract, while targeted variant assertions keep the finite state matrix from
-duplicating large strings.
-
-#### Answer to Q06: option 6A (with reason why it must be accepted as the answer)
-
-Option 6A: Accept mixed golden and focused assertions because it protects the
-wire and human contracts without making every test a bulky snapshot.
-
-### Q07: Launcher coverage split between unit and acceptance tests
-
-Question description: Step 3 assigns launcher self-location and exit forwarding
-to the CLI unit leaf, while Step 4 invokes the real batch launcher end to end.
-How should those tests divide responsibility so the same subprocess scenarios
-are not duplicated?
-
-#### BBQ for Q07
-
-A vehicle can be checked on a component bench and again on a road, but repeating
-the entire road course in both places wastes time. In this picture: the
-component bench is the Step 3 unit leaf, the road is Step 4 acceptance, and the
-vehicle is `rvw_status.bat` plus its Python entry point.
-
-#### Options for Q07
-
-- Option 7A: Keep Step 3 launcher tests focused on argument and exit-code
-  forwarding with a controlled Python target, and reserve real-repository
-  caller-root parity for Step 4.
-  - pro: Gives fast launcher diagnostics without duplicating acceptance setup.
-  - con: Requires a narrow test hook or controlled environment for the batch
-    process.
-- Option 7B: Run the same real temporary-repository subprocess matrix in both
-  steps.
-  - pro: Gives maximal end-to-end confidence at each layer.
-  - con: Duplicates slow setup and makes ownership of failures unclear.
-- Option 7C: Test the batch launcher only in Step 4.
-  - pro: Keeps unit tests entirely inside Python.
-  - con: Delays discovery of quoting or exit-forwarding defects until the final
-    step.
-
-#### Recommended option for Q07 (with arguments for this choice)
-
-Option 7A: A narrow Step 3 process test should pin the batch contract, while
-Step 4 alone owns real nested repositories and payload parity. This catches
-launcher defects early without repeating the feature matrix.
-
-#### Answer to Q07: option 7A (with reason why it must be accepted as the answer)
-
-Option 7A: Accept the focused-unit and real-acceptance split because each layer
-then has distinct evidence and faster failures.
-
-### Q08: Acceptance fixture extraction timing
-
-Question description: The original Step 4 draft estimated one acceptance file
-at 520 lines, only 30 lines below the risk band, and proposed `conftest.py` only
-after the file reached 550. Should reusable repository and exchange builders be
-extracted from the start or only after measured growth?
-
-#### BBQ for Q08
-
-A crowded kitchen can install a prep counter before opening, wait until the main
-counter is full, or move every station into a separate room. In this picture:
-the main counter is the acceptance test leaf, the prep counter is
-`conftest.py`, and prepared ingredients are reusable repository and exchange
-builders.
-
-#### Options for Q08
-
-- Option 8A: Create `tests/acceptance/review_status/conftest.py` in Step 4 from
-  the start for repository and durable-exchange builders.
-  - pro: Keeps the scenario leaf focused and provides margin below the risk band.
-  - con: Adds one planned file before an actual line count proves it mandatory.
-- Option 8B: Keep all helpers in the acceptance leaf until it reaches 550 lines,
-  then extract them.
-  - pro: Follows measured growth and avoids a speculative file.
-  - con: Makes a near-threshold file likely and forces a mechanical split during
-    the final implementation step.
-- Option 8C: Create multiple helper modules immediately.
-  - pro: Maximizes responsibility separation from the start.
-  - con: Spreads one acceptance suite across more files than current evidence
-    justifies.
-
-#### Recommended option for Q08 (with arguments for this choice)
-
-Option 8A: The estimate is already close enough to the risk band that one
-conventional `conftest.py` is justified. It keeps builders reusable and leaves
-the public scenario file at an estimated 380 lines, 170 lines below the
-550-line risk band instead of only 30, without over-fragmenting the suite.
-
-#### Answer to Q08: option 8A (with reason why it must be accepted as the answer)
-
-Option 8A: Accept one acceptance `conftest.py` from the start because the
-planned scenario breadth makes the split predictable and responsibility-based;
-the separate 240-line fixture estimate leaves the 380-line scenario leaf with
-170 lines of estimated risk-band headroom.
