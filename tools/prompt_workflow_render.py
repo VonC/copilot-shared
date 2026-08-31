@@ -54,4 +54,35 @@ def render_step_command(
     return f"{render_command(prefix, instruction, document)} step {implementation_step}"
 
 
+def render_umbrella_command(
+    prefix: str,
+    instruction: str,
+    document: str,
+    umbrella: str | None,
+) -> str:
+    """Append the umbrella a review role must carry in its exchange context.
+
+    A reviewer builds its core context from this line. Omitting the umbrella
+    there while the published request and the coordination record both carry
+    one makes every exchange operation report `inconsistent` with the opaque
+    "artifact context differs from core context", naming neither the umbrella
+    nor the missing flag. Naming it here is what lets the reviewer discover it.
+
+    Args:
+        prefix: The host command prefix.
+        instruction: The instruction or role name, with or without its suffix.
+        document: The repository-relative reviewed document.
+        umbrella: The repository-relative umbrella draft, or None when the
+            effort has none.
+
+    Returns:
+        The ordinary command when there is no umbrella, and the same command
+        followed by ``with umbrella <path>`` when there is one.
+    """
+    command = render_command(prefix, instruction, document)
+    if umbrella is None:
+        return command
+    return f"{command} with umbrella {umbrella}"
+
+
 # eof

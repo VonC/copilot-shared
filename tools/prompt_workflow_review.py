@@ -169,6 +169,23 @@ def live_specification_document(
     return route.context.document_path if route is not None else None
 
 
+def specification_umbrella(root: Path, topic: Topic) -> Path | None:
+    """Return the umbrella both review roles must carry, when the effort has one.
+
+    Routing names this on the emitted command so a role does not have to
+    rediscover it. A role whose exchange context omits an umbrella the
+    published request carries is reported `inconsistent` by every operation.
+
+    Args:
+        root: The project root the documents live under.
+        topic: The resolved topic, whose draft carries the umbrella marker.
+
+    Returns:
+        The umbrella path, or None when the effort has none.
+    """
+    return _umbrella_path(root, topic)
+
+
 def forced_specification_document(
     root: Path,
     topic: Topic,

@@ -22,12 +22,47 @@ Omit `--umbrella` when there is no umbrella. Omit `--implementation-step` for
 specification review. Do not search for a nearby document when the supplied
 exact path is missing or invalid.
 
+Both roles must pass the *same* context, because every operation compares the
+context built from these arguments against the one stored in the request
+artifact and the coordination record. A role that omits an umbrella the other
+supplied gets `state: inconsistent` and the diagnostic `artifact context
+differs from core context; coordination context differs from core context`,
+which names two differences but neither the field nor the flag. That is a
+mismatched invocation, not a damaged exchange: `reclaim`, `resolve` and
+`archive` are all wrong answers to it. Re-run `status` with the umbrella
+included before concluding anything about the exchange. `pw` names it on the
+routed command as `with umbrella <umbrella-draft>`, and it is also readable
+from `umbrella_path` in the published request envelope and from
+`context.umbrella_path` in the coordination record.
+
 ## Caller-owned Markdown inputs for review requestors
 
 Create substantive input as UTF-8 files directly under the project root. Each
 name must follow the effectively ignored `a.*` convention. The launcher checks
 the location, name, Git ignore result, existence, and UTF-8 encoding before it
 reads a file once. It never deletes a caller-owned input.
+
+### Caller-owned paths are never protocol artifact paths
+
+An `a.*` name is necessary and not sufficient. Every path in the `paths` object
+a launcher returns — `request`, `answer`, `tombstone`, `coordination`,
+`transition_lock` — also carries an ignored `a.*` name, and each one is owned
+by the shared core alone. A caller-owned input or renderer output must never be
+one of them. Choose a name that cannot collide, such as
+`a.spec-review.answer-content.<slug>.md`, and pass it to
+`--answer-content-output` or `--request-content-output`; publication then
+copies that content into the protocol path itself.
+
+Writing a rendered artifact straight to `paths.request` or `paths.answer` does
+not publish it, and it is not a shortcut for publication. It creates a live
+artifact the exchange never recorded: the transcript gains no entry, the
+coordination record is not advanced, and the counterpart artifact is not
+consumed. The next `status` then observes a request and an answer at once,
+which `_classify_invalid_live_shape` treats as mutually exclusive, and every
+later operation reports `state: inconsistent` before any status or lease logic
+runs. The round cannot proceed and cannot be reclaimed, because the fault is a
+shape the protocol forbids rather than a lease that lapsed. Render to a
+scratch output, then publish; never render onto the artifact.
 
 Use the shared `templates/review-request.template.md` shape for complete
 request or answer content. Start the Markdown with one `#` title, make
