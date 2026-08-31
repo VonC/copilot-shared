@@ -12,7 +12,7 @@ from tools import prompt_workflow
 from tools import prompt_workflow_memory as memory
 from tools import prompt_workflow_post_commit as post_commit
 from tools import prompt_workflow_skill as skill
-from tools.prompt_workflow_models import MemoryRecord, Topic
+from tools.prompt_workflow_models import MemoryRecord, Topic, WorkflowState
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -476,6 +476,38 @@ def test_post_commit_command_implements_the_next_step(
     """The step after the committed one gives an implement-step command."""
     _setup_plan_tree(monkeypatch, tmp_path, _VALIDATION_TWO_STEPS)
     command = skill.post_commit_command(tmp_path, "1", _CLAUDE)
+    assert command == "/implement-step on docs/plan.v0.9.0.handoff_automation.md step 2"
+
+
+def test_post_commit_command_names_an_unwritten_plan(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Continuation derives the canonical plan name when only validation exists."""
+    topic = _topic(tmp_path)
+    validation = tmp_path / "docs" / "plan.v0.9.0.handoff_automation.validation.md"
+    validation.write_text(_VALIDATION_TWO_STEPS, encoding="utf-8")
+    state = WorkflowState(
+        requirement=None,
+        design=None,
+        plan=None,
+        validation_plan=validation,
+        requirement_has_open_questions=False,
+        design_has_open_questions=False,
+        plan_has_open_questions=False,
+        memory_step=None,
+    )
+    monkeypatch.setattr(skill.git, "current_branch", lambda _root: topic.slug)
+    monkeypatch.setattr(skill.memory, "read_memory", lambda _root: None)
+    monkeypatch.setattr(
+        skill.handoff,
+        "resolve_current_topic",
+        lambda *_args: topic,
+    )
+    monkeypatch.setattr(skill.steps, "compute_state", lambda *_args: state)
+
+    command = skill.post_commit_command(tmp_path, "1", _CLAUDE)
+
     assert command == "/implement-step on docs/plan.v0.9.0.handoff_automation.md step 2"
 
 

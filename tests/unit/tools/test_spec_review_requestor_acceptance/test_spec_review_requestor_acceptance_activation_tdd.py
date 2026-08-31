@@ -90,6 +90,7 @@ def activation_journey(tmp_path: Path) -> None:
     expected = (
         "$llm-shared:spec-review-requestor on "
         "docs/v0.11.0/feature-request.v0.11.0.activation.md"
+        " with umbrella docs/v0.11.0/draft.v0.11.0.review-mode.md"
     )
     activated = _run_cli(root, effort.context, "activate")
     started = _run_cli(root, effort.context, "start")

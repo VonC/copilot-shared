@@ -64,9 +64,14 @@ def test_generated_state_maps_once_to_one_owner_or_no_route(
                 if observed is ArtifactState.REQUEST_PENDING
                 else "spec-review-requestor"
             )
-            instruction, separator, document = command.partition(" on ")
+            instruction, separator, target = command.partition(" on ")
             assert (instruction, separator) == (f"/{role}", " on ")
+            document, umbrella_separator, umbrella = target.partition(
+                " with umbrella ",
+            )
             assert document.endswith("docs/plan.v1.2.3.routing.md")
+            assert umbrella_separator == " with umbrella "
+            assert umbrella.endswith("docs/draft.v1.2.3.umbrella.md")
 
 
 # eof

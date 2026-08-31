@@ -61,7 +61,10 @@ def test_every_specification_type_routes_to_reviewer_with_exact_identity(
         {"CODEX_THREAD_ID": "acceptance"},
     )
 
-    expected = f"$llm-shared:spec-reviewer on {effort.document.relative_to(effort.root).as_posix()}"
+    document = effort.document.relative_to(effort.root).as_posix()
+    assert effort.context.umbrella_path is not None
+    umbrella = effort.context.umbrella_path.relative_to(effort.root).as_posix()
+    expected = f"$llm-shared:spec-reviewer on {document} with umbrella {umbrella}"
     assert (ordinary, explicit, envelope.identity.type_token) == (
         expected,
         expected,
