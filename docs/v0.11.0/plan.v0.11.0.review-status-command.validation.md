@@ -291,15 +291,23 @@ No, there is no unit-tested class below 100% that needs completing for Step 2.
 
 No existing feature or reporting capability appears impaired for Step 2.
 
-## Step 3 validation -- render and expose the rvw_status command
+## Step 3 validation -- expose the status skill and rvw_status command
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because no implementation check has taken place and the planned files have not been created.
+Yes. Step 3 has been fully implemented.
+
+The implementation check found every planned Step 3 file and verified that one
+normalized result drives both output forms, the CLI owns root and process
+boundaries, the launcher preserves the caller repository, and the public
+`$llm-shared:review-status-command` skill delegates to that launcher through
+one canonical instruction. No missing implementation work remains for this
+step.
 
 ### Step 3 goal
 
-Confirm that deterministic human-readable output exposes the absolute
+Confirm that the installed plugin exposes a discoverable read-only status
+skill, and that deterministic human-readable output exposes the absolute
 repository root, command role, umbrella state, every candidate detail, the
 semantic next action, and aggregate trust status through a root Windows
 launcher with exact exit-code propagation.
@@ -310,12 +318,21 @@ launcher with exact exit-code propagation.
 - Output order follows normalized identity and path ordering.
 - The launcher works from repository subdirectories.
 - Exit codes remain exactly 0, 3, or 2 according to the typed result.
+- Every host adapter links directly to the canonical instruction and copies no
+  status or mutation policy.
 
 ### Step 3 files to validate
 
 - `tools/review_status_render.py`
 - `tools/review_status_cli.py`
 - `rvw_status.bat`
+- `instructions/review-status-command.md`
+- `.agent/workflows/review-status-command.md`
+- `.agents/llm-shared/instructions/review-status-command.md`
+- `.agents/llm-shared/skills/review-status-command/SKILL.md`
+- `.claude/skills/review-status-command/SKILL.md`
+- `.github/skills/review-status-command/SKILL.md`
+- `tests/unit/tools/test_instruction_structure/test_review_status_command_adapters_tdd.py`
 - `tests/unit/tools/test_review_status_render/__init__.py`
 - `tests/unit/tools/test_review_status_render/test_review_status_render_tdd.py`
 - `tests/unit/tools/test_review_status_cli/__init__.py`
@@ -323,27 +340,86 @@ launcher with exact exit-code propagation.
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- `tools/review_status_render.py` renders one immutable result as either a
+  stable labelled human report or compact Unicode JSON. Healthy blocks expose
+  identity, reviewed document, umbrella, protocol position, distinct
+  role/specialization/owner fields, lease evidence, all six artifacts, next
+  action, and diagnostic. Damaged blocks retain only safe evidence.
+- `tools/review_status_cli.py` resolves the Git root, collects and renders once,
+  routes output by trust outcome, and returns typed status `0`, `3`, or `2`.
+- `rvw_status.bat` self-locates the newest llm-shared Python, prepends its root
+  to `PYTHONPATH`, retains `%CD%`, forwards arguments, and propagates status.
+- `instructions/review-status-command.md` defines the read-only agent workflow,
+  invokes `rvw_status` by full path from the caller repository, interprets
+  statuses `0`, `3`, and `2`, and forbids mutation or duplicated state logic.
+- Thin Codex, Claude, GitHub, and workflow adapters expose the exact
+  `review-status-command` name and point directly to the canonical instruction.
+- The planned test leaves cover complete output snapshots, compact JSON,
+  damaged mixtures, no-IO rendering, roots, outcomes, streams, direct module
+  execution, the real launcher through a controlled executable target, and
+  adapter structure and discovery metadata.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+No new public domain type was needed. The CLI adds private `_InvocationError`
+and `_ArgumentParser` adapter types so argparse failures obey status two instead
+of terminating outside `main()`.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Both renderers depend only on `ReviewStatusResult`; the no-IO test rejects
+  filesystem or subprocess access after collection.
+- Root discovery, clock creation, stream routing, and process status remain in
+  the thin CLI. The service is called once and renderers repeat no status logic.
+- The canonical skill owns only invocation and result interpretation. Every
+  provider wrapper is a thin direct reference, so no host-specific policy fork
+  can drift from `rvw_status`.
+- The real batch-process test proves runtime selection, caller preservation,
+  `PYTHONPATH`, argument forwarding, and status propagation.
+- Ty, Pyright, Ruff, Radon, Vulture, file-size, Markdown, ShellCheck, and EOF
+  checks pass. Every planned Python file remains below 650 lines.
+
+No, there is nothing that needs to be addressed for Step 3.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Rendering is an in-memory linear projection; CLI work remains one root
+  resolution, one collection, and one render.
+- Profiling found 0.617 seconds of the initial 0.69-second launcher-test call in
+  Windows subprocess startup/join. The unchanged real process and assertions
+  now use a module-scoped fixture, leaving the measured call below the floor.
+- The final full run reports no duration outlier; its slowest measured call is
+  an unrelated recovery test at 0.34 seconds against the 0.50-second floor.
+
+No, there is no performance issue that needs to be addressed for Step 3.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- The renderer and CLI leaves retain their 19 passing calls. The new adapter
+  leaf adds three passing calls for canonical references, public discovery
+  metadata, and absence of copied policy.
+- The final detached `ghog day` reached `state=done`, `exit=0`: static checks,
+  three affected calls, and all 2,205 full-suite calls passed at 100% coverage,
+  with zero warnings, failures, or outliers.
+- The skill creator reports `Skill is valid!`, and plugin validation passes for
+  `.agents/llm-shared` after refreshing the cachebuster to
+  `0.1.0+codex.20260831140034`.
+- Coverage includes existing non-Git roots, absent Git ancestors, the aware
+  production clock, and direct module status forwarding.
+
+No, there is no unit-tested class below 100% that needs completing for Step 3.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Human and JSON output share the model projection and preserve ordered tagged
+  healthy/damaged evidence.
+- Umbrella absence is `none` for humans and `null` for machines; exact paths
+  and Unicode repository roots survive without renderer normalization.
+- Operational failures emit no partial stdout payload, while untrustworthy
+  candidate evidence remains available on stdout with status `3`.
+- The complete repository gate found no existing feature regression.
+
+No existing feature or reporting capability appears impaired for Step 3.
 
 ## Step 4 validation -- prove end-to-end behavior and read-only rollout
 
