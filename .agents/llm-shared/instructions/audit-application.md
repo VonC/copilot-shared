@@ -1,0 +1,1 @@
+Read and follow [the canonical instruction](../skills/audit-application/SKILL.md)
