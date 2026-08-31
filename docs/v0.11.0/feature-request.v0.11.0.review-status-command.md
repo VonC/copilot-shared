@@ -1,19 +1,24 @@
-# Report active review status and responsible role
+# Report active review status through a skill and command
 
 ## User story for review status
 
-As a human or agent returning to an interrupted review, I want one read-only
-repository command to report every active review exchange, including whether
-the continuing agent is the requestor or the reviewer and which umbrella owns
-the work, so I can understand the durable workflow state without reconstructing
-its identity from prompt memory or transient shell state.
+As a human or agent returning to an interrupted review, I want an installed
+`$llm-shared:review-status-command` skill that uses one read-only repository
+command to report every active review exchange, including whether the
+continuing agent is the requestor or the reviewer and which umbrella owns the
+work, so I can discover and request the capability by name and understand the
+durable workflow state without reconstructing its identity from prompt memory
+or transient shell state.
 
 ## Review-mode revision for `rvw_status`
 
-The review-mode umbrella adds a repository-root `rvw_status` command, a shared
-read-only implementation, a concise human-readable report, and a stable
-machine-readable result. The command diagnoses specification and
-implementation-code exchanges from protocol-owned coordination records.
+The review-mode umbrella adds a public `review-status-command` skill, exposed
+by the installed llm-shared plugin as `$llm-shared:review-status-command`, plus
+a repository-root `rvw_status` command, a shared read-only implementation, a
+concise human-readable report, and a stable machine-readable result. The skill
+refers to the command as its execution mechanism. The command diagnoses
+specification and implementation-code exchanges from protocol-owned
+coordination records.
 
 The focused child draft adds two explicit identity rules:
 
@@ -38,11 +43,14 @@ The focused child draft adds two explicit identity rules:
 | Q10 | Derive the continuing role from `expected_next_actor` and report `owner` separately, because ownership and the next turn are distinct responsibilities. | Required `rvw_status` command contract | Using `owner` directs the wrong agent in a healthy request-pending round; showing both without a designated role leaves the next actor unclear. |
 | Q11 | Report `lease_renewed_at` and freshness against the configured wait timeout, preserving raw evidence and the degree of staleness needed for later reclaim decisions. | Required `rvw_status` command contract | A timestamp alone makes every caller repeat the comparison; omitting lease data loses the degree of staleness. |
 | Q12 | Resolve the repository from the caller's working directory by default, allow an explicit override, and require launcher/shared-entry-point parity. | Required `rvw_status` command contract | The installed location can select the tooling repository; a mandatory argument contradicts argument-free discovery. |
+| Q13 | Provide a public `review-status-command` skill, discoverable as `$llm-shared:review-status-command`, whose canonical instruction delegates status collection to `rvw_status`. | Required review-status skill contract | A command alone is not discoverable as a skill; copying command logic into an adapter would create competing implementations. |
 
 ## Current review-status behavior in v0.11.0
 
 - No repository-root `rvw_status` command provides a complete account of live
   review exchanges.
+- No installed `$llm-shared:review-status-command` skill exposes this
+  capability by name or directs an agent to the repository command.
 - A caller returning after a shell, VPN, terminal, computer, or agent restart
   must reconstruct the exchange family, reviewed document, round, artifacts,
   and responsible role from durable files and prior context.
@@ -54,19 +62,36 @@ The focused child draft adds two explicit identity rules:
 
 ## Gap to close for active review diagnosis
 
-1. Add a repository-root `rvw_status` launcher that needs no exchange-specific
+1. Add a public `review-status-command` skill that is discoverable after the
+   llm-shared plugin is installed and delegates status collection to
+   `rvw_status`.
+2. Add a repository-root `rvw_status` launcher that needs no exchange-specific
    arguments.
-2. Discover every live specification and implementation-code exchange from
+3. Discover every live specification and implementation-code exchange from
    protocol-owned coordination records.
-3. Return the complete durable identity and current state for each exchange.
-4. Make the continuing role explicit as `requestor` or `reviewer` in both
+4. Return the complete durable identity and current state for each exchange.
+5. Make the continuing role explicit as `requestor` or `reviewer` in both
    human-readable and machine-readable results.
-5. Make the umbrella relationship a labelled first-class fact, using the exact
+6. Make the umbrella relationship a labelled first-class fact, using the exact
    repository-relative umbrella path when present and an explicit absence when
    not present.
-6. Distinguish zero, one, and multiple live exchanges without silently choosing
+7. Distinguish zero, one, and multiple live exchanges without silently choosing
    one.
-7. Remain strictly read-only so diagnosis cannot alter or resume the workflow.
+8. Remain strictly read-only so diagnosis cannot alter or resume the workflow.
+
+## Required review-status skill contract
+
+The llm-shared plugin must expose a skill named `review-status-command`, so a
+user can invoke it as `$llm-shared:review-status-command`. Its reusable content
+must live in one canonical root instruction. Every provider-specific skill file
+must remain a thin adapter that refers directly to that canonical instruction
+rather than copying or summarizing it.
+
+The canonical skill instruction must invoke or direct the agent to invoke the
+repository-root `rvw_status` command and report its result. The skill must not
+reimplement exchange discovery, state classification, result rendering, or
+exit-code policy in Markdown. Its behavior remains read-only and accepts the
+same caller-repository default and explicit root override as the command.
 
 ## Required `rvw_status` command contract
 
@@ -202,42 +227,47 @@ after process or machine restarts without relying on the earlier prompt.
 
 ## Acceptance criteria for review status
 
-1. A repository-root `rvw_status` command and shared implementation are
+1. The installed llm-shared plugin exposes a `review-status-command` skill that
+   is discoverable as `$llm-shared:review-status-command`.
+2. The skill has one canonical root instruction, uses thin LLM-specific
+   adapters, and delegates status collection to `rvw_status` without copying
+   the command's discovery or classification logic.
+3. A repository-root `rvw_status` command and shared implementation are
    available for specification and implementation-code reviews, resolve the
    caller repository by default, accept an explicit root override, and agree
    when invoked from the same working directory.
-2. The command discovers live exchanges without requiring identity arguments
+4. The command discovers live exchanges without requiring identity arguments
    or resolving the repository from the launcher's installed location.
-3. Every active exchange explicitly reports the continuing agent as either a
+5. Every active exchange explicitly reports the continuing agent as either a
    `requestor` or a `reviewer` in human-readable output.
-4. The structured result carries the same unambiguous continuing-role identity.
-5. An exchange with an umbrella visibly reports the exact umbrella draft path
+6. The structured result carries the same unambiguous continuing-role identity.
+7. An exchange with an umbrella visibly reports the exact umbrella draft path
    in both output forms.
-6. An exchange without an umbrella explicitly reports that absence.
-7. The result includes state, family, reviewed document, applicable step,
+8. An exchange without an umbrella explicitly reports that absence.
+9. The result includes state, family, reviewed document, applicable step,
    round, occurrence, protocol-canonical artifact paths and their presence,
    separate owner and expected next actor, lease timestamp and derived
    freshness, and next protocol action.
-8. Zero, one, and multiple exchanges are distinguished without guessing or
+10. Zero, one, and multiple exchanges are distinguished without guessing or
    silently selecting an exchange.
-9. Every implemented nonterminal state is active, including
+11. Every implemented nonterminal state is active, including
    `convergence-gate`, `owning-action-pending`, escalated, abandoned,
    interrupted, repair-pending, and inconsistent outcomes, while `idle` is
    inactive.
-10. The structured result can be consumed by the later `rvw_resume` effort
+12. The structured result can be consumed by the later `rvw_resume` effort
    without scraping display text.
-11. Status remains strictly read-only across review artifacts, coordination
+13. Status remains strictly read-only across review artifacts, coordination
     state, markers, Git state, and workflow actions.
-12. Status derives its answer from durable repository evidence, reports lease
+14. Status derives its answer from durable repository evidence, reports lease
     freshness against the configured wait timeout, and works after the caller's
     prior shell or agent context has been lost.
 
 ## Scope boundaries and dependencies
 
-This feature owns status discovery and reporting only. It does not implement
-`rvw_resume`, renew or reclaim a lease, choose among multiple exchanges, or run
-requestor or reviewer actions. Those continuation behaviors belong to the
-separate `review-resume-command` umbrella item.
+This feature owns the read-only status skill, status discovery, and reporting
+only. It does not implement `rvw_resume`, renew or reclaim a lease, choose among
+multiple exchanges, or run requestor or reviewer actions. Those continuation
+behaviors belong to the separate `review-resume-command` umbrella item.
 
 The feature depends on the settled review exchange core and the specification
 and code requestor/reviewer roles whose durable coordination records it reads.

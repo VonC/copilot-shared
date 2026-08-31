@@ -23,6 +23,10 @@ The v0.11.0 outcomes are:
 
 ### In scope for v0.11.0 review status
 
+- a public `review-status-command` skill exposed by the installed llm-shared
+  plugin as `$llm-shared:review-status-command`;
+- one canonical skill instruction and thin provider adapters that delegate
+  status collection to `rvw_status`;
 - a repository-root `rvw_status` entry point that preserves caller context;
 - a shared read-only status service with human and JSON renderers;
 - canonical identity, role, umbrella, lease, artifact, and next-action fields;
@@ -190,6 +194,18 @@ work, human confirmation, authorized owning work, reclaim, repair, escalation
 resolution, and no safe action. The human command or description is rendered
 from that identity and the exact exchange context, so the two forms cannot
 drift.
+
+## Skill entry point for v0.11.0 review status
+
+The installed llm-shared plugin exposes the public skill name
+`$llm-shared:review-status-command`. Its canonical instruction invokes the
+repository-root `rvw_status` launcher from the caller repository and reports
+the typed command outcome. Provider-specific files contain only discovery
+metadata and a direct reference to that canonical instruction.
+
+The skill does not duplicate discovery, classification, rendering, or
+exit-code policy in Markdown. It remains read-only and does not resume, renew,
+reclaim, repair, cancel, complete, stage, or commit an exchange.
 
 ## Human report and command outcome for v0.11.0 review status
 

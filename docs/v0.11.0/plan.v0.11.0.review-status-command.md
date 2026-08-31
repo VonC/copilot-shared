@@ -513,6 +513,8 @@ Issues to address:
   without separate data gathering or status logic.
 - The repository has no caller-preserving `rvw_status` launcher or direct CLI
   with human/JSON selection and explicit root override.
+- The installed llm-shared plugin has no discoverable
+  `$llm-shared:review-status-command` skill that delegates to the launcher.
 
 Fix intent:
 
@@ -520,6 +522,8 @@ Fix intent:
   result outcome to process status.
 - Follow the root-launcher precedent so installed runtime location never
   replaces the caller repository.
+- Add one canonical skill instruction and thin provider adapters; keep all
+  status discovery and classification in `rvw_status`.
 
 Expected outcome:
 
@@ -528,6 +532,8 @@ Expected outcome:
 - JSON and human forms agree, direct and batch entry points select the same
   repository, and fatal invocation errors return status `2` without a partial
   trustworthy payload.
+- The installed plugin exposes `$llm-shared:review-status-command`, and every
+  provider adapter points directly to the same canonical read-only workflow.
 
 Step framing:
 
@@ -543,6 +549,16 @@ Step framing:
 - `tools/review_status_render.py` (new, to be created).
 - `tools/review_status_cli.py` (new, to be created).
 - `rvw_status.bat` (new, to be created).
+- `instructions/review-status-command.md` (new, to be created).
+- `.agent/workflows/review-status-command.md` (new, to be created).
+- `.agents/llm-shared/instructions/review-status-command.md` (new, to be
+  created).
+- `.agents/llm-shared/skills/review-status-command/SKILL.md` (new, to be
+  created).
+- `.claude/skills/review-status-command/SKILL.md` (new, to be created).
+- `.github/skills/review-status-command/SKILL.md` (new, to be created).
+- `tests/unit/tools/test_instruction_structure/test_review_status_command_adapters_tdd.py`
+  (new, to be created).
 - `tests/unit/tools/test_review_status_render/__init__.py` (new, to be created).
 - `tests/unit/tools/test_review_status_render/test_review_status_render_tdd.py`
   (new, to be created).
@@ -565,6 +581,8 @@ Step framing:
 - Cover launcher self-location, newest llm-shared Python selection, caller
   directory preservation, `PYTHONPATH`, and exit-code forwarding through a
   controlled executable target rather than batch-file text matching.
+- Cover the canonical skill instruction, direct adapter references, discovery
+  metadata, and the absence of copied status or mutation policy.
 
 **Classes and behavior**:
 
@@ -576,12 +594,17 @@ Step framing:
   collect once, render once, route streams, and return the typed status.
 - `rvw_status.bat`: self-locate the llm-shared runtime while retaining `%CD%`
   as the default discovery origin and forwarding all arguments and exit status.
+- `instructions/review-status-command.md`: direct the agent to the full-path
+  `rvw_status` launcher, preserve caller-root semantics, interpret statuses
+  `0`, `3`, and `2`, and stop after read-only reporting.
+- Provider adapters: expose the skill name and link directly to the canonical
+  instruction without copying command behavior.
 
 **Completion criteria**:
 
-- `ghog single tests/unit/tools/test_review_status_render/test_review_status_render_tdd.py tests/unit/tools/test_review_status_cli/test_review_status_cli_tdd.py`
+- `ghog single tests/unit/tools/test_review_status_render/test_review_status_render_tdd.py tests/unit/tools/test_review_status_cli/test_review_status_cli_tdd.py tests/unit/tools/test_instruction_structure/test_review_status_command_adapters_tdd.py`
   passes.
-- `rg -n "Role:|Specialization:|Owner:|Umbrella:|schema_version|--format|--root" tools/review_status_render.py tools/review_status_cli.py rvw_status.bat tests/unit/tools/test_review_status_render tests/unit/tools/test_review_status_cli`
+- `rg -n "Role:|Specialization:|Owner:|Umbrella:|schema_version|--format|--root|review-status-command|rvw_status" tools/review_status_render.py tools/review_status_cli.py rvw_status.bat instructions/review-status-command.md .agents/llm-shared/skills/review-status-command tests/unit/tools/test_review_status_render tests/unit/tools/test_review_status_cli tests/unit/tools/test_instruction_structure/test_review_status_command_adapters_tdd.py`
   shows the required visible fields and command contract.
 - Renderer tests prove no filesystem or subprocess access after collection.
 - `ghog day` reports the objective with `exit=0`.
@@ -596,6 +619,13 @@ Line-budget checkpoint:
   expected at or below 180 lines (advisory).
 - `rvw_status.bat`: before 0; non-Python launcher; Python ceiling not
   applicable; expected at or below 35 physical lines (advisory).
+- `instructions/review-status-command.md`: before 0; below-550 safe; repository
+  ceiling 650; expected at or below 80 lines (advisory).
+- Each provider adapter: before 0; below-550 safe; repository ceiling 650;
+  expected at or below 12 lines (advisory).
+- `tests/unit/tools/test_instruction_structure/test_review_status_command_adapters_tdd.py`:
+  before 0; below-550 safe; repository ceiling 650; expected at or below 100
+  lines (advisory).
 - `tests/unit/tools/test_review_status_render/__init__.py`: before 0; below-550
   safe; repository ceiling 650; expected at or below 5 lines (advisory).
 - `tests/unit/tools/test_review_status_render/test_review_status_render_tdd.py`:
@@ -616,8 +646,9 @@ Split guidance:
 
 Full workflow timing run readiness:
 
-- `tests/unit/tools/test_review_status_render/test_review_status_render_tdd.py`
-  and `tests/unit/tools/test_review_status_cli/test_review_status_cli_tdd.py`;
+- `tests/unit/tools/test_review_status_render/test_review_status_render_tdd.py`,
+  `tests/unit/tools/test_review_status_cli/test_review_status_cli_tdd.py`, and
+  `tests/unit/tools/test_instruction_structure/test_review_status_command_adapters_tdd.py`;
   `ghog day`.
 
 Time-gated status for Step 3:
