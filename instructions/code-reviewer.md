@@ -29,6 +29,15 @@ the request names one. Never search for a nearby plan, validation plan, request,
 answer, transcript, or exchange. Use only the plan and step supplied by `pw`
 and exact paths returned by the launchers.
 
+The umbrella is part of the compared context, so establish it before the first
+operation rather than guessing. Omitting one the request carries yields
+`state: inconsistent` with `artifact context differs from core context;
+coordination context differs from core context`, which names neither the field
+nor the flag and must not be treated as a damaged exchange. Read it from the
+`umbrella_path` of the request envelope at `paths.request`, or from
+`context.umbrella_path` in the coordination record; `null` in both means the
+effort has none and the flag is correctly omitted.
+
 ## Ordered reviewer sequence
 
 1. Run `status` through `bin/review_exchange.bat` with the exact context and
@@ -73,6 +82,12 @@ and exact paths returned by the launchers.
    Run `bin/code_review_answer.bat` once with the exact context, round,
    `--exchange-occurrence` from `status`, disposition, evidence inputs, and two
    distinct ignored outputs: complete answer content and transcript summary.
+   Neither output may be a path returned in `paths`. `paths.answer` carries an
+   ignored `a.*` name like any scratch file, so that convention alone does not
+   exclude it, and rendering onto it publishes nothing while leaving a request
+   and an answer live at once — a shape the protocol rejects as `inconsistent`
+   and cannot reclaim. See *Caller-owned paths are never protocol artifact
+   paths* in [`review-requestor.md`](review-requestor.md).
 11. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
     output through `--content-file` and the paired summary through
     `--summary-file`. Never publish or append either output by hand.

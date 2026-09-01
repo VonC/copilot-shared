@@ -138,7 +138,7 @@ The feature request and design will need to insist on termination criteria for t
 | 6 | Feature-request | Document the review-mode workflows | `review-mode-docs` | completed | `docs/v0.11.0/feature-request.v0.11.0.review-mode-docs.md` | `docs/v0.11.0/plan.v0.11.0.review-mode-docs.validation.md` |
 | 7 | Feature-request | Check Markdown against the repository rules | `markdown-check` | completed | `docs/v0.11.0/feature-request.v0.11.0.markdown-check.md` | `docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md` |
 | 8 | Feature-request | Expose commit-plan validation without committing | `commit-plan-check` | completed | `docs/v0.11.0/feature-request.v0.11.0.commit-plan-check.md` | `docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md` |
-| 9 | Feature-request | Report active review status | `review-status-command` | pending | - | - |
+| 9 | Feature-request | Report active review status through a skill | `review-status-command` | completed | `docs/v0.11.0/feature-request.v0.11.0.review-status-command.md` | `docs/v0.11.0/plan.v0.11.0.review-status-command.validation.md` |
 | 10 | Feature-request | Resume interrupted reviews | `review-resume-command` | pending | - | - |
 
 ### Requirement details for the umbrella
@@ -223,14 +223,14 @@ The feature request and design will need to insist on termination criteria for t
 - Concrete rules and constraints: reuse the shipped `validate_commit_plan(blocks, staged_paths)` rather than reimplementing its rules; parse the plan with `interactive=False`; never reset, stage, or commit; report the typed groups and every diagnostic in a form the reviewer can quote as readiness-floor evidence; note that the one shipped entry point today refuses `--root-a-commit` combined with `--dry-run`, so the requirement must decide between a new launcher and lifting that restriction; and decide whether `group-commits-msg` should call the same command before a request is published so both roles judge the plan identically.
 - Depends on: `review-exchange-core`, `code-reviewer`.
 
-#### 9. Report active review status
+#### 9. Report active review status through a skill
 
 - Type: Feature-request
-- Key title: Report active review status
+- Key title: Report active review status through a skill
 - Slug: `review-status-command`
-- Regroups: a repository-root `rvw_status` command, its launcher and shared implementation, a stable machine-readable result, and a concise human-readable account of every review exchange currently in progress.
+- Regroups: a public `review-status-command` skill exposed by the installed llm-shared plugin as `$llm-shared:review-status-command`; its canonical instruction and thin LLM-specific adapters; a repository-root `rvw_status` command, launcher, and shared implementation; a stable machine-readable result; and a concise human-readable account of every review exchange currently in progress.
 - Boundary rationale: discovering who owns a stopped review and what it concerns is read-only diagnosis; it belongs outside the requestor and reviewer roles so either role can use the same facts before acting.
-- Concrete rules and constraints: run without requiring the caller to remember a family, document, slug, step, round, or artifact path; discover live specification and code exchanges from protocol-owned coordination records; report whether a review is active, its specification or code family, the current requestor or reviewer actor, state, exact reviewed document, umbrella or `none`, implementation step when applicable, round, exchange occurrence, artifact paths, and next protocol action; distinguish zero, one, and multiple live exchanges without silently choosing among several; remain strictly read-only; return a stable result that `rvw_resume` can consume without scraping prose; and work after a shell, VPN, terminal, or computer restart without relying on prompt memory.
+- Concrete rules and constraints: make `$llm-shared:review-status-command` discoverable after installing the llm-shared plugin; keep reusable skill instructions canonical and make each LLM-specific skill file a thin adapter that refers directly to them; have the skill invoke or direct the agent to invoke `rvw_status` rather than reproduce its discovery logic; run without requiring the caller to remember a family, document, slug, step, round, or artifact path; discover live specification and code exchanges from protocol-owned coordination records; report whether a review is active, its specification or code family, the current requestor or reviewer actor, state, exact reviewed document, umbrella or `none`, implementation step when applicable, round, exchange occurrence, artifact paths, and next protocol action; distinguish zero, one, and multiple live exchanges without silently choosing among several; remain strictly read-only; return a stable result that `rvw_resume` can consume without scraping prose; and work after a shell, VPN, terminal, or computer restart without relying on prompt memory.
 - Depends on: `review-exchange-core`, `spec-review-requestor`, `spec-reviewer`, `code-review-requestor`, `code-reviewer`.
 
 #### 10. Resume interrupted reviews

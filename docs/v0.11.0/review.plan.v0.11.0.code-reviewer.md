@@ -1074,3 +1074,585 @@ that the recommended answers are sufficient for later consolidation.
 Check for missing questions, assess the existing options and answers, and suggest any clearer wording.
 
 <!-- review-entry-id: request-round-1-exchange-2 -->
+
+## Round 1 by reviewer (exchange 2)
+
+- Recorded: 2026-09-01T08:21:02+02:00
+- Exchange: specification/plan/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Outcome: answer
+
+### Reviewer assessment for plan code-reviewer round 1 (exchange 2)
+
+Exchange 2 round 1 assesses the three Step 3 questions Q09 through Q11 added to
+`docs/v0.11.0/plan.v0.11.0.code-reviewer.md`. All three stay inside
+implementation-plan scope, none reopens a design choice, each carries three
+materially distinct options with stated consequences, and each records a
+reasoned recommendation. I agree with every recommended option: I2 over I1 and
+I3, J1 over J2 and J3, K1 over K2 and K3.
+
+The disagreement is not about which option wins. Each of the three answers stops
+one clause short of being implementable, and one Step 3 decision is not asked at
+all. Consolidating the current text would leave four judgment calls to whoever
+implements Step 3, which is what the questions exist to prevent.
+
+Premises checked against the surfaces the plan itself names:
+
+- Q09 states its gap correctly. `ResolvedValidationCommand` in
+  `tools/code_review_validation.py` carries `command` and `sources` only, and
+  `ResolvedValidationSet.to_payload` renders exactly those two fields, so no
+  resolved entry reaching the reviewer names an artifact path.
+- Q10 states its gap correctly, and its recommendation agrees with the boundary
+  already written into `instructions/implementation-check.md`, where the calling
+  reviewer retires the manifest rather than the check itself.
+- Q11 states its gap correctly. A Markdown instruction cannot execute a decision
+  path, and Step 2 already owns the temporary-repository proof of command
+  behavior.
+
+Three of the four findings below are gaps the answers can close with added
+wording. The fourth is a missing question, because deciding which staged paths
+belong to the reviewed step changes the compared scope that Q09 depends on, and
+no existing question owns it.
+
+One boundary note for the requestor. Step 3 has an implementation in the working
+tree, so any wording accepted here that contradicts shipped behavior needs the
+implementation reconciled with it rather than the document alone. The findings
+below name the shipped surface each one touches so that reconciliation is a
+lookup, not a search.
+
+### Question verdicts for plan code-reviewer round 1 (exchange 2)
+
+**Q09, source of known validation-artifact paths.** The question is well formed
+and its options are materially distinct. My answer is option I2, the same option
+the plan recommends, and for the reason it gives: Step 2 already supplies
+exact-path capture, so an omitted artifact should become a plan or request
+defect rather than a reason to scan the repository. Two clauses are missing
+before that answer can be implemented.
+
+- The answer names no carrier. It says the caller supplies a checklist for each
+  additive command and that the project's artifacts are defined beside its
+  command contract, but it names neither file nor syntax. The project command
+  contract is the versioned declaration read by `load_project_validation_commands`
+  (`.review-validation`, one command per line with `#` comments), whose format
+  has no place for a path list. The plan must name the exact declaration and the
+  syntax that carries artifacts, or name a separate declaration.
+- Plan-added and request-added commands have no carrier at all. Step 1 renders
+  `resolved_validation_set` as `{command, sources}` per entry, so an artifact
+  list attached to a request addition cannot reach the reviewer through the
+  request. Either the plan accepts a small Step 1 payload field and says so, or
+  it names the authored request field that carries the declaration. Leaving this
+  open is what makes the current "stays inside Step 3" pro unproven, since that
+  pro is the only argument separating I2 from I1.
+- The consequence of an undeclared artifact is unstated. The I2 con already
+  admits the list can fall behind, and Step 3's own fix intent turns any tracked
+  difference outside the permitted validation rows into a `changes-requested`
+  finding. So today an artifact nobody declared is reported against the writer,
+  who did not cause it. The answer should state that an undeclared validation
+  artifact is a declaration defect, reported as such, with the fix being the
+  declaration rather than the staged work.
+
+Shipped surface to reconcile: `instructions/implementation-check.md` step 1 of
+the reviewer evidence boundary repeats the plan's phrase, "every known
+validation-artifact path named by the resolved validation commands", over
+resolved commands that name none.
+
+**Q10, owner and timing of manifest retirement.** The question is well formed,
+the options are distinct, and my answer is option J1 for the reason the plan
+gives: the manifest bridges assessment and publication, so the role that owns
+both ends should retire it. One clause is missing.
+
+- The answer covers only the successful path. A round that is abandoned,
+  escalated, or overridden by the human at the convergence gate never reaches
+  `outcome: published`, so its manifest survives into the next round. Step 3
+  tells resumed work to call `read-manifest` with the exact identity, and the
+  retained identity in `CodeReviewEvidence` is family, type token, version, slug
+  and implementation step. It carries no round number and no exchange
+  occurrence, so a manifest written by a dead round matches the identity of the
+  next one and is reused as if it were current. The specification reviewer's own
+  retained manifest already records `original_round_number` for exactly this
+  reason, and the code-review manifest does not.
+- Requested addition: state that retained evidence is valid only for the round
+  and exchange that wrote it, that a manifest failing that check is refused
+  rather than reused, and who removes a manifest whose round never published.
+
+**Q11, depth of reviewer-mode instruction tests.** The question is well formed
+and my answer is option K1, for the reason the plan gives: an instruction
+interpreter would test a second implementation whose agreement with an LLM is
+not established. One clause is missing, and the plan already contains a live
+example of what it costs.
+
+- Nothing ties the two layers together. The Step 3 structure test asserts
+  literal identifiers in the instruction and the Step 2 tests assert CLI
+  behavior, so renaming a Step 2 subcommand leaves the instruction and its
+  structure test agreeing with each other while both drift from the executable
+  surface. That is the failure K1's own pro claims to prevent.
+- The drift is already present. The registered subcommands in
+  `tools/code_review_evidence_cli.py` are hyphenated (`umbrella-digest`,
+  `validation-state`), while Q11's answer, the Step 3 "Canonical command
+  contract" line, and the Step 3 completion-criteria `rg` pattern all use
+  `umbrella_digest` and `validation_state`. That pattern currently matches the
+  shipped instruction only through the retained JSON value names
+  `umbrella_digest_before` and `validation_state_before`, so every real command
+  call could be deleted from the instruction and the check would still pass.
+- Requested addition: require the Step 3 structure test to take its identifiers
+  from the Step 2 CLI's registered subcommand names rather than from literals,
+  and correct the identifier spelling in the answer, in the command-contract
+  line, and in the completion-criteria pattern.
+- Smaller point on the K1 con. "No automated test interprets the complete prose
+  workflow end to end" reads as an accepted hole, while Step 6 already covers
+  both result paths through acceptance journeys. Naming Step 6 there keeps the
+  con honest without weakening the option.
+
+**Missing question, which staged paths belong to the reviewed step.** Step 3's
+fix intent requires the capture scope to name every staged step path, and the
+shipped instruction says "every staged path that belongs to the reviewed step".
+Neither says how that membership is decided, and the index routinely holds more
+than the step: `instructions/implementation-check.md` states that the commit
+handoff stages the whole tree with `git add -A`, so a concurrent edit or a
+tool-written file is staged alongside the step's own work. The choice changes
+both the compared scope and what counts as an unexplained difference, and no
+existing question owns it. Q09 depends on the answer, because a path set built
+from a narrower scope can leave a tracked difference outside the comparison,
+which is the outcome Step 3 exists to prevent.
+
+Proposed options, should the writer add this question:
+
+- the plan step's "Files involved" list;
+- an authored staged inventory carried by the request;
+- the complete staged set at request time, from the index tree Step 1 already
+  captures.
+
+My recommended answer is the complete staged set, with the "Files involved" list
+used only to explain attribution in the answer. It needs no new carrier, it is
+already immutable evidence in the request, and it is the only option that cannot
+leave a staged path outside the compared scope.
+
+### Requested changes for plan code-reviewer round 1 (exchange 2)
+
+Requested changes: apply five edits to `docs/v0.11.0/plan.v0.11.0.code-reviewer.md`, four of them
+to the open-question section and one to Step 3. Replacement wording follows, and
+each item names the exact target text.
+
+1. Replace the body of "Answer to Q09: option I2" with wording that names the
+   carrier and the failure rule:
+
+   > Option I2: Accept the deterministic checklist, carried in two named places.
+   > A project declares its mandatory commands and the artifacts each one writes
+   > in the versioned declaration read by `load_project_validation_commands`,
+   > one command per line followed by its artifact paths. A plan-added or
+   > request-added command declares its artifacts in the same shape inside the
+   > request, and Step 1 carries them by extending each resolved entry payload
+   > with an `artifacts` list beside `command` and `sources`. That payload field
+   > is the one Step 1 change this answer accepts; everything else stays inside
+   > Step 3. An artifact no declaration names is a plan or request defect: the
+   > reviewer reports it against the declaration rather than against the staged
+   > work, and the fix is the declaration.
+
+   If the writer prefers to keep Step 1 untouched, the same paragraph must
+   instead name the authored request field that carries the declaration, and the
+   "stays inside Step 3" pro under option I2 must be corrected, since it is
+   currently the only argument separating I2 from I1.
+
+2. Add to the body of "Answer to Q10: option J1":
+
+   > Retained evidence is valid only for the round and exchange that wrote it.
+   > The manifest records its round number and exchange occurrence beside the
+   > exchange identity and step, and `read-manifest` refuses a manifest whose
+   > round or exchange does not match the current request rather than reusing
+   > it. A round that never reaches `outcome: published`, whether abandoned,
+   > escalated, or overridden at the convergence gate, leaves its manifest in
+   > place as recovery evidence; the next reviewer round for the same identity
+   > refuses it on that check and overwrites it when it writes its own.
+
+3. Add to the body of "Answer to Q11: option K1":
+
+   > The structure test takes the command identifiers it asserts from the Step 2
+   > CLI's registered subcommand names rather than from literal strings, so
+   > renaming or removing a subcommand fails the Step 3 test instead of leaving
+   > the instruction and its test agreeing with each other while both drift from
+   > the executable surface.
+
+   In the same answer, in the "Canonical command contract" line of Step 3, and
+   in the Step 3 completion-criteria `rg` pattern, correct `umbrella_digest` and
+   `validation_state` to the registered subcommand names `umbrella-digest` and
+   `validation-state`. The current pattern matches the shipped instruction only
+   through the retained value names `umbrella_digest_before` and
+   `validation_state_before`, so it would pass with every command call removed.
+
+4. In the con of option K1, replace "No automated test interprets the complete
+   prose workflow end to end" with "No automated test interprets the prose
+   workflow itself; Step 6 covers both result paths through acceptance
+   journeys."
+
+5. Add one question, Q12, on which staged paths belong to the reviewed step,
+   before Q09 if the writer wants dependency order, since Q09's path set depends
+   on its answer. Suggested question description:
+
+   > Step 3 requires `validation_path_set` to name every staged path that
+   > belongs to the reviewed step, but the plan never says how that membership
+   > is decided. The commit handoff stages the whole tree, so the index also
+   > holds concurrent edits and tool-written files that no step authored.
+
+   Options: the plan step's "Files involved" list; an authored staged inventory
+   carried by the request; or the complete staged set from the request-time
+   index tree Step 1 already captures. Recommended answer, the complete staged
+   set, because it needs no new carrier, it is already immutable request
+   evidence, and it is the only option that cannot leave a staged path outside
+   the compared scope. The "Files involved" list then explains attribution in
+   the answer rather than bounding the comparison.
+
+Wording-only polish, worth applying in the same pass but not the reason for this
+round: Q09's question description says the entries "currently carry command text
+and sources rather than structured output paths", which reads as a temporary
+state; "carry command text and sources only" states the same fact without
+implying a pending change.
+
+### Writer instructions for plan code-reviewer round 1 (exchange 2)
+
+Apply the five requested changes to the open-question section and Step 3 of
+`docs/v0.11.0/plan.v0.11.0.code-reviewer.md`, then publish the next round. Do
+not consolidate: three answers are amended and one question is added, which is
+more than wording polish.
+
+Order of work:
+
+1. Settle the Q09 carrier first, since edits 1 and 5 both depend on it. Decide
+   whether Step 1 gains an `artifacts` list on each resolved validation entry,
+   or whether an authored request field carries the declarations. Record that
+   decision in the answer and correct option I2's pro if Step 1 changes.
+2. Apply edits 2, 3, and 4, which are self-contained.
+3. Add Q12 with the three options and the recommended answer, keeping the
+   section's existing shape: question description, BBQ analogy, options with pro
+   and con, recommended option with arguments, then the answer with its reason.
+4. Reconcile the shipped surfaces each accepted answer touches, since Step 3 has
+   an implementation in the working tree:
+   - Q09: the first step of the reviewer evidence boundary in
+     `instructions/implementation-check.md`, which repeats "every known
+     validation-artifact path named by the resolved validation commands" over
+     resolved commands that name none, and `tools/code_review_validation.py` if
+     the payload gains the artifact list.
+   - Q10: the retained identity in `CodeReviewEvidence`, which carries no round
+     number and no exchange occurrence.
+   - Q11: the identifier spelling in the Step 3 completion-criteria pattern and
+     the source of the identifiers asserted by the reviewer-mode structure test.
+   If reconciling any of them belongs to a later effort rather than this plan,
+   say so in the next round's change summary and name where it goes, so the
+   round does not close over a silent gap.
+5. If you disagree with the Q09 carrier or the Q12 recommendation, say so in the
+   next request with the reason. Both are reviewer recommendations over a live
+   choice, not corrections of a settled fact.
+
+Leave the rest of the plan alone. The implementation decisions table, scope
+anchors, six numbered steps, command checklist, and line budgets were not
+assessed this round and need no change.
+
+### Final reviewer decision for plan code-reviewer round 1 (exchange 2)
+
+Decision: changes-requested. The writer should apply the concrete instructions and publish another automated review round.
+
+<!-- review-entry-id: answer-round-1-exchange-2 -->
+
+## Round 2 by requestor (exchange 2)
+
+- Recorded: 2026-09-01T08:34:00+02:00
+- Exchange: specification/plan/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Outcome: request
+
+### Review identity for plan code-reviewer (round 2)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Reviewed specification: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+Review round: 2
+
+### Requestor assessment for plan code-reviewer (round 2)
+
+All four Step 3 decisions are now explicit. Q12 closes the missing staged-path
+membership decision, and its three options distinguish plan-bounded scope,
+authored inventory, and the complete immutable request-time staged set. Q09,
+Q10, and Q11 retain materially distinct options and now carry implementable
+answers rather than leaving carrier, recovery, or test-coupling details open.
+
+No additional implementation-plan question is missing from the reviewed
+surface. The existing options and answers are sufficient after these edits. All
+reviewer wording suggestions were applied, including the Q09 polish, the Step 3
+hyphenated identifiers, and the Step 6 acceptance-journey qualification in the
+Q11 con.
+
+The writer accepts I2, J1, K1, and L3 without disagreement. The accepted Q09
+carrier is a tab-separated command-plus-artifact declaration whose resolved
+request payload adds `artifacts` beside `command` and `sources`. The accepted
+Q12 scope is the complete staged set from the immutable request-time index;
+the plan step's `Files involved` list explains attribution but does not bound
+comparison.
+
+The reviewed artifact is the implementation plan, not the already-completed
+code-reviewer implementation on the current `review-status-command` branch.
+Implementation reconciliation remains visible and allocated to the matching
+code-reviewer work: Step 1 owns `tools/code_review_validation.py`, the request
+renderer and requestor tests; Step 2 owns the retained manifest round and
+exchange occurrence in `tools/code_review_evidence.py` and its CLI/tests; Step
+3 owns `instructions/implementation-check.md` and the reviewer-mode structure
+tests. Those shipped changes are not represented as completed by this
+specification-only edit.
+
+### Change summary for plan code-reviewer (round 2)
+
+- Added Q12 before Q09 and answered it with the complete staged set from the
+  request-time index, while retaining `Files involved` for attribution only.
+- Replaced Q09's answer with an exact tab-separated project/request carrier,
+  the resolved-entry `artifacts` payload field, and an undeclared-artifact
+  declaration-defect rule; also removed the temporary-state wording and fixed
+  option I2's pro.
+- Extended Q10's answer with round-and-exchange manifest validity, refusal of
+  stale evidence, and retained recovery evidence for unpublished rounds.
+- Extended Q11's answer so structure tests derive identifiers from registered
+  Step 2 CLI subcommands, corrected Step 3 identifiers to `umbrella-digest` and
+  `validation-state`, and credited Step 6 acceptance journeys in K1's con.
+- Allocated the corresponding shipped implementation reconciliation to the
+  existing code-reviewer Step 1, Step 2, and Step 3 surfaces; no implementation
+  file was changed during this specification-plan round.
+
+### Writer response for plan code-reviewer (round 2)
+
+Writer response: The writer accepts every round-1 finding and has applied all five requested
+plan changes.
+
+For Q09, the selected carrier is the Step 1 `artifacts` list on each resolved
+entry. Project declarations and plan/request additions use the same exact
+tab-separated command-plus-repository-relative-path shape. Undeclared outputs
+are reported as declaration defects, not staged-work defects.
+
+For Q12, the selected scope is the complete staged set represented by the
+request-time index tree. The step's `Files involved` list remains explanatory
+attribution and cannot exclude a staged path from the evidence comparison.
+
+The Q10 and Q11 requested clauses and spelling corrections are present. There
+is no disagreement. Because this exchange reviews the plan while the current
+branch implements the later `review-status-command` umbrella item, the shipped
+alignment work is explicitly assigned back to code-reviewer Steps 1 through 3
+and their named validation, manifest, instruction, CLI, and test surfaces; it
+was not mixed into this specification edit.
+
+### Reviewer focus for plan code-reviewer (round 2)
+
+Check for missing questions, assess the existing options and answers, and suggest any clearer wording.
+
+<!-- review-entry-id: request-round-2-exchange-2 -->
+
+## Round 2 by reviewer (exchange 2)
+
+- Recorded: 2026-09-01T08:37:16+02:00
+- Exchange: specification/plan/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Outcome: answer
+
+### Reviewer assessment for plan code-reviewer round 2 (exchange 2)
+
+Exchange 2 round 2 assesses the amended open-question section of
+`docs/v0.11.0/plan.v0.11.0.code-reviewer.md`. All five round-1 requests were
+applied, and applied to the text they named rather than around it.
+
+- Q09 now names both carriers, the tab-separated shape they share, and the
+  declaration-defect rule for an artifact nobody declared.
+- Q10 now bounds retained evidence to the round and exchange that wrote it,
+  refuses a stale manifest instead of reusing it, and says what happens to a
+  round that never publishes.
+- Q11 now sources the asserted identifiers from the Step 2 CLI's registered
+  subcommand names, and the corrected `umbrella-digest` and `validation-state`
+  spelling reached all three places: the Step 3 tests-first bullet, the
+  canonical command contract, and the completion-criteria pattern. That pattern
+  now matches real command calls in `instructions/implementation-check.md`
+  rather than matching only the retained value names.
+- K1's con credits the Step 6 acceptance journeys.
+- Q12 closes the staged-membership decision with three materially distinct
+  options and answers it with the complete request-time staged set, keeping
+  `Files involved` as attribution rather than a boundary.
+
+Every Step 3 decision is now settled and implementable, and no further question
+is missing from the reviewed surface. Q09's carrier, Q10's validity rule, Q11's
+identifier sourcing, and Q12's scope each name the exact surface that carries
+them, so Step 1, Step 2, and Step 3 can each be implemented from the text alone.
+
+Two wording defects remain, both inside Q09 and neither blocking. Option I2's
+pro and con no longer separate it from option I1: the accepted answer adopts
+I1's mechanism, an `artifacts` list on each resolved entry, so I1's stated con
+about modifying the Step 1 validation model now applies to the accepted answer
+too, while I2's con still mentions only declaration upkeep. A decisions table
+that later records I1 as a rejected alternative would misstate why it was
+rejected. Separately, the answer calls the payload field "the one Step 1 change
+this answer accepts" while the same paragraph also specifies a declaration parse
+change, since `load_project_validation_commands` currently reads each
+non-comment line as one whole command. Both changes are described, so the count
+is what is wrong, not the content.
+
+Neither defect changes an option, an answer, a file, or a step, so this round
+reaches convergence with the two corrections carried into consolidation.
+
+### Question verdicts for plan code-reviewer round 2 (exchange 2)
+
+**Q12, membership of staged paths in the reviewed step.** Settled. My answer is
+option L3, the same as the plan's. The three options are materially distinct
+(authored scope, authored inventory, immutable index evidence), each con states
+a real consequence, and L3's con correctly accepts that unrelated staged paths
+enter the comparison and must be explained rather than excluded. The BBQ mapping
+names all four concepts it uses. No change requested.
+
+**Q09, source of known validation-artifact paths.** Settled as to substance. My
+answer remains option I2 as now written: the versioned declaration and the
+request additions share one tab-separated command-plus-path shape, Step 1 carries
+the merged paths in each resolved entry, and an undeclared artifact is a
+declaration defect reported against the declaration rather than the staged work.
+That is implementable as it stands. Two wording corrections belong in
+consolidation:
+
+- Option I2's pro and con no longer distinguish it from option I1. The accepted
+  answer extends each resolved entry with an `artifacts` list, which is I1's
+  mechanism, so I1's con about modifying the Step 1 validation model and its
+  renderer now describes the accepted answer as well. I2's con still lists only
+  declaration upkeep. What actually separates the two options after this round
+  is that I2 also fixes where the paths are declared and who is at fault when
+  one is missing, and the option text should say that.
+- The answer states that the payload field is "the one Step 1 change this answer
+  accepts", while the same paragraph specifies a second Step 1 change: the
+  declaration parse. `load_project_validation_commands` currently reads each
+  non-comment line as one whole command, so tab-separated fields require a new
+  parse rule. Both changes are described, so this is a miscount rather than a
+  gap.
+
+**Q10, owner and timing of manifest retirement.** Settled. My answer remains
+option J1 as now written. The added clause covers the case the round-1 text left
+open: validity is bound to the round and exchange that wrote the manifest,
+`read-manifest` refuses a mismatch instead of reusing it, and an unpublished
+round keeps its manifest as recovery evidence until the next round for the same
+identity overwrites it. The rule is stated on the manifest rather than on the
+caller, which is the side that can enforce it. No change requested.
+
+**Q11, depth of reviewer-mode instruction tests.** Settled. My answer remains
+option K1 as now written. Sourcing the asserted identifiers from the Step 2
+CLI's registered subcommand names closes the drift the round-1 answer allowed,
+and the corrected spelling reached the tests-first bullet, the canonical command
+contract, and the completion-criteria pattern together, so the check no longer
+passes through the retained value names alone. The amended con is accurate: no
+test interprets the prose, and Step 6 covers both result paths. No change
+requested.
+
+**Missing questions.** None. Q12 closed the one decision Step 3 needed and did
+not ask for, and the amended answers introduce no new open choice. The merge
+rule implied by "the merged artifact paths" for a command declared by more than
+one source follows the resolver's existing union of sources, so it needs no
+separate question.
+
+**Numbering note, not a defect.** The section now reads Q12, Q09, Q10, Q11
+because Q12 was placed first for dependency order, as suggested. Consolidation
+folds these into the decisions table, where numeric order returns; leaving the
+document order as it is keeps the dependency visible until then.
+
+### Convergence evidence for plan code-reviewer round 2 (exchange 2)
+
+Covered wording: two corrections inside Q09, both text-only, to apply during consolidation.
+
+1. Replace option I2's pro and con so the option stays distinct from I1 now that
+   the answer adopts I1's mechanism:
+
+   > - pro: One declared source states both the command and the artifacts it
+   >   writes, so an omitted path has a named owner and a named fix.
+   > - con: Command authors must keep the declared artifact list current, and
+   >   the resolved entry payload gains an artifacts field alongside command and
+   >   sources.
+
+2. In the answer to Q09, replace "That payload field is the one Step 1 change
+   this answer accepts" with:
+
+   > The declaration parse and that payload field are the two Step 1 changes
+   > this answer accepts.
+
+Both edits describe the same decision already recorded. Neither changes an
+option, an answer, a file list, a step boundary, or a line budget, and Step 1,
+Step 2, and Step 3 can each be implemented from the current text without them.
+
+For consolidation itself, the four answers name work the plan body does not yet
+carry, which is the integration this gate authorizes rather than a defect in the
+questions: the `artifacts` list and the declaration parse in Step 1's resolver
+classes and tests; the round number and exchange occurrence on Step 2's retained
+manifest and its `read-manifest` refusal; the complete request-time staged set
+in Step 3's path-set rule; and the identifier sourcing in Step 3's structure
+tests.
+
+Convergence rationale: every in-scope Step 3 decision is now settled, and what remains is wording.
+
+Round 1 found four gaps: Q09 named no carrier and no failure rule, Q10 covered
+only the published path, Q11 left its two test layers uncoupled, and the staged
+membership decision was never asked. Round 2 closed all four in the text that
+owns them, with a named carrier and shape, a round-and-exchange validity rule
+on the manifest, identifiers sourced from the registered subcommands, and a new
+Q12 answered with the immutable request-time staged set. Each answer names the
+surface that carries it, so Step 1, Step 2, and Step 3 can be implemented from
+the plan alone.
+
+The two remaining corrections are inside one option's pro and con and one clause
+of one answer. They restate a decision already made and change nothing a reader
+would implement, which is what separates a wording pass from another review
+round.
+
+This recommendation is advisory. It does not authorize consolidation, and the
+choice between consolidating and running another round stays with the human at
+the convergence gate.
+
+### Writer instructions for plan code-reviewer round 2 (exchange 2)
+
+Stop at the convergence gate and present the human with the identity summary,
+this recommendation, the amended open-question section, and your own assessment.
+The reviewer recommendation is advisory: only the human chooses `Consolidate` or
+`Revise and review again`.
+
+If the human selects `Consolidate`:
+
+1. Apply the two Q09 wording corrections listed in the covered wording first,
+   so the consolidated decisions table records why option I1 was rejected
+   without contradicting the mechanism the answer accepts.
+2. Fold the four answers into the plan body, since the questions state work the
+   body does not yet carry:
+   - Step 1: the `artifacts` list beside `command` and `sources` on each
+     resolved entry, and the tab-separated declaration parse, in the resolver
+     classes, the request evidence rendering, and their tests-first bullets.
+   - Step 2: the round number and exchange occurrence on the retained manifest,
+     and the `read-manifest` refusal of a mismatched round or exchange.
+   - Step 3: the complete request-time staged set as the path-set rule, with
+     `Files involved` kept as attribution, plus the structure test taking its
+     identifiers from the registered Step 2 subcommands.
+   - Add Q09 through Q12 to the implementation decisions table in numeric order,
+     with their rejected alternatives.
+3. Check the Step 1 line budget after the resolver edit. The advisory expectation
+   for `tools/code_review_validation.py` is below 220 lines and the parse plus
+   payload change is small, but the budget line should be revisited rather than
+   copied forward.
+4. Keep the reconciliation of the shipped surfaces where you allocated it in
+   round 2, on code-reviewer Steps 1 through 3, and do not fold it into the
+   current `review-status-command` work.
+
+If the human selects `Revise and review again`, the two wording corrections are
+the only outstanding reviewer findings; any further change is the human's or
+your own, not this round's.
+
+### Final reviewer decision for plan code-reviewer round 2 (exchange 2)
+
+Decision: convergence-recommended. This recommendation is advisory; consolidation is not confirmed and remains at the durable human gate.
+
+<!-- review-entry-id: answer-round-2-exchange-2 -->
+
+## Round 2 by human - human-confirmation
+
+- Recorded: 2026-09-01T08:53:41+02:00
+- Exchange: specification/plan/v0.11.0/code-reviewer
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.code-reviewer.md
+- Outcome: human-confirmation
+
+Human choice: Consolidate
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->

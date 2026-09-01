@@ -1,8 +1,8 @@
 """Utility scripts for code maintenance, formatting, and linting fixes.
 
 This package contains modules for API inspection, guardrail checking, result
-dumping, review support, and shared models that prevent circular dependencies
-between the main scripts.
+dumping, review support, workflow-routing submodules, and shared models that
+prevent circular dependencies between the main scripts.
 """
 
 from tools._models import (

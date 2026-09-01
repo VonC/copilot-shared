@@ -30,6 +30,30 @@ if TYPE_CHECKING:
     from tools.review_exchange_store import ReviewExchangeStore
 
 
+def _context_differences(
+    fields: tuple[tuple[str, object, object], ...],
+) -> str:
+    """Name each context field that differs, with the stored and passed values.
+
+    A bare "context differs" tells a role that something is wrong and nothing
+    about what, which reads as a damaged exchange when the usual cause is one
+    omitted `--umbrella` on an otherwise correct invocation. Naming the field
+    and both values turns the same stop into an instruction.
+
+    Args:
+        fields: One ``(name, stored, passed)`` triple per compared field.
+
+    Returns:
+        The differing fields as ``name (artifact <stored>, core <passed>)``
+        joined by commas, and the empty string when every field agrees.
+    """
+    return ", ".join(
+        f"{name} (artifact {stored or 'none'}, core {passed or 'none'})"
+        for name, stored, passed in fields
+        if stored != passed
+    )
+
+
 @dataclass(frozen=True)
 class ExchangeObservation:
     """Complete observable state and parsed current-round evidence."""
@@ -85,7 +109,33 @@ class ReviewExchangeObserver:
                 errors.append(str(error))
         if record is not None:
             if record.context != self._context:
-                errors.append("coordination context differs from core context")
+                differences = _context_differences(
+                    (
+                        (
+                            "identity",
+                            record.context.identity.key,
+                            self._context.identity.key,
+                        ),
+                        (
+                            "document",
+                            record.context.document_path,
+                            self._context.document_path,
+                        ),
+                        (
+                            "umbrella",
+                            record.context.umbrella_path,
+                            self._context.umbrella_path,
+                        ),
+                        (
+                            "implementation step",
+                            record.context.implementation_step,
+                            self._context.implementation_step,
+                        ),
+                    ),
+                )
+                errors.append(
+                    f"coordination context differs from core context: {differences}",
+                )
             if record.policy != self._policy:
                 errors.append("coordination family policy differs from registered policy")
             for label, envelope in (
@@ -116,12 +166,19 @@ class ReviewExchangeObserver:
         except ReviewExchangeError as error:
             errors.append(str(error))
             return None
-        if (
-            envelope.document_path != self._context.document_path
-            or envelope.umbrella_path != self._context.umbrella_path
-            or envelope.implementation_step != self._context.implementation_step
-        ):
-            errors.append("artifact context differs from core context")
+        differences = _context_differences(
+            (
+                ("document", envelope.document_path, self._context.document_path),
+                ("umbrella", envelope.umbrella_path, self._context.umbrella_path),
+                (
+                    "implementation step",
+                    envelope.implementation_step,
+                    self._context.implementation_step,
+                ),
+            ),
+        )
+        if differences:
+            errors.append(f"artifact context differs from core context: {differences}")
             return None
         return envelope
 

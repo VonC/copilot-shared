@@ -24,6 +24,8 @@ from tools import prompt_workflow_plan as plan
 from tools import prompt_workflow_post_commit as post_commit
 from tools import prompt_workflow_render as rendering
 from tools import prompt_workflow_review as review
+from tools import prompt_workflow_skill_continuation as continuation
+from tools import prompt_workflow_skill_review as forced_review
 from tools import prompt_workflow_steps as steps
 from tools.review_exchange_models import ArtifactState
 
@@ -42,6 +44,7 @@ detect_host = rendering.detect_host
 host_prefix = rendering.host_prefix
 render_command = rendering.render_command
 render_step_command = rendering.render_step_command
+render_umbrella_command = rendering.render_umbrella_command
 
 
 # The instruction named before the workflow proper, when only a new draft exists.
@@ -79,18 +82,11 @@ ADVANCE_PAST_REVIEW = {2: 4, 5: 7, 8: 10}
 PRODUCED_TYPE = {"requirement": "feature-request", "design": "design", "plan": "plan"}
 # Workflow step number that hands execution to the plan implementation cycle.
 IMPLEMENT_STEP = 10
-SPEC_REVIEW_REQUESTOR = "spec-review-requestor"
-SPEC_REVIEWER = "spec-reviewer"
-CODE_REVIEW_REQUESTOR = "code-review-requestor"
-CODE_REVIEWER = "code-reviewer"
-FORCED_REVIEW_ROLES = frozenset(
-    {
-        SPEC_REVIEW_REQUESTOR,
-        SPEC_REVIEWER,
-        CODE_REVIEW_REQUESTOR,
-        CODE_REVIEWER,
-    },
-)
+SPEC_REVIEW_REQUESTOR = forced_review.SPEC_REVIEW_REQUESTOR
+SPEC_REVIEWER = forced_review.SPEC_REVIEWER
+CODE_REVIEW_REQUESTOR = forced_review.CODE_REVIEW_REQUESTOR
+CODE_REVIEWER = forced_review.CODE_REVIEWER
+FORCED_REVIEW_ROLES = forced_review.FORCED_REVIEW_ROLES
 
 
 def next_command(
@@ -124,7 +120,9 @@ def next_command(
     record = memory.read_memory(root)
     code_route = code_review.resolve_code_review_route(root, topic, state, record)
     if code_route is not None and code_route.state is not ArtifactState.IDLE:
-        return code_review.command_for_route(root, code_route, host_prefix(env, override), render_step_command)
+        return code_review.command_for_route(
+            root, code_route, host_prefix(env, override), render_step_command,
+        )
     review_route = review.live_specification_route(root, topic, state)
     if review_route is not None:
         role = (
@@ -132,10 +130,11 @@ def next_command(
             if review_route.state is ArtifactState.REQUEST_PENDING
             else SPEC_REVIEW_REQUESTOR
         )
-        return render_command(
+        return render_umbrella_command(
             host_prefix(env, override),
             f"{role}{MD_SUFFIX}",
             _relpath(root, review_route.context.document_path),
+            _relpath_or_none(root, review_route.context.umbrella_path),
         )
     step = _resolve_step(state)
     instruction, document = _instruction_and_document(step, root, topic, branch, state)
@@ -215,7 +214,9 @@ def _implementation_command(
     """
     if state.validation_plan is None:
         return None
-    plan_steps = plan.parse_validation_steps(state.validation_plan.read_text(encoding="utf-8"))
+    plan_steps = plan.parse_validation_steps(
+        state.validation_plan.read_text(encoding="utf-8"),
+    )
     if not plan_steps:
         return None
     branch_start = git.fork_point(root)
@@ -259,6 +260,11 @@ def _relpath(root: Path, path: Path) -> str:
     return Path(os.path.relpath(Path(path).resolve(), root)).as_posix()
 
 
+def _relpath_or_none(root: Path, path: Path | None) -> str | None:
+    """Return ``_relpath`` for an optional path, keeping None for no umbrella."""
+    return None if path is None else _relpath(root, path)
+
+
 # Exit code when the skill mode has no command to emit (a forced skill that is not
 # yet applicable, or no resolvable topic): stdout stays empty so the caller never
 # reads the signal as a command (Q03).
@@ -266,13 +272,7 @@ EXIT_NOT_APPLICABLE = 3
 # The document role a forced skill targets; the skill is emitted only when that
 # document exists (Q04). Review and consolidate are not forceable here, since they
 # read whichever document is current rather than a single owned one.
-FORCED_ROLE = {
-    "process-draft": "draft",
-    "write-requirement": "requirement",
-    "write-design": "design",
-    "write-plans": "plan",
-    "implement-step": "plan",
-}
+FORCED_ROLE = forced_review.FORCED_ROLE
 
 # Artifact roles accepted by the explicit post-write review handoff.
 AFTER_WRITE_ROLES = ("requirement", "design", "plan")
@@ -342,10 +342,9 @@ def run_skill(  # noqa: PLR0913
             f"pw skill: {skill_name} is not applicable here.\n",
         )
     branch_slug = branch.rsplit("/", maxsplit=1)[-1]
-    if (
-        post_commit.slug_key(branch_slug) == post_commit.slug_key(topic.slug)
-        and docs.collection_items(topic.draft_path)
-    ):
+    if post_commit.slug_key(branch_slug) == post_commit.slug_key(
+        topic.slug,
+    ) and docs.collection_items(topic.draft_path):
         umbrella = _relpath(root, topic.draft_path)
         command = post_merge_command(root, umbrella, os.environ, host_override)
         error = f"pw skill: no collection backlog resolved from {umbrella}.\n"
@@ -419,229 +418,13 @@ def _emit(command: str | None, not_applicable_note: str) -> int:
     return 0
 
 
-def forced_command(
-    root: Path,
-    topic: Topic,
-    skill_name: str,
-    env: Mapping[str, str],
-    override: str | None = None,
-) -> str | None:
-    """Return a forced skill's command when its document exists, else None (Q04).
-
-    Args:
-        root: The project root, used to make the document path relative.
-        topic: The resolved topic.
-        skill_name: The forced skill name (a key of ``FORCED_ROLE``).
-        env: The process environment, read for the host prefix.
-        override: A host token forcing the prefix, or None to detect it.
-
-    Returns:
-        The host-prefixed command naming the skill's document when that document
-        exists; None when the skill is unknown or its document is absent.
-    """
-    state = steps.compute_state(root, topic, None)
-    if skill_name in FORCED_REVIEW_ROLES:
-        return _forced_review_command(
-            root,
-            topic,
-            state,
-            skill_name,
-            env,
-            override,
-        )
-    role = FORCED_ROLE.get(skill_name)
-    if role is None:
-        return None
-    doc = (
-        topic.draft_path
-        if role == "draft"
-        else {
-            "requirement": state.requirement,
-            "design": state.design,
-            "plan": state.plan,
-        }[role]
-    )
-    if doc is None:
-        return None
-    instruction = f"{skill_name}{MD_SUFFIX}"
-    return render_command(host_prefix(env, override), instruction, _relpath(root, doc))
+forced_command = forced_review.forced_command
 
 
-def _forced_review_command(  # noqa: PLR0913
-    root: Path,
-    topic: Topic,
-    state: WorkflowState,
-    skill_name: str,
-    env: Mapping[str, str],
-    override: str | None,
-) -> str | None:
-    """Dispatch one explicit review role without burdening generic routing."""
-    if skill_name == CODE_REVIEWER:
-        return _forced_code_reviewer_command(root, topic, state, env, override)
-    if skill_name == SPEC_REVIEWER:
-        return _forced_spec_reviewer_command(root, topic, state, env, override)
-    if skill_name == CODE_REVIEW_REQUESTOR:
-        route = code_review.resolve_code_review_route(
-            root,
-            topic,
-            state,
-            memory.read_memory(root),
-        )
-        if route is None or route.actor is not code_review.CodeReviewActor.REQUESTOR:
-            return None
-        return code_review.command_for_route(
-            root,
-            route,
-            host_prefix(env, override),
-            render_step_command,
-        )
-    doc = review.forced_specification_document(root, topic, state)
-    if doc is None:
-        return None
-    return render_command(
-        host_prefix(env, override),
-        f"{SPEC_REVIEW_REQUESTOR}{MD_SUFFIX}",
-        _relpath(root, doc),
-    )
+post_write_command = continuation.post_write_command
 
 
-def _forced_spec_reviewer_command(
-    root: Path,
-    topic: Topic,
-    state: WorkflowState,
-    env: Mapping[str, str],
-    override: str | None,
-) -> str | None:
-    """Render only an exact pending reviewer route and diagnose cold reclaim."""
-    route = review.live_specification_route(root, topic, state)
-    if route is None:
-        return None
-    if route.state is ArtifactState.ABANDONED_REQUEST:
-        message = (
-            "forced spec-reviewer cannot enter an abandoned request cold; "
-            f"run {SPEC_REVIEW_REQUESTOR} reclaim for {route.context.identity.key}"
-        )
-        raise review.SpecificationReviewRoutingError(message)
-    if route.state is not ArtifactState.REQUEST_PENDING:
-        return None
-    return render_command(
-        host_prefix(env, override),
-        f"{SPEC_REVIEWER}{MD_SUFFIX}",
-        _relpath(root, route.context.document_path),
-    )
-
-
-def _forced_code_reviewer_command(
-    root: Path,
-    topic: Topic,
-    state: WorkflowState,
-    env: Mapping[str, str],
-    override: str | None,
-) -> str | None:
-    """Render only an exact reviewer-owned code request route."""
-    route = code_review.resolve_code_review_route(
-        root,
-        topic,
-        state,
-        memory.read_memory(root),
-    )
-    if route is None:
-        return None
-    if route.actor is not code_review.CodeReviewActor.REVIEWER:
-        return None
-    return code_review.command_for_route(
-        root,
-        route,
-        host_prefix(env, override),
-        render_step_command,
-    )
-
-
-def post_write_command(
-    root: Path,
-    topic: Topic,
-    written_role: str,
-    env: Mapping[str, str],
-    override: str | None = None,
-) -> str | None:
-    """Return the review command for the artifact that was just written.
-
-    This explicit handoff intentionally ignores decisions-table markers. A
-    writer knows which artifact it produced, while bare ``pw skill`` remains the
-    state-based router used after review and consolidation.
-
-    Args:
-        root: The project root.
-        topic: The resolved topic.
-        written_role: One of ``AFTER_WRITE_ROLES``.
-        env: The process environment, read for the host prefix.
-        override: A host token forcing the prefix, or None to detect it.
-
-    Returns:
-        A review command for the written artifact, or None when it is absent.
-    """
-    state = steps.compute_state(root, topic, None)
-    document = {
-        "requirement": state.requirement,
-        "design": state.design,
-        "plan": state.plan,
-    }[written_role]
-    if document is None:
-        return None
-    return render_command(
-        host_prefix(env, override),
-        "review-ask-questions.md",
-        _relpath(root, document),
-    )
-
-
-def post_commit_command(
-    root: Path,
-    committed_step: str,
-    env: Mapping[str, str],
-    override: str | None = None,
-) -> str | None:
-    """Return the command to chain after committing ``committed_step`` (Step 7).
-
-    Told the plan step the commit completes, this names the step after it for
-    ``implement-step``; once that step was the last, ``prepare-release``; and when
-    no validation plan is resolved (a standalone commit, no effort) or the step is
-    not in the plan, None.
-
-    Args:
-        root: The project root.
-        committed_step: The plan step id the commit just completed.
-        env: The process environment, read for the host prefix.
-        override: A host token forcing the prefix, or None to detect it.
-
-    Returns:
-        The host-prefixed command for the next action, or None when there is no
-        plan in play or the committed step is not one of its steps.
-    """
-    branch = git.current_branch(root)
-    record = memory.read_memory(root)
-    topic = handoff.resolve_current_topic(root, branch, record)
-    if topic is None:
-        topic = post_commit.resolve_post_commit_topic(root, record, branch)
-    if topic is None:
-        return None
-    state = steps.compute_state(root, topic, None)
-    if state.validation_plan is None:
-        return None
-    numbers = [
-        plan_step.number
-        for plan_step in plan.parse_validation_steps(
-            state.validation_plan.read_text(encoding="utf-8"),
-        )
-    ]
-    if committed_step not in numbers:
-        return None
-    prefix = host_prefix(env, override)
-    index = numbers.index(committed_step)
-    if index + 1 < len(numbers):
-        plan_doc = _document(root, topic, "plan", state)
-        return f"{prefix}implement-step on {plan_doc} step {numbers[index + 1]}"
-    return f"{prefix}prepare-release"
+post_commit_command = continuation.post_commit_command
 
 
 # eof

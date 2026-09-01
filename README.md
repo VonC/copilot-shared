@@ -1013,6 +1013,7 @@ command name and the instruction file name are always the same.
 | Analysis and review prompts | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | Covers API review, plan checks, discussions, and issue work. |
 | Step-based skills and agent | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | Includes step implementation, implementation checks, and file splitting. |
 | Local helper scripts | draft | Windows (`cmd.exe` with Doskey) | Includes `senv.bat`, `git_batch_commit.py`, and `git_command.py`. |
+| Exported-conversation trimming | draft | Claude Code and OpenAI Codex exports | `tth` keeps the ask, the opening, and the closing answer of every turn; reasoning and tool traffic are dropped. See [Trim an exported conversation](wiki/how-to/trim-an-exported-conversation.md). |
 | Groundhog pytest loop | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | `ghog day` walk, `ghog init` registration, LLM fixing loop; see `GROUNDHOG.md`. |
 | Prompt-workflow handoff | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | `pw handoff` chains implement-step, check, implement-missing, and the `a.commit` group-commit step with no menu. |
 | Prompt-workflow skill | draft | Copilot, Claude Code, OpenAI Codex, Google Antigravity | `pw skill` chains the document phase (write -> review -> consolidate -> next phase) and feeds the commit-gate multi-choice via `--after-commit`. |
@@ -1051,6 +1052,7 @@ the shared skill bodies. The Doskey aliases are documented in detail in
 | `pw skill --after-commit` | The commit-gate form; told the just-committed plan step, prints the contextual next action (the next `/implement-step`, `/prepare-release`, or nothing). |
 | `Qxx` block | An open-question block appended by the review skills (options + recommended choice). |
 | `ruffc` | Doskey alias to `ruff check`. |
+| `tth` | Doskey alias to `bin\tth.bat` (`tools\trim_thinking_cli.py`); trims an exported Claude or Codex conversation down to the ask, the opening, and the closing answer of each turn, from a file or the clipboard, back to the clipboard. |
 | `vX.Y.Z` | Working version slug used in every artifact filename (draft, requirement, design, plan). |
 
 ---

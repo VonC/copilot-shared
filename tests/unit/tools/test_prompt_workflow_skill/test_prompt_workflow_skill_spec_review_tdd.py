@@ -88,6 +88,38 @@ def test_normal_routing_prefers_one_live_specification_exchange(
     assert command == "/spec-reviewer on docs/design.v1.0.0.routing.md"
 
 
+def test_reviewer_routing_names_the_umbrella_the_reviewer_must_pass(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """An effort with an umbrella names it, so the reviewer can pass it.
+
+    A reviewer builds its exchange context from this line. Without the
+    umbrella on it, its core context omits one the published request and the
+    coordination record both carry, and every operation reports `inconsistent`
+    with a diagnostic that names neither the umbrella nor the missing flag.
+    """
+    topic = _topic(tmp_path)
+    target = tmp_path / "docs/design.v1.0.0.routing.md"
+    umbrella = tmp_path / "docs/draft.v1.0.0.umbrella.md"
+    umbrella.write_text("# Umbrella\n", encoding="utf-8")
+    monkeypatch.setattr(
+        review,
+        "live_specification_route",
+        lambda *_args: review.LiveSpecificationRoute(
+            review.specification_context(target, umbrella),
+            ArtifactState.REQUEST_PENDING,
+        ),
+    )
+
+    command = skill.next_command(tmp_path, topic, "routing", {"CLAUDECODE": "1"})
+
+    assert command == (
+        "/spec-reviewer on docs/design.v1.0.0.routing.md"
+        " with umbrella docs/draft.v1.0.0.umbrella.md"
+    )
+
+
 def test_normal_routing_keeps_existing_command_without_live_exchange(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

@@ -9,12 +9,29 @@ REM root this wrapper is launched from so senv.bat can repair the venv PATH.
 REM Its output is parked in a side log (Q31): cli.py replays it into the
 REM report stream - stdout normally, a.ghog.log when the self-redirect guard
 REM armed - so a forgotten caller redirect cannot flood an LLM conversation
-REM with the senv preamble.
+REM with the senv preamble. This tool is agent-facing first, so parking stays
+REM the default.
+REM
+REM Set GHOG_SENV_LIVE to stream senv.bat straight through instead. senv can
+REM take the best part of a minute - two uv.exe launches dominate it - and
+REM parked, that is a blank terminal for the whole of it, with the preamble
+REM landing only at the end. A human watching a run wants to see it happen;
+REM the file half then comes from the caller redirect.
+REM
+REM Neither branch can be a tee: cmd runs both sides of a pipe in child
+REM processes, so `call senv.bat | tee` would lose the PATH and VIRTUAL_ENV
+REM that Q21 needs in THIS process.
 if not defined PRJ_DIR set "PRJ_DIR=%CD%"
 for %%i in ("%PRJ_DIR%") do set "LLM_SHARED_PRJ_DIR_NAME=%%~nxi"
 if defined LLM_SHARED_PRJ_DIR_NAME set "NO_MORE_SENV_!LLM_SHARED_PRJ_DIR_NAME!="
 set "GHOG_SENV_LOG=%PRJ_DIR%\a.ghog.senv.log"
-if exist "%PRJ_DIR%\senv.bat" call <NUL "%PRJ_DIR%\senv.bat" > "%GHOG_SENV_LOG%" 2>&1
+if exist "%PRJ_DIR%\senv.bat" (
+    if defined GHOG_SENV_LIVE (
+        call <NUL "%PRJ_DIR%\senv.bat" 2>&1
+    ) else (
+        call <NUL "%PRJ_DIR%\senv.bat" > "%GHOG_SENV_LOG%" 2>&1
+    )
+)
 set "LLM_SHARED_PRJ_DIR_NAME="
 
 REM groundhog itself runs from the llm-shared venv (Q17), reached by absolute

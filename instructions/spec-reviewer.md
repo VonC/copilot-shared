@@ -27,9 +27,38 @@ effort has one, `--umbrella <exact-umbrella-draft>`. Do not pass an
 implementation step for specification review. Let the shared model map a
 source `design` document to the `design-specification` exchange type.
 
+### Establishing whether this effort has an umbrella
+
+The umbrella is part of the exchange context, not an optional annotation.
+Omitting one the published request carries makes every operation report
+`state: inconsistent` with `artifact context differs from core context;
+coordination context differs from core context` — a diagnostic that names
+neither the umbrella nor the missing flag, and that reads like a corrupt
+exchange when nothing is wrong with it. Never repair or reclaim an exchange on
+that diagnostic alone: first confirm the context you passed.
+
+`pw` names the umbrella on the routed command when the effort has one:
+
+```text
+<command-prefix>spec-reviewer on <document> with umbrella <umbrella-draft>
+```
+
+Take it from that line. When the invocation reached this role without it, the
+umbrella is recorded in the exchange itself, and reading it is a lookup rather
+than a search:
+
+- the `umbrella_path` of the JSON envelope in the published request, whose
+  path `status` returns as `paths.request`;
+- the `context.umbrella_path` of the coordination record at
+  `paths.coordination`.
+
+A command line naming no umbrella, and a request envelope whose `umbrella_path`
+is `null`, together mean the effort has none: run without `--umbrella`. Do not
+infer one from a document that merely sits in the same directory.
+
 Do not search documentation folders for nearby work or enumerate live
-artifacts. Use only the reviewed document and optional umbrella supplied by
-`pw`, plus exact paths returned by `bin/review_exchange.bat`. Never create,
+artifacts. Use only the reviewed document and the umbrella established above,
+plus exact paths returned by `bin/review_exchange.bat`. Never create,
 overwrite, rename, or delete protocol artifacts by hand.
 
 ## Ordered sequence for specification reviewer work
@@ -52,7 +81,14 @@ overwrite, rename, or delete protocol artifacts by hand.
 5. Run `bin/spec_review_answer.bat` once with the exact context, round,
    disposition, expected document digest, caller-owned inputs, and two distinct
    ignored root outputs. One output is complete answer content and the other is
-   the substantive transcript summary.
+   the substantive transcript summary. Neither output may be a path the
+   launcher returned in `paths`: `paths.answer` carries an ignored `a.*` name
+   like any scratch file, so the `a.*` rule alone does not exclude it. Pass a
+   name that cannot collide, such as
+   `--answer-content-output a.spec-review.answer-content.<slug>.md`. Rendering
+   onto `paths.answer` publishes nothing and strands the round — see
+   *Caller-owned paths are never protocol artifact paths* in
+   [`review-requestor.md`](review-requestor.md).
 6. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
    answer through `--content-file` and the paired substantive summary through
    `--summary-file`. Do not publish either output independently.

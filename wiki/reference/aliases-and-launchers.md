@@ -52,6 +52,16 @@ run still needs a new Codex thread before the refreshed skill registry appears.
 | `ruffc` | `ruff check` | lint right after code generation |
 | `covg` | `bin\covg.bat` | map uncovered lines to functions, build a test-writing prompt |
 
+## 📋 Clipboard aliases
+
+| Alias | Runs | Purpose |
+| --- | --- | --- |
+| `tth` | `bin\tth.bat` | trim an exported Claude or Codex conversation to the ask, the opening, and the closing answer of every turn, back to the clipboard |
+
+`tth` reads the clipboard when it gets no file argument, and always publishes
+its result to the clipboard. See
+[the trim-thinking command reference](trim-thinking-command.md).
+
 ## ⚙️ Other launchers in bin
 
 | Launcher | Wraps | Purpose |
@@ -63,6 +73,7 @@ run still needs a new Codex thread before the refreshed skill registry appears.
 | `sensitive_history_scan.bat` | `tools\sensitive_history\sensitive_history_scan.py` | report sensitive terms across commit, tag, path, and blob history |
 | `git_history_diagrams.bat` | `tools\git_history_diagrams\generate_git_history_diagrams.py` | generate or check the prepare-release SVG histories |
 | `mds.ps1` | `tools\serve_docs\serve_docs.py` | serve a markdown folder as a local website and open the browser (PowerShell so Ctrl-C stops it without cmd's terminate-batch question) |
+| `tth.bat` | `tools\trim_thinking_cli.py` | trim an exported conversation from a file or the clipboard, result to the clipboard |
 | `python_check.bat` | vulture, big-file check, `enforce_eof.py` | the check station of the walk |
 | `python_check_types.bat` | type checking | the typing gate |
 | `review_exchange.bat` | `tools\review_exchange_cli.py` | shared review state, publication, wait, confirmation, and recovery operations |

@@ -11,6 +11,7 @@ adapter validates every caller-owned root file before it writes either output.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import re
 import shutil
 import subprocess
@@ -19,6 +20,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from string import Template
 from typing import TYPE_CHECKING, NoReturn
+
+# bin\spec_review_request.bat runs this file by path, so sys.path[0] is the
+# tools directory and the `tools.` package below is not importable from it.
+# Bootstrap the repository root the way new_draft.py does, or the launcher
+# fails with "No module named 'tools'" from every project.
+if __name__ == "__main__":  # pragma: no cover - thin launcher boundary
+    with contextlib.suppress(Exception):
+        _project_root = Path(__file__).parent.parent.resolve()
+        sys.path.insert(0, str(_project_root))
 
 from tools._models import find_project_root
 from tools.review_exchange_models import (
