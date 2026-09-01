@@ -104,6 +104,19 @@ the runtime artifact-home scan.
 
 ---
 
+## Implementation decisions for v0.11.0 review resumption
+
+| Question | Decision | Integrated in | Rejected alternatives |
+| --- | --- | --- | --- |
+| Q01 | Pass the ownership generation and token as paired CLI flags on each mutating call. The threat model is a displaced LLM session with repository access, not a hostile local user inspecting live process arguments; the displaced session cannot recover another session's arguments, while a file or environment copy would be reachable. | Step 3 ownership CLI, mutation tests, redaction checks, and completion grep. | Environment variables create a second reachable copy; a session-local capability file creates durable secret material and cleanup races. |
+| Q02 | Declare `watchdog` as a direct runtime dependency behind a narrow notification adapter, retain bounded polling, and treat every event as a hint followed by an authoritative rescan. | Step 5 wait implementation, dependency files, notification tests, and Step 6 acceptance. | Hand-written platform watchers multiply platform code; polling alone does not provide the settled native-notification path. |
+| Q03 | Put a schema-validated, non-secret `llm_nature` metadata field on each thin provider adapter while keeping every adapter body a canonical direct pointer. | Step 5 provider adapters, structure tests, role resolution, and Step 6 acceptance. | Body prose duplicates canonical rules; launcher environment injection adds public runtime machinery and omits direct skill invocation. |
+| Q04 | Use one strict versioned JSON migration journal at a known path, atomically replacing the complete snapshot after every move or phase transition. | Step 1 migration service, recovery tests, and performance guards. | Append-only journals require partial-line recovery; multiple marker files make transaction state ambiguous. |
+| Q05 | Expose typed `migration-check`, `migrate-artifacts`, `resume-inspect`, `claim`, and `wait-any-request` operations through `review_exchange.bat`; keep sequencing in the LLM skill and add no resume launcher. | Step 5 CLI support, canonical resume instruction, tests, and completion grep. | A generic action multiplexer weakens per-operation contracts; a second support launcher duplicates shared protocol safety. |
+| Q06 | Add `tests/unit/tools/review_exchange_test_support.py` for canonical configured-home, role-nature, ownership, and schema builders while retaining local fixtures for scenario-specific behavior. | Step 6 affected suites, line budgets, and regression coverage. | Per-suite builders duplicate cross-cutting defaults; a global pytest plugin hides setup and increases unrelated coupling. |
+
+---
+
 ## Confirmed technical facts for v0.11.0 plan viability
 
 **Relevant Python files over the 650-line repository limit**:
@@ -410,6 +423,9 @@ Step framing:
 - Cover new-home ignore creation and Git verification, existing uncovered home,
   multi-source merge, collision, byte mismatch, journal rollback, committed
   cleanup, repeated check, and repeated migration.
+- Cover a single known-path, strict versioned JSON journal whose complete
+  snapshot is atomically replaced after every move and phase transition;
+  malformed, truncated, or unsupported snapshots must block recovery.
 - Update path and store tests so no runtime artifact assumes `PRJ_DIR` directly.
 - Remove the Step 0 migration xfails without changing their bounds.
 
@@ -421,6 +437,8 @@ Step framing:
 - `ReviewArtifactLocator`: home-aware derivation replacing direct root joins.
 - `MigrationCheckResult` and `ReviewArtifactMigration`: ready,
   migration-required, blocked, journaling, rollback, and recovery.
+- `ReviewArtifactMigration` owns one atomic JSON snapshot journal rather than
+  append-only records or per-phase marker files.
 
 **Completion criteria**:
 
@@ -652,6 +670,9 @@ Step framing:
 - Cover generation and token flags as one required pair, including omitted,
   empty, malformed, duplicated, and mismatched values plus secret redaction from
   diagnostics and transcript output.
+- Pass both values only as CLI flags for the current mutating call. Do not place
+  the token in an environment variable or session capability file; this follows
+  the displaced-session threat model recorded in Q01.
 - Property-test strict generation increase and rejection of every earlier
   generation.
 - Cover crash boundaries before and after capability persistence and require the
@@ -665,6 +686,8 @@ Step framing:
   forced pickup, validation, and handoff invalidation.
 - Ownership CLI support parses capability inputs and removes those branches from
   `review_exchange_cli.py`.
+- Every mutating operation accepts the paired ownership generation and token
+  flags, validates them before mutation, and redacts the token from all output.
 
 **Completion criteria**:
 
@@ -894,6 +917,8 @@ Step framing:
 - `tools/review_exchange_cli.py` (existing, to be reduced to delegation).
 - `tools/review_exchange_wait.py` (existing, to be updated).
 - `tools/prompt_workflow_skill_review.py` (existing, to be updated).
+- `pyproject.toml` (existing, to be updated).
+- `uv.lock` (existing, to be updated).
 - `instructions/review-resume.md` (new, to be created).
 - `.agent/workflows/review-resume.md` (new, to be created).
 - `.agents/llm-shared/skills/review-resume/SKILL.md` (new, to be created).
@@ -931,12 +956,16 @@ Step framing:
 - Cover reviewer wait before any exchange, after conclusion, after intermediate
   answer, at convergence, and during requestor ownership; same and new exchange
   wakes; unrelated artifact ignore; human cancellation.
+- Cover native notification through a narrow `watchdog` adapter, bounded polling
+  fallback, event coalescing, and an authoritative rescan after every hint.
 - Cover several requests for one reviewer and one request for several reviewers,
   including first claim, typed loser, and return to wait.
 - Cover requestor exact-answer wait, owned action, convergence pickup, lost
   secret pickup, exchange release, and immediate `pw skill` continuation.
 - Assert there is no `rvw_resume.bat` and every provider adapter remains a thin
-  direct pointer.
+  direct pointer with a schema-validated, non-secret `llm_nature` metadata field.
+- Cover the typed `migration-check`, `migrate-artifacts`, `resume-inspect`,
+  `claim`, and `wait-any-request` operations exposed by `review_exchange.bat`.
 - Remove Step 0 wait xfails without changing timeout bounds.
 
 **Classes and behavior**:
@@ -946,8 +975,14 @@ Step framing:
   action.
 - `GlobalReviewerWait` uses notification hints, bounded polling, authoritative
   rescans, candidate selection, and first-claim-wins.
-- Resume support operations are exposed through `review_exchange.bat`; the LLM
-  instruction remains the only public resume entry point.
+- A narrow notification adapter uses the direct `watchdog` runtime dependency
+  when available and retains bounded polling as the correctness fallback.
+- Resume support operations are exposed through `review_exchange.bat` as
+  `migration-check`, `migrate-artifacts`, `resume-inspect`, `claim`, and
+  `wait-any-request`; the LLM instruction remains the only public resume entry
+  point.
+- Provider adapters carry validated `llm_nature` metadata and keep their bodies
+  as canonical direct pointers.
 
 **Completion criteria**:
 
@@ -973,6 +1008,8 @@ Line-budget checkpoint:
   policy band; ceiling 650; expected at or below 360 lines (advisory).
 - Prompt review routing: before 208; below-550 safe; ceiling 650; expected at or
   below 250 lines (advisory).
+- `pyproject.toml` and `uv.lock`: existing non-Python dependency declarations;
+  no Python line ceiling; add `watchdog` as a direct runtime dependency.
 - Canonical instructions: before 235, 166, 183, 233, and 238 lines; non-Python;
   keep role rules centralized and adapters at 10 lines or fewer (advisory).
 - New resume tests: before 0; each below-550 safe; ceiling 650; expected at or
@@ -1044,6 +1081,7 @@ Step framing:
   (new, to be created).
 - `tests/acceptance/review_resume/test_review_resume_acceptance/test_review_resume_concurrency_tdd.py`
   (new, to be created).
+- `tests/unit/tools/review_exchange_test_support.py` (new, to be created).
 - `tests/unit/tools/test_review_exchange_acceptance/test_review_exchange_acceptance_tdd.py`
   (existing, to be updated only for shared fixtures and schema expectations).
 - `tests/unit/tools/test_spec_review_requestor_acceptance/test_spec_review_requestor_acceptance_tdd.py`
@@ -1081,6 +1119,9 @@ Step framing:
 
 - Acceptance fixtures create configured repositories, session host evidence,
   protocol artifacts, concurrent waiters, and deterministic notifications.
+- `review_exchange_test_support.py` provides canonical configured-home,
+  role-nature, ownership, and schema builders; scenario-specific fixtures remain
+  local to their test package.
 - README documents `.review-artifacts.ini`, migration-aware `rvw_status`, the
   resume skill, role detection, reviewer waiting, and requestor continuation.
 
@@ -1100,6 +1141,8 @@ Line-budget checkpoint:
 - New acceptance package and init files: before 0; below-550 safe; ceiling 650;
   each init target 5 lines, conftest target 420 lines, scenario files target 500
   lines each (advisory).
+- Shared review-exchange test support: before 0; below-550 safe; ceiling 650;
+  expected at or below 450 lines (advisory).
 - Existing review-exchange acceptance test: before 604; risk band; ceiling 650;
   no growth beyond fixture/schema edits; put every new scenario in the new
   acceptance package.
@@ -1127,295 +1170,3 @@ Time-gated status for Step 6:
 
 - Run notification, polling, migration, and competing-reviewer gates under the
   final public launcher fixtures with their Step 0 bounds unchanged.
-
-## Open questions for the v0.11.0 review-resume-command implementation plan
-
-### Q01: How should a session pass its ownership secret to later commands?
-
-Question description: The claiming command returns a secret to the LLM session,
-and every later mutation must present it without writing it to coordination or
-another durable artifact. The plan must name a transport that works across
-separate `review_exchange.bat` process invocations without exposing the secret
-unnecessarily. The fence protects against a displaced LLM session with
-repository access, which is the adversary the design's ownership generation
-exists to reject. That session reads any repository file but not another
-session's process arguments or context. Transport must therefore avoid a durable
-copy; it need not defend against a local user inspecting live process arguments.
-
-#### BBQ for Q01
-
-Think of a worker who receives a one-use door code and must present it at the
-next guarded door. They can hand it to the guard on a slip, leave it in an
-office-wide memo slot, or say it at the door where only whoever is present hears
-it. In this picture: the worker is the LLM session, the door code is the
-ownership token, the slip is standard input, the memo slot is an environment
-variable, and speaking at the door is a command-line argument.
-
-#### Options for Q01
-
-- Option A: Pass the generation as an ordinary flag and send the secret through
-  a dedicated standard-input field read once by the mutating command.
-  - pro: The token stays out of process arguments, environment snapshots,
-    coordination, and files.
-  - con: The LLM caller can feed standard input only by embedding the secret in
-    a shell command or redirecting a file, which reintroduces argument exposure
-    or a durable copy.
-- Option B: Pass the token through one dedicated process environment variable.
-  - pro: Existing non-interactive commands remain single calls and Python can
-    remove the variable after reading it.
-  - con: Process environments can be inspected by same-user processes and are
-    easy to inherit accidentally into child commands.
-- Option C: Pass both generation and token as command-line flags.
-  - pro: It is the simplest parser and produces self-contained replayable test
-    calls.
-  - con: A hostile local user inspecting live process arguments could see the
-    secret, which is outside the stated displaced-session threat model.
-
-#### Recommended option for Q01 (with arguments for this choice)
-
-Option C: Use generation and token flags. The actual LLM caller can issue them
-in one non-interactive call, and the stated adversary cannot recover another
-session's process arguments after the command exits. A repository file or
-environment copy would remain readable or inheritable for longer.
-
-#### Answer to Q01: option C (with reason why it must be accepted as the answer)
-
-Option C: Accept generation and token flags. Under the stated threat model a
-displaced session cannot recover a secret from another session's process
-arguments, while any file or environment copy is reachable. Flags keep mutating
-commands single-call, replayable in tests, and free of a second durable copy.
-
-### Q02: Which implementation should provide directory notifications?
-
-Question description: The design requires native directory notification when
-available plus bounded polling fallback. Python has no portable standard-library
-watcher, while `watchdog` already appears transitively in the lock file but is
-not a declared runtime dependency.
-
-#### BBQ for Q02
-
-Imagine fitting doorbells in buildings on Windows, Linux, and macOS. The team
-can buy one supported doorbell kit for all buildings, wire each building's
-electrical system by hand, or skip bells and have someone check every door on a
-schedule. In this picture: the kit is `watchdog`, custom wiring is an OS-native
-adapter, scheduled checks are polling, and the buildings are supported hosts.
-
-#### Options for Q02
-
-- Option A: Declare `watchdog` as a direct runtime dependency behind a small
-  observer adapter and retain bounded polling fallback.
-  - pro: One maintained cross-platform API supplies native events, and the
-    dependency is already represented in the repository lock.
-  - con: The runtime dependency set grows and tests need a fake adapter rather
-    than depending on real OS event timing.
-- Option B: Implement separate standard-library or `ctypes` native adapters per
-  supported operating system plus polling fallback.
-  - pro: It adds no third-party runtime dependency and permits exact platform
-    control.
-  - con: It creates substantial platform-specific code and testing for behavior
-    already maintained by a specialist library.
-- Option C: Implement bounded polling only.
-  - pro: It is the smallest and most predictable implementation.
-  - con: It does not implement the settled notification-plus-polling design and
-    pays repeated idle scan cost indefinitely.
-
-#### Recommended option for Q02 (with arguments for this choice)
-
-Option A: Declare and wrap `watchdog`. A narrow adapter keeps tests deterministic
-and supplies the designed native hint on supported hosts while polling remains
-the correctness fallback.
-
-#### Answer to Q02: option A (with reason why it must be accepted as the answer)
-
-Option A: Accept a direct `watchdog` dependency because it implements the
-settled cross-platform notification path with far less platform code, and the
-authoritative rescan means library events remain hints rather than protocol
-evidence.
-
-### Q03: How should thin provider adapters supply the trusted LLM hint?
-
-Question description: Claude and Codex have known environment evidence, but the
-design also requires a trusted provider-entry hint and specifically relies on it
-for Gemini when no stable environment signal exists. Provider Markdown bodies
-must remain direct pointers to canonical instructions, although discovery
-metadata is allowed.
-
-#### BBQ for Q03
-
-Picture identical forwarding envelopes sent from three branch offices. Each
-envelope may carry a small branch stamp, the mailroom may guess the branch from
-the shelf where it found the envelope, or the recipient may inspect the weather
-outside and infer the city. In this picture: the branch stamp is adapter front
-matter, the shelf is the provider-specific path, weather is environment
-evidence, and the envelope body is the mandatory canonical pointer.
-
-#### Options for Q03
-
-- Option A: Add a validated `llm_nature` metadata field to each thin adapter and
-  have the adapter invocation pass that non-secret hint to the canonical resume
-  support operation.
-  - pro: The identity is explicit, works for Gemini, and leaves adapter bodies as
-    direct pointers.
-  - con: Adapter-structure tests and each provider format need to recognize the
-    metadata field.
-- Option B: Infer the nature from the provider-specific adapter path that
-  initiated the skill.
-  - pro: It adds no metadata and the directory already names the integration.
-  - con: Canonical execution may not retain the adapter path, and path inference
-    couples runtime identity to installation layout.
-- Option C: Use environment signals only and return `unknown` for Gemini when no
-  signal exists.
-  - pro: It requires no adapter protocol change.
-  - con: It fails to use the trusted provider entry point and makes Gemini
-    identity unavailable in the normal adapter path.
-
-#### Recommended option for Q03 (with arguments for this choice)
-
-Option A: Use declarative adapter metadata. The adapter rule expressly permits
-discovery metadata, and one validated enum supplies the host hint without
-copying any canonical workflow content.
-
-#### Answer to Q03: option A (with reason why it must be accepted as the answer)
-
-Option A: Accept provider metadata because it gives all three supported hosts a
-portable trusted hint while preserving the thin-pointer body and keeping the
-hint non-secret and schema-validated.
-
-### Q04: What concrete format should the migration recovery journal use?
-
-Question description: The design settles a versioned journal, per-move recording,
-rollback, and committed cleanup but leaves the physical update format to the
-plan. Recovery must distinguish an incomplete write from a valid phase and must
-not require scanning unrelated home files.
-
-#### BBQ for Q04
-
-Think of movers recording a job as it proceeds. They can replace one complete
-clipboard sheet after each box, append one new line to a running notebook, or
-leave a separate marker card beside every moved box. In this picture: the sheet
-is an atomically replaced JSON snapshot, the notebook is JSON Lines, marker
-cards are per-artifact files, and the movers are the migration transaction.
-
-#### Options for Q04
-
-- Option A: Store one strict versioned JSON journal and atomically replace the
-  complete snapshot after each recorded move and phase transition.
-  - pro: Recovery reads one bounded file and either sees a complete validated
-    state or the previous complete state.
-  - con: Each move rewrites a small journal containing the complete source map.
-- Option B: Append checksummed JSON Lines records for prepare, each move, commit,
-  rollback, and cleanup.
-  - pro: Each successful move adds one short write and retains transition
-    history.
-  - con: Recovery must detect and ignore torn final records and replay a log to
-    derive current state.
-- Option C: Create one phase marker and one marker file per moved artifact.
-  - pro: Individual marker creation can use atomic filesystem operations.
-  - con: Recovery needs another directory enumeration and must reconcile many
-    marker files with the source map.
-
-#### Recommended option for Q04 (with arguments for this choice)
-
-Option A: Use one atomically replaced strict JSON snapshot. The artifact count
-is bounded and the simplest recovery contract is to validate one complete
-versioned state rather than replay or reconcile fragmented evidence.
-
-#### Answer to Q04: option A (with reason why it must be accepted as the answer)
-
-Option A: Accept the atomic JSON snapshot because it gives recovery one strict
-source of truth, rejects malformed or unsupported phases directly, and keeps
-journal discovery to one known path.
-
-### Q05: Which shared operations should the resume skill call?
-
-Question description: Resume must remain an LLM skill rather than a public
-command, but its canonical instruction needs typed support for migration, role
-inspection, ownership claim, and identity-free waiting. The plan currently says
-to add support operations without naming the command surface.
-
-#### BBQ for Q05
-
-Imagine a dispatcher coordinating a recovery crew. The dispatcher can call
-separate clearly labeled service numbers, call one switchboard and state an
-action code, or call a second private company that duplicates the main service
-desk. In this picture: the dispatcher is the resume skill, labeled numbers are
-explicit `review_exchange` operations, the switchboard is a generic action
-operation, and the second company is a separate support launcher.
-
-#### Options for Q05
-
-- Option A: Add explicit typed operations to `review_exchange.bat` for
-  `migration-check`, `migrate-artifacts`, `resume-inspect`, `claim`, and
-  `wait-any-request`, while keeping role orchestration in the skill.
-  - pro: Existing JSON, exit, root, locking, and test conventions apply to each
-    support action without creating a public resume command.
-  - con: The parser and operation registry gain several names and need focused
-    CLI delegation.
-- Option B: Add one generic `resume-support --action <name>` operation to the
-  shared launcher.
-  - pro: The top-level command registry gains one operation.
-  - con: Action-specific inputs and outputs become a second dispatch layer and
-    are harder to discover and validate independently.
-- Option C: Add a separate `review_resume_support.bat` launcher containing all
-  support actions.
-  - pro: Resume-related parser code stays outside the exchange launcher.
-  - con: It creates a second protocol command surface close to the forbidden
-    resume command and duplicates caller-root and result handling.
-
-#### Recommended option for Q05 (with arguments for this choice)
-
-Option A: Add explicit operations to the existing shared launcher and keep the
-skill as the only resume entry point. Focused CLI modules prevent growth in the
-risk-band main parser and dispatcher.
-
-#### Answer to Q05: option A (with reason why it must be accepted as the answer)
-
-Option A: Accept explicit shared operations because each gains a strict typed
-contract and existing protocol safety while the LLM skill, not a new batch
-launcher, remains responsible for choosing and sequencing them.
-
-### Q06: How should existing review tests adopt the new common context?
-
-Question description: Many specification, code-review, status, lifecycle, and
-prompt tests independently construct project-root artifacts and legacy schemas.
-The final step must update all affected suites without duplicating configured
-home, LLM nature, and ownership capability setup in every package.
-
-#### BBQ for Q06
-
-Picture several workshops that all need the same new safety jig. The team can
-build one shared jig and let each workshop add its own attachment, build a copy
-inside every workshop, or leave old benches in place and patch each test by hand.
-In this picture: the jig is a shared test-support builder, attachments are local
-fixtures, workshops are existing test packages, and benches are the duplicated
-legacy setup functions.
-
-#### Options for Q06
-
-- Option A: Add `tests/unit/tools/review_exchange_test_support.py` with shared
-  repository, artifact-home, nature, and capability builders; keep scenario
-  assertions and specialized wrappers in local fixtures.
-  - pro: One helper owns schema-2 defaults and migration layout construction,
-    while each suite retains its domain-specific assertions.
-  - con: Many packages depend on one test-support module and changes to its
-    defaults can affect a broad test set.
-- Option B: Extend each package's `conftest.py` or `fixtures.py` independently.
-  - pro: Fixture behavior remains local and failures are isolated to one suite.
-  - con: Home, nature, capability, and legacy setup logic is repeated and can
-    drift across specification, code, and status tests.
-- Option C: Update existing inline constructors in place without a new helper.
-  - pro: It adds no shared test module or import changes.
-  - con: It maximizes repetitive edits and grows several files already near the
-    repository line ceiling.
-
-#### Recommended option for Q06 (with arguments for this choice)
-
-Option A: Add one shared builder module with narrow explicit inputs, and keep
-scenario policy local. This reduces repeated setup and avoids growing risk-band
-acceptance and CLI files while retaining readable tests.
-
-#### Answer to Q06: option A (with reason why it must be accepted as the answer)
-
-Option A: Accept the shared builder because the cross-cutting schema and path
-defaults need one maintained source in tests, while local fixtures can still
-express each workflow's distinct behavior and expected result.
