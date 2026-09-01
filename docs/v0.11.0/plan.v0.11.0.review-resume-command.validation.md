@@ -37,8 +37,13 @@ projection, pairwise artifact comparison, and hot-loop filesystem work.
 
 ### Analysis of Step 0 implementation state
 
-Not started. Step 0 is not implemented because the time-bound migration and
-global-wait guard tests do not exist yet.
+Yes. Step 0 has been fully implemented.
+
+The performance contract package now contains three strict migration xfails and
+three strict global-wait xfails with deterministic spies, call-count assertions,
+elapsed bounds, and per-test timeouts. The completed Groundhog walk reported
+`fail=0`, `warn=0`, `xfail=6`, `cov=100`, `outliers=0`, `excluded=0`, and
+`exit=0`.
 
 ### Goal for Step 0
 
@@ -52,27 +57,71 @@ Add strict xfail timing and call-bound guards before production behavior lands.
 
 ### What was implemented for Step 0
 
-_(empty — no check has taken place yet.)_.
+- Added `tests/unit/tools/test_review_resume_perf/__init__.py` and the 247-line
+  `test_review_resume_perf_tdd.py` guard suite.
+- Added strict Step 1 xfails for exactly three flat placement reads, one linear
+  parse per synthetic candidate, and zero full-status projections from
+  `migration_check`.
+- Added strict Step 5 xfails for bounded quiet intervals, notification hints
+  followed by authoritative rescans, and polling fallback when no notification
+  arrives.
+- Applied one-second `pytest.mark.timeout` guards and separate 0.25-second
+  elapsed assertions while keeping fixture sizes and synthetic time
+  deterministic.
+- Shortened the pre-existing invalid-root review-status acceptance call by
+  invoking the same public CLI adapter in-process; all original status and
+  output assertions remain, and its measured call time fell from 5.38 seconds
+  to below the 0.01-second report threshold.
+- Qualified ten repeated historical transcript headings with their exchange
+  occurrence so the repository Markdown gate remains valid.
 
 ### New types or classes introduced for Step 0
 
-_(empty — no check has taken place yet.)_.
+- `MigrationSpies` records configuration reads, non-recursive directory reads,
+  candidate parses, and forbidden full-status projections through explicit
+  test ports.
+- `WaitSpies` records authoritative rescans, notification waits, fallback
+  polls, and synthetic monotonic time through explicit test ports.
 
 ### Architecture check for Step 0
 
-_(empty — no check has taken place yet.)_.
+Step 0 adds no production dependency or domain behavior. Its tests describe
+future migration and wait services through injected callables, keeping file IO,
+status projection, notification observation, and clock behavior at explicit
+adapter boundaries. The acceptance optimization still enters through the
+public `review_status_cli.main` adapter and does not bypass status policy.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 0
 
-_(empty — no check has taken place yet.)_.
+The migration contract permits one configuration read, three non-recursive
+directory reads, and one parse per candidate, which is `O(n)` across the three
+bounded locations. The wait contract permits one authoritative rescan per
+notification or fallback interval and constant callback work. No pairwise
+candidate comparison, recursive discovery, busy loop, or `O(n log n)` path is
+introduced. Groundhog completed with no duration outlier after the flagged
+acceptance subprocess was removed.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 0
 
-_(empty — no check has taken place yet.)_.
+Step 0 changes no production class, so no class-specific unit coverage target is
+newly applicable. The six new contracts were collected in both focused and full
+Groundhog phases as the six declared xfails, and the complete suite retained
+100 percent production coverage.
+
+No unit-tested class is below 100 percent or needs completing.
 
 ### Feature integrity for Step 0
 
-_(empty — no check has taken place yet.)_.
+The full suite passed all 2,219 collected tests with the six intentional Step 0
+xfails. Review-status invalid-root behavior still returns status 2, emits no
+stdout, prefixes stderr with `rvw_status:`, and does not emit a partial JSON
+payload. Repository Markdown validation also passes after occurrence-qualified
+transcript headings, so no existing feature or reporting capability is
+impaired.
 
 ---
 
