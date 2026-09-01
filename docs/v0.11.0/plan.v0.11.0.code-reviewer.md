@@ -33,6 +33,10 @@ No Step 0 performance gate is required. The responder is a bounded local workflo
 | Q06 | Test public Python entry points over real temporary Git repositories, with one smoke invocation per launcher. | Step 6 acceptance | Launcher subprocesses for every case or fully mocked repository state |
 | Q07 | Put capture, comparison, attribution, and retained-manifest operations behind one typed evidence boundary. | Steps 2, 3, and 5 | Prose-managed checks or several helpers with separate state models |
 | Q08 | Create capture-only `code_review_evidence.py` in Step 1, then extend the same module in Step 2. | Steps 1 and 2 file ownership and line budgets | Duplicate capture implementations or step renumbering |
+| Q09 | Declare each validation command and its artifact paths in one tab-separated project, plan, or request entry; carry merged paths as `artifacts`, and report omissions as declaration defects. | Step 1 validation resolution and Step 3 validation scope | An entry-only artifact field without declaration ownership, or repository-wide artifact discovery |
+| Q10 | Let the reviewer retire retained evidence only after answer publication; bind retained evidence to its round and exchange occurrence and refuse stale reads. | Step 2 retained evidence and Steps 4–6 publication recovery | Retirement during implementation-check or by the requestor after answer consumption |
+| Q11 | Test instruction structure with identifiers read from the registered Step 2 CLI subcommands and reuse Step 2 behavior tests plus Step 6 acceptance journeys. | Step 3 reviewer-mode tests and Step 6 acceptance | A test-only prose interpreter or a new production assessment service |
+| Q12 | Compare the complete staged set from the immutable request-time index and use `Files involved` only for attribution. | Step 3 validation path-set construction | Bounding scope to `Files involved` or carrying a second authored staged inventory |
 
 ---
 
@@ -184,11 +188,15 @@ Apply this checklist to every numbered step.
 Issues to address:
 
 - Code-family requests do not carry the request-time index tree.
-- Requestor and reviewer do not share one typed resolved validation set and its sources.
+- Requestor and reviewer do not share one typed resolved validation set with
+  command sources and declared artifact paths.
 
 Fix intent:
 
-- Add one resolver for project defaults plus plan and request additions.
+- Add one resolver for project defaults plus plan and request additions. Parse
+  every non-comment declaration as tab-separated command and
+  repository-relative artifact-path fields, merge artifact paths with source
+  labels, and reject malformed or escaping paths.
 - Capture the Git index tree at publication and render both evidence fields in the complete request and paired summary.
 - Put the authored evidence object under a distinct `## Code review evidence` heading so it cannot be confused with the shared envelope's `## JSON` section.
 
@@ -223,7 +231,9 @@ Files involved:
 Tests first:
 
 - Use small temporary Git repositories to prove the shared helper captures the Git tree object of the index without inspecting the worktree.
-- Cover default preservation, additive plan/request checks, source labels, deterministic ordering, and resolver drift inputs.
+- Cover default preservation, additive plan/request checks, tab-separated
+  declaration parsing, repository-relative artifact validation, source labels,
+  deterministic command-and-artifact ordering, and resolver drift inputs.
 - Reject a missing or malformed tree object and require both new fields in request and summary.
 - Round-trip a request carrying both `## JSON` and `## Code review evidence` through the shared envelope parser unchanged.
 - Prove each caller input is read once and output pairing remains atomic.
@@ -231,14 +241,17 @@ Tests first:
 Classes and behavior:
 
 - `capture_index_tree`: the single requestor-and-reviewer implementation of Git index-tree capture, introduced before the first request publication consumer.
-- `ResolvedValidationSet`: immutable commands plus their project, plan, or request sources.
-- `resolve_code_review_validation`: combine additions without allowing a default removal.
+- `ResolvedValidationSet`: immutable commands plus their project, plan, or
+  request sources and the merged `artifacts` list for each command.
+- `resolve_code_review_validation`: combine tab-separated project, plan, and
+  request declarations without allowing a default removal; keep the first-seen
+  ordered union of repository-relative artifact paths.
 - `CodeReviewRoundInput`: receive `request_index_tree` from `capture_index_tree` rather than computing it, require the tree and `resolved_validation_set`, render their canonical fenced JSON object under `## Code review evidence`, derive the human-readable summary from the same object, and preserve the shared envelope unchanged.
 
 Completion criteria:
 
 - `ghog day` reports `exit=0`.
-- `rg -n 'capture_index_tree|Code review evidence|request_index_tree|resolved_validation_set' tools/code_review_evidence.py tools/code_review_request.py templates/code-review-request.template.md instructions/code-review-requestor.md` finds the single capture helper, distinct authored heading, and both evidence fields.
+- `rg -n 'capture_index_tree|Code review evidence|request_index_tree|resolved_validation_set|artifacts' tools/code_review_evidence.py tools/code_review_validation.py tools/code_review_request.py templates/code-review-request.template.md instructions/code-review-requestor.md` finds the single capture helper, distinct authored heading, both evidence fields, and the declared artifact payload.
 - Requestor acceptance tests publish the exact evidence without changing shared exchange mechanics.
 
 #### Step 1 -- addendums for request evidence
@@ -247,7 +260,7 @@ Line-budget checkpoint:
 
 - `tools/code_review_request.py`: before 382; below-550 safe; ceiling 650; expected final count below 470 (advisory).
 - `tools/code_review_evidence.py`: before 0; below-550 safe; ceiling 650; expected Step 1 final count below 80 (advisory).
-- `tools/code_review_validation.py`: before 0; below-550 safe; ceiling 650; expected final count below 220 (advisory).
+- `tools/code_review_validation.py`: before 0; below-550 safe; ceiling 650; expected final count below 220 after the Q09 declaration-parse and payload additions (advisory).
 - `test_code_review_request_tdd.py`: before 437; below-550 safe; ceiling 650; expected final count below 525 (advisory).
 - Other Step 1 Python tests: before 151, 426, and 254; below-550 safe; ceiling 650; keep focused additions in place and move broad combinations to the new validation leaf.
 
@@ -277,7 +290,7 @@ Issues to address:
 
 Fix intent:
 
-- Add exact-path Git evidence, comparison, attribution, and stable manifest helpers behind one non-interactive launcher.
+- Add exact-path Git evidence, comparison, attribution, and stable manifest helpers behind one non-interactive launcher. Retain the writing round number and exchange occurrence and refuse a manifest that does not match the current request.
 - Add a typed commit-plan validator and call it from the existing batch workflow.
 - Make every evidence operation callable by the later canonical reviewer instruction without composing Git commands in Markdown.
 
@@ -311,7 +324,7 @@ Files involved:
 
 Tests first:
 
-- Use temporary Git repositories to extend the Step 1 capture cases with pre-repair blobs, created and writer-deleted files, reviewer-only patch attribution, drift, and stable manifest write, read, and retirement.
+- Use temporary Git repositories to extend the Step 1 capture cases with pre-repair blobs, created and writer-deleted files, reviewer-only patch attribution, drift, stable manifest write/read/retirement, stale round or exchange refusal, and next-round overwrite.
 - Execute `umbrella_digest` capture and comparison for unchanged and changed pass/fail workflow outcomes, including the explicit not-applicable result for `Umbrella draft: none`.
 - Execute validation-state capture and comparison around ignored-only and tracked-file differences without reverting or laundering command artifacts into reviewer repairs.
 - Validate staged membership, group order, and conventional subjects from `CommitBlock` values through `validate_commit_plan(blocks, staged_paths)` after `interactive=False` parsing.
@@ -319,14 +332,14 @@ Tests first:
 
 Classes and behavior:
 
-- `CodeReviewEvidence`: baseline and assessed index tree objects, recorded blobs, repair paths, validation state, and identity-derived manifest serialization.
-- `CodeReviewEvidenceCli`: typed subcommands for index-tree capture, pre-repair blob recording, reviewer-only patch attribution, `umbrella_digest` capture/compare, validation-state capture/compare, and manifest write/read/retire.
+- `CodeReviewEvidence`: baseline and assessed index tree objects, recorded blobs, repair paths, validation state, round number, exchange occurrence, and identity-derived manifest serialization.
+- `CodeReviewEvidenceCli`: typed subcommands for index-tree capture, pre-repair blob recording, reviewer-only patch attribution, `umbrella_digest` capture/compare, validation-state capture/compare, and manifest write/read/retire; `read-manifest` receives the current round and exchange occurrence and refuses a mismatch.
 - `CommitPlanValidation`: typed groups and diagnostics without staging or commit side effects; `validate_commit_plan(blocks, staged_paths)` is the public validation API.
 
 Completion criteria:
 
 - `ghog day` reports `exit=0`.
-- `rg -n 'interactive=False|umbrella_digest|validation_state|retire_manifest' tools/code_review_evidence.py tools/code_review_evidence_cli.py tools/git_batch_commit_validation.py tests/unit/tools/test_code_review_evidence tests/unit/tools/test_git_batch_commit_validation` finds executable implementations and tests rather than documentation-only phrases.
+- `rg -n 'interactive=False|umbrella_digest|validation_state|round_number|exchange_occurrence|retire_manifest' tools/code_review_evidence.py tools/code_review_evidence_cli.py tools/git_batch_commit_validation.py tests/unit/tools/test_code_review_evidence tests/unit/tools/test_git_batch_commit_validation` finds executable implementations, retained request identity, and tests rather than documentation-only phrases.
 - Existing batch commit tests still pass with the shared validator in the commit path.
 - The launcher works from a repository root without environment setup.
 
@@ -370,7 +383,10 @@ Fix intent:
 
 - Add an explicit reviewer assessment mode to the canonical implementation-check instruction.
 - Require that mode to call the Step 2 evidence launcher before and after either the criteria pass or fail path.
-- Require each validation-state capture to name at least every staged step path and every known validation-artifact path, so tracked differences cannot fall outside the compared scope.
+- Require each validation-state capture to name the complete staged set from
+  the immutable request-time index plus every declared validation-artifact
+  path, so tracked differences cannot fall outside the compared scope. Use the
+  plan step's `Files involved` list only to explain attribution.
 - Permit writes only to validation-plan rows for the reviewed step and treat any detected umbrella mutation as a `changes-requested` finding that leaves the changed file in place.
 
 Expected outcome:
@@ -396,14 +412,16 @@ Tests first:
 
 - Assert the canonical instruction names the evidence launcher's `umbrella-digest` capture/compare operations on both criteria result paths.
 - Assert it names validation-state capture/compare, pre-repair blob capture, patch attribution, and manifest lifecycle commands rather than describing equivalent shell operations.
-- Assert both result paths build the validation-state scope from all staged step paths and known validation-artifact paths before capture.
+- Assert both result paths build the validation-state scope from the complete
+  request-time staged set and every declared validation-artifact path before
+  capture.
 - Cover the reviewed-step validation-row exemption, forbidden umbrella completion writes, changed-file retention, and `Umbrella draft: none` handling.
 - Reuse Step 2 executable tests as the proof that pass-path and fail-path mutation and validation side effects are actually detected.
 
 Classes and behavior:
 
 - Reviewer assessment mode: an explicit canonical mode that delegates executable evidence work to `bin/code_review_evidence.bat`, permits only reviewed-step validation-row writes, and reports any other tracked difference.
-- Canonical command contract: instruction tests take command identifiers such as `umbrella-digest` and `validation-state` from the Step 2 CLI's registered subcommand names, require the staged-plus-validation-artifact minimum path set, and use helper tests to prove their behavior.
+- Canonical command contract: instruction tests take command identifiers such as `umbrella-digest` and `validation-state` from the Step 2 CLI's registered subcommand names, require the complete request-time staged set plus the declared validation-artifact paths, treat `Files involved` as attribution only, and use helper tests to prove command behavior.
 
 Completion criteria:
 
@@ -670,216 +688,3 @@ Full workflow timing run readiness:
 Time-gated status for Step 6:
 
 - No persistent timeout marker; bounded-wait cases use configured short fixture deadlines and deterministic state transitions.
-
-## Open questions for the v0.11.0 implementation plan
-
-### Q12: Membership of staged paths in the reviewed step
-
-Question description: Step 3 requires `validation_path_set` to name every
-staged path that belongs to the reviewed step, but the plan never says how that
-membership is decided. The commit handoff stages the whole tree, so the index
-can also hold concurrent edits and tool-written files that no step authored.
-
-#### BBQ for Q12
-
-A cook must inspect every dish already placed on the service counter, even
-when another cook prepared one of them. The recipe card can explain who owns a
-dish, but it cannot make an unlisted dish disappear from the safety check. In
-this picture: the service counter is the request-time index, each dish is a
-staged path, the recipe card is the plan step's `Files involved` list, and the
-safety check is `validation_path_set` comparison.
-
-#### Options for Q12
-
-- Option L1: Bound membership to the plan step's `Files involved` list.
-  - pro: The comparison follows the plan's authored scope without another
-    carrier.
-  - con: Concurrent edits and tool-written staged paths can remain outside the
-    compared scope.
-- Option L2: Carry an authored staged-path inventory in the review request.
-  - pro: The writer can distinguish step-owned paths from unrelated staged
-    work explicitly.
-  - con: It adds a carrier that can drift from the immutable request-time
-    index.
-- Option L3: Use the complete staged set from the request-time index tree.
-  - pro: It needs no new carrier, uses immutable request evidence, and cannot
-    leave a staged path outside the comparison.
-  - con: The comparison includes unrelated staged paths, so the review answer
-    must explain attribution separately.
-
-#### Recommended option for Q12 (with arguments for this choice)
-
-Option L3: Build the compared staged scope from the complete staged set in the
-request-time index tree. Use the plan step's `Files involved` list only to
-explain attribution in the answer. This is the only option that cannot hide a
-tracked staged difference outside the evidence boundary.
-
-#### Answer to Q12: option L3 (with reason why it must be accepted as the answer)
-
-Option L3: Accept the complete request-time staged set because the request
-already carries its immutable index tree and Step 3 must fail closed over every
-staged path. The `Files involved` list remains attribution evidence rather than
-a boundary that can exclude staged work from comparison.
-
-### Q09: Source of known validation-artifact paths
-
-Question description: Step 3 requires `validation_path_set` to include every
-known validation-artifact path, but the resolved validation entries carry
-command text and sources only rather than structured output paths. The plan
-must state how the reviewer obtains a complete deterministic path set without a
-repository scan or guesswork.
-
-#### BBQ for Q09
-
-A cleaner needs a room list before starting. Reading labels on cleaning
-products does not reveal every room where residue may appear, while walking the
-whole building after the job defeats the bounded checklist. In this picture:
-the room list is `validation_path_set`, the product labels are validation
-command strings, residue is a validation artifact, and walking the building is
-a repository-wide scan.
-
-#### Options for Q09
-
-- Option I1: Extend each resolved validation entry with structured artifact
-  paths.
-  - pro: The request and reviewer share one machine-checkable source.
-  - con: Step 3 would modify the Step 1 validation model and its renderer.
-- Option I2: Define a deterministic reviewer checklist that maps project and
-  plan commands to their declared artifact paths, with request additions
-  supplied explicitly.
-  - pro: One declared source states both the command and the artifacts it
-    writes, so an omitted path has a named owner and a named fix.
-  - con: Command authors must keep the declared artifact list current, and the
-    resolved entry payload gains an artifacts field alongside command and
-    sources.
-- Option I3: Discover artifacts by comparing the repository after validation.
-  - pro: It can notice outputs that command authors forgot to declare.
-  - con: It violates the explicit-path boundary and detects omissions only
-    after the baseline scope was already incomplete.
-
-#### Recommended option for Q09 (with arguments for this choice)
-
-Option I2: Require every validation command source to declare an explicit
-artifact checklist. The versioned project declaration and the plan/request
-additions use the same tab-separated command-plus-path shape, and Step 1 carries
-the merged artifact paths in each resolved entry. This preserves O(n) capture
-over named paths and makes an omitted artifact a declaration defect rather than
-an invitation to scan the repository.
-
-#### Answer to Q09: option I2 (with reason why it must be accepted as the answer)
-
-Option I2: Accept the deterministic checklist, carried in two named places. A
-project declares its mandatory commands and the artifacts each one writes in
-the versioned declaration read by `load_project_validation_commands`: each
-non-comment line contains the command followed by zero or more
-repository-relative artifact paths as tab-separated fields. A plan-added or
-request-added command declares its artifacts in the same tab-separated shape
-inside the request, and Step 1 carries them by extending each resolved entry
-payload with an `artifacts` list beside `command` and `sources`. That payload
-field and the declaration parse are the two Step 1 changes this answer accepts;
-everything else stays inside Step 3. An artifact no declaration names is a plan
-or request defect: the reviewer reports it against the declaration rather than
-against the staged work, and the fix is the declaration.
-
-### Q10: Owner and timing of manifest retirement
-
-Question description: Step 3 requires manifest lifecycle commands but does not
-say whether `implementation-check`, the calling reviewer, or the requestor
-retires retained evidence. Retirement timing determines whether an interrupted
-answer publication can resume safely.
-
-#### BBQ for Q10
-
-A courier should not shred the delivery receipt while the parcel is still on
-the loading dock. The receipt can go only after the destination records the
-delivery. In this picture: the receipt is the retained manifest, the parcel is
-the reviewer answer, the loading dock is paired rendering, and the destination
-record is `publish-answer` with `outcome: published`.
-
-#### Options for Q10
-
-- Option J1: The calling reviewer retires the manifest only after the published
-  outcome.
-  - pro: Interrupted rendering or publication retains recovery evidence.
-  - con: The reviewer workflow must remember one post-publication command.
-- Option J2: `implementation-check` retires the manifest after its comparisons.
-  - pro: The check cleans up everything it touched.
-  - con: A later publication failure loses the assessed-tree and repair
-    recovery record.
-- Option J3: The requestor retires the manifest after consuming the answer.
-  - pro: Evidence remains available through requestor assessment.
-  - con: Ownership crosses role boundaries and leaves stale manifests at the
-    human convergence gate.
-
-#### Recommended option for Q10 (with arguments for this choice)
-
-Option J1: Keep retirement with the calling reviewer and key it to the
-published outcome. This matches the design's recovery boundary, including the
-exit-3 convergence publication, while keeping `implementation-check` advisory
-and publication-independent.
-
-#### Answer to Q10: option J1 (with reason why it must be accepted as the answer)
-
-Option J1: Accept reviewer-owned post-publication retirement because the
-manifest exists to bridge assessment and publication. Removing it at either an
-earlier check boundary or a later requestor boundary gives the wrong role
-control over that bridge. Retained evidence is valid only for the round and
-exchange that wrote it. The manifest records its round number and exchange
-occurrence beside the exchange identity and step, and `read-manifest` refuses a
-manifest whose round or exchange does not match the current request rather than
-reusing it. A round that never reaches `outcome: published`, whether abandoned,
-escalated, or overridden at the convergence gate, leaves its manifest in place
-as recovery evidence; the next reviewer round for the same identity refuses it
-on that check and overwrites it when it writes its own.
-
-### Q11: Depth of reviewer-mode instruction tests
-
-Question description: The plan asks tests to cover both criteria paths,
-permission boundaries, and executable evidence commands. A Markdown
-instruction cannot execute an LLM decision path, so the plan must define where
-structure assertions stop and the Step 2 executable tests take over.
-
-#### BBQ for Q11
-
-A fire-escape sign can be checked for every required arrow, while a separate
-drill proves that the doors open. Building a robot that reads the sign and
-performs the drill would test a new robot rather than the escape route. In this
-picture: the sign is `implementation-check.md`, the arrows are command and
-permission clauses, the drill is the Step 2 evidence suite, and the robot is a
-new instruction interpreter.
-
-#### Options for Q11
-
-- Option K1: Use structure tests for instruction clauses and reuse Step 2 tests
-  for command behavior.
-  - pro: Each boundary is tested at its executable layer without duplicate Git
-    logic.
-  - con: No automated test interprets the prose workflow itself; Step 6 covers
-    both result paths through acceptance journeys.
-- Option K2: Add a test-only instruction interpreter for Yes and No journeys.
-  - pro: The suite could simulate the whole written sequence.
-  - con: The interpreter becomes an unplanned second implementation whose
-    agreement with an LLM is not established.
-- Option K3: Replace the instruction branch with a new production assessment
-  service.
-  - pro: Reviewer permissions and branches become directly executable.
-  - con: It reopens design Q03 and expands Step 3 far beyond its listed files.
-
-#### Recommended option for Q11 (with arguments for this choice)
-
-Option K1: Assert the exact command identifiers, both result sections, path-set
-minimum, write restrictions, changed-file retention, and absent-umbrella rule
-in the instruction. Let the existing Step 2 temporary-repository tests prove
-capture and comparison behavior.
-
-#### Answer to Q11: option K1 (with reason why it must be accepted as the answer)
-
-Option K1: Accept the layered test boundary because it proves every Step 3
-responsibility without inventing an interpreter or copying evidence behavior.
-The structure test takes the command identifiers it asserts from the Step 2
-CLI's registered subcommand names, including `umbrella-digest` and
-`validation-state`, rather than from literal strings. Renaming or removing a
-subcommand therefore fails the Step 3 test instead of leaving the instruction
-and its test agreeing with each other while both drift from the executable
-surface. The code-review round can still challenge whether the prose clauses
-are complete and mutually consistent.
