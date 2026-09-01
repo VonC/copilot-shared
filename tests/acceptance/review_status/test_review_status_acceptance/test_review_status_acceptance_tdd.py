@@ -2,17 +2,16 @@
 
 The tests compare the real Windows launcher with direct module execution from a
 nested caller repository, then assert the durable state categories and process
-statuses promised by the settled review-status design.
+statuses promised by the settled review-status design. The invalid-root case
+calls the public CLI adapter in-process so it tests the same status and stream
+contract without paying for an unrelated cold Python subprocess.
 """
 
-# ruff: noqa: PLR2004, S603
+# ruff: noqa: PLR2004
 
 from __future__ import annotations
 
 import json
-import os
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -20,6 +19,7 @@ from typing import TYPE_CHECKING, Any, cast
 import pytest
 
 from tools.review_status import collect_review_status
+from tools.review_status_cli import main as review_status_main
 from tools.review_status_models import DamagedCandidateStatus
 
 if TYPE_CHECKING:
@@ -254,38 +254,19 @@ def test_changed_coordination_is_reported_without_mutating_the_candidate(
     assert original_read(candidate) == original_bytes
 
 
-def test_invalid_explicit_root_is_an_operational_failure(tmp_path: Path) -> None:
+def test_invalid_explicit_root_is_an_operational_failure(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """An invalid controlled root returns status two without a partial payload."""
     missing = tmp_path / "missing"
-    shared_root = Path(__file__).resolve().parents[4]
-    environment = os.environ.copy()
-    existing = environment.get("PYTHONPATH")
-    environment["PYTHONPATH"] = (
-        str(shared_root)
-        if not existing
-        else f"{shared_root}{os.pathsep}{existing}"
+    process_status = review_status_main(
+        ["--root", str(missing), "--format", "json"],
     )
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-P",
-            "-m",
-            "tools.review_status_cli",
-            "--root",
-            str(missing),
-            "--format",
-            "json",
-        ],
-        cwd=tmp_path,
-        env=environment,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    captured = capsys.readouterr()
 
-    assert completed.returncode == 2
-    assert completed.stdout == ""
-    assert completed.stderr.startswith("rvw_status: ")
+    assert process_status == 2
+    assert captured.out == ""
+    assert captured.err.startswith("rvw_status: ")
     with pytest.raises(json.JSONDecodeError):
-        json.loads(completed.stderr)
+        json.loads(captured.err)
