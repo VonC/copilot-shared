@@ -256,6 +256,18 @@ identity resolution.
   rejected on its next transition. This deferred point does not change the
   requirement-level pickup authority.
 
+## File-based IO cost clarification for review resumption
+
+- Artifact-home resolution reads one small versioned declaration per workflow
+  invocation and must not load every review artifact to derive one path.
+- `migration_check` inspects only the project root, default home, and configured
+  home without recursive repository discovery or full status projection.
+- Status performs at most one bounded migration preflight before its ordinary
+  read-only projection.
+- Selected-role identity completion scans only one exchange occurrence, and the
+  global reviewer wait treats file notifications as hints with bounded polling
+  rather than repeatedly projecting all review state.
+
 ## Acceptance criteria for review resumption
 
 1. With no configuration, every new runtime review artifact is placed below

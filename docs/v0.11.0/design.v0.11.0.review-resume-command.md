@@ -503,6 +503,21 @@ normal requestor skill with the new exact identity.
 - The convergence gate and all existing requestor/reviewer authority checks
   remain in force after pickup.
 
+## File-based IO cost clarification for v0.11.0 review resumption
+
+- Configuration is loaded once per workflow invocation and the resolved locator
+  is reused by every producer and consumer in that invocation.
+- Placement preflight performs three non-recursive directory reads and parses
+  only registered candidates; migration fingerprints each source a bounded
+  number of times under one journaled transaction.
+- Status performs no projection before placement is ready and performs one
+  ordinary read-only projection afterward.
+- Role reconciliation is linear in artifacts for one selected occurrence.
+- Directory notifications only mark the global wait dirty; a bounded rescan is
+  the source of truth, so event callbacks perform constant work.
+- Ownership claims and mutations read and write one coordination record under
+  the transition lock.
+
 ## Acceptance cases for v0.11.0 review resumption
 
 1. With no declaration, all new runtime artifacts resolve below `.reviews` and
