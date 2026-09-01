@@ -54,6 +54,19 @@ exchange or manually choose its next workflow command.
    test behavior delivered by completed umbrella items without reopening their
    completed documents or status rows.
 
+Only protocol-owned runtime artifacts move into the artifact home. Versioned
+`docs/.../review.*.md` transcripts remain beside their reviewed documents. One
+dedicated versioned repository declaration carries the artifact-home setting;
+session environment variables and resume or status arguments cannot override
+it. The declaration's exact file name and syntax are left to design. A declared
+path must resolve inside the repository and must not name an existing tracked
+directory.
+
+Creating an artifact home also creates a home-local `.gitignore` before any
+runtime artifact is written or moved. That generated ignore file is itself
+untracked under its own rule. An existing home without effective ignore
+coverage is a blocking layout and is not repaired silently during preflight.
+
 ## Required migration preflight
 
 A fast `migration_check` tool must report one of these settled outcomes before
@@ -68,6 +81,11 @@ resume or migration-capable status collection continues:
 The check must not perform the full review-status projection merely to decide
 artifact placement.
 
+The check inspects only the recognized legacy project-root location, the
+default `.reviews` home, and the configured home. Migration validates the
+complete move before changing any path and then moves every artifact or none;
+one collision blocks the whole move and leaves the source layout intact.
+
 Every resume invocation must run `migration_check` before it reads status or
 selects a role. When migration is required, resume runs the migration tool and
 repeats the check. A failed second check or blocking diagnostic stops the
@@ -79,6 +97,12 @@ preflight mutation is the only exception to the prior strictly read-only status
 contract. Once the check passes, normal discovery, projection, and rendering
 remain read-only. Status reports whether migration was unnecessary, completed,
 or blocked.
+
+Ordinary review status performs a safe required migration automatically. Its
+typed result advances the schema version and carries a migration record for the
+unnecessary and completed cases. A blocked layout returns the existing
+operational-failure outcome with a migration diagnostic because no trustworthy
+status projection can follow.
 
 ## Required LLM nature trace
 
@@ -126,6 +150,10 @@ path, the role, each recorded nature, and the current nature. It presents only:
 
 Override never rewrites an existing conflicting LLM nature.
 
+Override authority lasts only for the current resume attempt. A later resume
+re-evaluates the preserved discrepancy and requires a new decision when it is
+still present.
+
 Artifacts authored by the counterpart role remain readable. When their LLM
 nature is missing, the reader ignores that missing field and leaves the
 artifact unchanged. A counterpart artifact carrying a different nature is
@@ -154,6 +182,12 @@ It resolves the role as follows:
 6. A matching role argument does not bypass the role-wide artifact identity
    scan or its `Override` or `Stop` decision.
 
+When both role traces identify the detected current LLM and no role argument
+was passed, resume asks whether to continue as requestor or reviewer. When host
+detection returns unknown or unavailable, resume can continue after role
+selection but does not backfill that weak value into legacy artifacts; missing
+natures remain available for a later known LLM to complete.
+
 Once the role and artifact identity gates are resolved, resume continues
 without another confirmation.
 
@@ -175,6 +209,11 @@ A resumed reviewer has exactly two protocol outcomes:
 A reviewer resume never runs `pw skill`, starts writer work, or advances a
 requestor workflow. Its open-ended wait wakes only for review-request
 artifacts, not unrelated review files.
+
+The global reviewer wait remains active until a request arrives or the human
+cancels it; exchange timeout rules begin only after a concrete request exists.
+If several requests are observed together, resume lists them and asks the human
+to select one instead of inventing an ordering or processing a queue.
 
 ## Requestor continuation behavior
 
@@ -209,6 +248,9 @@ identity resolution.
   `awaiting-human-confirmation` convergence gate retain their existing
   authority rules.
 - Repeating resume against the same durable state is idempotent.
+- Design must specify how a session displaced by lease-independent pickup is
+  rejected on its next transition. This deferred point does not change the
+  requirement-level pickup authority.
 
 ## Acceptance criteria for review resumption
 
@@ -280,572 +322,21 @@ this item, because continuation requires an active LLM session. The umbrella
 draft is updated with both revisions; no completed requirement, design, plan,
 validation document, or completed umbrella row is reopened.
 
-## Open questions for the v0.11.0 feature request
-
-### Q01: Which review artifacts belong in the configured artifact home?
-
-Question description: The requirement puts protocol-owned runtime artifacts
-below the configured directory, but the umbrella also calls versioned
-`docs/.../review.*.md` transcripts review artifacts. The feature must state
-whether those documentation transcripts move too.
-
-#### BBQ for Q01
-
-We need to decide whether the filing cabinet stores only the live case files or
-also the published case history kept in the library. Moving both gives one
-location, but it also removes documentation from its established shelf. In
-this picture: the filing cabinet is `.reviews`, live case files are runtime
-protocol artifacts, and the library history is versioned review transcripts.
-
-#### Options for Q01
-
-- Option Q01-A: Move only protocol-owned runtime artifacts.
-  - pro: Keeps transient coordination evidence together without changing the
-    versioned documentation contract.
-  - con: Review-related files still exist in two intentional locations.
-- Option Q01-B: Move runtime artifacts and versioned transcripts.
-  - pro: Places every file called a review artifact below one directory.
-  - con: Breaks the established rule that transcripts live beside the reviewed
-    documents and remain normal project documentation.
-- Option Q01-C: Configure runtime and transcript locations independently.
-  - pro: Supports repositories that want both categories relocated.
-  - con: Adds two settings and cross-location discovery rules to one feature.
-
-#### Recommended option for Q01 (with arguments for this choice)
-
-Option Q01-A: Move only protocol-owned runtime artifacts. The requested
-migration targets files currently stored at `PRJ_DIR`, while versioned
-transcripts already have a stable documentation purpose and location.
-
-#### Answer to Q01: option Q01-A (with reason why it must be accepted as the answer)
-
-Option Q01-A: Accept this boundary so `.reviews` becomes the runtime protocol
-home without silently relocating versioned documentation or reopening its
-history contract. This feature therefore supersedes the umbrella's earlier
-project-root placement rule for runtime artifacts only.
-
-### Q02: Which legacy locations must migration_check inspect?
-
-Question description: The requirement names current root artifacts and a new
-default directory, but a configured directory may differ from the default. The
-feature must define which known legacy locations are checked without turning
-the preflight into an unrestricted repository scan.
-
-#### BBQ for Q02
-
-When moving house, we can check only the old front room, check the front room
-and the standard storage unit, or search every building in town. The last
-choice finds more but is slow and may collect someone else's property. In this
-picture: the front room is `PRJ_DIR`, the storage unit is `.reviews`, and the
-town is the entire repository tree.
-
-#### Options for Q02
-
-- Option Q02-A: Inspect only artifacts directly below `PRJ_DIR`.
-  - pro: Matches the original legacy layout and keeps the check small.
-  - con: Misses artifacts in `.reviews` after configuration changes to another
-    directory.
-- Option Q02-B: Inspect `PRJ_DIR`, the default `.reviews`, and the configured
-  directory.
-  - pro: Covers the known old, default, and current homes with bounded work.
-  - con: Cannot discover an arbitrary previously configured path that is no
-    longer recorded.
-- Option Q02-C: Recursively scan the repository for artifact-shaped names.
-  - pro: Can find evidence left in unexpected folders.
-  - con: Risks false matches, slower checks, and migration of unrelated files.
-
-#### Recommended option for Q02 (with arguments for this choice)
-
-Option Q02-B: Inspect the root, default, and configured locations. These are
-the locations the protocol can identify safely without guessing from filenames
-across the repository.
-
-#### Answer to Q02: option Q02-B (with reason why it must be accepted as the answer)
-
-Option Q02-B: Accept the bounded three-location check because it covers normal
-legacy and configuration transitions while keeping `migration_check` fast and
-trustworthy.
-
-### Q03: Can one session override the repository artifact-home setting?
-
-Question description: Every producer and consumer must resolve the same
-artifact home. The requirement does not settle whether a session environment
-or skill argument may temporarily override the durable repository setting.
-
-#### BBQ for Q03
-
-Two coworkers need to agree which mailbox receives the forms. A personal note
-that redirects one coworker to another mailbox is flexible, but the other
-coworker may wait forever at the old one. In this picture: the mailbox is the
-artifact home, the coworkers are requestor and reviewer sessions, and the
-personal note is a per-session override.
-
-#### Options for Q03
-
-- Option Q03-A: Use one durable repository setting, with the default when it is
-  absent.
-  - pro: Every role resolves the same location across sessions and restarts.
-  - con: A temporary alternate location requires changing repository state.
-- Option Q03-B: Let environment variables override the repository setting.
-  - pro: Supports temporary and automation-specific locations.
-  - con: Different sessions can silently watch different directories.
-- Option Q03-C: Let every resume or status invocation pass a path argument.
-  - pro: Makes one-off testing convenient.
-  - con: Weakens durable discovery and requires the caller to remember context.
-
-#### Recommended option for Q03 (with arguments for this choice)
-
-Option Q03-A: Use one durable repository setting. Restart-safe coordination
-depends on every participant deriving the same location without sharing shell
-state or command arguments.
-
-#### Answer to Q03: option Q03-A (with reason why it must be accepted as the answer)
-
-Option Q03-A: Accept one durable setting plus the default so artifact discovery
-remains consistent across Claude, Codex, Gemini, and later sessions. Q13
-selects the durable carrier and its repository-boundary validation.
-
-### Q04: Should ordinary review status migrate automatically?
-
-Question description: Resume must migrate before continuing, while review
-status only needs to be able to check and migrate. The feature must settle
-whether a normal `rvw_status` call performs safe migration automatically or
-requires an explicit migration request.
-
-#### BBQ for Q04
-
-A receptionist can move misplaced files while checking the register, or report
-the misplaced files and wait for permission. Automatic filing is convenient,
-but callers who expected only a report may be surprised by moved files. In
-this picture: the receptionist is `rvw_status`, the register check is status
-collection, and filing is artifact migration.
-
-#### Options for Q04
-
-- Option Q04-A: Automatically migrate whenever `migration_check` says the move
-  is safe.
-  - pro: A simple status call repairs the legacy layout and immediately reports
-    current state.
-  - con: A command previously treated as read-only now moves files by default.
-- Option Q04-B: Check by default and require an explicit status migration mode.
-  - pro: Preserves observational behavior for normal status callers.
-  - con: Leaves status unable to complete until the caller invokes migration.
-- Option Q04-C: Never migrate from status; report the migration command only.
-  - pro: Keeps a strict separation between observation and mutation.
-  - con: Does not satisfy the requested ability for status to perform migration
-    itself.
-
-#### Recommended option for Q04 (with arguments for this choice)
-
-Option Q04-A: Automatically migrate safe legacy layouts and report the action.
-The revised CDC explicitly accepts bounded preflight mutation, and automatic
-migration gives both resume and status one predictable entry behavior.
-
-#### Answer to Q04: option Q04-A (with reason why it must be accepted as the answer)
-
-Option Q04-A: Accept automatic safe migration so `rvw_status` can return a
-current, trustworthy result without a second command while still stopping on
-every collision or ambiguity.
-
-### Q05: Is migration all-or-nothing when one artifact conflicts?
-
-Question description: The requirement refuses destructive collisions but does
-not say whether safe files may move before a later conflict stops migration.
-That choice affects recovery and the meaning of the repeated preflight.
-
-#### BBQ for Q05
-
-A mover can inspect every box before loading the truck, or load clear boxes
-until finding one with a duplicate label. The second approach makes progress,
-but leaves belongings split between houses. In this picture: boxes are review
-artifacts, duplicate labels are destination collisions, and the two houses are
-the legacy and configured directories.
-
-#### Options for Q05
-
-- Option Q05-A: Validate the complete move first and migrate all artifacts or
-  none.
-  - pro: Never leaves one exchange split across locations after a known
-    conflict.
-  - con: One collision blocks movement of every otherwise safe artifact.
-- Option Q05-B: Move non-conflicting artifacts and report the blocked subset.
-  - pro: Reduces the remaining migration work.
-  - con: Creates a partial layout that every reader must understand during
-    repair.
-- Option Q05-C: Keep the source copy when a destination exists and continue.
-  - pro: Avoids overwriting either copy.
-  - con: Leaves duplicate identities and makes the authoritative artifact
-    ambiguous.
-
-#### Recommended option for Q05 (with arguments for this choice)
-
-Option Q05-A: Use an all-or-nothing migration after a complete preflight. The
-protocol's durable identity is more important than partial progress, and a
-split exchange would make resume and status less trustworthy.
-
-#### Answer to Q05: option Q05-A (with reason why it must be accepted as the answer)
-
-Option Q05-A: Accept atomic migration so a failed attempt leaves the legacy
-layout intact and gives the human one complete conflict report to resolve.
-
-### Q06: How should resume choose when both roles record the same LLM nature?
-
-Question description: A single Codex, Claude, or Gemini nature may appear as
-both requestor and reviewer. In that case nature detection does not identify
-one role even though neither trace is missing.
-
-#### BBQ for Q06
-
-One person has keys for both the writer's office and the reviewer's office.
-Recognizing the person does not say which desk they should use today. In this
-picture: the person is the detected LLM nature, the offices are the two roles,
-and the desk choice is resume routing.
-
-#### Options for Q06
-
-- Option Q06-A: Ask for requestor or reviewer when both traces match and no role
-  argument was passed.
-  - pro: Resolves the real ambiguity without guessing from transient state.
-  - con: Adds a role question even though both traces contain LLM nature.
-- Option Q06-B: Select whichever role owns the next protocol action.
-  - pro: Keeps simple resume automatic in many cases.
-  - con: Conflates current protocol state with proof of which role the session
-    intends to play.
-- Option Q06-C: Refuse unless the caller passes an explicit role argument.
-  - pro: Makes automation deterministic.
-  - con: A human simple resume cannot proceed without restarting with an
-    argument.
-
-#### Recommended option for Q06 (with arguments for this choice)
-
-Option Q06-A: Ask only in this genuinely ambiguous case. It follows the rule
-that resume must not guess a role while still letting a simple interactive
-invocation continue.
-
-#### Answer to Q06: option Q06-A (with reason why it must be accepted as the answer)
-
-Option Q06-A: Accept the role question when both role traces match the current
-LLM because nature alone cannot distinguish the intended responsibility.
-
-### Q07: What should resume do when the current LLM nature is unknown?
-
-Question description: Host detection can produce unknown or unavailable. The
-feature must settle whether resume may continue with an explicit role and what
-happens to missing-nature legacy artifacts in that session.
-
-#### BBQ for Q07
-
-A worker can prove which job they were assigned but their identity badge is
-unreadable. They can still do the job, but stamping old paperwork with
-"unknown" may make later identification harder. In this picture: the job is
-the protocol role, the badge is LLM nature detection, and the paperwork is the
-legacy artifact set.
-
-#### Options for Q07
-
-- Option Q07-A: Allow role selection but leave missing artifact natures
-  unchanged until a known LLM resumes.
-  - pro: Continues useful work without writing a weak identity over legacy
-    evidence.
-  - con: The exchange remains partly untraced.
-- Option Q07-B: Backfill the explicit value `unknown` into current-role
-  artifacts.
-  - pro: Records that identity handling ran during the session.
-  - con: Converts recoverable absence into a durable value that still cannot
-    select a future role.
-- Option Q07-C: Refuse resume until Claude, Codex, or Gemini is detected.
-  - pro: Every continuation has a concrete identity.
-  - con: Blocks other or newly introduced hosts even when the role is explicit.
-
-#### Recommended option for Q07 (with arguments for this choice)
-
-Option Q07-A: Continue with an explicit or selected role but do not backfill
-unknown. This preserves legacy evidence for a later known session while
-keeping the protocol usable on unsupported hosts.
-
-#### Answer to Q07: option Q07-A (with reason why it must be accepted as the answer)
-
-Option Q07-A: Accept role continuation without unknown backfill so the feature
-does not confuse inability to detect a host with a durable participant nature.
-
-### Q08: How broad is one role-wide identity backfill?
-
-Question description: The requirement says to update all artifacts for a role,
-but it can mean the selected exchange, every occurrence for the same reviewed
-document, or every artifact for that role in the repository.
-
-#### BBQ for Q08
-
-Correcting the author's name can mean fixing one case folder, every edition of
-one book, or every document in the archive. The broader the correction, the
-greater the chance of changing work from another session. In this picture: the
-case folder is one exchange occurrence, the editions are one reviewed topic's
-occurrences, and the archive is the repository.
-
-#### Options for Q08
-
-- Option Q08-A: Backfill all current-role artifacts in the selected exchange
-  occurrence only.
-  - pro: Uses one exact durable identity and keeps the mutation bounded.
-  - con: Other legacy exchanges for the same role remain unfilled.
-- Option Q08-B: Backfill every occurrence for the same reviewed document and
-  role.
-  - pro: Completes identity history for one topic at once.
-  - con: May attribute older occurrences created by another session of the same
-    role.
-- Option Q08-C: Backfill every repository artifact attributed to that role.
-  - pro: Removes missing nature broadly in one pass.
-  - con: Incorrectly assumes one current LLM authored all historical work for
-    that role.
-
-#### Recommended option for Q08 (with arguments for this choice)
-
-Option Q08-A: Limit backfill to the selected exchange occurrence. That is the
-largest set whose durable context the resume invocation has actually selected
-and validated.
-
-#### Answer to Q08: option Q08-A (with reason why it must be accepted as the answer)
-
-Option Q08-A: Accept exchange-scoped backfill to satisfy the all-artifacts rule
-without claiming ownership of unrelated historical exchanges.
-
-### Q09: How long does an identity discrepancy override last?
-
-Question description: `Override` authorizes continuation despite current-role
-artifacts naming another LLM, while preserving those names. The feature must
-state whether that authority expires with the current resume attempt or changes
-future routing.
-
-#### BBQ for Q09
-
-A supervisor can admit a substitute for one shift, for the whole project, or
-permanently change the staff register. A narrow pass is repetitive but does not
-silently alter later access. In this picture: the substitute is the current
-LLM, the shift is one resume attempt, and the staff register is durable role
-identity.
-
-#### Options for Q09
-
-- Option Q09-A: Apply Override only to the current resume attempt.
-  - pro: Future sessions re-evaluate the preserved discrepancy.
-  - con: Repeated resumes may ask again about the same evidence.
-- Option Q09-B: Persist Override for the selected exchange occurrence.
-  - pro: Avoids repeated prompts while that exchange continues.
-  - con: Adds a second durable authority record that later readers must honor.
-- Option Q09-C: Replace the conflicting recorded nature with the current LLM.
-  - pro: Makes future routing simple.
-  - con: Destroys the evidence the requirement explicitly says to preserve.
-
-#### Recommended option for Q09 (with arguments for this choice)
-
-Option Q09-A: Limit Override to one resume attempt. The recorded mismatch stays
-visible, and every later session makes its own explicit decision.
-
-#### Answer to Q09: option Q09-A (with reason why it must be accepted as the answer)
-
-Option Q09-A: Accept attempt-scoped Override because it grants the requested
-continuation without converting a human exception into silent permanent role
-ownership.
-
-### Q10: Does an open-ended reviewer wait expire?
-
-Question description: Existing review waits have timeout and escalation rules,
-but a reviewer waiting for an unknown future request has no exchange to renew
-or escalate. The expected lifetime of that wait needs a feature-level rule.
-
-#### BBQ for Q10
-
-A duty officer can remain on call until a case arrives, end the shift after a
-timer, or repeatedly clock out and back in. A timeout makes sense for a late
-response to an existing case, but not necessarily before any case exists. In
-this picture: the officer is the resumed reviewer, the case is a new request
-artifact, and the shift timer is the exchange timeout.
-
-#### Options for Q10
-
-- Option Q10-A: Wait until a request arrives or the human cancels the wait.
-  - pro: Matches the requirement to remain available for an unknown future
-    request.
-  - con: The session can remain occupied indefinitely.
-- Option Q10-B: Apply the ordinary review timeout and escalate when it expires.
-  - pro: Keeps all waits bounded by one policy.
-  - con: There is no exchange identity or counterpart failure to escalate.
-- Option Q10-C: Poll once and return when no request exists.
-  - pro: Never occupies the session for long.
-  - con: Does not satisfy the requested reviewer resume behavior.
-
-#### Recommended option for Q10 (with arguments for this choice)
-
-Option Q10-A: Keep the reviewer wait active until a request arrives or the
-human cancels. Exchange timeout rules begin only after a concrete request and
-exchange identity exist.
-
-#### Answer to Q10: option Q10-A (with reason why it must be accepted as the answer)
-
-Option Q10-A: Accept the open-ended wait because reviewer resume is explicitly
-an availability mode when no request identity is known.
-
-### Q11: What happens when several review requests appear for one reviewer?
-
-Question description: An open-ended reviewer may observe more than one new
-request. Existing status behavior refuses ambiguous multiple exchanges, but
-resume must say whether it keeps that rule or automatically orders work.
-
-#### BBQ for Q11
-
-If two case files land on a reviewer's desk together, they can ask which one is
-urgent, take the oldest, or work through the whole stack. Automatic ordering is
-convenient, but it creates a priority rule the requester never stated. In this
-picture: case files are review requests, desk arrival is the configured-folder
-wait, and priority is resume selection.
-
-#### Options for Q11
-
-- Option Q11-A: Stop, list all requests, and ask the human to select one.
-  - pro: Preserves the established refusal to guess among multiple exchanges.
-  - con: Interrupts otherwise automatic reviewer operation.
-- Option Q11-B: Select the oldest request deterministically.
-  - pro: Lets reviewer resume continue without a human choice.
-  - con: Introduces an age-based priority that may not match project needs.
-- Option Q11-C: Process every request sequentially in discovery order.
-  - pro: Eventually answers the full queue automatically.
-  - con: Widens one resume invocation across independent exchanges and makes
-    failure recovery harder.
-
-#### Recommended option for Q11 (with arguments for this choice)
-
-Option Q11-A: Keep the existing ambiguity boundary and ask for one selection.
-The feature promises exact durable continuation, not an implicit review queue
-policy.
-
-#### Answer to Q11: option Q11-A (with reason why it must be accepted as the answer)
-
-Option Q11-A: Accept explicit selection for concurrent requests so resume never
-chooses an exchange priority that the protocol did not record.
-
-### Q12: How does the configured artifact home remain ignored by Git?
-
-Question description: Exchange activation requires every transient path to be
-effectively ignored. The root `a.*` rule does not cover artifacts moved below a
-configured subdirectory, so the home needs an explicit ignore-coverage rule.
-
-#### BBQ for Q12
-
-A secure records room must be marked private before files are carried inside.
-The sign can be installed on the building, on the room itself, or the guard can
-be told to ignore the missing sign. In this picture: the room is the configured
-artifact home, the sign is Git ignore coverage, and the guard is activation's
-ignore validation.
-
-#### Options for Q12
-
-- Option Q12-A: Add the configured home to the repository's root `.gitignore`.
-  - pro: Keeps ignore policy visible in one versioned file.
-  - con: A configurable path requires rewriting repository ignore rules each
-    time the setting changes.
-- Option Q12-B: Write a `.gitignore` inside the artifact home when it is
-  created.
-  - pro: Ignore coverage travels with any configured repository-local home and
-    preserves the existing validation rule.
-  - con: The migration and directory-creation paths must maintain one extra
-    control file.
-- Option Q12-C: Let ignore validation accept the resolved home without a Git
-  rule.
-  - pro: Avoids creating or changing ignore files.
-  - con: Weakens the existing safety check and can leave transient evidence
-    visible to Git tooling.
-
-#### Recommended option for Q12 (with arguments for this choice)
-
-Option Q12-B: Create an internal `.gitignore` before placing artifacts in the
-home. This works for the default and configured locations without teaching
-activation an exception.
-
-#### Answer to Q12: option Q12-B (with reason why it must be accepted as the answer)
-
-Option Q12-B: Accept the home-local ignore rule. Migration creates a missing
-home and its ignore rule before moving anything. A home that already exists
-without effective coverage is a blocking layout: `migration_check` reports it
-rather than adding the rule on its behalf. The generated home-local
-`.gitignore` is itself untracked under its own rule, so a fresh clone
-establishes coverage when first use creates the home.
-
-### Q13: Where does the durable artifact-home setting live?
-
-Question description: Every participant must derive one location across
-sessions and machines. The feature must select a durable configuration carrier
-and reject locations that would expose or relocate protocol evidence unsafely.
-
-#### BBQ for Q13
-
-All staff need the same recorded address for the records room. A private note
-works only for one employee, a shared register travels with the office, and a
-miscellaneous settings ledger may already have unrelated owners. In this
-picture: the address is the artifact-home path, the private note is
-`a.review-mode`, and the shared register is a versioned declaration.
-
-#### Options for Q13
-
-- Option Q13-A: Store the path in the ignored `a.review-mode` marker.
-  - pro: Keeps all review-mode controls in one per-clone file.
-  - con: Other clones and machines do not receive the same setting.
-- Option Q13-B: Add a dedicated versioned repository declaration beside
-  `.review-validation`.
-  - pro: Every participant derives the same path without shared shell state.
-  - con: Adds one project-level configuration surface.
-- Option Q13-C: Reuse an existing versioned project settings file.
-  - pro: Avoids another root declaration.
-  - con: Couples review protocol configuration to a file with unrelated
-    ownership or a format not shared by all consuming projects.
-
-#### Recommended option for Q13 (with arguments for this choice)
-
-Option Q13-B: Use a dedicated versioned declaration because the setting must
-remain identical across sessions, restarts, clones, and machines.
-
-#### Answer to Q13: option Q13-B (with reason why it must be accepted as the answer)
-
-Option Q13-B: Accept a dedicated versioned repository declaration. Its exact
-file name and syntax are left to design. Its path must resolve inside the
-repository; a path outside the repository or an existing tracked directory is
-invalid and blocks migration, status, and resume.
-
-### Q14: How does typed review status report migration?
-
-Question description: Resume consumes the stable status result without
-scraping prose. The result must represent unnecessary, completed, and blocked
-migration while preserving the existing operational-failure meaning.
-
-#### BBQ for Q14
-
-A delivery receipt can add a new relocation field, reuse its failure stamp when
-delivery is blocked, or leave the details only in a handwritten note. In this
-picture: the receipt is the typed status schema, relocation is migration, and
-the failure stamp is the operational-failure outcome.
-
-#### Options for Q14
-
-- Option Q14-A: Add a typed migration record and advance the schema version.
-  - pro: Resume and both renderers receive validated unnecessary or completed
-    migration state.
-  - con: Every schema consumer and fixture must adopt the new version.
-- Option Q14-B: Represent a blocked migration with the existing
-  operational-failure outcome and a diagnostic.
-  - pro: Preserves the established meaning that status could not produce a
-    trustworthy result.
-  - con: The migration-specific reason still needs a typed diagnostic record.
-- Option Q14-C: Report migration only in human-readable status output.
-  - pro: Avoids a schema change.
-  - con: Forces resume to scrape prose or rediscover migration state.
-
-#### Recommended option for Q14 (with arguments for this choice)
-
-Options Q14-A and Q14-B together: add the typed migration record and schema
-version for unnecessary and completed results, while using the existing
-operational-failure outcome when migration is blocked.
-
-#### Answer to Q14: options Q14-A and Q14-B (with reason why they must be accepted as the answer)
-
-Accept Q14-A and Q14-B together. The schema version must advance because the
-typed result changes; a blocked layout returns operational failure with a
-migration diagnostic because no trustworthy status projection can follow.
+## Requirement clarifications
+
+| Question | Decision | Integrated in | Rejected alternatives |
+| --- | --- | --- | --- |
+| Q01 | Move runtime protocol artifacts only; keep versioned transcripts beside reviewed documents. | Gap to close for configurable review evidence | Moving transcripts too; configuring runtime and transcript homes separately. |
+| Q02 | Check only `PRJ_DIR`, default `.reviews`, and the configured home. | Required migration preflight | Root-only inspection; recursive repository scans. |
+| Q03 | Use one durable repository setting with no session override. | Gap to close for configurable review evidence | Environment overrides; per-command path arguments. |
+| Q04 | Let ordinary `rvw_status` perform and report safe migration automatically. | Required migration preflight | Explicit migration mode; status that only reports a migration command. |
+| Q05 | Validate first, then migrate every artifact or none. | Required migration preflight | Partial moves; retaining duplicate source and destination artifacts. |
+| Q06 | Ask for a role when both role traces match the current LLM. | Resume skill and role selection | Selecting the next actor; requiring a new invocation with an argument. |
+| Q07 | Continue by selected role when LLM nature is unknown, without backfilling `unknown`. | Resume skill and role selection | Durable unknown backfill; refusing unsupported hosts. |
+| Q08 | Backfill current-role artifacts only in the selected exchange occurrence. | Legacy and identity-bearing artifact policy | All occurrences for one document; repository-wide backfill. |
+| Q09 | Apply an identity discrepancy override only to the current resume attempt. | Legacy and identity-bearing artifact policy | Persistent occurrence authority; replacing conflicting evidence. |
+| Q10 | Keep a global reviewer wait active until a request arrives or the human cancels. | Reviewer continuation behavior | Exchange timeout before a request exists; one-shot polling. |
+| Q11 | List concurrent requests and ask the human to select one. | Reviewer continuation behavior | Oldest-first selection; automatic queue processing. |
+| Q12 | Create an untracked home-local `.gitignore` before first use; block an existing uncovered home. | Gap to close for configurable review evidence | Root `.gitignore` rewrites; bypassing effective-ignore validation. |
+| Q13 | Carry the home in a dedicated versioned declaration and reject external or tracked-directory targets. | Gap to close for configurable review evidence | Ignored per-clone marker; unrelated project settings file. |
+| Q14 | Advance the typed status schema, record successful migration state, and use operational failure when blocked. | Required migration preflight | Failure-only reporting without typed success state; human-readable reporting only. |
