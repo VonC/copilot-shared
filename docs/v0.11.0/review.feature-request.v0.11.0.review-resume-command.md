@@ -564,3 +564,285 @@ Human choice: Consolidate
 Outcome: continue-owning-workflow
 
 <!-- review-entry-id: human-confirmation-round-2 -->
+
+## Round 1 by requestor (exchange 2)
+
+- Recorded: 2026-09-01T16:56:45+02:00
+- Exchange: specification/feature-request/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/feature-request.v0.11.0.review-resume-command.md
+- Outcome: request
+
+### Review identity for feature-request review-resume-command (round 1)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Reviewed specification: docs/v0.11.0/feature-request.v0.11.0.review-resume-command.md
+Review round: 1
+
+### Requestor assessment for feature-request review-resume-command (round 1)
+
+The reopened requirement remains settled at fourteen clarifications and has no
+new open question. The human override identifies one missing scope statement:
+the global reviewer wait must be enterable not only before an exchange exists,
+but also after an exchange concludes and while a live exchange belongs to the
+requestor or the human convergence gate. The requirement, canonical child
+draft, and umbrella now name all three entry situations and both wake cases.
+Acceptance criterion 12 and the Q10 clarification row cover the same behavior.
+The existing options and answers remain sufficient. All reviewer-authored
+wording was accepted; trailing whitespace was removed and the decision record
+was aligned before publication.
+
+### Change summary for feature-request review-resume-command (round 1)
+
+Since occurrence 1 was consolidated, the reviewer continuation text was
+reopened by explicit human guidance. Three documents now state that the global
+wait can begin before an exchange exists, after the reviewer's exchange has
+concluded, or while the live exchange belongs to the requestor or human gate.
+They also state that the wait wakes for a later request in the same exchange or
+for a request opening a new exchange. Acceptance criterion 12 and the Q10
+clarification row were updated to match. No design document was created.
+
+### Human guidance and writer response for feature-request review-resume-command (round 1)
+
+Human guidance:
+
+The human chose `Revise and review again`, overriding the reviewer's
+convergence recommendation. Round 3 must close one gap in the reviewer wait
+scope, in addition to the three clarifications already listed in the round-2
+covered wording.
+
+The intended workflow is that a reviewer can wait for the next request whether
+or not one is pending: after its exchange has concluded, and while the current
+exchange is live but its next action belongs to the requestor or to the human
+convergence gate. All three documents state a rule broad enough to cover that,
+in the draft's role-specific waiting section, in the requirement's reviewer
+continuation, and in umbrella item 10. What none of them does is name those two
+situations, while all three name exactly one state as a valid entry point, the
+idle exchange. Naming one state invites the narrow reading that only that state
+qualifies.
+
+Requested change for the reviewer continuation bullet in
+`docs/v0.11.0/feature-request.v0.11.0.review-resume-command.md`, with the same
+correction applied to the matching draft line and to umbrella item 10:
+
+> An idle exchange, an exchange that has concluded, and a live exchange whose
+> next action belongs to the requestor or to the human convergence gate are all
+> valid wait entry points. The wait wakes on the next request artifact whether
+> it belongs to the same exchange resuming at a later round or occurrence, or to
+> an exchange that did not exist when the wait started.
+
+Acceptance criterion 12 must cover the two cases it does not test today: a
+reviewer that keeps waiting after its own exchange concludes, and a reviewer
+parked at a convergence gate that wakes on the replacement request when the
+human chooses another round.
+
+This override resets the no-progress counters. The reviewer's round-2 findings
+stand and are not withdrawn: the three covered-wording clarifications should be
+applied in the same round.
+
+Writer response: The human reopened the feature-request scope and requested another review
+occurrence. I accept the reviewer-authored amendment and widened the Q10
+clarification row so the settled record matches the body and acceptance case.
+Please assess whether the three entry situations, the two wake cases, and the
+no-writer-work reviewer boundary now fully capture the override. Please also
+check that no new requirement-level question is needed.
+
+### Reviewer focus for feature-request review-resume-command (round 1)
+
+Check for missing questions, assess the existing options and answers, and suggest any clearer wording.
+
+<!-- review-entry-id: request-round-1-exchange-2 -->
+
+## Round 1 by reviewer (exchange 2)
+
+- Recorded: 2026-09-01T16:59:47+02:00
+- Exchange: specification/feature-request/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/feature-request.v0.11.0.review-resume-command.md
+- Outcome: answer
+
+### Reviewer assessment for feature-request review-resume-command round 1 (exchange 2)
+
+Independence limit for this round, stated first because it bears on how much
+weight the verdict carries. The reviewer authored the wait-scope wording now
+under review. The human directed that edit after the previous occurrence had
+already consolidated, and the requestor accepted it unchanged, so this round's
+verdict on that specific text is not an independent assessment of it. What
+remains independent, and is what this answer actually checks: whether the
+amendment covers the whole override, whether the three documents agree with each
+other, whether the decision record and the acceptance criteria match the body,
+and whether the change opens a new requirement-level question.
+
+Coverage of the override is complete in the body text. All three documents now
+name the same three entry situations, an idle exchange, a concluded exchange,
+and a live exchange whose next action belongs to the requestor or to the human
+convergence gate, and all three name both wake cases, a request that resumes the
+same exchange at a later round or occurrence and a request that opens an
+exchange which did not exist when the wait started. The requirement's reviewer
+continuation, the child draft's role-specific waiting section, and umbrella item
+10 agree in substance and in the order they list those cases.
+
+The Q10 clarification row is the requestor's own work this round, so it is
+assessed independently. It is accurate, and it is slightly broader than the
+acceptance criterion beside it: the row names idle, concluded, requestor-owned,
+and convergence-gate entry, while criterion 12 names entry before any exchange
+starts, entry after the reviewer's own exchange concludes, and entry while
+parked at a gate. The requestor-owned live exchange is missing from the
+criterion alone.
+
+That gap matters more than its size suggests, because the requestor-owned state
+is the most frequent one: it is where every reviewer sits after publishing a
+`changes-requested` answer, waiting for the replacement request. A criterion set
+that tests the rare entry points and skips the common one would pass while the
+behavior that runs on every intermediate round goes unverified. The fix is one
+clause in criterion 12, which is why this round converges rather than requesting
+another.
+
+No new requirement-level question is needed. The entry situations and wake cases
+are enumerated rather than left open, cancellation stays with Q10, and
+concurrent requests stay with Q11, which already covers the case where a parked
+wait sees its own exchange resume while another request also arrives. The
+reviewer boundary against writer work is unchanged and still explicit.
+
+### Question verdicts for feature-request review-resume-command round 1 (exchange 2)
+
+**No open question remains in the reviewed specification.** The previous
+occurrence consolidated all fourteen into the clarifications table, and this
+occurrence adds none. My answers to those fourteen are unchanged from the
+previous occurrence: Q01-A, Q02-B, Q03-A, Q04-A, Q05-A, Q06-A, Q07-A, Q08-A,
+Q09-A, Q10-A, Q11-A, Q12-B, Q13-B, and Q14-A with Q14-B together. Nothing in the
+amendment disturbs any of them.
+
+**Q10's clarification row, widened this round by the writer.** I agree with it.
+It now reads that the global reviewer wait stays active from idle, concluded,
+requestor-owned, and convergence-gate states until a same-exchange or
+new-exchange request arrives or the human cancels, and it adds idle-only entry
+to the rejected alternatives. That last addition is the useful part: it records
+why the narrow reading was wrong, so a later reader does not reintroduce it. The
+row is the most complete statement of the rule in the document set.
+
+**One coverage gap, in acceptance criterion 12 only.** The body and the Q10 row
+name four states from which the wait may be entered. Criterion 12 names three
+and omits the live exchange whose next action belongs to the requestor. The
+requestor assessment for this round states that criterion 12 and the Q10 row
+cover the same behavior; they do not quite, and the criterion is the half that
+is short. The covered wording carries the clause that closes it.
+
+**No missing question.** The widened scope enumerates its entry situations and
+its wake cases rather than leaving either open, so it settles behavior instead
+of opening a choice. Two cases that might look like new questions are already
+owned elsewhere: cancelling a parked wait is Q10, and a parked wait that sees
+both its own exchange resume and another request arrive is Q11, which lists them
+and asks the human to select one.
+
+**On the previous occurrence's deferred item.** The live-lease displacement case
+was deferred to design at the end of the last occurrence, and this reopen did
+not revive it. That remains the right call: it is a design-level safety question
+and it blocks nothing in this requirement. It should reach the design document
+rather than quietly disappear with the consolidated questions.
+
+### Convergence evidence for feature-request review-resume-command round 1 (exchange 2)
+
+Covered wording: one clause in acceptance criterion 12, so the criterion covers the same four
+entry states as the body and the Q10 clarification row:
+
+> 12. A reviewer with a request reclaims and answers it; a reviewer without one
+>     waits globally for any future specification- or code-review request
+>     artifact without requiring its identity. That wait is entered before any
+>     exchange or implementation step starts, after the reviewer's own exchange
+>     has concluded, while the exchange's next action belongs to the requestor,
+>     and while the reviewer is parked at a convergence gate; in the last two
+>     cases it wakes on the replacement request when the requestor publishes it
+>     or when the human chooses another round.
+
+The added state is the one every reviewer occupies after publishing a
+`changes-requested` answer, so the criterion currently skips the entry point
+that runs on every intermediate round while testing the rarer ones.
+
+Nothing else needs to change. The reviewer continuation bullet, the child
+draft's role-specific waiting section, umbrella item 10, and the Q10 row already
+state the rule consistently, and no acceptance criterion other than 12 touches
+the wait scope.
+
+For the record this occurrence leaves behind: the working tree carries the
+amendment across three documents, `feature-request.v0.11.0.review-resume-command.md`,
+`draft.v0.11.0.review-resume-command.md`, and `draft.v0.11.0.review-mode.md`,
+none of which is committed yet. Whoever consolidates should commit them together
+with the criterion clause, since a partial commit would leave the umbrella and
+the requirement disagreeing again, which is the condition the previous
+occurrence closed.
+
+Convergence rationale: the override is fully carried and what remains is one clause.
+
+The human reopened this requirement for one reason: the global reviewer wait was
+stated broadly enough to cover waiting after an exchange concludes and while a
+live exchange belongs to the requestor or the human gate, but named only the
+idle exchange as a valid entry point, which invited the narrow reading. The
+amendment names all four states and both wake cases in the requirement, the
+child draft, and umbrella item 10, and the Q10 clarification row records
+idle-only entry as a rejected alternative so the narrow reading cannot return
+through the decision table.
+
+What is left is acceptance criterion 12, which lists three of the four states.
+That is a coverage clause, not a decision: the rule it tests is already settled
+and stated in three documents plus the decision row. No option changes, no
+answer changes, no dependency changes, and no new question is opened.
+
+This convergence carries one limitation the human should weigh: the reviewer
+authored the wait-scope wording at the human's direction, so the verdict on that
+text is not independent. The verdict on the surrounding work is: the requestor's
+Q10 row, the cross-document agreement, the criterion coverage, and the absence
+of a new question were all assessed normally. If the human wants an independent
+reading of the amendment itself, another round with a different reviewer session
+is the way to get it, and that is a stronger reason to choose another round here
+than anything found in the text.
+
+This recommendation is advisory. It does not authorize consolidation, and the
+choice stays with the human at the convergence gate.
+
+### Writer instructions for feature-request review-resume-command round 1 (exchange 2)
+
+Stop at the convergence gate and present the human with the identity summary,
+this recommendation, the amended documents, and your own assessment. Include the
+independence limit stated in the convergence rationale: the reviewer wrote the
+wait-scope wording it has just reviewed, so the human is choosing with that on
+the record rather than discovering it later.
+
+If the human selects `Consolidate`:
+
+1. Apply the criterion 12 clause from the covered wording.
+2. Commit the three amended documents together with that clause. A partial
+   commit would leave the umbrella and the requirement disagreeing about the
+   wait scope, which is the condition the previous occurrence closed.
+3. Carry the deferred live-lease displacement case into the design document as a
+   named open point. It survived one consolidation already and will disappear
+   quietly if the design phase does not pick it up.
+
+If the human selects `Revise and review again`, the criterion 12 clause is the
+only outstanding reviewer finding, and the strongest use of that round is an
+independent reviewer session reading the wait-scope amendment for the first
+time.
+
+Either way, do not treat the reopened occurrence as a reason to revisit the
+fourteen consolidated clarifications. They were settled in the previous
+occurrence, the amendment disturbs none of them, and only the Q10 row needed the
+widening you already applied.
+
+### Final reviewer decision for feature-request review-resume-command round 1 (exchange 2)
+
+Decision: convergence-recommended. This recommendation is advisory; consolidation is not confirmed and remains at the durable human gate.
+
+<!-- review-entry-id: answer-round-1-exchange-2 -->
+
+## Round 1 by human - human-confirmation
+
+- Recorded: 2026-09-01T17:07:29+02:00
+- Exchange: specification/feature-request/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/feature-request.v0.11.0.review-resume-command.md
+- Outcome: human-confirmation
+
+Human choice: Consolidate
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-1 -->
