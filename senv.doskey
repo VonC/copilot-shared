@@ -49,3 +49,6 @@ ptr="%LLM_SHARED_DIR%\bin\ptr.bat" $*
 pta="%LLM_SHARED_DIR%\bin\pta.bat" $*
 ptanc="%LLM_SHARED_DIR%\bin\ptanc.bat" $*
 pts="%LLM_SHARED_DIR%\bin\pts.bat" $*
+
+rvwst="%LLM_SHARED_DIR%\rvw_status.bat" $*
+rwst="%LLM_SHARED_DIR%\rvw_status.bat" $*
