@@ -472,30 +472,84 @@ the working tree and protocol files unchanged.
 
 ### New types or classes introduced for Step 4
 
-_(empty — no check has taken place yet.)_.
+- No production type or class was added in Step 4; the step closes the feature
+  through acceptance fixtures and public-entry assertions.
+- `ProcessResult`: frozen test-support value containing one process status,
+  streams, and parsed JSON payload.
+- `RepositorySnapshot`: frozen test-support value containing protocol hashes,
+  coordination bytes, review-marker bytes, Git status, index tree, and current
+  ref for before-and-after comparison.
+- `CommandMatrix`: frozen module-scoped fixture result containing direct,
+  launcher, repeated-launcher, human-output, and empty-repository observations.
 
 ### Architecture check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Acceptance adapter boundary**: the fixture imports production review models,
+  paths, and stores to create valid durable exchanges, while deliberately
+  malformed candidates bypass those boundaries only in damage scenarios.
+- **Dependency direction**: acceptance code depends on production modules;
+  production modules do not import test support or subprocess fixtures.
+- **Public seam coverage**: direct-module and launcher subprocess calls stay in
+  the acceptance layer, which is the correct place to compare host integration
+  with the Python entry point.
+- **Fixture responsibility**: repository construction and durable-state setup
+  remain in `conftest.py`; scenario assertions remain in the acceptance test
+  leaf. Both files stay below the plan's 550-line safe boundary.
+
+No, there is no architecture smell or violation that needs to be addressed for
+Step 4.
 
 ### Performance check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **No production complexity change**: Step 4 adds test code only and does not
+  change the status collector, projection, renderer, or CLI request path.
+- **Bounded scenario matrix**: the module-scoped fixture constructs a fixed set
+  of healthy and damaged exchanges and executes each public entry point a fixed
+  number of times.
+- **Snapshot cost**: protocol hashing and sorting operate only over the small
+  temporary acceptance repository. They add no production `O(n^2)` path and do
+  not alter the collector's bounded candidate scan.
+- **Process bounds**: Git and public-entry subprocesses carry explicit 20- or
+  30-second timeouts, so a broken fixture cannot wait indefinitely.
+
+No, there is no performance issue that needs to be addressed for Step 4.
 
 ### Unit test coverage check for Step 4
 
-_(empty — no check has taken place yet.)_.
+- Step 4 changes no production class file, so it introduces no new production
+  unit-coverage target.
+- `ProcessResult`, `RepositorySnapshot`, and `CommandMatrix` are acceptance-only
+  fixture values exercised through the command matrix and read-only comparison
+  scenarios; they are not production classes requiring separate unit leaves.
+- Production model, collector, projection, renderer, and CLI unit coverage was
+  assessed in Steps 1 through 3. Step 4 adds end-to-end coverage without
+  weakening those unit suites.
+
+No, there is no unit-tested class below 100% that needs completing for Step 4.
 
 ### Feature integrity for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Existing status behavior**: empty, multiple, request-pending, convergence,
+  owning-action, escalation, expired, standalone, inconsistent, malformed, and
+  changed-during-read cases retain their settled states and process outcomes.
+- **Reporting and diagnostics**: human and JSON outputs preserve role,
+  specialization, umbrella, artifact, lease, action, and damage evidence while
+  healthy exchanges remain visible beside damaged candidates.
+- **Read-only contract**: repeated direct and launcher calls compare protocol
+  hashes, coordination and marker bytes, Git status, index tree, and current ref
+  before and after observation.
+- **Operational boundary**: invalid explicit roots return status `2` without a
+  partial JSON payload, while untrustworthy repository evidence remains a
+  complete status `3` report.
+
+No existing feature or reporting capability appears impaired for Step 4.
 
 ## Final rollout validation
 
-After all four step checks are complete, confirm that the narrow leaves pass,
-the full `ghog day` workflow reaches its recorded done state, coverage remains
-at the project gate, the launcher returns the specified aggregate statuses, and
-the implementation leaves the repository and all review-exchange artifacts
-unchanged after observation.
+All four step analysis sections now record full implementation. Step 4's
+acceptance source covers both public entry points, the settled state matrix,
+aggregate statuses `0`, `3`, and `2`, and before-and-after repository evidence.
+The implementation check does not rerun Groundhog or tests; it records the
+existing acceptance suite and previously recorded project-gate evidence.
 
 ---

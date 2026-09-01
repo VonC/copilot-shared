@@ -138,7 +138,7 @@ The feature request and design will need to insist on termination criteria for t
 | 6 | Feature-request | Document the review-mode workflows | `review-mode-docs` | completed | `docs/v0.11.0/feature-request.v0.11.0.review-mode-docs.md` | `docs/v0.11.0/plan.v0.11.0.review-mode-docs.validation.md` |
 | 7 | Feature-request | Check Markdown against the repository rules | `markdown-check` | completed | `docs/v0.11.0/feature-request.v0.11.0.markdown-check.md` | `docs/v0.11.0/plan.v0.11.0.markdown-check.validation.md` |
 | 8 | Feature-request | Expose commit-plan validation without committing | `commit-plan-check` | completed | `docs/v0.11.0/feature-request.v0.11.0.commit-plan-check.md` | `docs/v0.11.0/plan.v0.11.0.commit-plan-check.validation.md` |
-| 9 | Feature-request | Report active review status through a skill | `review-status-command` | pending | - | - |
+| 9 | Feature-request | Report active review status through a skill | `review-status-command` | completed | `docs/v0.11.0/feature-request.v0.11.0.review-status-command.md` | `docs/v0.11.0/plan.v0.11.0.review-status-command.validation.md` |
 | 10 | Feature-request | Resume interrupted reviews | `review-resume-command` | pending | - | - |
 
 ### Requirement details for the umbrella
