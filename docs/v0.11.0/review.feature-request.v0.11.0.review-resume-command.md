@@ -573,13 +573,13 @@ Outcome: continue-owning-workflow
 - Reviewed document: docs/v0.11.0/feature-request.v0.11.0.review-resume-command.md
 - Outcome: request
 
-### Review identity for feature-request review-resume-command (round 1)
+### Review identity for feature-request review-resume-command (round 1, exchange 2)
 
 Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
 Reviewed specification: docs/v0.11.0/feature-request.v0.11.0.review-resume-command.md
 Review round: 1
 
-### Requestor assessment for feature-request review-resume-command (round 1)
+### Requestor assessment for feature-request review-resume-command (round 1, exchange 2)
 
 The reopened requirement remains settled at fourteen clarifications and has no
 new open question. The human override identifies one missing scope statement:
@@ -592,7 +592,7 @@ The existing options and answers remain sufficient. All reviewer-authored
 wording was accepted; trailing whitespace was removed and the decision record
 was aligned before publication.
 
-### Change summary for feature-request review-resume-command (round 1)
+### Change summary for feature-request review-resume-command (round 1, exchange 2)
 
 Since occurrence 1 was consolidated, the reviewer continuation text was
 reopened by explicit human guidance. Three documents now state that the global
@@ -602,7 +602,7 @@ They also state that the wait wakes for a later request in the same exchange or
 for a request opening a new exchange. Acceptance criterion 12 and the Q10
 clarification row were updated to match. No design document was created.
 
-### Human guidance and writer response for feature-request review-resume-command (round 1)
+### Human guidance and writer response for feature-request review-resume-command (round 1, exchange 2)
 
 Human guidance:
 
@@ -647,7 +647,7 @@ Please assess whether the three entry situations, the two wake cases, and the
 no-writer-work reviewer boundary now fully capture the override. Please also
 check that no new requirement-level question is needed.
 
-### Reviewer focus for feature-request review-resume-command (round 1)
+### Reviewer focus for feature-request review-resume-command (round 1, exchange 2)
 
 Check for missing questions, assess the existing options and answers, and suggest any clearer wording.
 
@@ -746,14 +746,14 @@ rather than quietly disappear with the consolidated questions.
 Covered wording: one clause in acceptance criterion 12, so the criterion covers the same four
 entry states as the body and the Q10 clarification row:
 
-> 12. A reviewer with a request reclaims and answers it; a reviewer without one
->     waits globally for any future specification- or code-review request
->     artifact without requiring its identity. That wait is entered before any
->     exchange or implementation step starts, after the reviewer's own exchange
->     has concluded, while the exchange's next action belongs to the requestor,
->     and while the reviewer is parked at a convergence gate; in the last two
->     cases it wakes on the replacement request when the requestor publishes it
->     or when the human chooses another round.
+> Criterion 12:  A reviewer with a request reclaims and answers it; a reviewer without one
+> waits globally for any future specification- or code-review request
+> artifact without requiring its identity. That wait is entered before any
+> exchange or implementation step starts, after the reviewer's own exchange
+> has concluded, while the exchange's next action belongs to the requestor,
+> and while the reviewer is parked at a convergence gate; in the last two
+> cases it wakes on the replacement request when the requestor publishes it
+> or when the human chooses another round.
 
 The added state is the one every reviewer occupies after publishing a
 `changes-requested` answer, so the criterion currently skips the entry point
