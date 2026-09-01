@@ -1,11 +1,10 @@
 # v0.11.0 review-status-command implementation validation plan
 
-No, it is not implemented.
+Yes, it is implemented.
 
-This validation plan mirrors
-`plan.v0.11.0.review-status-command.md`. It records the evidence required to
-decide whether each numbered implementation step is complete without changing
-the settled review-status design.
+This validation plan records the completed implementation of
+`plan.v0.11.0.review-status-command.md`. All four numbered steps now carry
+passing evidence without changing the settled review-status design.
 
 ## Validation scope
 
@@ -425,7 +424,11 @@ No existing feature or reporting capability appears impaired for Step 3.
 
 ### Analysis of Step 4 implementation state
 
-Not started. Step 4 is not implemented because no implementation check has taken place and the planned files have not been created.
+Yes. Step 4 has been fully implemented.
+
+The acceptance suite now exercises the real launcher and direct module against
+durable healthy and damaged exchanges, verifies every settled rollout shape,
+and proves repeated status calls preserve protocol bytes and Git state.
 
 ### Step 4 goal
 
@@ -450,7 +453,22 @@ the working tree and protocol files unchanged.
 
 ### What was implemented for Step 4
 
-_(empty — no check has taken place yet.)_.
+- **Real repository fixtures**: temporary Git repositories carry canonical
+  contexts, coordination records, requests, answers, transcripts, review-mode
+  configuration, and deliberately damaged candidates.
+- **Public entry-point parity**: the real `rvw_status.bat` launcher and direct
+  `tools.review_status_cli` module run from nested caller directories and
+  produce the same structured result after normalizing only their independently
+  captured evaluation instant.
+- **Full rollout matrix**: empty, multiple, request-pending, convergence,
+  authorized owning action, escalated wait, expired lease, standalone,
+  inconsistent, legacy-umbrella, malformed, missing-artifact, and changed-read
+  evidence have explicit assertions.
+- **Read-only boundary**: repeated launcher and direct calls compare recursive
+  protocol hashes, coordination bytes, review marker bytes, Git status, index
+  tree, and current ref before and after diagnosis.
+- **Process outcomes**: the suite asserts status `0` for trustworthy empty
+  results, `3` for mixed untrustworthy evidence, and `2` for an invalid root.
 
 ### New types or classes introduced for Step 4
 
