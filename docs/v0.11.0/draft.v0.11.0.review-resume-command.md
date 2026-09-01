@@ -185,9 +185,13 @@ printing a command or reporting status:
   global reviewer wait for any new specification- or code-review request
   artifact in the configured review directory. The reviewer does not need to
   know the future document, family, slug, step, round, or occurrence before it
-  begins that wait. An idle exchange is therefore a valid wait entry point and
-  must not be rejected merely because `wait-request` has no concrete exchange
-  identity yet.
+  begins that wait. An idle exchange, an exchange that has concluded, and a
+  live exchange whose next action belongs to the requestor or to the human
+  convergence gate are therefore all valid wait entry points, and none may be
+  rejected merely because `wait-request` has no concrete exchange identity yet.
+  The wait wakes on the next request artifact whether it belongs to the same
+  exchange resuming at a later round or occurrence, or to an exchange that did
+  not exist when the wait started.
 - A reviewer resume either waits or answers. It never runs `pw skill`, starts
   writer work, or advances a requestor workflow.
 

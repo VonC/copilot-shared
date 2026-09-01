@@ -202,9 +202,13 @@ A resumed reviewer has exactly two protocol outcomes:
   global reviewer wait for any new specification- or code-review request
   artifact in the configured review directory. The future document, family,
   slug, step, round, and occurrence do not need to be known before the wait
-  starts. An idle exchange is a valid wait entry point and must not be rejected
-  merely because the existing exchange-specific `wait-request` operation has
-  no concrete identity to target.
+  starts. An idle exchange, an exchange that has concluded, and a live exchange
+  whose next action belongs to the requestor or to the human convergence gate
+  are all valid wait entry points, and none may be rejected merely because the
+  existing exchange-specific `wait-request` operation has no concrete identity
+  to target. The wait wakes on the next request artifact whether it belongs to
+  the same exchange resuming at a later round or occurrence, or to an exchange
+  that did not exist when the wait started.
 
 A reviewer resume never runs `pw skill`, starts writer work, or advances a
 requestor workflow. Its open-ended wait wakes only for review-request
@@ -279,10 +283,14 @@ identity resolution.
 11. Missing trace nature with no role argument prompts for requestor or
     reviewer; an explicit role supplies that choice, subject to known-trace
     conflict confirmation.
-12. A reviewer with a request reclaims and answers it; a reviewer without one,
-    including before any exchange or implementation step starts, waits
-    globally for any future specification- or code-review request artifact
-    without requiring its identity.
+12. A reviewer with a request reclaims and answers it; a reviewer without one
+    waits globally for any future specification- or code-review request
+    artifact without requiring its identity. That wait is entered before any
+    exchange or implementation step starts, after the reviewer's own exchange
+    has concluded, while the exchange's next action belongs to the requestor,
+    and while the reviewer is parked at a convergence gate; in the last two
+    cases it wakes on the replacement request when the requestor publishes it
+    or when the human chooses another round.
 13. A requestor waits for an in-progress answer, performs owned review work, or
     runs and follows `pw skill` when no review remains.
 14. Once role and identity gates pass, resume acts or waits without another
@@ -335,7 +343,7 @@ validation document, or completed umbrella row is reopened.
 | Q07 | Continue by selected role when LLM nature is unknown, without backfilling `unknown`. | Resume skill and role selection | Durable unknown backfill; refusing unsupported hosts. |
 | Q08 | Backfill current-role artifacts only in the selected exchange occurrence. | Legacy and identity-bearing artifact policy | All occurrences for one document; repository-wide backfill. |
 | Q09 | Apply an identity discrepancy override only to the current resume attempt. | Legacy and identity-bearing artifact policy | Persistent occurrence authority; replacing conflicting evidence. |
-| Q10 | Keep a global reviewer wait active until a request arrives or the human cancels. | Reviewer continuation behavior | Exchange timeout before a request exists; one-shot polling. |
+| Q10 | Keep a global reviewer wait active from idle, concluded, requestor-owned, and convergence-gate states until a same-exchange or new-exchange request arrives or the human cancels. | Reviewer continuation behavior | Exchange timeout before a request exists; idle-only entry; one-shot polling. |
 | Q11 | List concurrent requests and ask the human to select one. | Reviewer continuation behavior | Oldest-first selection; automatic queue processing. |
 | Q12 | Create an untracked home-local `.gitignore` before first use; block an existing uncovered home. | Gap to close for configurable review evidence | Root `.gitignore` rewrites; bypassing effective-ignore validation. |
 | Q13 | Carry the home in a dedicated versioned declaration and reject external or tracked-directory targets. | Gap to close for configurable review evidence | Ignored per-clone marker; unrelated project settings file. |
