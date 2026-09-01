@@ -394,7 +394,7 @@ Files involved:
 
 Tests first:
 
-- Assert the canonical instruction names the evidence launcher's `umbrella_digest` capture/compare operations on both criteria result paths.
+- Assert the canonical instruction names the evidence launcher's `umbrella-digest` capture/compare operations on both criteria result paths.
 - Assert it names validation-state capture/compare, pre-repair blob capture, patch attribution, and manifest lifecycle commands rather than describing equivalent shell operations.
 - Assert both result paths build the validation-state scope from all staged step paths and known validation-artifact paths before capture.
 - Cover the reviewed-step validation-row exemption, forbidden umbrella completion writes, changed-file retention, and `Umbrella draft: none` handling.
@@ -403,12 +403,12 @@ Tests first:
 Classes and behavior:
 
 - Reviewer assessment mode: an explicit canonical mode that delegates executable evidence work to `bin/code_review_evidence.bat`, permits only reviewed-step validation-row writes, and reports any other tracked difference.
-- Canonical command contract: instruction tests anchor on command identifiers such as `umbrella_digest` and `validation_state`, require the staged-plus-validation-artifact minimum path set, and use helper tests to prove their behavior.
+- Canonical command contract: instruction tests take command identifiers such as `umbrella-digest` and `validation-state` from the Step 2 CLI's registered subcommand names, require the staged-plus-validation-artifact minimum path set, and use helper tests to prove their behavior.
 
 Completion criteria:
 
 - `ghog day` reports `exit=0`.
-- `rg -n 'code_review_evidence.bat|umbrella_digest|validation_state' instructions/implementation-check.md tests/unit/tools/test_implementation_check_reviewer_mode` finds the exact delegation boundary and both result paths.
+- `rg -n 'code_review_evidence.bat|umbrella-digest|validation-state' instructions/implementation-check.md tests/unit/tools/test_implementation_check_reviewer_mode` finds the exact delegation boundary and both result paths.
 - Existing implementation-check behavior outside reviewer assessment mode remains unchanged.
 
 #### Step 3 -- addendums for reviewer-mode checks
@@ -673,11 +673,59 @@ Time-gated status for Step 6:
 
 ## Open questions for the v0.11.0 implementation plan
 
+### Q12: Membership of staged paths in the reviewed step
+
+Question description: Step 3 requires `validation_path_set` to name every
+staged path that belongs to the reviewed step, but the plan never says how that
+membership is decided. The commit handoff stages the whole tree, so the index
+can also hold concurrent edits and tool-written files that no step authored.
+
+#### BBQ for Q12
+
+A cook must inspect every dish already placed on the service counter, even
+when another cook prepared one of them. The recipe card can explain who owns a
+dish, but it cannot make an unlisted dish disappear from the safety check. In
+this picture: the service counter is the request-time index, each dish is a
+staged path, the recipe card is the plan step's `Files involved` list, and the
+safety check is `validation_path_set` comparison.
+
+#### Options for Q12
+
+- Option L1: Bound membership to the plan step's `Files involved` list.
+  - pro: The comparison follows the plan's authored scope without another
+    carrier.
+  - con: Concurrent edits and tool-written staged paths can remain outside the
+    compared scope.
+- Option L2: Carry an authored staged-path inventory in the review request.
+  - pro: The writer can distinguish step-owned paths from unrelated staged
+    work explicitly.
+  - con: It adds a carrier that can drift from the immutable request-time
+    index.
+- Option L3: Use the complete staged set from the request-time index tree.
+  - pro: It needs no new carrier, uses immutable request evidence, and cannot
+    leave a staged path outside the comparison.
+  - con: The comparison includes unrelated staged paths, so the review answer
+    must explain attribution separately.
+
+#### Recommended option for Q12 (with arguments for this choice)
+
+Option L3: Build the compared staged scope from the complete staged set in the
+request-time index tree. Use the plan step's `Files involved` list only to
+explain attribution in the answer. This is the only option that cannot hide a
+tracked staged difference outside the evidence boundary.
+
+#### Answer to Q12: option L3 (with reason why it must be accepted as the answer)
+
+Option L3: Accept the complete request-time staged set because the request
+already carries its immutable index tree and Step 3 must fail closed over every
+staged path. The `Files involved` list remains attribution evidence rather than
+a boundary that can exclude staged work from comparison.
+
 ### Q09: Source of known validation-artifact paths
 
 Question description: Step 3 requires `validation_path_set` to include every
-known validation-artifact path, but the resolved validation entries currently
-carry command text and sources rather than structured output paths. The plan
+known validation-artifact path, but the resolved validation entries carry
+command text and sources only rather than structured output paths. The plan
 must state how the reviewer obtains a complete deterministic path set without a
 repository scan or guesswork.
 
@@ -699,9 +747,11 @@ a repository-wide scan.
 - Option I2: Define a deterministic reviewer checklist that maps project and
   plan commands to their declared artifact paths, with request additions
   supplied explicitly.
-  - pro: The instruction remains bounded and Step 3 stays within its planned
-    files.
-  - con: Command authors must keep the declared artifact list current.
+  - pro: One declared source states both the command and the artifacts it
+    writes, so an omitted path has a named owner and a named fix.
+  - con: Command authors must keep the declared artifact list current, and the
+    resolved entry payload gains an artifacts field alongside command and
+    sources.
 - Option I3: Discover artifacts by comparing the repository after validation.
   - pro: It can notice outputs that command authors forgot to declare.
   - con: It violates the explicit-path boundary and detects omissions only
@@ -709,18 +759,27 @@ a repository-wide scan.
 
 #### Recommended option for Q09 (with arguments for this choice)
 
-Option I2: Require the caller to provide an explicit artifact checklist for
-each additive validation command and define the mandatory project's artifacts
-beside its command contract. This stays inside Step 3, preserves O(n) capture
-over named paths, and makes an omitted artifact a request or plan defect rather
-than an invitation to scan the repository.
+Option I2: Require every validation command source to declare an explicit
+artifact checklist. The versioned project declaration and the plan/request
+additions use the same tab-separated command-plus-path shape, and Step 1 carries
+the merged artifact paths in each resolved entry. This preserves O(n) capture
+over named paths and makes an omitted artifact a declaration defect rather than
+an invitation to scan the repository.
 
 #### Answer to Q09: option I2 (with reason why it must be accepted as the answer)
 
-Option I2: Accept the deterministic checklist because Step 3 is an instruction
-boundary and Step 2 already supplies exact-path capture. Structured resolver
-metadata can remain a later change if command-to-artifact declarations prove
-too hard to maintain.
+Option I2: Accept the deterministic checklist, carried in two named places. A
+project declares its mandatory commands and the artifacts each one writes in
+the versioned declaration read by `load_project_validation_commands`: each
+non-comment line contains the command followed by zero or more
+repository-relative artifact paths as tab-separated fields. A plan-added or
+request-added command declares its artifacts in the same tab-separated shape
+inside the request, and Step 1 carries them by extending each resolved entry
+payload with an `artifacts` list beside `command` and `sources`. That payload
+field and the declaration parse are the two Step 1 changes this answer accepts;
+everything else stays inside Step 3. An artifact no declaration names is a plan
+or request defect: the reviewer reports it against the declaration rather than
+against the staged work, and the fix is the declaration.
 
 ### Q10: Owner and timing of manifest retirement
 
@@ -764,7 +823,14 @@ and publication-independent.
 Option J1: Accept reviewer-owned post-publication retirement because the
 manifest exists to bridge assessment and publication. Removing it at either an
 earlier check boundary or a later requestor boundary gives the wrong role
-control over that bridge.
+control over that bridge. Retained evidence is valid only for the round and
+exchange that wrote it. The manifest records its round number and exchange
+occurrence beside the exchange identity and step, and `read-manifest` refuses a
+manifest whose round or exchange does not match the current request rather than
+reusing it. A round that never reaches `outcome: published`, whether abandoned,
+escalated, or overridden at the convergence gate, leaves its manifest in place
+as recovery evidence; the next reviewer round for the same identity refuses it
+on that check and overwrites it when it writes its own.
 
 ### Q11: Depth of reviewer-mode instruction tests
 
@@ -788,7 +854,8 @@ new instruction interpreter.
   for command behavior.
   - pro: Each boundary is tested at its executable layer without duplicate Git
     logic.
-  - con: No automated test interprets the complete prose workflow end to end.
+  - con: No automated test interprets the prose workflow itself; Step 6 covers
+    both result paths through acceptance journeys.
 - Option K2: Add a test-only instruction interpreter for Yes and No journeys.
   - pro: The suite could simulate the whole written sequence.
   - con: The interpreter becomes an unplanned second implementation whose
@@ -809,5 +876,10 @@ capture and comparison behavior.
 
 Option K1: Accept the layered test boundary because it proves every Step 3
 responsibility without inventing an interpreter or copying evidence behavior.
-The code-review round can still challenge whether the prose clauses are
-complete and mutually consistent.
+The structure test takes the command identifiers it asserts from the Step 2
+CLI's registered subcommand names, including `umbrella-digest` and
+`validation-state`, rather than from literal strings. Renaming or removing a
+subcommand therefore fails the Step 3 test instead of leaving the instruction
+and its test agreeing with each other while both drift from the executable
+surface. The code-review round can still challenge whether the prose clauses
+are complete and mutually consistent.
