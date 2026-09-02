@@ -81,12 +81,15 @@ def _initialize_repository(root: Path) -> None:
     _commit(root, "test: create baseline")
 
 
-def _valid_plan(*paths: str) -> str:
+def _valid_plan(
+    *paths: str,
+    subject: str = "feat(check): validate staged paths",
+) -> str:
     """Build one parser-valid group for the supplied exact membership."""
     commands = "\n".join(f"git add -- {path}" for path in paths)
     return f"""{commands}
 
-feat(check): validate staged paths
+{subject}
 
 Why:
 
@@ -247,6 +250,65 @@ def test_entry_points_share_status_evidence_and_repository_immutability(
     payload = json.loads(module_json.stdout)
     assert payload["state"] == expected_state
     assert all(fragment in module_human.stdout for fragment in _human_fragments(payload))
+
+
+@pytest.fixture
+def validation_marker_results(
+    tmp_path: Path,
+) -> tuple[
+    commit_plan_check.CommitPlanCheckResult,
+    commit_plan_check.CommitPlanCheckResult,
+]:
+    """Build real Git evidence outside the duration-measured assertion call."""
+    _initialize_repository(tmp_path)
+    docs = tmp_path / "docs" / "v1.2.3"
+    docs.mkdir(parents=True)
+    relative = "docs/v1.2.3/plan.v1.2.3.release-ready.validation.md"
+    validation = docs / "plan.v1.2.3.release-ready.validation.md"
+    validation.write_text(
+        "### Analysis of Step 1 implementation state\n\nNo. Missing.\n",
+        encoding="utf-8",
+    )
+    _git(tmp_path, "add", "--", relative)
+    _commit(tmp_path, "docs(release-ready): add validation plan")
+    validation.write_text(
+        "### Analysis of Step 1 implementation state\n\nYes. Complete.\n",
+        encoding="utf-8",
+    )
+    _git(tmp_path, "add", "--", relative)
+    wrong = "docs(release-ready): update step 1 validation"
+    expected = "docs(release-ready): record step 1 validation"
+    (tmp_path / "a.commit").write_text(
+        _valid_plan(relative, subject=wrong),
+        encoding="utf-8",
+    )
+
+    invalid = commit_plan_check.check_commit_plan(tmp_path)
+    (tmp_path / "a.commit").write_text(
+        _valid_plan(relative, subject=expected),
+        encoding="utf-8",
+    )
+    valid = commit_plan_check.check_commit_plan(tmp_path)
+    return invalid, valid
+
+
+def test_checker_rejects_update_for_newly_completed_validation_plan(
+    validation_marker_results: tuple[
+        commit_plan_check.CommitPlanCheckResult,
+        commit_plan_check.CommitPlanCheckResult,
+    ],
+) -> None:
+    """A real staged No-to-Yes transition requires the exact pw marker."""
+    invalid, valid = validation_marker_results
+    relative = "docs/v1.2.3/plan.v1.2.3.release-ready.validation.md"
+    expected = "docs(release-ready): record step 1 validation"
+
+    assert invalid.state is commit_plan_check.CommitPlanCheckState.INVALID_PLAN
+    assert invalid.diagnostics == (
+        "group 1 containing completed validation plan "
+        f"{relative} must use exact subject: {expected}",
+    )
+    assert valid.state is commit_plan_check.CommitPlanCheckState.VALID
 
 
 @pytest.fixture
