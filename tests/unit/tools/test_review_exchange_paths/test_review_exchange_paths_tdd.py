@@ -7,6 +7,7 @@ identity, archive naming, and one fail-closed effective Git-ignore check.
 from __future__ import annotations
 
 import subprocess
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,6 +15,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from tools import review_exchange_paths as paths_module
+from tools.review_artifact_configuration import ReviewArtifactConfiguration
 from tools.review_exchange_models import (
     ArchiveKind,
     ExchangeIdentity,
@@ -38,7 +40,7 @@ if TYPE_CHECKING:
 _VERSION = "v0.11.0"
 _SLUG = "review-exchange-core"
 _IGNORE_TIMESTAMP = "20000101-000000"
-_TRANSIENT_KIND_COUNT = 9
+_IGNORE_PROBE_COUNT = 10
 
 
 def _context(tmp_path: Path, family: ReviewFamily) -> ReviewContext:
@@ -84,6 +86,14 @@ def test_specification_paths_use_document_parent_and_project_root(tmp_path: Path
         "a.review-lock.specification.design-specification.v0.11.0."
         "review-exchange-core.lock"
     )
+    transients = (
+        paths.request,
+        paths.answer,
+        paths.coordination,
+        paths.tombstone,
+        paths.transition_lock,
+    )
+    assert all(path.parent == tmp_path / ".reviews" for path in transients)
 
 
 def test_code_paths_keep_intentional_code_code_names(tmp_path: Path) -> None:
@@ -114,6 +124,7 @@ def test_archive_path_uses_only_settled_kinds_and_compact_time(tmp_path: Path) -
         "a.review-archive.code.code.v0.11.0.review-exchange-core."
         "20260803-143005.answer.md"
     )
+    assert archived.parent == tmp_path / ".reviews"
     with pytest.raises(ReviewExchangeError, match="compact local timestamp"):
         archive_path(paths, "2026-08-03T14:30:05+02:00", ArchiveKind.ANSWER)
 
@@ -198,10 +209,13 @@ def test_activation_checks_all_transients_in_one_ignore_call(
     submitted = set(filter(None, (ignore_calls[0][2] or "").split("\0")))
     expected = {
         path.relative_to(tmp_path).as_posix()
-        for path in transient_paths_for_ignore(paths)
+        for path in (
+            tmp_path / ".reviews" / ".gitignore",
+            *transient_paths_for_ignore(paths),
+        )
     }
     assert submitted == expected
-    assert len(expected) == _TRANSIENT_KIND_COUNT
+    assert len(expected) == _IGNORE_PROBE_COUNT
 
 
 def test_activation_fails_outside_git_before_ignore_check(
@@ -293,6 +307,48 @@ def test_activation_rejects_a_different_project_root(tmp_path: Path) -> None:
 
     with pytest.raises(ReviewExchangeError, match="project root differs"):
         validate_activation(other, paths)
+
+
+def test_activation_rejects_paths_from_a_different_artifact_home(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Activation cannot mix one configuration with paths from another home."""
+    paths = derive_artifact_paths(tmp_path, _context(tmp_path, ReviewFamily.CODE))
+    mismatched = replace(paths, request=tmp_path / "other" / paths.request.name)
+
+    def git_repository(
+        command: list[str],
+        *,
+        cwd: Path,
+        input_text: str | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        del cwd, input_text
+        return subprocess.CompletedProcess(command, 0, "true\n", "")
+
+    monkeypatch.setattr(
+        "tools.review_exchange_paths._run_git",
+        git_repository,
+    )
+
+    with pytest.raises(ReviewExchangeError, match="artifact home differs"):
+        validate_activation(tmp_path, mismatched)
+
+
+def test_derivation_rejects_another_repository_artifact_configuration(
+    tmp_path: Path,
+) -> None:
+    """Invocation-bound derivation cannot cross repository boundaries."""
+    other = tmp_path / "other"
+    other.mkdir()
+    artifacts = ReviewArtifactConfiguration.load(other)
+
+    with pytest.raises(ReviewExchangeError, match="another repository"):
+        derive_artifact_paths(
+            tmp_path,
+            _context(tmp_path, ReviewFamily.CODE),
+            configuration=artifacts,
+        )
 
 
 def test_standard_git_runner_forwards_bounded_subprocess_arguments(

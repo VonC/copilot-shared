@@ -13,6 +13,7 @@ from typing import cast
 
 import pytest
 
+from tools.review_artifact_configuration import ReviewArtifactConfiguration
 from tools.review_exchange_models import (
     Actor,
     ArtifactState,
@@ -33,6 +34,7 @@ from tools.review_exchange_store import ReviewExchangeStore
 from tools.review_status import (
     _DEFAULT_DEPENDENCIES,
     _collect_review_status,
+    _enumerate_candidates,
     _lease_for,
     _next_action_for,
     _observe,
@@ -110,7 +112,9 @@ def _encoded(record: CoordinationRecord) -> bytes:
 
 
 def _candidate(root: Path, identity: ExchangeIdentity) -> Path:
-    return root / (
+    configuration = ReviewArtifactConfiguration.load(root)
+    configuration.prepare_home()
+    return configuration.home / (
         "a.review-active."
         f"{identity.family.value}.{identity.type_token}.{identity.version}."
         f"{identity.slug}.md"
@@ -128,15 +132,28 @@ def _dependencies(
 ) -> _StatusDependencies:
     first = _encoded(record)
     reads = 0
+    project_root = record.context.document_path.parents[1]
 
-    def load(root: Path) -> ReviewConfiguration:
-        assert root == candidate.parent.resolve()
+    def load_artifacts(root: Path) -> ReviewArtifactConfiguration:
+        assert root == project_root.resolve()
+        if counters is not None:
+            counters["artifact_config"] = counters.get("artifact_config", 0) + 1
+        return ReviewArtifactConfiguration.load(root)
+
+    def load(
+        root: Path,
+        artifacts: ReviewArtifactConfiguration,
+    ) -> ReviewConfiguration:
+        assert root == project_root.resolve()
+        assert artifacts.project_root == root
         if counters is not None:
             counters["config"] = counters.get("config", 0) + 1
         return ReviewConfiguration(enabled=True, wait_timeout_seconds=90)
 
-    def enumerate_candidates(root: Path) -> tuple[Path, ...]:
-        assert root == candidate.parent.resolve()
+    def enumerate_candidates(
+        artifacts: ReviewArtifactConfiguration,
+    ) -> tuple[Path, ...]:
+        assert artifacts.project_root == project_root.resolve()
         if counters is not None:
             counters["enumerate"] = counters.get("enumerate", 0) + 1
         return (candidate,)
@@ -154,7 +171,7 @@ def _dependencies(
             probe_paths.append(path)
         if counters is not None:
             counters["artifact_probes"] = counters.get("artifact_probes", 0) + 1
-        return path in {candidate, derive_artifact_paths(candidate.parent, record.context).transcript}
+        return path in {candidate, derive_artifact_paths(project_root, record.context).transcript}
 
     def observe(*args: object) -> ExchangeObservation:
         if counters is not None:
@@ -166,6 +183,7 @@ def _dependencies(
 
     return replace(
         _DEFAULT_DEPENDENCIES,
+        load_artifact_configuration=load_artifacts,
         load_configuration=load,
         enumerate_candidates=enumerate_candidates,
         read_bytes=read_bytes,
@@ -201,6 +219,7 @@ def _assert_bounded_io(
     expected_paths: tuple[Path, ...],
 ) -> None:
     assert counts == {
+        "artifact_config": 1,
         "config": 1,
         "enumerate": 1,
         "coordination_reads": 2,
@@ -216,11 +235,11 @@ def test_empty_repository_is_trustworthy_and_loads_configuration_once(
     counts: dict[str, int] = {}
     dependencies = replace(
         _DEFAULT_DEPENDENCIES,
-        load_configuration=lambda root: (
+        load_configuration=lambda root, artifacts: (
             counts.__setitem__("config", counts.get("config", 0) + 1)
             or ReviewConfiguration(enabled=False, wait_timeout_seconds=41)
         ),
-        enumerate_candidates=lambda root: (
+        enumerate_candidates=lambda artifacts: (
             counts.__setitem__("enumerate", counts.get("enumerate", 0) + 1) or ()
         ),
     )
@@ -230,6 +249,11 @@ def test_empty_repository_is_trustworthy_and_loads_configuration_once(
     assert result.outcome is ReviewStatusOutcome.TRUSTWORTHY
     assert result.exchanges == ()
     assert counts == {"config": 1, "enumerate": 1}
+
+
+def test_default_candidate_enumerator_accepts_an_absent_home(tmp_path: Path) -> None:
+    """An unused repository has no configured-home candidates and no error."""
+    assert _enumerate_candidates(ReviewArtifactConfiguration.load(tmp_path)) == ()
 
 
 def test_valid_candidate_is_normalized_with_bounded_read_only_io(tmp_path: Path) -> None:
@@ -271,7 +295,7 @@ def test_malformed_content_is_retained_as_damaged_candidate(
     reads = iter((first, second or first))
     dependencies = replace(
         _DEFAULT_DEPENDENCIES,
-        enumerate_candidates=lambda root: (candidate,),
+        enumerate_candidates=lambda artifacts: (candidate,),
         read_bytes=lambda path: next(reads),
     )
 
@@ -289,7 +313,7 @@ def test_malformed_name_does_not_hide_a_healthy_exchange(tmp_path: Path) -> None
     dependencies = _dependencies(record, healthy)
     dependencies = replace(
         dependencies,
-        enumerate_candidates=lambda root: (malformed, healthy),
+        enumerate_candidates=lambda artifacts: (malformed, healthy),
         read_bytes=lambda path: _encoded(record),
     )
 
@@ -396,7 +420,11 @@ def test_derived_canonical_path_mismatch_is_damaged(tmp_path: Path) -> None:
     record = _record(tmp_path)
     candidate = _candidate(tmp_path, record.context.identity)
 
-    def mismatched(root: Path, context: ReviewContext) -> object:
+    def mismatched(
+        artifacts: ReviewArtifactConfiguration,
+        context: ReviewContext,
+    ) -> object:
+        root = artifacts.project_root
         return replace(derive_artifact_paths(root, context), coordination=root / "other.md")
 
     dependencies = replace(
@@ -426,10 +454,52 @@ def test_multiple_valid_candidates_are_sorted_by_identity(tmp_path: Path) -> Non
     ] == ["alpha", "zulu"]
 
 
+@pytest.mark.parametrize("relative_home", [".reviews", "runtime/reviews"])
+def test_status_reuses_one_artifact_configuration_for_multiple_candidates(
+    tmp_path: Path,
+    relative_home: str,
+) -> None:
+    """One status invocation reads and validates either home layout exactly once."""
+    if relative_home != ".reviews":
+        (tmp_path / ".review-artifacts.ini").write_text(
+            f"[review-artifacts]\nhome={relative_home}\n",
+            encoding="utf-8",
+        )
+    records = (_record(tmp_path, "zulu"), _record(tmp_path, "alpha"))
+    for record in records:
+        _candidate(tmp_path, record.context.identity).write_bytes(_encoded(record))
+    counts = {"configuration": 0, "tracking": 0}
+
+    def tracked_directory(root: Path, relative: str) -> bool:
+        assert root == tmp_path.resolve()
+        assert relative == relative_home
+        counts["tracking"] += 1
+        return False
+
+    def load_artifacts(root: Path) -> ReviewArtifactConfiguration:
+        counts["configuration"] += 1
+        return ReviewArtifactConfiguration.load(
+            root,
+            tracked_directory=tracked_directory,
+        )
+
+    dependencies = replace(
+        _DEFAULT_DEPENDENCIES,
+        load_artifact_configuration=load_artifacts,
+    )
+
+    result = _collect(tmp_path, dependencies)
+
+    assert all(isinstance(entry, ExchangeStatus) for entry in result.exchanges)
+    assert counts == {"configuration": 1, "tracking": 1}
+
+
 def test_operational_failure_does_not_claim_partial_evidence(tmp_path: Path) -> None:
     dependencies = replace(
         _DEFAULT_DEPENDENCIES,
-        load_configuration=lambda root: (_ for _ in ()).throw(OSError("unreadable")),
+        load_artifact_configuration=lambda root: (_ for _ in ()).throw(
+            OSError("unreadable"),
+        ),
     )
 
     result = _collect(tmp_path, dependencies)

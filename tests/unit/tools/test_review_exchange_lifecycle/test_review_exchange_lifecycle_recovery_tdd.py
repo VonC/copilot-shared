@@ -319,6 +319,7 @@ def rejected_forced_reclaim_journey(
         core.force_reclaim("A different repair is still pending.")
 
     store.write_coordination(escalated)
+    store.paths.answer.parent.mkdir(parents=True, exist_ok=True)
     store.paths.answer.write_text("orphan answer\n", encoding="utf-8")
     with pytest.raises(ReviewExchangeError, match="one intact escalated round"):
         core.force_reclaim("Request and answer are both present.")

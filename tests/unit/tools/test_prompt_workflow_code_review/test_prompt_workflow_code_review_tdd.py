@@ -232,6 +232,7 @@ def test_live_route_rejects_another_step_and_duplicate_coordination(tmp_path: Pa
 
     wanted_store = ReviewExchangeStore(derive_artifact_paths(tmp_path, wanted))
     wanted_store.write_coordination(_coordination(wanted, CoordinationStatus.ACTIVE))
+    wanted_store.paths.request.parent.mkdir(parents=True, exist_ok=True)
     wanted_store.paths.request.write_text("conflicting request", encoding="utf-8")
     with pytest.raises(code_review.CodeReviewRoutingError, match="inconsistent"):
         code_review.resolve_code_review_route(tmp_path, topic, state, record)
@@ -263,9 +264,13 @@ def test_authorized_continuation_calls_batch_once_and_keeps_failures_pending(
         == failed_exit
     )
     assert calls == [("--root-a-commit", "--non-interactive")]
-    pending = code_review.resolve_code_review_route(tmp_path, topic, state, record)
+    pending = store.read_coordination(required=True)
     assert pending is not None
-    assert pending.state is ArtifactState.OWNING_ACTION_PENDING
+    assert pending.status is CoordinationStatus.AWAITING_HUMAN_CONFIRMATION
+    assert (
+        pending.confirmed_outcome
+        is ConfirmationOutcome.CONTINUE_OWNING_WORKFLOW
+    )
 
 
 def test_authorized_continuation_rejects_missing_authority(tmp_path: Path) -> None:

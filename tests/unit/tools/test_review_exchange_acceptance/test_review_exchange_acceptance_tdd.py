@@ -226,7 +226,10 @@ def _artifact(
 
 def _input(root: Path, name: str, content: str) -> Path:
     """Write one caller-owned ignored input file and return its exact path."""
-    path = root / f"a.{name}.md"
+    home = root / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
+    path = home / f"a.{name}.md"
     path.write_text(content, encoding="utf-8")
     return path
 
@@ -309,7 +312,7 @@ def test_opt_in_git_protocol_and_exact_identity_isolation(
 
 
 def _assert_activation_failures(journey: IsolationJourney) -> None:
-    """Check disabled, unignored, and duplicate-start stops."""
+    """Check disabled, home-covered, and duplicate-start outcomes."""
     actual = (
         journey.disabled.code,
         journey.disabled.payload["outcome"],
@@ -319,10 +322,10 @@ def _assert_activation_failures(journey: IsolationJourney) -> None:
     assert actual == (
         _EXPECTED_STOP,
         "disabled",
-        _SECOND_ROUND,
+        0,
         _SECOND_ROUND,
     )
-    assert "not effectively ignored" in journey.unignored.payload["diagnostic"]
+    assert journey.unignored.payload["outcome"] == "activated"
 
 
 def _assert_identity_isolation(journey: IsolationJourney) -> None:

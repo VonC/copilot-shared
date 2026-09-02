@@ -1,4 +1,4 @@
-"""Bounded, read-only discovery and normalization of active review exchanges."""
+"""Bounded status discovery with one invocation-scoped artifact configuration."""
 
 # ruff: noqa: EM101, EM102, TRY003
 
@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+from tools.review_artifact_configuration import ReviewArtifactConfiguration
 from tools.review_exchange_models import (
     Actor,
     ArtifactPaths,
@@ -20,7 +21,11 @@ from tools.review_exchange_models import (
 from tools.review_exchange_models_coordination import CoordinationRecord
 from tools.review_exchange_models_envelope import parse_json_markdown
 from tools.review_exchange_observer import ExchangeObservation, ReviewExchangeObserver
-from tools.review_exchange_paths import derive_artifact_paths, parse_transient_identity
+from tools.review_exchange_paths import (
+    derive_artifact_paths,
+    load_review_configuration,
+    parse_transient_identity,
+)
 from tools.review_exchange_store import ReviewExchangeStore
 from tools.review_exchange_transcript_identity import current_request_occurrence
 from tools.review_status_models import (
@@ -122,11 +127,14 @@ _EXTRA_EXPECTED = {
 class _StatusDependencies:
     """Private read boundary used to prove bounded and mutation-free collection."""
 
-    load_configuration: Callable[[Path], ReviewConfiguration]
-    enumerate_candidates: Callable[[Path], tuple[Path, ...]]
+    load_artifact_configuration: Callable[[Path], ReviewArtifactConfiguration]
+    load_configuration: Callable[
+        [Path, ReviewArtifactConfiguration], ReviewConfiguration,
+    ]
+    enumerate_candidates: Callable[[ReviewArtifactConfiguration], tuple[Path, ...]]
     read_bytes: Callable[[Path], bytes]
     path_exists: Callable[[Path], bool]
-    derive_paths: Callable[[Path, ReviewContext], ArtifactPaths]
+    derive_paths: Callable[[ReviewArtifactConfiguration, ReviewContext], ArtifactPaths]
     make_store: Callable[[ArtifactPaths], ReviewExchangeStore]
     observe: Callable[
         [
@@ -141,9 +149,44 @@ class _StatusDependencies:
     occurrence: Callable[[ReviewExchangeStore, ReviewContext, int], int]
 
 
-def _enumerate_candidates(root: Path) -> tuple[Path, ...]:
-    """Enumerate the reserved root prefix once without walking documentation."""
-    return tuple(path for path in root.iterdir() if path.name.startswith(_ACTIVE_PREFIX))
+@dataclass(frozen=True)
+class _StatusInvocation:
+    """One immutable status read context sharing artifact configuration."""
+
+    root: Path
+    artifacts: ReviewArtifactConfiguration
+    configuration: ReviewConfiguration
+    evaluated_at: datetime
+
+
+def _enumerate_candidates(
+    configuration: ReviewArtifactConfiguration,
+) -> tuple[Path, ...]:
+    """Enumerate the reserved prefix once inside the configured artifact home."""
+    home = configuration.home
+    if not home.is_dir():
+        return ()
+    return tuple(path for path in home.iterdir() if path.name.startswith(_ACTIVE_PREFIX))
+
+
+def _load_review_configuration(
+    root: Path,
+    artifacts: ReviewArtifactConfiguration,
+) -> ReviewConfiguration:
+    """Load review-mode settings against one invocation-bound artifact home."""
+    return load_review_configuration(root, configuration=artifacts)
+
+
+def _derive_paths(
+    artifacts: ReviewArtifactConfiguration,
+    context: ReviewContext,
+) -> ArtifactPaths:
+    """Derive candidate paths without reloading artifact-home configuration."""
+    return derive_artifact_paths(
+        artifacts.project_root,
+        context,
+        configuration=artifacts,
+    )
 
 
 def _observe(
@@ -164,11 +207,12 @@ def _observe(
 
 
 _DEFAULT_DEPENDENCIES = _StatusDependencies(
-    load_configuration=ReviewConfiguration.load,
+    load_artifact_configuration=ReviewArtifactConfiguration.load,
+    load_configuration=_load_review_configuration,
     enumerate_candidates=_enumerate_candidates,
     read_bytes=lambda path: path.read_bytes(),
     path_exists=lambda path: path.exists(),
-    derive_paths=derive_artifact_paths,
+    derive_paths=_derive_paths,
     make_store=ReviewExchangeStore,
     observe=_observe,
     occurrence=current_request_occurrence,
@@ -192,18 +236,23 @@ def _collect_review_status(
     repository_root = root.absolute()
     try:
         repository_root = root.resolve(strict=True)
-        configuration = dependencies.load_configuration(repository_root)
+        artifacts = dependencies.load_artifact_configuration(repository_root)
+        configuration = dependencies.load_configuration(repository_root, artifacts)
         evaluated_at = wall_clock()
-        candidates = dependencies.enumerate_candidates(repository_root)
+        candidates = dependencies.enumerate_candidates(artifacts)
     except (OSError, UnicodeError, ReviewExchangeError, ValueError):
         return _operational_result(repository_root)
 
+    invocation = _StatusInvocation(
+        repository_root,
+        artifacts,
+        configuration,
+        evaluated_at,
+    )
     entries = tuple(
         _collect_candidate(
-            repository_root,
+            invocation,
             candidate,
-            configuration,
-            evaluated_at,
             dependencies,
         )
         for candidate in candidates
@@ -213,13 +262,12 @@ def _collect_review_status(
 
 
 def _collect_candidate(
-    root: Path,
+    invocation: _StatusInvocation,
     candidate: Path,
-    configuration: ReviewConfiguration,
-    evaluated_at: datetime,
     dependencies: _StatusDependencies,
 ) -> StatusEntry | None:
     """Validate and normalize one candidate without affecting its siblings."""
+    root = invocation.root
     identity = None
     try:
         identity = parse_transient_identity(candidate)
@@ -231,7 +279,7 @@ def _collect_candidate(
             record.context.identity,
             "filename identity differs from coordination record",
         )
-        paths = dependencies.derive_paths(root, record.context)
+        paths = dependencies.derive_paths(invocation.artifacts, record.context)
         _require_equal(
             paths.coordination.resolve(),
             candidate.resolve(),
@@ -240,13 +288,13 @@ def _collect_candidate(
         store = dependencies.make_store(paths)
 
         def fixed_clock() -> datetime:
-            return evaluated_at
+            return invocation.evaluated_at
 
         observation = dependencies.observe(
             store,
             record.context,
             record.policy,
-            configuration,
+            invocation.configuration,
             fixed_clock,
         )
         after = dependencies.read_bytes(candidate)
@@ -271,8 +319,8 @@ def _collect_candidate(
             paths,
             observation,
             occurrence,
-            configuration.wait_timeout_seconds,
-            evaluated_at,
+            invocation.configuration.wait_timeout_seconds,
+            invocation.evaluated_at,
             presence,
         )
     except (OSError, UnicodeError, ReviewExchangeError, ValueError, TypeError) as error:

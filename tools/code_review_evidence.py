@@ -48,6 +48,8 @@ from tools.code_review_evidence_validation_state import (
     compare_validation_state,
 )
 from tools.git_command import GitCommandOptions, run_cross_platform_git_command
+from tools.review_artifact_configuration import ReviewArtifactConfiguration
+from tools.review_artifact_registry import ReviewArtifactLocator
 from tools.review_exchange_models import ReviewExchangeError
 
 if TYPE_CHECKING:
@@ -394,22 +396,39 @@ def manifest_path(
 ) -> Path:
     """Derive one stable ignored manifest path from exact identity and step."""
     root = _repository_root(repository)
+    configuration = ReviewArtifactConfiguration.load(root)
+    return _manifest_path(configuration, identity)
+
+
+def _manifest_path(
+    configuration: ReviewArtifactConfiguration,
+    identity: tuple[str, str, str, str, str],
+) -> Path:
+    """Derive one retained path from one invocation-bound configuration."""
     family, type_token, version, slug, step = identity
     if (family, type_token) != ("code", "code"):
         raise ReviewExchangeError("retained evidence identity must use code/code")
     if any(_TOKEN_RE.fullmatch(value) is None for value in (version, slug, step)):
         raise ReviewExchangeError("retained evidence identity contains an unsafe token")
-    return root / f"a.code-review-evidence.{version}.{slug}.step-{step}.json"
+    return ReviewArtifactLocator(configuration).retained_manifest_path(
+        version,
+        slug,
+        step,
+    )
 
 
 def write_manifest(repository: str | Path, retained: CodeReviewEvidence) -> Path:
     """Atomically write retained evidence to its stable ignored path."""
     root = _repository_root(repository)
     retained = CodeReviewEvidence.from_payload(retained.to_payload())
-    path = manifest_path(root, retained.identity)
+    configuration = ReviewArtifactConfiguration.load(root)
+    created = configuration.prepare_home()
+    path = _manifest_path(configuration, retained.identity)
     relative = path.relative_to(root).as_posix()
     ignored = _git(root, ("check-ignore", "-q", "--", relative), check=False)
     if ignored.returncode != 0:
+        if created:
+            configuration.rollback_prepared_home()
         raise ReviewExchangeError("retained evidence manifest path must be ignored")
     temporary = path.with_suffix(path.suffix + ".tmp")
     try:
@@ -419,6 +438,9 @@ def write_manifest(repository: str | Path, retained: CodeReviewEvidence) -> Path
         )
         temporary.replace(path)
     except (OSError, UnicodeError) as error:
+        temporary.unlink(missing_ok=True)
+        if created:
+            configuration.rollback_prepared_home()
         raise ReviewExchangeError(f"cannot write retained evidence manifest: {error}") from error
     return path
 

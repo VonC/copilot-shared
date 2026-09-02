@@ -26,10 +26,9 @@ from tools.review_exchange_models import (
     ArtifactState,
     ConfirmationOutcome,
     FamilyPolicy,
-    ReviewConfiguration,
     ReviewContext,
 )
-from tools.review_exchange_paths import derive_artifact_paths
+from tools.review_exchange_paths import derive_artifact_paths, load_review_configuration
 from tools.review_exchange_store import ReviewExchangeStore
 
 if TYPE_CHECKING:
@@ -150,7 +149,7 @@ def _core(root: Path, context: ReviewContext) -> ReviewExchangeCore:
         ReviewExchangeStore(derive_artifact_paths(root, context)),
         context,
         CODE_REVIEW_POLICY,
-        ReviewConfiguration.load(root),
+        load_review_configuration(root),
     )
 
 
@@ -185,7 +184,7 @@ def resolve_code_review_route(
         raise CodeReviewRoutingError(
             "live code exchange uses another implementation step",
         )
-    configuration = ReviewConfiguration.load(root)
+    configuration = load_review_configuration(root)
     live_paths = (
         paths.request,
         paths.answer,

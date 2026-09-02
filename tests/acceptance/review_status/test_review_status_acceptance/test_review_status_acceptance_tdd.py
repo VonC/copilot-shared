@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
+from tools import review_artifact_configuration as artifact_configuration
 from tools.review_status import collect_review_status
 from tools.review_status_cli import main as review_status_main
 from tools.review_status_models import DamagedCandidateStatus
@@ -75,7 +76,7 @@ def _assert_authorized_owning_action(owning: Mapping[str, Any]) -> None:
     assert owning["continuing_role"] == "requestor"
     assert owning["next_action"] == "authorized-owning-work"
     assert owning["artifacts"]["answer"] == {
-        "path": "a.review-answer.code.v0.11.0.authorized.md",
+        "path": ".reviews/a.review-answer.code.v0.11.0.authorized.md",
         "applicability": "expected",
         "present": False,
     }
@@ -186,7 +187,7 @@ def test_state_identity_and_action_matrix_is_complete(
 def test_damaged_candidates_do_not_hide_healthy_exchanges(
     command_matrix: CommandMatrix,
 ) -> None:
-    """Legacy and malformed evidence remains separate from healthy records."""
+    """Registered legacy damage remains separate from healthy records."""
     entries = cast(
         "list[Mapping[str, Any]]",
         command_matrix.direct.payload["exchanges"],
@@ -194,12 +195,11 @@ def test_damaged_candidates_do_not_hide_healthy_exchanges(
     damaged = [entry for entry in entries if entry["kind"] == "damaged-candidate"]
 
     assert _exchanges_by_slug(command_matrix.direct.payload)["spec-request"]
-    assert len(damaged) == 2
+    assert len(damaged) == 1
     assert any(
         "missing context fields: umbrella_path" in entry["diagnostic"]
         for entry in damaged
     )
-    assert any("coordination candidate" in entry["diagnostic"] for entry in damaged)
     assert command_matrix.direct.payload["has_errors"] is True
 
 
@@ -244,6 +244,29 @@ def test_changed_coordination_is_reported_without_mutating_the_candidate(
         reads += 1
         return content if reads == 1 else content + b"\n"
 
+    def untracked_directory(_root: Path, _relative: str) -> bool:
+        return False
+
+    original_configuration_load = (
+        artifact_configuration.ReviewArtifactConfiguration.load
+    )
+
+    def load_untracked(
+        _configuration_type: type[
+            artifact_configuration.ReviewArtifactConfiguration
+        ],
+        project_root: Path,
+    ) -> artifact_configuration.ReviewArtifactConfiguration:
+        return original_configuration_load(
+            project_root,
+            tracked_directory=untracked_directory,
+        )
+
+    monkeypatch.setattr(
+        artifact_configuration.ReviewArtifactConfiguration,
+        "load",
+        classmethod(load_untracked),
+    )
     monkeypatch.setattr(Path, "read_bytes", changing_read)
 
     result = collect_review_status(root, lambda: datetime.now().astimezone())

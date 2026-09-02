@@ -1,9 +1,9 @@
 """Strict performance gates for review migration and global reviewer waiting.
 
-Step 0 adds these contracts before the production services exist. Step 1 removes
-the migration xfails when the artifact locator and migration service land. Step
-5 removes the wait xfails when the notification-backed global reviewer wait
-lands. The spies assert bounded calls as well as elapsed time so later code
+Step 0 added these contracts before the production services existed. Step 1
+activated the migration gates when the artifact locator and migration service
+landed. Step 5 removes the wait xfails when the notification-backed global
+reviewer wait lands. The spies assert bounded calls as well as elapsed time so later code
 cannot hide recursive discovery, full status projection, or busy polling behind
 otherwise correct results.
 """
@@ -32,10 +32,6 @@ FALLBACK_WAIT_COUNT: Final = 2
 FALLBACK_RESCAN_COUNT: Final = 3
 STATUS_PROJECTION_ERROR: Final = "migration_check must not project review status"
 
-MIGRATION_GATE = pytest.mark.xfail(
-    strict=True,
-    reason="Step 1 removes this xfail when bounded migration_check lands",
-)
 WAIT_GATE = pytest.mark.xfail(
     strict=True,
     reason="Step 5 removes this xfail when GlobalReviewerWait lands",
@@ -150,7 +146,6 @@ def _global_wait(
 class TestMigrationCheckPerformance:
     """Guard the Step 1 placement preflight against hidden projection and scans."""
 
-    @MIGRATION_GATE
     @pytest.mark.timeout(MIGRATION_TIMEOUT_SECONDS)
     def test_migration_check_reads_only_three_flat_locations(
         self,
@@ -168,7 +163,6 @@ class TestMigrationCheckPerformance:
             tmp_path / "configured",
         ]
 
-    @MIGRATION_GATE
     @pytest.mark.timeout(MIGRATION_TIMEOUT_SECONDS)
     def test_migration_check_parses_candidates_once_in_linear_time(
         self,
@@ -188,7 +182,6 @@ class TestMigrationCheckPerformance:
         assert spies.candidate_parses == 3 * SYNTHETIC_CANDIDATE_COUNT
         assert elapsed < MIGRATION_ELAPSED_BOUND_SECONDS
 
-    @MIGRATION_GATE
     @pytest.mark.timeout(MIGRATION_TIMEOUT_SECONDS)
     def test_migration_check_never_projects_full_status(self, tmp_path: Path) -> None:
         """The fast placement check never enters the ordinary status projector."""
