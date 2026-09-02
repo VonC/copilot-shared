@@ -170,14 +170,17 @@ def tracked_scratch_result(tmp_path: Path) -> tuple[int, bool, bool]:
     root = tmp_path / "tracked"
     _topic, state, _record = _inputs(root)
     plan = cast("Path", state.plan)
+    home = root / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
     authored: list[Path] = []
     for name in ("assessment", "report", "changes", "response"):
-        path = root / f"a.{name}.md"
+        path = home / f"a.{name}.md"
         path.write_text(f"{name}.\n", encoding="utf-8")
         authored.append(path)
-    _git(root, "add", "-f", "a.assessment.md")
-    request_output = root / "a.request.md"
-    summary_output = root / "a.summary.md"
+    _git(root, "add", "-f", ".reviews/a.assessment.md")
+    request_output = home / "a.request.md"
+    summary_output = home / "a.summary.md"
     code = request_renderer.main(
         [
             "--plan",

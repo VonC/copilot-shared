@@ -150,7 +150,10 @@ def _run_cli(
 
 def _root_input(root: Path, name: str, content: str) -> Path:
     """Write one distinct ignored input used by a public adapter."""
-    path = root / f"a.{name}.md"
+    home = root / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
+    path = home / f"a.{name}.md"
     path.write_text(content, encoding="utf-8")
     return path
 
@@ -172,8 +175,9 @@ def _render_pair(
     )
     changes = _root_input(effort.root, f"changes-{suffix}", change_summary)
     response = _root_input(effort.root, f"response-{suffix}", writer_response)
-    request_output = effort.root / f"a.rendered-request-{suffix}.md"
-    summary_output = effort.root / f"a.rendered-summary-{suffix}.md"
+    home = effort.root / ".reviews"
+    request_output = home / f"a.rendered-request-{suffix}.md"
+    summary_output = home / f"a.rendered-summary-{suffix}.md"
     arguments = [
         "--document",
         str(effort.document),

@@ -216,9 +216,12 @@ def _common(runtime: cli.Runtime) -> list[str]:
 
 def _input_files(tmp_path: Path) -> tuple[Path, Path, Path]:
     """Create ignored-name caller inputs for content, summary, and guidance."""
-    content = tmp_path / "a.review-content.md"
-    summary = tmp_path / "a.review-summary.md"
-    guidance = tmp_path / "a.review-guidance.md"
+    home = tmp_path / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
+    content = home / "a.review-content.md"
+    summary = home / "a.review-summary.md"
+    guidance = home / "a.review-guidance.md"
     content.write_text("content", encoding="utf-8")
     summary.write_text("summary", encoding="utf-8")
     guidance.write_text("guidance", encoding="utf-8")
@@ -559,12 +562,14 @@ def test_invalid_arguments_and_fatal_errors_emit_one_json_object(
     assert payload["diagnostic"] == "unexpected failure"
 
 
-def test_input_files_must_be_ignored_root_a_names(
+def test_input_files_must_be_ignored_home_local_a_names(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     """Caller Markdown is validated before its single UTF-8 read and retained."""
-    valid = tmp_path / "a.valid.md"
+    home = tmp_path / ".reviews"
+    home.mkdir()
+    valid = home / "a.valid.md"
     valid.write_text("hello", encoding="utf-8")
     def ignored(_root: Path, _path: Path) -> bool:
         return True
@@ -573,9 +578,9 @@ def test_input_files_must_be_ignored_root_a_names(
     assert cli._read_input_file(tmp_path, valid, "content") == "hello"
     assert valid.exists()
 
-    with pytest.raises(ReviewExchangeError, match="project root"):
+    with pytest.raises(ReviewExchangeError, match="review artifact home"):
         cli._read_input_file(tmp_path, tmp_path / "nested/a.bad.md", "content")
-    bad_name = tmp_path / "content.md"
+    bad_name = home / "content.md"
     bad_name.write_text("bad", encoding="utf-8")
     with pytest.raises(ReviewExchangeError, match=r"a\.\*"):
         cli._read_input_file(tmp_path, bad_name, "content")

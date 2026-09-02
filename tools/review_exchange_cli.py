@@ -22,6 +22,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, TextIO
 
 from tools import find_project_root
+from tools.review_artifact_configuration import (
+    ReviewArtifactConfiguration,
+    caller_file_parents,
+)
 from tools.review_exchange_cli_parser import (
     context_from_document as _context_from_document,
 )
@@ -37,7 +41,11 @@ from tools.review_exchange_models import (
     ReviewContext,
     ReviewExchangeError,
 )
-from tools.review_exchange_paths import derive_artifact_paths, validate_activation
+from tools.review_exchange_paths import (
+    derive_artifact_paths,
+    load_review_configuration,
+    validate_activation,
+)
 from tools.review_exchange_store import ReviewExchangeStore
 from tools.review_exchange_transcript_identity import current_request_occurrence
 from tools.review_exchange_wait import WaitOutcome, WaitProgress
@@ -194,8 +202,9 @@ def _build_runtime(args: argparse.Namespace, project_root: Path) -> Runtime:
         args.another_round_label,
         args.continue_owning_workflow_label,
     )
-    configuration = ReviewConfiguration.load(project_root)
-    paths = derive_artifact_paths(project_root, context)
+    artifacts = ReviewArtifactConfiguration.load(project_root)
+    configuration = load_review_configuration(project_root, configuration=artifacts)
+    paths = derive_artifact_paths(project_root, context, configuration=artifacts)
     store = ReviewExchangeStore(paths)
     core = ReviewExchangeCore(store, context, policy, configuration)
     return Runtime(project_root, context, paths, configuration, core)
@@ -228,12 +237,12 @@ def _is_effectively_ignored(project_root: Path, path: Path) -> bool:
 
 
 def _read_input_file(project_root: Path, value: str | Path, label: str) -> str:
-    """Validate and read one ignored root ``a.*`` UTF-8 input exactly once."""
+    """Validate and read one ignored home-local ``a.*`` UTF-8 input once."""
     path = Path(value).expanduser().resolve()
-    if path.parent != project_root.resolve():
-        raise ReviewExchangeError(f"{label} file must be directly under project root")
+    if path.parent not in caller_file_parents(project_root):
+        raise ReviewExchangeError(f"{label} file must be in the review artifact home")
     if not path.name.startswith("a."):
-        raise ReviewExchangeError(f"{label} file must use a project-root a.* name")
+        raise ReviewExchangeError(f"{label} file must use an a.* name")
     if not path.is_file():
         raise ReviewExchangeError(f"{label} file does not exist: {path}")
     if not _is_effectively_ignored(project_root, path):

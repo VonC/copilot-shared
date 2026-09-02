@@ -138,7 +138,10 @@ def run_exchange(
 
 def input_file(effort: Effort, name: str, content: str) -> Path:
     """Write one exact ignored reviewer-authored input."""
-    path = effort.root / f"a.{name}.md"
+    home = effort.root / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
+    path = home / f"a.{name}.md"
     path.write_text(content, encoding="utf-8")
     return path
 
@@ -148,8 +151,9 @@ def render_request(effort: Effort, *, guidance: str | None = None) -> tuple[Path
     assessment = input_file(effort, "request-assessment", "Review every open question.")
     changes = input_file(effort, "request-changes", "Initial independent review.")
     response = input_file(effort, "writer-response", "Please assess the specification.")
-    output = effort.root / "a.rendered-request.md"
-    summary = effort.root / "a.rendered-request-summary.md"
+    home = effort.root / ".reviews"
+    output = home / "a.rendered-request.md"
+    summary = home / "a.rendered-request-summary.md"
     args = [
         "--document",
         str(effort.document),
@@ -208,8 +212,9 @@ def render_answer(
             "Apply the verdict.",
         ),
     }
-    answer = effort.root / "a.rendered-answer.md"
-    summary = effort.root / "a.rendered-answer-summary.md"
+    home = effort.root / ".reviews"
+    answer = home / "a.rendered-answer.md"
+    summary = home / "a.rendered-answer-summary.md"
     args = [
         "--document",
         str(effort.document),

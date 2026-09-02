@@ -273,13 +273,16 @@ def test_context_rejects_unsupported_document_names(tmp_path: Path, name: str) -
 
 def _cli_files(tmp_path: Path) -> dict[str, Path]:
     """Create the four ignored authored inputs and two output paths."""
+    home = tmp_path / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
     files = {
-        "assessment": tmp_path / "a.assessment.md",
-        "changes": tmp_path / "a.changes.md",
-        "response": tmp_path / "a.response.md",
-        "guidance": tmp_path / "a.guidance.md",
-        "content": tmp_path / "a.request-content.md",
-        "summary": tmp_path / "a.request-summary.md",
+        "assessment": home / "a.assessment.md",
+        "changes": home / "a.changes.md",
+        "response": home / "a.response.md",
+        "guidance": home / "a.guidance.md",
+        "content": home / "a.request-content.md",
+        "summary": home / "a.request-summary.md",
     }
     files["assessment"].write_text("Assess these questions.\n", encoding="utf-8")
     files["changes"].write_text("Added Q01.\n", encoding="utf-8")
@@ -395,7 +398,7 @@ def test_cli_reads_explicit_files_and_writes_the_pair_once(
     [
         ("missing", "assessment file does not exist"),
         ("malformed", "assessment file is not valid UTF-8"),
-        ("nested-output", "request content output must be directly under project root"),
+        ("nested-output", "request content output must be in the review artifact home"),
         ("tracked-output", "request content output is not effectively ignored"),
     ],
 )
@@ -457,7 +460,7 @@ def test_cli_rejects_wrong_round_and_non_root_authored_input(
     files["response"].write_text("Response\n", encoding="utf-8")
 
     assert requestor.main(_cli_args(document, files), project_root=tmp_path) == _FATAL_EXIT
-    assert "writer response file must be directly under project root" in (
+    assert "writer response file must be in the review artifact home" in (
         capsys.readouterr().err
     )
 
@@ -468,15 +471,17 @@ def test_root_and_io_helpers_cover_defensive_failures(
 ) -> None:
     """Invalid names, directories, and OS failures remain caller-safe."""
     monkeypatch.setattr(requestor, "_is_effectively_ignored", _always_ignored)
-    with pytest.raises(ReviewExchangeError, match=r"project-root a\.\* name"):
+    home = tmp_path / ".reviews"
+    home.mkdir()
+    with pytest.raises(ReviewExchangeError, match=r"a\.\* name"):
         requestor._root_file(
             tmp_path,
-            tmp_path / "output.md",
+            home / "output.md",
             "request content output",
             input_file=False,
         )
 
-    directory = tmp_path / "a.directory"
+    directory = home / "a.directory"
     directory.mkdir()
     with pytest.raises(ReviewExchangeError, match="must not be a directory"):
         requestor._root_file(

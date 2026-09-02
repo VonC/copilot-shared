@@ -352,22 +352,25 @@ def test_caller_owned_redirection_is_the_only_observable_change(
 
 def _request_arguments(root: Path) -> Namespace:
     """Create ignored caller inputs and paired outputs for the request gate."""
+    home = root / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
     for name in ("assessment", "report", "changes", "response"):
-        (root / f"a.{name}.md").write_text(f"{name}\n", encoding="utf-8")
+        (home / f"a.{name}.md").write_text(f"{name}\n", encoding="utf-8")
     return Namespace(
         plan="docs/v0.11.0/plan.v0.11.0.commit-plan-check.md",
         implementation_step="4",
         umbrella=None,
         round_number=1,
-        assessment_file=str(root / "a.assessment.md"),
-        implementation_report_file=str(root / "a.report.md"),
-        change_summary_file=str(root / "a.changes.md"),
-        writer_response_file=str(root / "a.response.md"),
+        assessment_file=str(home / "a.assessment.md"),
+        implementation_report_file=str(home / "a.report.md"),
+        change_summary_file=str(home / "a.changes.md"),
+        writer_response_file=str(home / "a.response.md"),
         guidance_file=None,
         plan_validation_command=[],
         request_validation_command=[],
-        request_content_output=str(root / "a.request.md"),
-        transcript_summary_output=str(root / "a.summary.md"),
+        request_content_output=str(home / "a.request.md"),
+        transcript_summary_output=str(home / "a.summary.md"),
     )
 
 
@@ -398,8 +401,8 @@ def requestor_rejections(
     return (
         str(invalid.value),
         str(drift.value),
-        (tmp_path / "a.request.md").exists(),
-        (tmp_path / "a.summary.md").exists(),
+        (tmp_path / ".reviews" / "a.request.md").exists(),
+        (tmp_path / ".reviews" / "a.summary.md").exists(),
     )
 
 

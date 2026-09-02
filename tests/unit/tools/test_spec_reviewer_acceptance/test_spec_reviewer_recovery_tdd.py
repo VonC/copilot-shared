@@ -51,11 +51,14 @@ class Clock:
 
 def _manifest(effort: Effort, original_round: int = 1) -> Path:
     """Write retained reviewer evidence matching the current document exactly."""
+    home = effort.root / ".reviews"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_bytes(b"*\n")
     inputs = [
-        effort.root / "a.reviewer-assessment.md",
-        effort.root / "a.question-verdicts.md",
-        effort.root / "a.writer-instructions.md",
-        effort.root / "a.requested-changes.md",
+        home / "a.reviewer-assessment.md",
+        home / "a.question-verdicts.md",
+        home / "a.writer-instructions.md",
+        home / "a.requested-changes.md",
     ]
     for path, content in zip(
         inputs,
@@ -63,7 +66,7 @@ def _manifest(effort: Effort, original_round: int = 1) -> Path:
         strict=True,
     ):
         path.write_text(content, encoding="utf-8")
-    manifest = effort.root / "a.retained-context.json"
+    manifest = home / "a.retained-context.json"
     manifest.write_text(
         json.dumps(
             {

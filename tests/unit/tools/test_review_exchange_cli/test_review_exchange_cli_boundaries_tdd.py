@@ -123,9 +123,11 @@ def test_input_reader_reports_missing_and_invalid_utf8(
         return True
 
     monkeypatch.setattr(cli, "_is_effectively_ignored", ignored)
+    home = tmp_path / ".reviews"
+    home.mkdir()
     with pytest.raises(ReviewExchangeError, match="does not exist"):
-        cli._read_input_file(tmp_path, tmp_path / "a.missing.md", "summary")
-    invalid = tmp_path / "a.invalid.md"
+        cli._read_input_file(tmp_path, home / "a.missing.md", "summary")
+    invalid = home / "a.invalid.md"
     invalid.write_bytes(b"\xff")
     with pytest.raises(ReviewExchangeError, match="UTF-8"):
         cli._read_input_file(tmp_path, invalid, "summary")
@@ -158,7 +160,9 @@ def test_forced_reclaim_requires_its_authorized_summary_pairing(
 ) -> None:
     """Only `--force` with `--summary-file` delegates one forced resume."""
     runtime, core = _runtime(tmp_path)
-    summary = tmp_path / "a.review-summary.md"
+    home = tmp_path / ".reviews"
+    home.mkdir()
+    summary = home / "a.review-summary.md"
     summary.write_text("Manual back-and-forth resume.", encoding="utf-8")
 
     code, payload, _ = _run(
@@ -198,7 +202,9 @@ def test_forced_completion_requires_its_authorized_summary_pairing(
 ) -> None:
     """Only --force with --summary-file delegates forced completion."""
     runtime, core = _runtime(tmp_path)
-    summary = tmp_path / "a.completion-summary.md"
+    home = tmp_path / ".reviews"
+    home.mkdir()
+    summary = home / "a.completion-summary.md"
     summary.write_text("The human closes the abandoned round.", encoding="utf-8")
 
     code, payload, _ = _run(
