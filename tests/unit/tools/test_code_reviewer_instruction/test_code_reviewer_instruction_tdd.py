@@ -116,7 +116,24 @@ def test_instruction_forbids_writer_human_and_commit_authority() -> None:
         assert f"`{operation}`" in content
     assert "never authorizes a commit" in content
     assert "Waiting does not transfer requestor authority" in normalized
-    assert "Stop after a convergence publication" in normalized
+    assert "ends the reviewer's rounds, not its session" in normalized
+
+
+def test_instruction_requires_the_reviewer_to_always_wait() -> None:
+    """A reviewer never ends its session; it waits for the next request."""
+    content = _content()
+    normalized = " ".join(content.split())
+
+    assert "## A reviewer always waits" in content
+    assert "publishing an answer never returns control to the user" in normalized
+    for phrase in (
+        "The round wait.",
+        "The artifact-home wait.",
+        "Do not restrict that wait to the exchange just finished",
+        "Neither wait is optional and neither is a question for the user",
+    ):
+        assert phrase in normalized
+    assert "GlobalReviewerWait" in content
 
 
 def test_instruction_requires_independent_commit_plan_readiness_evidence() -> None:

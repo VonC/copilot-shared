@@ -78,7 +78,8 @@ effort has none and the flag is correctly omitted.
    result. Classify identity, completeness, validation and coverage, staged
    attribution, unresolved findings, and `a.commit` as the six readiness-floor
    results.
-10. Write every answer-model input to a distinct ignored root `a.*` UTF-8 file.
+10. Write every answer-model input to a distinct ignored `a.*` UTF-8 file
+   inside the configured artifact home, `.reviews` by default.
    Run `bin/code_review_answer.bat` once with the exact context, round,
    `--exchange-occurrence` from `status`, disposition, evidence inputs, and two
    distinct ignored outputs: complete answer content and transcript summary.
@@ -105,16 +106,62 @@ effort has none and the flag is correctly omitted.
     identity and step, the next reviewer-owned round, and a positive exchange
     occurrence. Read only the returned `paths.request` and continue at Step 3.
     Repeat the assess, publish, and wait cycle for every intermediate round.
-15. After `commit-ready` publication returns `convergence-gate`, stop for the
-    human commit choice instead of starting another wait. Also stop on any
-    terminal wait outcome under the shared timeout, escalation, and recovery
-    contract.
+15. After `commit-ready` publication returns `convergence-gate`, the reviewer's
+    rounds in this exchange are over but its session is not. The commit choice
+    belongs to the human, so do not confirm it and do not act on it; move to the
+    artifact-home wait below instead of reporting the work finished. Apply the
+    same rule to any terminal wait outcome under the shared timeout,
+    escalation, and recovery contract: name the state and the role that owns
+    it, then wait.
+
+## A reviewer always waits
+
+A reviewer never ends its own session, and publishing an answer never returns
+control to the user. There is always a wait to enter, and only two kinds exist.
+
+**The round wait.** While the exchange still has reviewer-owned rounds, wait for
+the next one with a bounded `wait-request` on the exact same context. This is
+Step 13 above, and it applies the moment a `changes-requested` publication
+returns `answer-pending`.
+
+**The artifact-home wait.** When the current exchange has no further
+reviewer-owned round -- after a convergence publication reaches the human gate,
+or after any terminal result hands the exchange to another role -- wait for the
+next request to appear under the configured artifact home, `.reviews` by
+default. Do not restrict that wait to the exchange just finished: any family,
+document, or step may publish the next request.
+
+Neither wait is optional and neither is a question for the user. Do not ask
+whether to start waiting, do not offer waiting as a choice, and do not treat a
+long session or a completed round as a reason to hand back. A reviewer that
+reports a round finished and stops has abandoned the next request rather than
+completed its work, and the requestor will publish into an exchange nobody is
+watching.
+
+Never substitute a polling loop, a sleep, or a repeated `status` for either
+wait. The bounded protocol wait is the only sanctioned mechanism.
+
+### While the artifact-home wait has no launcher operation
+
+`bin/review_exchange.bat wait-request` binds to one exact exchange context, so
+it serves the round wait only. The cross-exchange wait is `GlobalReviewerWait`,
+Step 5 of the v0.11.0 `review-resume-command` plan, and it has not shipped: the
+Step 5 contracts in
+`tests/unit/tools/test_review_resume_perf/test_review_resume_perf_tdd.py` are
+still strict xfails.
+
+Until it lands, hold the artifact-home wait open in words rather than inventing
+a mechanism. Report that the reviewer is waiting for the next request under the
+artifact home, name the gate or state that needs another role, and stay
+available. Do not report the work as finished, do not ask whether to continue,
+and do not poll. When `GlobalReviewerWait` ships, this paragraph is replaced by
+the operation itself.
 
 ## Exact evidence delegation
 
 Use `bin/code_review_evidence.bat` for every Git-index and retained-evidence
 operation. Every path operand is repository-relative, and every JSON operand
-is the path of an ignored root file containing the retained JSON.
+is the path of an ignored home-local file containing the retained JSON.
 
 - Capture the baseline index tree with `bin/code_review_evidence.bat
   --repository <root> capture-index-tree` and compare it once with the
@@ -234,5 +281,6 @@ convergence gate, complete the exchange, edit the transcript, or perform the
 requestor's owning workflow. Remaining active in `wait-request` after a
 `changes-requested` publication does not cross that boundary: the reviewer
 observes until the requestor publishes the next round, then resumes only its
-reviewer-owned assessment. Stop after a convergence publication or any shared
-terminal result.
+reviewer-owned assessment. A convergence publication or a shared terminal
+result ends the reviewer's rounds, not its session: take no owning action and
+enter the artifact-home wait described above.

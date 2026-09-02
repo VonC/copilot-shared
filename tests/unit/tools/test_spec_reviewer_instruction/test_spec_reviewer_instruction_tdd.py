@@ -136,7 +136,24 @@ def test_instruction_stops_outside_reviewer_authority() -> None:
     assert "Do not edit or consolidate the reviewed specification" in content
     assert "Do not read the versioned transcript" in content
     assert "stop for human recovery" in content
-    assert "Stop for the human choice; do not start a post-answer wait" in content
+    assert "Leave the human choice alone and enter the artifact-home wait" in content
+
+
+def test_instruction_requires_the_reviewer_to_always_wait() -> None:
+    """A reviewer never ends its session; it waits for the next request."""
+    content = _content()
+    normalized = " ".join(content.split())
+
+    assert "## A reviewer always waits" in content
+    assert "publishing an answer never returns control to the user" in normalized
+    for phrase in (
+        "The round wait.",
+        "The artifact-home wait.",
+        "Do not restrict that wait to the exchange just finished",
+        "Neither wait is optional and neither is a question for the user",
+    ):
+        assert phrase in normalized
+    assert "GlobalReviewerWait" in content
 
 
 # eof
