@@ -15,6 +15,7 @@ For an effort targeting `vX.Y.Z`, the supported layouts are:
 | Minor release | `minor` | `docs/vX.Y/` |
 | Full version | `version` | `docs/vX.Y.Z/` |
 | Minor and full version | `minor-version` | `docs/vX.Y/vX.Y.Z/` |
+| Full version and slug | `version-slug` | `docs/vX.Y.Z/<slug>/` |
 
 `process-draft` asks for this choice after the target version is settled and
 passes the tool value to `new_draft --docs-layout`. The renamed
@@ -27,7 +28,7 @@ version and topic already remain explicit in every filename.
 
 ## Workflow discovery
 
-`pw` scans all four layouts. Once it resolves a canonical draft, it searches
+`pw` scans all supported layouts. Once it resolves a canonical draft, it searches
 that draft's parent directory first and does not mix duplicate documents from
 another layout into the effort.
 

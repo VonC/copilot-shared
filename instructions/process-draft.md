@@ -191,7 +191,7 @@ settles its own version later.
 ## Step 6 for process-draft, choose the documentation layout
 
 Read [`../rules/docs_layout.md`](../rules/docs_layout.md). Using the target
-`vX.Y.Z` selected in Step 5, present these four concrete directory choices:
+`vX.Y.Z` selected in Step 5, present these concrete directory choices:
 
 - `docs/` (`--docs-layout flat`): keep every effort document directly under
   the documentation root; this preserves the historical layout.
@@ -202,10 +202,12 @@ Read [`../rules/docs_layout.md`](../rules/docs_layout.md). Using the target
   boundary without a second directory level.
 - `docs/vX.Y/vX.Y.Z/` (`--docs-layout minor-version`): group exact versions
   below their minor release line for repositories with many maintained lines.
+- `docs/vX.Y.Z/<slug>/` (`--docs-layout version-slug`): group all effort documents
+  inside a folder named by the effort slug under the version.
 
-Show the computed paths, not the formulas alone. For target version `0.4.1`,
-the choices are `docs/`, `docs/v0.4/`, `docs/v0.4.1/`, and
-`docs/v0.4/v0.4.1/`. This choice is per effort. The canonical draft's parent
+Show the computed paths, not the formulas alone. For target version `0.4.1` and
+slug `my_slug`, the choices are `docs/`, `docs/v0.4/`, `docs/v0.4.1/`,
+`docs/v0.4/v0.4.1/`, and `docs/v0.4.1/my_slug/`. This choice is per effort. The canonical draft's parent
 directory records it for `pw` and every later writing skill.
 
 ## Step 7 for process-draft, rename and branch with the new_draft tool
