@@ -37,19 +37,48 @@ from `umbrella_path` in the published request envelope and from
 
 ## Caller-owned Markdown inputs for review requestors
 
-Create substantive input as UTF-8 files directly under the project root. Each
-name must follow the effectively ignored `a.*` convention. The launcher checks
-the location, name, Git ignore result, existence, and UTF-8 encoding before it
-reads a file once. It never deletes a caller-owned input.
+Create substantive input as UTF-8 files inside the configured artifact home,
+`.reviews` by default. Each name must follow the effectively ignored `a.*`
+convention. The launcher checks the location, name, Git ignore result,
+existence, and UTF-8 encoding before it reads a file once. It never deletes a
+caller-owned input.
+
+### One artifact home holds every runtime review file
+
+Every review artifact is home-local: the request, answer, coordination record,
+tombstone, transition lock, archives, retained code-review evidence, the
+`a.review-mode` marker, guidance, question state, the migration journal, and
+every caller-owned input and renderer output either role writes. Do not create
+a review scratch file at the project root, and do not read one from there.
+
+The home is repository-local and declared once in `.review-artifacts.ini`:
+
+```ini
+[review-artifacts]
+home = .reviews
+```
+
+Without that file the home is `.reviews`. It is created with a home-local
+`.gitignore` holding exactly `*`, so everything inside it is effectively
+ignored, and it may never be the repository root or an existing tracked
+directory. Read the effective home from `ReviewArtifactConfiguration`, or
+derive it from any path a launcher returns in `paths`, rather than assuming the
+default.
+
+The reviewed document and its versioned transcript are the deliberate
+exceptions. They are tracked project documentation: the transcript stays beside
+the document it records, never under the home.
 
 ### Caller-owned paths are never protocol artifact paths
 
-An `a.*` name is necessary and not sufficient. Every path in the `paths` object
-a launcher returns — `request`, `answer`, `tombstone`, `coordination`,
-`transition_lock` — also carries an ignored `a.*` name, and each one is owned
-by the shared core alone. A caller-owned input or renderer output must never be
-one of them. Choose a name that cannot collide, such as
-`a.spec-review.answer-content.<slug>.md`, and pass it to
+An `a.*` name is necessary and not sufficient, and neither is living in the
+artifact home: protocol artifacts and caller scratch files now share that
+directory, so placement no longer separates them. Every path in the `paths`
+object a launcher returns — `request`, `answer`, `tombstone`, `coordination`,
+`transition_lock` — carries an ignored home-local `a.*` name, and each one is
+owned by the shared core alone. A caller-owned input or renderer output must
+never be one of them. Choose a name that cannot collide, such as
+`.reviews/a.spec-review.answer-content.<slug>.md`, and pass it to
 `--answer-content-output` or `--request-content-output`; publication then
 copies that content into the protocol path itself.
 
@@ -135,9 +164,11 @@ waits for the replacement request. The requestor consumes the answer, updates
 the reviewed work, continues the round, and publishes that replacement while
 the reviewer is already waiting. No human prompt or new reviewer invocation
 belongs between those actions. Each role runs one bounded protocol wait for its
-counterpart rather than an external polling loop. A convergence answer ends
-this automatic exchange at the durable human gate instead of starting the
-reviewer's next wait.
+counterpart rather than an external polling loop. A convergence answer ends this
+automatic exchange at the durable human gate, which ends the reviewer's rounds
+but not its session: the reviewer moves to its artifact-home wait and stays
+available for the next request, so a requestor may publish a fresh exchange
+without arranging a new reviewer invocation.
 
 1. Call `status` with the exact context. Exit `3` with outcome `disabled` means
    the calling workflow follows its existing non-review path and creates no
@@ -211,7 +242,7 @@ automation with an authored reason. Use `cancel --summary-file <path>` for a
 human cancellation at convergence.
 
 An escalated exchange stays stopped until a human identifies authoritative
-evidence. Record that decision in an ignored root summary file, then call
+evidence. Record that decision in an ignored home-local summary file, then call
 `resolve --summary-file <path>` to clear stopped evidence or
 `archive --summary-file <path>` to preserve it under derived archive names.
 Both operations start a fresh round. Do not resume the interrupted transition.

@@ -73,20 +73,21 @@ overwrite, rename, or delete protocol artifacts by hand.
    Treat current specification text as authoritative and the request as the
    focus for the independent assessment.
 4. Write assessment, question verdicts, writer instructions, disposition
-   evidence, and any response to human guidance into separate ignored root
-   `a.*` UTF-8 files. Record the current document digest and input paths in the
-   retained-context manifest described below. Write it before rendering so a
-   stopped round keeps recovery evidence; pass it to the renderer only when
-   republishing retained findings.
+   evidence, and any response to human guidance into separate ignored `a.*`
+   UTF-8 files inside the configured artifact home, `.reviews` by default.
+   Record the current document digest and input paths in the retained-context
+   manifest described below. Write it before rendering so a stopped round keeps
+   recovery evidence; pass it to the renderer only when republishing retained
+   findings.
 5. Run `bin/spec_review_answer.bat` once with the exact context, round,
    disposition, expected document digest, caller-owned inputs, and two distinct
-   ignored root outputs. One output is complete answer content and the other is
-   the substantive transcript summary. Neither output may be a path the
-   launcher returned in `paths`: `paths.answer` carries an ignored `a.*` name
-   like any scratch file, so the `a.*` rule alone does not exclude it. Pass a
-   name that cannot collide, such as
-   `--answer-content-output a.spec-review.answer-content.<slug>.md`. Rendering
-   onto `paths.answer` publishes nothing and strands the round — see
+   ignored home-local outputs. One output is complete answer content and the
+   other is the substantive transcript summary. Neither output may be a path the
+   launcher returned in `paths`: `paths.answer` is home-local and carries an
+   ignored `a.*` name like any scratch file, so neither the `a.*` rule nor the
+   shared directory excludes it. Pass a name that cannot collide, such as
+   `--answer-content-output .reviews/a.spec-review.answer-content.<slug>.md`.
+   Rendering onto `paths.answer` publishes nothing and strands the round — see
    *Caller-owned paths are never protocol artifact paths* in
    [`review-requestor.md`](review-requestor.md).
 6. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
@@ -104,10 +105,13 @@ overwrite, rename, or delete protocol artifacts by hand.
    exchange identity and the next reviewer-owned round, read only its returned
    `paths.request`, and continue at Step 3. Repeat the assess, publish, and wait
    cycle for every intermediate round.
-10. When publication reports `convergence-gate`, stop for the durable human
-    choice instead of waiting for another request. Also stop on any terminal
-    wait outcome, preserving the shared timeout, escalation, and recovery
-    contract.
+10. When publication reports `convergence-gate`, the reviewer's rounds in this
+    exchange are over but its session is not. The consolidation choice belongs
+    to the human, so do not confirm it and do not act on it; move to the
+    artifact-home wait below instead of reporting the work finished. Apply the
+    same rule to any terminal wait outcome, preserving the shared timeout,
+    escalation, and recovery contract: name the state and the role that owns
+    it, then wait.
 
 Do not read the versioned transcript as assessment context. Do not use an old
 request summary when it differs from the current specification. Return
@@ -120,6 +124,50 @@ a transcript that already holds the earlier rounds, so a bare `## Findings` or
 `### Repairs made by the reviewer` collides with the same heading from the round
 before. Qualify it with the step and round, or with the exchange where rounds
 restart, and never author a `#` heading inside appended content.
+
+## A reviewer always waits
+
+A reviewer never ends its own session, and publishing an answer never returns
+control to the user. There is always a wait to enter, and only two kinds exist.
+
+**The round wait.** While the exchange still has reviewer-owned rounds, wait for
+the next one with a bounded `wait-request` on the exact same context. This is
+Step 8 above, and it applies the moment a `changes-requested` publication
+returns `answer-pending`.
+
+**The artifact-home wait.** When the current exchange has no further
+reviewer-owned round -- after a convergence publication reaches the human gate,
+or after any terminal result hands the exchange to another role -- wait for the
+next request to appear under the configured artifact home, `.reviews` by
+default. Do not restrict that wait to the exchange just finished: any family,
+document, or step may publish the next request, so a specification reviewer's
+wait also covers a code-review request and the reverse.
+
+Neither wait is optional and neither is a question for the user. Do not ask
+whether to start waiting, do not offer waiting as a choice, and do not treat a
+long session or a completed round as a reason to hand back. A reviewer that
+reports a round finished and stops has abandoned the next request rather than
+completed its work, and the requestor will publish into an exchange nobody is
+watching.
+
+Never substitute a polling loop, a sleep, or a repeated `status` for either
+wait. The bounded protocol wait is the only sanctioned mechanism.
+
+### While the artifact-home wait has no launcher operation
+
+`bin/review_exchange.bat wait-request` binds to one exact exchange context, so
+it serves the round wait only. The cross-exchange wait is `GlobalReviewerWait`,
+Step 5 of the v0.11.0 `review-resume-command` plan, and it has not shipped: the
+Step 5 contracts in
+`tests/unit/tools/test_review_resume_perf/test_review_resume_perf_tdd.py` are
+still strict xfails.
+
+Until it lands, hold the artifact-home wait open in words rather than inventing
+a mechanism. Report that the reviewer is waiting for the next request under the
+artifact home, name the gate or state that needs another role, and stay
+available. Do not report the work as finished, do not ask whether to continue,
+and do not poll. When `GlobalReviewerWait` ships, this paragraph is replaced by
+the operation itself.
 
 ## Pending request and reclaim boundary for specification reviewers
 
@@ -170,7 +218,8 @@ override identity, safety, current-document authority, or scope.
 
 Before rendering, calculate SHA-256 over the exact current reviewed-document
 bytes. Pass the lowercase digest through `--expected-document-sha256`. Keep a
-single ignored root retained manifest with exactly these JSON fields:
+single ignored retained manifest inside the configured artifact home, with
+exactly these JSON fields:
 
 - `document_sha256`: the assessed working-tree byte digest;
 - `identity`: the exact specification exchange identity;
@@ -206,7 +255,7 @@ Use the shared final JSON outcome without recreating its classifier:
 | --- | --- |
 | `request-pending` | Run the exact bounded wait and assess once. |
 | In-session `answer-pending` after publishing `changes-requested` | Stay active in the next bounded `wait-request`; the requestor remains the owner. |
-| `convergence-gate` after publication | Stop for the human choice; do not start a post-answer wait. |
+| `convergence-gate` after publication | Leave the human choice alone and enter the artifact-home wait. |
 | In-session `abandoned-request` | Reclaim the same intact reviewer-owned round once. |
 | Cold-route `abandoned-request` | Stop and hand recovery to `spec-review-requestor`. |
 | `disabled` | Stop and report that review mode must be restored. |
@@ -217,8 +266,9 @@ Use the shared final JSON outcome without recreating its classifier:
 | Any other writer or human-owned state seen on cold entry | Stop and return control to its owning role. |
 
 Timeout, ambiguity, lost ownership, malformed input, and unexpected fatal
-results also stop. Do not create a replacement request, start a fresh round,
-or turn a diagnostic into authority.
+results also end the round. Do not create a replacement request, start a fresh
+round, or turn a diagnostic into authority. Ending the round is not ending the
+session: report the state, name its owner, and enter the artifact-home wait.
 
 ## Reviewer-forbidden operations and actions
 
@@ -230,4 +280,5 @@ Do not edit or consolidate the reviewed specification. Do not answer questions
 in place, consume the answer, append transcript content, confirm convergence,
 perform the writer's owning workflow, or make a human recovery decision. When
 the shared state stops automation, retain caller-owned assessment evidence and
-stop for human recovery.
+stop for human recovery. Stopping the round is not ending the session: name the
+role that owns the recovery, then enter the artifact-home wait.
