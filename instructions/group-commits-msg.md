@@ -32,10 +32,13 @@ The context that can inform how you will group those files can be:
 
 3. Group files based on their dependencies and the context you have (previous prompts, `.md` files in your context, and the changes done on those files).
 
-   A plan or validation document whose only purpose is to record that a step
-   was completed is a trailing documentation group. Do not fold it into the
-   feature, fix, test, or performance group that made the code change. Put it
-   last, after all behavior and test groups, with a title shaped like
+   A validation plan that newly marks a step `Yes` is a trailing documentation
+   group. Do not fold it into the feature, fix, test, or performance group that
+   made the code change. Put it last, after all behavior and test groups, with
+   the exact title `docs(<topic>): record step <n> validation`. The readiness
+   checker and final batch validation enforce that exact `pw` marker for the
+   group containing the completed validation plan. A different plan or
+   completion-only document may instead use
    `docs(<topic>): record step <n> completion`.
 
 4. For each group, write a conventional commit message. Each group must follow the template provided in [`group-commits-msg.template.md`](../templates/group-commits-msg.template.md). See the next section for more details on how to write the commit message. The title `# Grouping commits by topic` from the template must be added only once, for the first group, and not for the following groups.
