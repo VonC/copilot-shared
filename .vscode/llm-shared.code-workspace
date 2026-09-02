@@ -34,6 +34,14 @@
 		},
 		"peacock.color": "#86a1fc",
 		"github.copilot.chat.otel.dbSpanExporter.enabled": true,
-		"workspaceHalo.logoScale": 34
+		"workspaceHalo.logoScale": 34,
+		"vscodeRadonLinter.excludeFiles": [
+			"**/*.pyx",
+			"**/a.*"
+		],
+		"ruff.nativeServer": "on",
+		"ruff.exclude": [
+			"a.*"
+		]
 	}
 }
