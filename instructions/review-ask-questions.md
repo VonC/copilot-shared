@@ -68,7 +68,6 @@ role command it prints for the reviewed document. Do not duplicate round
 coordination here. A no-question pass skips this block and retains its existing
 settled-document handoff.
 
-
 ## Presenting the review questions
 
 This step is mandatory, not optional: every time you post open questions, present them in your reply as a compact three-column table — one row per question, never a bulleted list — so the human reads them at a glance:
