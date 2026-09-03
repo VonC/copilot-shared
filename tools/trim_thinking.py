@@ -31,7 +31,8 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
+    from datetime import date
 
 # Answer and tool blocks are rendered with a black circle. Both code points
 # appear across Claude Code versions, and they are visually identical.
@@ -48,6 +49,9 @@ CODEX_SECTION_HEADINGS = frozenset({"user", "assistant", "activity"})
 
 _CODEX_HEADING_PATTERN = re.compile(r"^##\s+(?P<name>\S.*?)\s*$")
 _BLANK_LINE_PATTERN = re.compile(r"^\s*$")
+# A dated prompt opens with an optional one-character marker and its space,
+# then an eight-digit YYYYMMDD date followed by a space.
+_DATED_LINE_PATTERN = re.compile(r"^(?:.\s)?(?P<date>\d{8})\s")
 
 _PERCENT = 100
 
@@ -461,15 +465,61 @@ _TRIMMERS: dict[TranscriptFormat, Callable[[str], str]] = {
 }
 
 
+def date_forms(day: date) -> frozenset[str]:
+    """Return the digit string one date is recognized as.
+
+    Args:
+        day: The date a dated prompt line may carry.
+
+    Returns:
+        Its `YYYYMMDD` rendering.
+    """
+    return frozenset({day.strftime("%Y%m%d")})
+
+
+def drop_lines_before_dated_prompts(
+    lines: Sequence[str],
+    dates: Iterable[date],
+) -> list[str]:
+    """Drop every line before the first prompt bearing one of these dates.
+
+    A dated prompt is a line whose first token, after an optional one-character
+    marker such as the Claude prompt ornament, is a date followed by a space.
+    Only the dates given are recognized, so an unrelated number opening a line
+    keeps the transcript unchanged.
+
+    Args:
+        lines: Lines of the already trimmed conversation.
+        dates: Dates a prompt line may be stamped with.
+
+    Returns:
+        The lines from the first matching dated prompt onward, or all lines
+        when no dated prompt matches.
+    """
+    wanted: set[str] = set()
+    for day in dates:
+        wanted |= date_forms(day)
+    if not wanted:
+        return list(lines)
+    for index, line in enumerate(lines):
+        match = _DATED_LINE_PATTERN.match(line)
+        if match is not None and match.group("date") in wanted:
+            return list(lines[index:])
+    return list(lines)
+
+
 def trim_transcript(
     text: str,
     transcript_format: TranscriptFormat | None = None,
+    dates: Iterable[date] = (),
 ) -> TrimResult:
     """Trim one exported conversation.
 
     Args:
         text: Full exported conversation.
         transcript_format: Format to apply. Detected from the text when None.
+        dates: Dates whose first matching prompt drops everything before it,
+            applied once the ordinary trimming is done.
 
     Returns:
         The trimmed text with the line counts of both sides.
@@ -479,6 +529,12 @@ def trim_transcript(
     """
     resolved = transcript_format or detect_format(text)
     trimmed = _TRIMMERS[resolved](text)
+    # split("\n"), not splitlines(): the pass must round-trip the text exactly,
+    # and splitlines() would swallow the trailing newline a kept blank line
+    # leaves behind.
+    trimmed = "\n".join(
+        drop_lines_before_dated_prompts(trimmed.split("\n"), dates),
+    )
 
     if not trimmed.strip():
         msg = (

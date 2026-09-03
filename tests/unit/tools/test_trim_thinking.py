@@ -7,6 +7,8 @@ filter, the trimming entry point, and the summary line of
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 
 from tools import trim_thinking as trimmer
@@ -297,6 +299,90 @@ def test_build_summary_line_reports_no_share_for_an_empty_source() -> None:
     )
 
     assert "0 -> 0 lines, 0 reflection lines removed (0%)" in summary
+
+
+
+_DAY = date(2026, 9, 3)
+_DATED_EXPORT = """❯ first ask
+● opening
+● the answer
+✻ done
+
+※ recap that precedes the dated turn
+
+❯ 20260903 the dated ask
+● opening two
+● answer two
+✻ done two
+"""
+
+
+def test_date_forms_covers_the_eight_digit_rendering() -> None:
+    """One date is recognized only in YYYYMMDD form."""
+    assert trimmer.date_forms(_DAY) == {"20260903"}
+
+
+def test_dated_prompt_drops_every_line_before_it() -> None:
+    """The entire prefix goes; the dated prompt and the rest stay."""
+    kept = trimmer.drop_lines_before_dated_prompts(
+        ["first", "second", "", "❯ 20260903 the ask", "after"],
+        [_DAY],
+    )
+
+    assert kept == ["❯ 20260903 the ask", "after"]
+
+
+def test_dated_prompt_is_matched_without_a_marker() -> None:
+    """The one-character prompt marker is optional."""
+    assert trimmer.drop_lines_before_dated_prompts(
+        ["gone", "20260903 bare ask"],
+        [_DAY],
+    ) == ["20260903 bare ask"]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "20261231 another day",
+        "260903 six-digit date",
+        "1234567 not a date length",
+        "❯ 20260903no space after the date",
+    ],
+)
+def test_unmatched_leading_number_keeps_its_predecessor(line: str) -> None:
+    """Only a recognized eight-digit date truncates the transcript."""
+    assert trimmer.drop_lines_before_dated_prompts(["before", line], [_DAY]) == [
+        "before",
+        line,
+    ]
+
+
+def test_dated_prompt_on_the_first_line_keeps_the_whole_text() -> None:
+    """A dated prompt opening the text leaves no prefix to drop."""
+    assert trimmer.drop_lines_before_dated_prompts(
+        ["20260903 the ask", "after"],
+        [_DAY],
+    ) == ["20260903 the ask", "after"]
+
+
+def test_no_dates_leaves_every_line_in_place() -> None:
+    """With no date to match, the trimmed text is returned untouched."""
+    lines = ["before", "20260903 the ask"]
+
+    assert trimmer.drop_lines_before_dated_prompts(lines, []) == lines
+
+
+def test_trim_transcript_applies_the_dated_pass_after_trimming() -> None:
+    """The dated pass truncates the ordinarily trimmed text at its match."""
+    plain = trimmer.trim_transcript(_DATED_EXPORT)
+    dated = trimmer.trim_transcript(_DATED_EXPORT, None, [_DAY])
+
+    assert "※ recap that precedes the dated turn" in plain.text
+    assert dated.text == """❯ 20260903 the dated ask
+● opening two
+● answer two
+✻ done two"""
+    assert dated.kept_lines < plain.kept_lines
 
 
 # eof
