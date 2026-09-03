@@ -2,8 +2,8 @@
 
 No, it is not implemented.
 
-This validation tracks the seven ordered implementation steps. Step 0 is fully
-implemented and validated; Steps 1 through 6 remain pending.
+This validation tracks the seven ordered implementation steps. Steps 0 through
+2 are fully implemented and validated; Steps 3 through 6 remain pending.
 
 ---
 
@@ -289,8 +289,12 @@ is clean.
 
 ### Analysis of Step 2 implementation state
 
-Not started. Step 2 is not implemented because host detection, role snapshots,
-legacy reconciliation, and missing-only backfill do not exist.
+Yes. Step 2 has been fully implemented.
+
+Host detection now has a closed, non-secret nature result; request, answer, and
+coordination publication preserve strict two-role snapshots; and legacy
+selected-role evidence has complete reconciliation and transactional
+missing-only completion with conflict, unknown, and idempotency safeguards.
 
 ### Goal for Step 2
 
@@ -306,27 +310,115 @@ legacy selected-role evidence without rewriting conflicts.
 
 ### What was implemented for Step 2
 
-_(empty — no check has taken place yet.)_.
+- Added centralized Claude, Codex, Gemini, and `unknown` detection with trusted
+  hint precedence, explicit no-evidence and conflicting-evidence results, and
+  diagnostics that retain neither environment names nor values.
+- Added strict requestor/reviewer snapshots to envelopes and coordination while
+  preserving the explicit legacy field-absence parser. Publication merges the
+  stored snapshots, records only the acting role, rerenders the envelope, and
+  carries the resulting snapshot into coordination and transcript metadata.
+- Removed the prompt renderer's silent Claude default, routed its detection
+  through the shared detector, and added explicit Gemini and unknown command
+  prefix behavior.
+- Added selected-role reconciliation that ignores counterpart gaps, preserves
+  stable evidence order, and collects every conflict before mutation.
+- Added missing-only legacy backfill with prospective rendering and validation,
+  Stop/Override conflict handling, unknown no-op behavior, rollback on commit
+  failure, and one role-and-occurrence-qualified transcript completion entry.
+- Added focused detector, snapshot, schema, publication, reconciliation,
+  property, backfill, rollback, transcript identity, and prompt-rendering tests.
 
 ### New types or classes introduced for Step 2
 
-_(empty — no check has taken place yet.)_.
+- `LlmNature` is the closed Claude, Codex, Gemini, and `unknown` enum;
+  `LlmNatureDetection` holds only its nature, stable source category, and an
+  optional non-secret diagnostic; and `LlmNatureDetector` applies trusted-hint
+  precedence before bounded host-environment detection.
+- `RoleNatureSnapshot` is the strict nullable requestor/reviewer value object,
+  with compatible legacy parsing and conflict-safe record and merge operations.
+- `RoleNatureEvidence`, `RoleNatureReconciliation`, and
+  `RoleNatureReconciler` represent and classify the complete selected-role
+  evidence set in one stable pass.
+- `MutableRoleNatureArtifact`, `RoleNatureBackfillContext`,
+  `RoleNatureBackfillResult`, and `RoleNatureBackfill` isolate validated file
+  rendering from pure reconciliation and coordinate the missing-only commit.
+- `NatureCompletionEntry` represents the uniquely identified append-only
+  transcript fragment for one role and exchange occurrence.
 
 ### Architecture check for Step 2
 
-_(empty — no check has taken place yet.)_.
+The detector and immutable snapshot types remain independent of file storage.
+Pure reconciliation is separated from the backfill transaction, while
+publication obtains host evidence at its existing process boundary and the
+store only renders already validated enum values. Envelope and coordination
+schemas share the snapshot value object without importing either persistence or
+workflow adapters. No new responsibility was added to the risk-band exchange
+store beyond rendering two snapshot values.
+
+The round-1 review found that backfill temporary files used an unignored prefix
+inside each target directory. The replacement prefix now starts with `.tmp`,
+which the repository ignore rules already cover, and a regression test pins
+that relationship.
+
+The temporary-file ignore-coverage issue needed fixing and is now addressed.
 
 ### Performance check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Environment detection checks a fixed two-signal tuple. Snapshot record and merge
+are constant bounded work. Reconciliation, prospective rendering, temporary
+preparation, commit, and cleanup each make one linear pass over the selected
+artifact set; resolved-path membership uses a set, so no pairwise scan was
+introduced. Transcript identity lookup retains its existing bounded behavior.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 2
 
-_(empty — no check has taken place yet.)_.
+Dedicated unit leaves exercise every detector result, every closed enum member,
+legacy absence and nullable strict schemas, invalid keys and values, role
+preservation, stable complete conflict collection, counterpart omission,
+Stop/Override, unknown no-op, missing-only mutation, repeat idempotency, commit
+rollback, and transcript completion guards. Lifecycle tests prove requestor
+publication first and reviewer publication later across request, answer,
+coordination, and transcript evidence without retaining environment secrets.
+
+The exact Step 2 focused walk passed 85 tests with no failures or warnings. The
+coverage repair walk then passed all 28 affected tests at `cov=100`, and the
+final `ghog check` passed every static and documentation gate.
+
+No unit-tested class is below 100 percent or needs completing.
 
 ### Feature integrity for Step 2
 
-_(empty — no check has taken place yet.)_.
+Legacy envelopes and coordination records remain readable only through the
+explicit missing-field exception, while every new serialization emits both
+role keys. Known role evidence cannot be silently replaced, unknown detection
+does not manufacture legacy evidence, counterpart artifacts remain untouched,
+and Override fills gaps without rewriting conflicts. Existing specification
+and code-review lifecycle behavior remained green across the 2,345-test full
+phase; its only initial nonzero result was the seven newly introduced defensive
+coverage lines, which the subsequent 100-percent affected walk closed.
+
+The completion grep shows host environment signals only in the centralized
+detector and `role_natures` at the two strict schemas, publication merge, and
+transcript projection sites, with no `default.*claude` match. Every Step 2
+Python file remains below the 650-line ceiling. No existing feature or reporting
+capability is impaired. The round-1 temporary-file ignore gap, stale theme
+sentence, and dropped exchange-store invariant needed fixing; all three are now
+corrected. Round 2 also found that an unmatched backtick run could expose a
+later code-spanned URL to rewriting, and that concurrent stale-record routing
+work pushed its public resolver over the Radon gate. The span scan now skips
+only the unmatched run, a regression test protects the later span, and record
+eligibility is isolated behind a small predicate so `ghog check` is green.
+
+The round-3 reviewer walk restored 100 percent coverage across 2,393 tests but
+exited 8 for three duration outliers, not for a coverage failure. Step 2 owned
+the largest: its reconciliation property took 0.63 seconds; the other two were
+concurrent Markdown-checker and pre-existing Step 1 tests. The Step 2 property
+now uses 40 generated examples while retaining list sizes through 40 and the
+complete conflict-order assertion. The subsequent 2,403-test `ghog day` reports
+`fail=0`, `xfail=3`, `cov=100`, `outliers=0`, and `exit=0`; its opening
+`check.bat` phase also passes across the complete shared worktree.
 
 ---
 
