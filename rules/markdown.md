@@ -4,6 +4,10 @@ When writing any markdown file, always use different section titles, using the c
 For instance, do not use as a section title "Goal", use instead "Goal for xxx" if xxx is the topic of your writing.
 Each section title must be unique, not a repetition of a previous section title already used.
 
+Make sure to insert an empty line before every heading and an empty line after every heading.
+The first level-one document title is the only exception: because it starts the file, it needs only the empty line after it.
+This prevents `MD022/blanks-around-headings` warnings and applies whenever an existing Markdown document is edited, not only when a new document is created.
+
 When writing a list element (`- xxx`), always use only one space between the list item dash marker (`-`) and its content (`xxx`): so use `- xxx`, not `-  xxx` or `-   xxx`: do not use 2 or 3 spaces, only one.
 
 When writing an ordered list element (`1. xxx`), always use only one space between the list item number marker (`1.`) and its content (`xxx`): so use `1. xxx` or `1. **xxx**`, not `1.   xxx` or `1.   **xxx**` or `1.  xxx` or `1.  **xxx**`: do not use 2 or 3 spaces, only one.

@@ -10,6 +10,11 @@ exchange command. That shared instruction owns durable coordination. This
 specialized instruction supplies specification policy, authored content, and
 the owning action only.
 
+Before writing or editing the reviewed specification or any caller-owned
+Markdown input, read and follow [`../rules/markdown.md`](../rules/markdown.md).
+Apply those rules to every accepted edit and covered-wording edit before
+publishing the next round.
+
 ## Exact policy for specification requestor operations
 
 Pass this unchanged policy to every shared exchange operation:

@@ -7,8 +7,10 @@ Check your prompt for type (feature-request, issue, design or plan), vX.Y.Z and 
 Consolidate the exact `<document-path>` named in the prompt by integrating
 answers given to existing questions in its "Open questions for the vX.Y.Z ..."
 section. Read [`../rules/docs_layout.md`](../rules/docs_layout.md) and preserve
-the document's effort directory. Do not leave the questions and their options;
-consolidation integrates the chosen answers into the document.
+the document's effort directory. Before making any Markdown edit, read and
+follow [`../rules/markdown.md`](../rules/markdown.md). Do not leave the
+questions and their options; consolidation integrates the chosen answers into
+the document.
 
 ## Pre-consolidation question snapshot
 

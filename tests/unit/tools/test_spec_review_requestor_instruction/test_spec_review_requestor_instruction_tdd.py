@@ -98,6 +98,20 @@ def test_instruction_handles_resumption_without_manual_artifact_edits() -> None:
     assert "Never read the versioned transcript as working context" in content
 
 
+def test_document_edits_follow_the_shared_heading_spacing_rule() -> None:
+    """Specification edits load the rule that prevents MD022 findings."""
+    content = _content()
+    markdown_rule = (_ROOT / "rules" / "markdown.md").read_text(encoding="utf-8")
+
+    assert "../rules/markdown.md" in content
+    assert content.index("../rules/markdown.md") < content.index(
+        "When an intermediate answer",
+    )
+    assert "empty line before every heading" in markdown_rule
+    assert "empty line after every heading" in markdown_rule
+    assert "first level-one document title" in markdown_rule
+
+
 def test_instruction_owns_edits_rounds_and_human_choices() -> None:
     """Wording edits precede the gate and substantive edits repeat automatically."""
     content = _content()
