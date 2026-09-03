@@ -10,11 +10,14 @@ from __future__ import annotations
 
 import subprocess
 from dataclasses import FrozenInstanceError, replace
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
 import pytest
 
 from tools import spec_review_request as requestor
+from tools.markdown_check.rules import check_md001
+from tools.markdown_check.source import parse_markdown
 from tools.review_exchange_models import (
     ExchangeIdentity,
     ReviewContext,
@@ -144,7 +147,7 @@ def test_render_accepts_no_umbrella_and_preserves_guidance_verbatim(
     assert "Human guidance:\n\nKeep option A.\nDo not collapse its rationale." in (
         rendered.request_content
     )
-    assert "Writer response: The writer applied the requested direction." in (
+    assert "Writer response:\n\nThe writer applied the requested direction." in (
         rendered.request_content
     )
     assert "Human guidance:\n\nKeep option A.\nDo not collapse its rationale." in (
@@ -184,6 +187,30 @@ def test_render_nests_and_qualifies_specification_headings(
     assert "round 2" not in "\n".join(
         line for line in rendered.request_content.splitlines() if line.startswith("## ")
     ).replace("(round 2)", "")
+
+
+def test_writer_response_headings_remain_blocks_without_level_skips(
+    tmp_path: Path,
+) -> None:
+    """A response label cannot swallow its first nested Markdown heading."""
+    source = replace(
+        _round_input(tmp_path),
+        writer_response=(
+            "# Writer response\n\nThe finding is addressed.\n\n"
+            "## What changed\n\nThe wording is now explicit."
+        ),
+    )
+
+    rendered = requestor.render_specification_request(source)
+
+    assert "Writer response:\n\n### Writer response" in rendered.request_content
+    assert "Writer response:\n\n#### Writer response" in rendered.transcript_summary
+    for name, markdown in (
+        ("request.md", rendered.request_content),
+        ("transcript.md", rendered.transcript_summary),
+    ):
+        source_markdown = parse_markdown(PurePosixPath(name), markdown)
+        assert check_md001(source_markdown) == ()
 
 
 def test_round_input_is_frozen_and_rejects_invalid_content(tmp_path: Path) -> None:

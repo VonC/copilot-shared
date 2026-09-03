@@ -435,7 +435,7 @@ def guided_override_journey(
         "Human guidance:\n\n#### Human decision for issue guided (round 2)\n\n"
         "Keep Q02 literal; do not merge it with Q01.",
     ) == 1
-    assert "Writer response: The writer kept Q02 separate" in request
+    assert "Writer response:\n\nThe writer kept Q02 separate" in request
     assert (
         "Human guidance:\n\n#### Human decision for issue guided (round 2)"
         in transcript
