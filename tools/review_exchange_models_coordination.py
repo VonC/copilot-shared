@@ -1,14 +1,14 @@
 """Durable coordination model for the v0.11.0 review-exchange core.
 
-Step 1 split: isolates cross-process lease, repair, progress, escalation, and
-confirmation state from identity and configuration value objects.
+Step 2 adds a strict two-role LLM-nature snapshot while retaining legacy
+coordination parsing for records that predate identity evidence.
 """
 
 # ruff: noqa: EM101, TRY003
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, cast
 
 from tools.review_exchange_models import (
@@ -28,6 +28,7 @@ from tools.review_exchange_models import (
     strict_fields,
     validate_local_timestamp,
 )
+from tools.review_role_nature import RoleNatureSnapshot
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -106,6 +107,7 @@ class CoordinationRecord:
     confirmed_outcome: ConfirmationOutcome | None = None
     confirmation_timestamp: str | None = None
     human_guidance: str | None = None
+    role_natures: RoleNatureSnapshot = field(default_factory=RoleNatureSnapshot)
 
     def __post_init__(self) -> None:
         """Validate status, repair-marker, and confirmation invariants."""
@@ -145,6 +147,7 @@ class CoordinationRecord:
             ),
             "confirmation_timestamp": self.confirmation_timestamp,
             "human_guidance": self.human_guidance,
+            "role_natures": self.role_natures.to_dict(),
         }
 
     @classmethod
@@ -158,6 +161,9 @@ class CoordinationRecord:
             "escalation_reason", "confirmation_label", "confirmed_outcome",
             "confirmation_timestamp", "human_guidance",
         }
+        legacy = "role_natures" not in data
+        if not legacy:
+            expected.add("role_natures")
         strict_fields(data, expected, "coordination record")
         marker_value = data["incomplete_transition"]
         outcome_value = data["confirmed_outcome"]
@@ -232,6 +238,14 @@ class CoordinationRecord:
                 data["confirmation_timestamp"], "confirmation timestamp",
             ),
             human_guidance=optional_string(data["human_guidance"], "human guidance"),
+            role_natures=RoleNatureSnapshot.from_optional_dict(
+                None
+                if legacy
+                else mapping_value(
+                    data["role_natures"],
+                    "coordination role natures",
+                ),
+            ),
         )
 
 

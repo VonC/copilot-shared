@@ -1,9 +1,9 @@
 """Crash-recoverable exact-path persistence for review exchanges.
 
-Step 2 centralizes complete UTF-8 replacement, identity validation, short
-operating-system locks, request tombstones, evidence archives, and transcript
-append repair from a persisted byte offset. It never discovers exchange files
-by scanning directories or keeps a transition lock across counterpart work.
+Review-resume Step 2 adds both role natures to each appended transcript entry;
+existing exact-path replacement, locking, and append repair remain unchanged.
+It never scans directories to discover exchanges or holds a transition lock
+across counterpart work.
 """
 
 # ruff: noqa: EM101, EM102, TRY003
@@ -42,6 +42,8 @@ from tools.review_exchange_paths import archive_path
 if TYPE_CHECKING:
     from collections.abc import Generator
     from typing import BinaryIO
+
+    from tools.llm_nature import LlmNature
 
 if os.name == "nt":
     import msvcrt  # pragma: no cover - platform-specific import
@@ -474,7 +476,7 @@ class ReviewExchangeStore:
         record: CoordinationRecord,
         entry: TranscriptEntry,
     ) -> str:
-        """Render one portable role-and-round-labeled transcript entry."""
+        """Render one portable entry with its complete role-nature snapshot."""
         context = record.context
         umbrella = (
             self._transcript_path(context.umbrella_path)
@@ -505,6 +507,10 @@ class ReviewExchangeStore:
             f"- Exchange: {context.identity.key}",
             f"- Umbrella: {umbrella}",
             f"- Reviewed document: {self._transcript_path(context.document_path)}",
+            "- Requestor LLM nature: "
+            + self._render_nature(record.role_natures.requestor),
+            "- Reviewer LLM nature: "
+            + self._render_nature(record.role_natures.reviewer),
         ]
         if context.implementation_step is not None:
             lines.append(f"- Implementation step: {context.implementation_step}")
@@ -518,6 +524,11 @@ class ReviewExchangeStore:
         )
         lines.append(f"<!-- review-entry-id: {entry.entry_id} -->")
         return "\n".join(lines) + "\n"
+
+    @staticmethod
+    def _render_nature(nature: LlmNature | None) -> str:
+        """Render one nullable role nature without any host evidence detail."""
+        return nature.value if nature is not None else "unrecorded"
 
     def _transcript_path(self, path: Path) -> str:
         """Render an in-repository transcript path without host identity."""
