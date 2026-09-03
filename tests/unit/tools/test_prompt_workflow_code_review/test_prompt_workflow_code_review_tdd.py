@@ -128,7 +128,7 @@ def test_resolve_route_is_disabled_without_marker_or_live_state(tmp_path: Path) 
 
 
 def test_marker_routes_exact_plan_step_and_rejects_unknown_context(tmp_path: Path) -> None:
-    """Cold entry validates the memory identity and declared plan step."""
+    """Cold entry validates the declared plan step and ignores another topic."""
     topic, state, record = _effort(tmp_path, "4A")
     (tmp_path / "a.review-mode").write_text("", encoding="utf-8")
 
@@ -145,13 +145,24 @@ def test_marker_routes_exact_plan_step_and_rejects_unknown_context(tmp_path: Pat
             state,
             replace(record, plan_step="9"),
         )
-    with pytest.raises(code_review.CodeReviewRoutingError, match="workflow topic"):
+    assert (
         code_review.resolve_code_review_route(
             tmp_path,
             topic,
             state,
             replace(record, topic="other"),
         )
+        is None
+    )
+    assert (
+        code_review.resolve_code_review_route(
+            tmp_path,
+            topic,
+            state,
+            replace(record, version="v0.12.0"),
+        )
+        is None
+    )
 
 
 def test_context_validation_rejects_missing_inputs_and_bad_identity(tmp_path: Path) -> None:

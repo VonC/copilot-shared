@@ -128,8 +128,6 @@ def _context(
         raise CodeReviewRoutingError("code review requires an exact plan document")
     if record is None or record.plan_step is None:
         raise CodeReviewRoutingError("code review requires an implementation step")
-    if record.version != topic.version or record.topic != topic.slug:
-        raise CodeReviewRoutingError("workflow topic differs from the resolved plan")
     if record.plan_step not in _plan_steps(state):
         raise CodeReviewRoutingError(f"unknown plan step: {record.plan_step}")
     context = code_review_context(
@@ -141,6 +139,20 @@ def _context(
     if identity.version != topic.version or identity.slug != topic.slug:
         raise CodeReviewRoutingError("plan identity differs from the workflow topic")
     return context
+
+
+def _record_matches_topic(record: MemoryRecord, topic: Topic) -> bool:
+    """Report whether a durable review record belongs to this workflow topic."""
+    return record.version == topic.version and record.topic == topic.slug
+
+
+def _record_plan_step(record: MemoryRecord | None, topic: Topic) -> str | None:
+    """Return the plan step only when the record belongs to this topic."""
+    if record is None or record.plan_step is None:
+        return None
+    if not _record_matches_topic(record, topic):
+        return None
+    return record.plan_step
 
 
 def _core(root: Path, context: ReviewContext) -> ReviewExchangeCore:
@@ -165,12 +177,22 @@ def resolve_code_review_route(
     durable, its fixed paths win even if the marker is later removed. Any live
     evidence for the same code identity but another implementation step fails
     closed instead of being silently ignored.
+
+    A record naming another topic or version is not evidence about this one, so
+    it routes nowhere rather than failing. Every effort that ran a code review
+    leaves its record behind, and the next effort would otherwise meet a fatal
+    on its first call whose only remedy is deleting an ignored scratch file.
+    Fail-closed is kept where it means something: an unknown step for this
+    topic, or live evidence at another step, still raise.
     """
-    if state.plan is None or record is None or record.plan_step is None:
+    if state.plan is None:
+        return None
+    record_plan_step = _record_plan_step(record, topic)
+    if record_plan_step is None:
         return None
     probe_context = code_review_context(
         state.plan,
-        record.plan_step,
+        record_plan_step,
         _umbrella_path(root, topic),
     )
     paths = derive_artifact_paths(root, probe_context)
