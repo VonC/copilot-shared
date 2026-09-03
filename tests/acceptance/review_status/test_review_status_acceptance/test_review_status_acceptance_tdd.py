@@ -239,7 +239,7 @@ def test_changed_coordination_is_reported_without_mutating_the_candidate(
     def changing_read(path: Path) -> bytes:
         nonlocal reads
         content = original_read(path)
-        if path.resolve() != candidate.resolve():
+        if path != candidate:
             return content
         reads += 1
         return content if reads == 1 else content + b"\n"
