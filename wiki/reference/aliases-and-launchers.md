@@ -59,7 +59,10 @@ run still needs a new Codex thread before the refreshed skill registry appears.
 | `tth` | `bin\tth.bat` | trim an exported Claude or Codex conversation to the ask, the opening, and the closing answer of every turn, back to the clipboard |
 
 `tth` reads the clipboard when it gets no file argument, and always publishes
-its result to the clipboard. See
+its result to the clipboard. It always drops every line before the first prompt
+stamped with today's date, and takes an optional `YYYYMMDD` date to match a
+second day, so `tth 20260903` trims the clipboard and `tth export.md 20260903`
+trims a file; the alias forwards every argument. See
 [the trim-thinking command reference](trim-thinking-command.md).
 
 ## ⚙️ Other launchers in bin
