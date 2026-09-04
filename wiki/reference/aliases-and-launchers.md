@@ -31,7 +31,7 @@ the corresponding launcher.
 
 | Alias | Runs | Purpose |
 | --- | --- | --- |
-| `llmup` | `bin\update_llm_shared_plugin.bat` | validate `.agents\llm-shared`, replace its manifest cachebuster, reinstall `llm-shared@personal`, and print its installed row |
+| `llmup` | `bin\update_llm_shared_plugin.bat` | validate `.agents\llm-shared` and its cache-relative redirects, replace its manifest cachebuster, reinstall `llm-shared@personal`, verify the installed cache copy, and print its installed row |
 
 `llmup` requires an interactive `cmd` initialized by `senv.bat`. The launcher
 uses `uv run --isolated --no-project --with PyYAML` for plugin validation, so
