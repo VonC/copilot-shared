@@ -1,8 +1,7 @@
-"""Failure-path TDD coverage for the v0.11.0 review-exchange store.
+"""Failure-path TDD coverage for the v0.11.0 review-exchange stores.
 
-Step 2 validates that exact persistence fails closed across invalid content,
-missing artifacts, interrupted mutations, archive conflicts, and both lock
-adapters while preserving recoverable evidence.
+Step 3 keeps exact persistence failure coverage while moving both platform lock
+adapters behind the focused ownership store.
 """
 
 from __future__ import annotations
@@ -12,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from tools import review_exchange_ownership_store as ownership_store_module
 from tools import review_exchange_store as store_module
 from tools.review_exchange_models import (
     Actor,
@@ -514,11 +514,16 @@ def test_posix_lock_adapter_acquires_and_releases_one_file_descriptor(
             calls.append((descriptor, operation))
 
     with (tmp_path / "posix.lock").open("w+b") as stream:
-        monkeypatch.setattr(store_module.os, "name", "posix")
-        monkeypatch.setattr(store_module, "fcntl", FakeFcntl, raising=False)
+        monkeypatch.setattr(ownership_store_module.os, "name", "posix")
+        monkeypatch.setattr(
+            ownership_store_module,
+            "fcntl",
+            FakeFcntl,
+            raising=False,
+        )
 
-        store_module.ReviewExchangeStore._lock_stream(stream)
-        store_module.ReviewExchangeStore._unlock_stream(stream)
+        ownership_store_module.ReviewExchangeOwnershipStore._lock_stream(stream)
+        ownership_store_module.ReviewExchangeOwnershipStore._unlock_stream(stream)
 
     assert [operation for _, operation in calls] == [
         FakeFcntl.LOCK_EX,

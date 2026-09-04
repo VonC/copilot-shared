@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
 POLICY = FamilyPolicy("consolidation-ready", "Revise and review again", "Consolidate")
 TIMESTAMP = "2026-08-11T14:00:00+02:00"
+_CAPABILITIES: dict[Path, tuple[int, str]] = {}
 
 
 @dataclass(frozen=True)
@@ -124,16 +125,35 @@ def run_exchange(
 ) -> CliResult:
     """Invoke the public exchange command and parse its sole JSON result."""
     stdout, stderr = StringIO(), StringIO()
+    capability = _CAPABILITIES.get(effort.context.document_path)
+    capability_arguments: tuple[str, ...] = ()
+    if capability is not None and operation not in {"activate", "status"}:
+        generation, token = capability
+        capability_arguments = (
+            "--ownership-generation",
+            str(generation),
+            "--ownership-token",
+            token,
+        )
     with (
         chdir(effort.root),
         redirect_stdout(stdout),
         redirect_stderr(stderr),
         patch.dict(os.environ, {"PRJ_DIR": str(effort.root)}),
     ):
-        code = review_exchange_cli.main([operation, *common(effort.context), *extra])
+        code = review_exchange_cli.main(
+            [operation, *common(effort.context), *capability_arguments, *extra],
+        )
     lines = stdout.getvalue().splitlines()
     assert len(lines) == 1, stderr.getvalue()
-    return CliResult(code, cast("dict[str, Any]", json.loads(lines[0])))
+    payload = cast("dict[str, Any]", json.loads(lines[0]))
+    generation = payload.get("ownership_generation")
+    token = payload.get("ownership_token")
+    if isinstance(generation, int) and isinstance(token, str):
+        _CAPABILITIES[effort.context.document_path] = (generation, token)
+    if payload.get("state") == "idle":
+        _CAPABILITIES.pop(effort.context.document_path, None)
+    return CliResult(code, payload)
 
 
 def input_file(effort: Effort, name: str, content: str) -> Path:

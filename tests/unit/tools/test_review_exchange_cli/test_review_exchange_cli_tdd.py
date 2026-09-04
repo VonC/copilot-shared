@@ -32,6 +32,11 @@ from tools.review_exchange_models import (
 )
 from tools.review_exchange_models_coordination import CoordinationRecord
 from tools.review_exchange_observer import ExchangeObservation
+from tools.review_exchange_ownership import (
+    OwnershipCapability,
+    OwnershipClaim,
+    OwnershipRejectedError,
+)
 from tools.review_exchange_paths import derive_artifact_paths
 from tools.review_exchange_wait import WaitOutcome, WaitProgress, WaitResult
 
@@ -41,7 +46,7 @@ _SECOND_EXCHANGE = 2
 
 
 class FakeCore:
-    """Record CLI delegation while returning typed lifecycle values."""
+    """Record CLI delegation and presented ownership capability values."""
 
     def __init__(self, record: CoordinationRecord) -> None:
         """Start in a normal active round with an empty call log."""
@@ -50,11 +55,21 @@ class FakeCore:
         self.calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
         self.wait_outcome = WaitOutcome.FOUND
         self.fail: Exception | None = None
+        self.ownership_capability: OwnershipCapability | None = None
+        self.ownership_capability_issued = False
+
+    def present_ownership(self, capability: OwnershipCapability | None) -> None:
+        """Record the parsed capability without adding a lifecycle call."""
+        self.ownership_capability = capability
+        self.ownership_capability_issued = False
 
     def _call(self, name: str, *args: Any, **kwargs: Any) -> None:
         """Record a call or raise the injected failure."""
         if self.fail is not None:
-            raise self.fail
+            error = self.fail
+            if isinstance(error, OwnershipRejectedError):
+                self.fail = None
+            raise error
         self.calls.append((name, args, kwargs))
 
     def classify(self) -> ExchangeObservation:
@@ -131,6 +146,13 @@ class FakeCore:
         """Record one authorized forced resume of an escalated round."""
         self._call("force_reclaim", summary)
         return self.record
+
+    def pickup_ownership(self, actor: Actor) -> OwnershipClaim:
+        """Record one lease-independent capability pickup."""
+        self._call("pickup_ownership", actor)
+        self.ownership_capability = OwnershipCapability(2, "t" * 32)
+        self.ownership_capability_issued = True
+        return OwnershipClaim(self.record, self.ownership_capability)
 
     def escalate(self, reason: str) -> CoordinationRecord:
         """Record an escalation reason."""
@@ -353,6 +375,7 @@ def _assert_inputs_retained(content: Path, summary: Path, guidance: Path) -> Non
         ),
         ("continue", [], "continue_round"),
         ("reclaim", [], "reclaim"),
+        ("pickup", [], "pickup_ownership"),
         ("escalate", ["--summary-file", "SUMMARY"], "escalate"),
         (
             "confirm",

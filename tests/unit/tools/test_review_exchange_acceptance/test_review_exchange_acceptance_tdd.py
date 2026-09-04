@@ -45,6 +45,7 @@ _CREATED_AT = "2026-08-05T09:00:00+02:00"
 _EXPECTED_STOP = 3
 _SECOND_ROUND = 2
 _WAIT_LIMIT = 4
+_CAPABILITIES: dict[Path, tuple[int, str]] = {}
 
 
 @dataclass(frozen=True)
@@ -162,16 +163,35 @@ def _run_cli(
 ) -> CliResult:
     """Invoke the public command adapter and preserve its JSON boundary."""
     stdout, stderr = StringIO(), StringIO()
+    capability = _CAPABILITIES.get(context.document_path)
+    capability_arguments: tuple[str, ...] = ()
+    if capability is not None and operation not in {"activate", "status"}:
+        generation, token = capability
+        capability_arguments = (
+            "--ownership-generation",
+            str(generation),
+            "--ownership-token",
+            token,
+        )
     with (
         chdir(root),
         redirect_stdout(stdout),
         redirect_stderr(stderr),
         patch.dict(os.environ, {"PRJ_DIR": str(root)}),
     ):
-        code = cli.main([operation, *_common(context), *extra])
+        code = cli.main(
+            [operation, *_common(context), *capability_arguments, *extra],
+        )
     stdout_lines = tuple(stdout.getvalue().splitlines())
     assert len(stdout_lines) == 1, stderr.getvalue()
-    return CliResult(code, json.loads(stdout_lines[0]))
+    payload: dict[str, Any] = json.loads(stdout_lines[0])
+    generation = payload.get("ownership_generation")
+    token = payload.get("ownership_token")
+    if isinstance(generation, int) and isinstance(token, str):
+        _CAPABILITIES[context.document_path] = (generation, token)
+    if payload.get("state") == "idle":
+        _CAPABILITIES.pop(context.document_path, None)
+    return CliResult(code, payload)
 
 
 def _summary(
@@ -564,6 +584,8 @@ def test_long_wait_has_progress_stderr_and_one_monotonic_deadline(
         sleeper=clock.sleep,
     )
     core.start()
+    capability = core.ownership_capability
+    assert capability is not None
     runtime = cli.Runtime(root, context, store.paths, configuration, core)
     def fixed_root(_start: Path) -> Path:
         return root
@@ -582,6 +604,10 @@ def test_long_wait_has_progress_stderr_and_one_monotonic_deadline(
         [
             "wait-answer",
             *_common(context),
+            "--ownership-generation",
+            str(capability.generation),
+            "--ownership-token",
+            capability.token,
             "--timeout-seconds",
             str(_WAIT_LIMIT),
             "--poll-interval",

@@ -13,6 +13,7 @@ from tools import prompt_workflow_skill
 from tools.prompt_workflow_review import SpecificationReviewRoutingError
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
+    Actor,
     ArtifactState,
     ReviewConfiguration,
     ReviewDisposition,
@@ -172,6 +173,7 @@ def interrupted_publication_journey(
         POLICY,
         ReviewConfiguration(enabled=True, wait_timeout_seconds=300),
     )
+    active.pickup_ownership(Actor.REVIEWER)
     original_append = store.append_transcript_once
 
     def stop_after_visibility(*_args: object, **_kwargs: object) -> object:
@@ -186,7 +188,9 @@ def interrupted_publication_journey(
         )
     monkeypatch.setattr(store, "append_transcript_once", original_append)
 
-    core(effort).publish_answer(
+    repairing = core(effort)
+    repairing.pickup_ownership(Actor.REVIEWER)
+    repairing.publish_answer(
         content.read_text(encoding="utf-8"),
         summary.read_text(encoding="utf-8"),
     )

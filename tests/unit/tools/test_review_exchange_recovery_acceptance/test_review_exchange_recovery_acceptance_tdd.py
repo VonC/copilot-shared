@@ -80,9 +80,10 @@ def _fresh(
     store: ReviewExchangeStore,
     context: ReviewContext,
     clock: FakeTime,
+    actor: Actor | None = None,
 ) -> ReviewExchangeCore:
     """Construct a later-session core over the same exact artifact paths."""
-    return ReviewExchangeCore(
+    core = ReviewExchangeCore(
         store,
         context,
         _policy(context),
@@ -91,6 +92,9 @@ def _fresh(
         monotonic_clock=clock.monotonic_now,
         sleeper=clock.sleep,
     )
+    if actor is not None:
+        core.pickup_ownership(actor)
+    return core
 
 
 def _publish_request(
@@ -267,7 +271,7 @@ def interrupted_request_journey(
     assert store.paths.request.is_file()
 
     monkeypatch.setattr(store, "append_transcript_once", original_append)
-    _publish_request(_fresh(store, context, clock), context, 1)
+    _publish_request(_fresh(store, context, clock, Actor.REQUESTOR), context, 1)
 
     transcript = store.paths.transcript.read_text(encoding="utf-8")
     assert "torn acceptance suffix" not in transcript
@@ -315,7 +319,10 @@ def interrupted_answer_repair_journey(
     assert not store.paths.answer.exists()
 
     monkeypatch.setattr(store, "_commit_prepared", original_commit)
-    _fresh(store, context, clock).publish_answer(answer, "Reviewer acceptance report.")
+    _fresh(store, context, clock, Actor.REVIEWER).publish_answer(
+        answer,
+        "Reviewer acceptance report.",
+    )
     assert store.paths.answer.is_file()
     assert not store.paths.tombstone.exists()
 
@@ -340,7 +347,7 @@ def interrupted_answer_repair_journey(
     assert second_store.paths.tombstone.is_file()
 
     monkeypatch.setattr(second_store, "append_transcript_once", original_second_append)
-    _fresh(second_store, second_context, second_clock).publish_answer(
+    _fresh(second_store, second_context, second_clock, Actor.REVIEWER).publish_answer(
         second_answer,
         "Reviewer visible-answer report.",
     )
@@ -386,6 +393,7 @@ def consumed_answer_interruption_journey(
     assert observation.state is ArtifactState.ABANDONED_MID_ROUND
     assert observation.record is not None
     assert observation.record.expected_next_actor is Actor.REQUESTOR
+    later.pickup_ownership(Actor.REQUESTOR)
     later.escalate(observation.diagnostic)
     assert later.classify().state is ArtifactState.ESCALATED
 
@@ -439,7 +447,9 @@ def escalation_and_completion_replay_journey(
     assert marked.incomplete_transition is IncompleteTransitionKind.ESCALATION
 
     monkeypatch.setattr(store, "append_transcript_once", original_append)
-    _fresh(store, context, clock).escalate("Acceptance evidence requires human review.")
+    _fresh(store, context, clock, Actor.REQUESTOR).escalate(
+        "Acceptance evidence requires human review.",
+    )
     transcript = store.paths.transcript.read_text(encoding="utf-8")
     assert transcript.count("review-entry-id: escalation-round-1") == 1
 
@@ -465,6 +475,7 @@ def escalation_and_completion_replay_journey(
 
     monkeypatch.setattr(owning_store, "remove_exact", original_remove)
     later_owning = _fresh(owning_store, owning_context, owning_clock)
+    later_owning.pickup_ownership(Actor.REQUESTOR)
     assert later_owning.complete() is True
     assert later_owning.complete() is False
 
