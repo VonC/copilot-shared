@@ -23,6 +23,7 @@ from tools.code_review_request import code_review_context
 from tools.prompt_workflow_models import PromptWorkflowError
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
+    Actor,
     ArtifactState,
     ConfirmationOutcome,
     FamilyPolicy,
@@ -395,6 +396,7 @@ def continue_authorized_commit(
         is not ConfirmationOutcome.CONTINUE_OWNING_WORKFLOW
     ):
         raise CodeReviewRoutingError("code-review commit is not durably authorized")
+    core.pickup_ownership(Actor.REQUESTOR)
 
     if residual:
         return _continue_residual_commit(root, route.context, core)

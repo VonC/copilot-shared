@@ -210,9 +210,10 @@ class ReviewExchangeHumanMixin(ABC):
     def complete(self) -> bool:
         """Remove retained evidence only after the authorized owning action succeeds."""
         with self.store.transition_lock():
-            record = self.store.read_coordination()
-            if record is None:
+            observation = self.classify()
+            if observation.record is None:
                 return False
+            record = self._require_record(observation)
             if (
                 record.status is not CoordinationStatus.AWAITING_HUMAN_CONFIRMATION
                 or record.confirmed_outcome
@@ -236,8 +237,8 @@ class ReviewExchangeHumanMixin(ABC):
         if not summary.strip():
             raise ReviewExchangeError("forced reclaim summary must be non-empty")
         with self.store.transition_lock():
-            record = self.store.read_coordination()
-            if record is None or record.status is not CoordinationStatus.ESCALATED:
+            record = self._require_record(self.classify())
+            if record.status is not CoordinationStatus.ESCALATED:
                 raise ReviewExchangeError("forced reclaim requires an escalated exchange")
             if record.incomplete_transition not in (
                 None,
@@ -301,8 +302,8 @@ class ReviewExchangeHumanMixin(ABC):
         if not summary.strip():
             raise ReviewExchangeError("human resolution summary must be non-empty")
         with self.store.transition_lock():
-            record = self.store.read_coordination(required=True)
-            if record is None or record.status is not CoordinationStatus.ESCALATED:
+            record = self._require_record(self.classify())
+            if record.status is not CoordinationStatus.ESCALATED:
                 raise ReviewExchangeError("resolution requires an escalated exchange")
             if record.incomplete_transition is not None:
                 raise ReviewExchangeError("repair the pending transition before resolution")
@@ -403,10 +404,7 @@ class ReviewExchangeHumanMixin(ABC):
         if not summary.strip():
             raise ReviewExchangeError("forced completion summary must be non-empty")
         with self.store.transition_lock():
-            record = cast(
-                "CoordinationRecord",
-                self.store.read_coordination(required=True),
-            )
+            record = self._require_record(self.classify())
             repairing = record.incomplete_transition is (
                 IncompleteTransitionKind.HUMAN_COMPLETION
             )

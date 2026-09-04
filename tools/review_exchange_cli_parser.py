@@ -13,6 +13,7 @@ import re
 from pathlib import Path
 from typing import NoReturn
 
+from tools.review_exchange_cli_ownership import add_ownership_arguments
 from tools.review_exchange_models import (
     ExchangeIdentity,
     ReviewContext,
@@ -60,10 +61,11 @@ def parser() -> JsonArgumentParser:
     common.add_argument("--convergence-signal", required=True)
     common.add_argument("--another-round-label", required=True)
     common.add_argument("--continue-owning-workflow-label", required=True)
+    add_ownership_arguments(common)
 
     result = JsonArgumentParser(prog="review-exchange")
     subparsers = result.add_subparsers(dest="operation", required=True)
-    for name in ("activate", "status", "start", "continue"):
+    for name in ("activate", "status", "start", "continue", "pickup"):
         subparsers.add_parser(name, parents=[common])
     complete = subparsers.add_parser("complete", parents=[common])
     complete.add_argument("--force", action="store_true")
