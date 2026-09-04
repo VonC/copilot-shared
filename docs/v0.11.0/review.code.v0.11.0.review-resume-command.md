@@ -2613,7 +2613,7 @@ One row will need the writer's attention in the next round, as a consequence of
 this round's finding rather than a defect in the row itself. `Feature integrity
 for Step 2` closes on the corrected round-1 items; once the code-span defect in
 `tools/review_markdown_headings.py` is fixed, that fix belongs in the record too,
-because the module ships in the same commit. The reviewer did not pre-empt that
+because the module ships in the same commit. The reviewer did not preempt that
 edit, since the fix has not been made yet and the row must describe the state
 that exists.
 
@@ -3319,7 +3319,7 @@ describe an effort whose mandatory walk is green, and the reviewer's own walk is
 not. Whichever way the human settles the concurrent markdown-checker question,
 the `Feature integrity for Step 2` row should end the next round describing the
 walk state that actually exists, rather than the one that existed when the row
-was written. The reviewer did not pre-empt that edit, because the row must
+was written. The reviewer did not preempt that edit, because the row must
 describe the state after the decision, and the decision has not been made.
 
 The document-level status line stays `No, it is not implemented.`, which remains
@@ -4011,7 +4011,7 @@ Nothing in the document needs a reviewer edit. The one row that will need the
 writer's attention in a later round is `Feature integrity for Step 2`, once the
 `rules/markdown.md` staging question is resolved, because the row should end by
 describing a commit whose content matches what was reviewed. The reviewer did
-not pre-empt that edit, since the resolution has not been chosen.
+not preempt that edit, since the resolution has not been chosen.
 
 The document-level status line stays `No, it is not implemented.`, correct while
 Steps 3 through 6 are not started, and the theme sentence corrected in round 2
@@ -5904,3 +5904,1279 @@ restores the fourteen concurrent lines unstaged. Do not delete or overwrite the
 parking file before restoration.
 
 <!-- review-entry-id: human-confirmation-round-6 -->
+
+## Round 1 by requestor - Step 3
+
+- Recorded: 2026-09-04T12:30:23+02:00
+- Exchange: code/code/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-resume-command.md
+- Requestor LLM nature: codex
+- Reviewer LLM nature: unrecorded
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 review-resume-command (round 1)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.review-resume-command.md
+Implementation step: 3
+Review round: 1
+
+### Code review evidence for step 3 review-resume-command (round 1)
+
+request_index_tree: 03cdf01ca5e2a96535a80e64c022e9c59cb20032
+resolved_validation_set:
+
+- ghog day (sources: project)
+- ghog single tests/unit/tools/test_review_exchange_ownership tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py (sources: plan)
+- rg -n ownership_generation tools tests/unit/tools/test_review_exchange_ownership (sources: plan)
+- rg -n ownership-superseded tools tests/unit/tools/test_review_exchange_ownership (sources: plan)
+
+commit_plan_result:
+
+```text
+state: valid
+ready: true
+group 1: feat(review-exchange): add ownership capabilities
+group 1 path: tools/review_exchange_models_coordination.py
+group 1 path: tools/review_exchange_ownership.py
+group 1 path: tools/review_exchange_ownership_store.py
+group 1 path: tools/review_exchange_store.py
+group 2: feat(review-exchange): fence session mutations
+group 2 path: tools/review_exchange_cli_ownership.py
+group 2 path: tools/review_exchange_cli_parser.py
+group 2 path: tools/review_exchange_core.py
+group 2 path: tools/review_exchange_human.py
+group 2 path: tools/review_exchange_cli.py
+group 2 path: tools/prompt_workflow_code_review.py
+group 3: test(review-exchange): cover ownership fencing
+group 3 path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+group 3 path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_recovery_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_acceptance/test_review_exchange_acceptance_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_ownership/__init__.py
+group 3 path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_cli_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_pbt.py
+group 3 path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_recovery_acceptance/test_review_exchange_recovery_acceptance_tdd.py
+group 3 path: tests/unit/tools/test_review_exchange_store/test_review_exchange_store_validation_tdd.py
+group 3 path: tests/unit/tools/test_spec_review_requestor_acceptance/test_spec_review_requestor_acceptance_tdd.py
+group 3 path: tests/unit/tools/test_spec_reviewer_acceptance/fixtures.py
+group 3 path: tests/unit/tools/test_spec_reviewer_acceptance/test_spec_reviewer_recovery_tdd.py
+group 4: docs(review-resume-command): record step 3 validation
+group 4 path: docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md
+staged path: docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md
+staged path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+staged path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_recovery_tdd.py
+staged path: tests/unit/tools/test_review_exchange_acceptance/test_review_exchange_acceptance_tdd.py
+staged path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py
+staged path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_tdd.py
+staged path: tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py
+staged path: tests/unit/tools/test_review_exchange_ownership/__init__.py
+staged path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_cli_tdd.py
+staged path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_pbt.py
+staged path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_tdd.py
+staged path: tests/unit/tools/test_review_exchange_recovery_acceptance/test_review_exchange_recovery_acceptance_tdd.py
+staged path: tests/unit/tools/test_review_exchange_store/test_review_exchange_store_validation_tdd.py
+staged path: tests/unit/tools/test_spec_review_requestor_acceptance/test_spec_review_requestor_acceptance_tdd.py
+staged path: tests/unit/tools/test_spec_reviewer_acceptance/fixtures.py
+staged path: tests/unit/tools/test_spec_reviewer_acceptance/test_spec_reviewer_recovery_tdd.py
+staged path: tools/prompt_workflow_code_review.py
+staged path: tools/review_exchange_cli.py
+staged path: tools/review_exchange_cli_ownership.py
+staged path: tools/review_exchange_cli_parser.py
+staged path: tools/review_exchange_core.py
+staged path: tools/review_exchange_human.py
+staged path: tools/review_exchange_models_coordination.py
+staged path: tools/review_exchange_ownership.py
+staged path: tools/review_exchange_ownership_store.py
+staged path: tools/review_exchange_store.py
+```
+
+### Requestor assessment for step 3 review-resume-command (round 1)
+
+#### Step 3 implementation assessment for step 3 review-resume-command (round 1)
+
+Step 3 is fully implemented against the exact plan. Ownership claims now pair
+a monotonic generation with a session-held random token, persist only its
+SHA-256 digest, and reject missing, invalid, or superseded capabilities before
+later mutations.
+
+The ownership domain service, coordination persistence adapter, CLI adapter,
+core lifecycle wiring, human/publication fences, and authorized commit pickup
+follow the planned dependency boundaries. The store is 599 lines, the CLI is
+521 lines, and the core is 538 lines.
+
+The exact focused Groundhog command passed. The fresh repository-wide
+`ghog day` run passed 2,437 tests with 100 percent production coverage, no
+failures, no warnings, three expected xfails, and no duration outliers.
+`check.bat` passed type, Ruff, complexity, file-size, Markdown, shell, and EOF
+checks.
+
+### Implementation report for step 3 review-resume-command (round 1)
+
+#### Step 3 implementation report for step 3 review-resume-command (round 1)
+
+- Added `OwnershipCapability`, `OwnershipClaim`, `OwnershipFailure`, and
+  `OwnershipService` for token creation, digest comparison, typed rejection,
+  ordinary claim, actor handoff, and forced pickup.
+- Added `ReviewExchangeOwnershipStore` for exact transition locking, strict
+  coordination IO, atomic replacement, and locked claim compare-and-swap.
+- Added `review_exchange_cli_ownership.py` for paired generation/token flags,
+  duplicate rejection, core port typing, capability delivery, and redacted
+  failure payloads.
+- Extended coordination with a strict legacy-compatible generation/digest pair.
+- Claimed ownership on start, reclaim, exact wait wake, and direct pickup, then
+  fenced core, publication, and human mutations through the same validator.
+- Picked up requestor ownership before the authorized code-review commit
+  continuation performs its final owning mutation.
+- Added focused examples, property cases, concurrent claims, persistence crash
+  boundaries, CLI validation/redaction, lifecycle recovery, and cross-workflow
+  acceptance coverage.
+
+### Change summary for step 3 review-resume-command (round 1)
+
+#### Step 3 staged change summary for step 3 review-resume-command (round 1)
+
+The staged index contains 26 paths grouped from foundational ownership storage
+through lifecycle wiring, tests, and the terminal validation record.
+
+- Group 1, `feat(review-exchange): add ownership capabilities`: coordination
+  model, ownership service, ownership store, and delegated exchange store.
+- Group 2, `feat(review-exchange): fence session mutations`: CLI ownership
+  adapter and parser, core and human lifecycle fences, CLI dispatch, and the
+  authorized code-review commit pickup.
+- Group 3, `test(review-exchange): cover ownership fencing`: ownership,
+  lifecycle, CLI, persistence, recovery, specification-review, and code-review
+  suites.
+- Group 4, `docs(review-resume-command): record step 3 validation`: the exact
+  terminal Step 3 validation marker required by the workflow.
+
+The formatted root `a.commit` covers every staged path exactly once and
+`commit-plan-check.bat --format json` reports `state=valid` with no
+diagnostics.
+
+### Writer response for step 3 review-resume-command (round 1)
+
+Writer response:
+
+#### Step 3 writer response for step 3 review-resume-command (round 1)
+
+This is the first review round. There is no earlier reviewer feedback or
+writer disagreement to record.
+
+### Reviewer focus for step 3 review-resume-command (round 1)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-3-round-1 -->
+
+## Round 1 by reviewer - Step 3
+
+- Recorded: 2026-09-04T12:43:08+02:00
+- Exchange: code/code/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-resume-command.md
+- Requestor LLM nature: codex
+- Reviewer LLM nature: claude
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed index identity for step 3 review-resume-command (exchange 1) (round 1)
+
+Baseline index tree: 03cdf01ca5e2a96535a80e64c022e9c59cb20032
+
+Assessed index tree: 03cdf01ca5e2a96535a80e64c022e9c59cb20032
+
+### Implementation check for step 3 review-resume-command (exchange 1) (round 1)
+
+Result:
+
+Yes. Step 3 has been fully implemented.
+
+The reviewer reached that independently, against the code rather than the
+requestor's report. Every class and behavior the plan step names exists.
+
+`OwnershipCapability`, `OwnershipClaim` and `OwnershipFailure` are the typed
+records the step asks for, and `OwnershipService` supplies token generation,
+digest comparison, ordinary claim, forced pickup, validation and handoff
+invalidation. `ReviewExchangeOwnershipStore` holds the transition lock, strict
+coordination IO, atomic replacement and the locked compare-and-swap.
+`review_exchange_cli_ownership.py` parses the paired capability flags and moves
+those branches out of `review_exchange_cli.py`, and coordination gained a
+strict legacy-compatible generation and digest pair.
+
+The security-relevant choices are correct and, more to the point, verified.
+Tokens come from `secrets.token_urlsafe(32)`, digests from SHA-256, and
+comparison from `hmac.compare_digest`, so equality is constant-time. Only the
+digest is persisted, and that is not merely asserted in prose: a test reads the
+coordination file back and asserts the plaintext token does not appear in it.
+The typed failures carry `code`, `diagnostic` and `current_generation` only, and
+`failure_payload` renders exactly those three; the plaintext token appears in
+`capability_payload` alone, which the design confines to the claiming session's
+successful machine result. `OwnershipRejectedError` keeps only the non-secret
+failure record.
+
+The fencing behavior matches the design. A claim advances a monotonic
+generation under the lock; an ordinary re-claim by the same owner requires the
+presented capability and is idempotent; a handoff to a different actor issues a
+fresh capability without any prior secret, which is what the design means by
+lease-independent pickup; and a capability older than the stored generation
+yields `ownership-superseded` while a mismatched or undigested one yields
+`ownership-invalid`.
+
+Architecture: the ownership service is pure, depending only on the enum, the
+shared error type and the coordination model, with all filesystem work in the
+separate store. That keeps the new branches outside the risk-band files as the
+step requires, and the numbers confirm it: `review_exchange_store.py` is 599
+lines, down from the 642 the reviewer flagged in step 2 round 1, with the CLI at
+521 and the core at 538, all comfortably below the 650 ceiling. One structural
+point is worth stating rather than treating as a fault. `store.claim` acquires
+only the process-local `RLock`, so cross-process safety depends on callers
+holding `transition_lock()`. Every call site does, the `RLock` is reentrant to
+permit exactly that nesting, and the contract is stated in each docstring. It is
+a documented invariant rather than a structural one, and it is pinned by tests,
+so nothing needs addressing.
+
+Performance: claim and validation are constant work over one record, digest
+comparison is over fixed-length hex, and the lock is per-identity rather than
+global. The service docstring's `O(1)` claim holds. No pairwise or repeated scan
+was introduced. No performance issue needs to be addressed.
+
+Unit test coverage: the new `test_review_exchange_ownership` leaf carries the
+example, property and CLI suites the step lists, and the full walk reports
+`cov=100`. Two tests deserve naming because they prove the step's hardest
+claims: one asserts the plaintext token is absent from persisted coordination,
+and one races two threads through the lock and asserts exactly one `claimed` and
+one `already-claimed`. That second test is the first mechanical proof in this
+effort that two simultaneous reviewers cannot both own one request. No
+unit-tested class is below 100 percent.
+
+Feature integrity: coordination keeps a legacy-compatible parse for records
+without the generation and digest pair, and `_require_record` claims on behalf
+of a generation-zero record rather than failing it, so exchanges predating this
+step continue to work. Existing lifecycle, CLI, specification-review and
+code-review suites were updated and pass. No existing feature or reporting
+capability is impaired.
+
+The two findings returned with this answer leave no plan element unimplemented.
+One concerns the recorded validation evidence being narrower than the criterion
+it stands for, and one concerns a fragile expression of an otherwise correct
+failure path. They are why the disposition is `changes-requested` rather than a
+commit-ready recommendation, because the readiness floor requires the absence of
+unresolved findings.
+
+Validation plan effects:
+
+The reviewer made no edit to
+`docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md` this round, and
+no edit to any other tracked file. The index tree is unchanged across the
+assessment.
+
+The writer's Step 3 rows are accurate against the code the reviewer verified.
+The status sentence is the exact `Yes. Step 3 has been fully implemented.`, no
+`Missing work for Step 3` section exists, and the implemented-work, new-types,
+architecture, performance, coverage and feature-integrity rows describe what the
+staged code actually does. Rewriting accurate rows would add churn without
+adding evidence.
+
+Two rows will need the writer's attention in the next round, and both are
+consequences of this round's findings rather than defects the reviewer could
+repair. `Architecture check for Step 3` closes with `No architecture issue needs
+to be addressed.` and `Unit test coverage check for Step 3` closes with `No
+unit-tested class is below 100 percent or needs completing.` The second remains
+true. The first will not once the raise-only call in the ownership store is
+acknowledged, because the implementation-check rule counts any mentioned item,
+however minor, as something that needed addressing. The writer should refresh
+that row in the same round that applies the fix.
+
+The reviewer considered whether the resolver-drift finding belongs in the
+validation record too and concluded it does not. That finding concerns the
+request's resolved validation set rather than the step's implementation, and the
+validation plan records what was built and proved, not how a particular round
+phrased its commands. Correcting the command set is the durable fix; the record
+needs no sentence about it once the set is right.
+
+The document-level status line stays `No, it is not implemented.`, correct while
+Steps 4 through 6 are not started. The theme sentence still reads `Steps 0
+through 2 are fully implemented and validated; Steps 3 through 6 remain
+pending.`, which this step's completion will make stale in the same way round 2
+of step 2 found it stale; it is the writer's to refresh when Step 3's rows are
+final, and the reviewer flags it now rather than letting it drift again. No
+umbrella row was touched, and no umbrella row may be completed from reviewer
+mode.
+
+### Pre-repair mandatory checks and coverage for step 3 review-resume-command (exchange 1) (round 1)
+
+Baseline evidence was captured through `bin/code_review_evidence.bat` before any
+assessment work, and the manifest was written before anything could mutate state.
+This is the first round of a new step, so no manifest existed to reuse.
+
+- `capture-index-tree` returned `03cdf01ca5e2a96535a80e64c022e9c59cb20032`,
+  equal to the `request_index_tree` in the round-1 request, so the received state
+  matched the requested state exactly and the early rejection path did not apply.
+- `umbrella-digest capture docs/v0.11.0/draft.v0.11.0.review-mode.md` returned
+  `applicable: true` with digest
+  `bb71aaf68bb45d395e719881a86817a146eba8f164e06a09433fb375914ddc81`.
+- `record-pre-repair-blob
+  docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md` recorded the
+  blob before the reviewer could touch the only validation-plan path it may
+  write; in the event no edit was made.
+- `validation-state capture` over the ordered path set recorded the union of the
+  26 staged paths and the versioned transcript at that same index tree.
+- `write-manifest` stored the baseline at the step-3 manifest path before
+  assessment began.
+
+The limitation recorded through the step-2 rounds applies unchanged and is
+repeated rather than quietly dropped. The ordered validation path set does not
+name the ghog artifacts `a.ghog.log`, `.coverage`, `coverage.xml` and
+`a.ghog.senv.log` that the resolved validation commands rewrite, and because the
+set must be identical before and after it was not widened afterwards.
+Differences confined to ignored validation artifacts are acceptable by contract,
+and the tracked question was answered more broadly by `git status --porcelain`
+over the whole worktree.
+
+Two pieces of this round's evidence came from outside these captures, and their
+provenance is recorded so nothing rests on an unstated assumption. The
+resolver-drift measurement ran three `rg` forms over the same paths, read-only.
+The ownership review read `tools/review_exchange_ownership.py`,
+`tools/review_exchange_ownership_store.py`,
+`tools/review_exchange_cli_ownership.py` and their call sites in
+`review_exchange_core.py`, `review_exchange_publication.py` and
+`review_exchange_human.py` to confirm that every `_claim_locked` call sits inside
+a `transition_lock()` scope. Neither mutated anything.
+
+### Resolved validation set and sources for step 3 review-resume-command (exchange 1) (round 1)
+
+The reviewer ran the union of the request validation set and the set resolved
+during this round, and ran every command itself. The union is larger than the
+request set this round, which is the subject of the drift note and of the first
+finding.
+
+- `ghog single tests/unit/tools/test_review_exchange_ownership
+  tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py
+  tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py`,
+  source plan. Result: `fail=0 warn=0 xfail=0 exit=0`.
+- `rg -n ownership_generation tools tests/unit/tools/test_review_exchange_ownership`,
+  source request. Result: exit 0, 25 matching lines.
+- `rg -n ownership-superseded tools tests/unit/tools/test_review_exchange_ownership`,
+  source request. Result: exit 0, 6 matching lines.
+- `rg -n "ownership[-_](generation|token|digest)|ownership-superseded" tools
+  tests/unit/tools/test_review_exchange_ownership`, source plan, run by the
+  reviewer as the union member the request omits. Result: exit 0, 56 matching
+  lines, showing digest storage in the service, the coordination model, the
+  store and the CLI, and typed fencing at the mutation seams.
+- `ghog day`, source project. Result: `exit=0`, forced, completing every phase:
+  `ghog check done fail=0 warn=0 xfail=0 exit=0`, `ghog affected --no-cov`
+  green, and `ghog full done fail=0 warn=0 xfail=3 cov=100 outliers=0
+  excluded=0 exit=0`. The plan's Step 3 criterion that `ghog day` reports
+  `exit=0` is satisfied.
+
+The three xfails remain the Step 5 `GlobalReviewerWait` gates that Step 5 owns.
+No mandatory evidence was unavailable.
+
+The criterion behind the greps is met, and it is met because the reviewer ran
+the plan's form. The plan asks the grep to show `digest storage and typed
+fencing at every mutation seam`. The request's two commands show generation and
+typed fencing but never search for `token` or `digest`, so on the recorded set
+alone the digest half of that sentence would be unevidenced. Running the plan
+form supplies it: digest storage appears in `review_exchange_ownership.py`,
+`review_exchange_models_coordination.py`, `review_exchange_ownership_store.py`
+and the ownership CLI, which is the seam coverage the criterion describes.
+
+### Resolver drift and direction for step 3 review-resume-command (exchange 1) (round 1)
+
+One drift, and unlike every earlier round of this effort it narrows rather than
+re-expresses. The direction is recorded here and the union was run.
+
+Through step 2 the only drift was the completion grep written as separate `-e`
+patterns instead of a quoted alternation, which is semantically identical
+because ripgrep unions `-e` patterns exactly as it unions alternation branches.
+That drift favoured the request and cost nothing.
+
+This round is different. The plan's Step 3 criterion is one command,
+`rg -n "ownership[-_](generation|token|digest)|ownership-superseded" tools
+tests/unit/tools/test_review_exchange_ownership`, and the request resolves it as
+two, `rg -n ownership_generation ...` and `rg -n ownership-superseded ...`. The
+pair drops three of the alternation's terms: the hyphenated
+`ownership-generation` form, `ownership[-_]token`, and `ownership[-_]digest`.
+
+The reviewer measured the difference over identical paths rather than reasoning
+about it. The plan form matches 56 lines, while the two request commands match
+25 lines and 6 lines respectively. The dropped `ownership[-_](token|digest)`
+terms alone account for 25 lines. So the request set covers a little over half
+the evidence the plan names, and the missing half is specifically the digest
+storage the criterion exists to show.
+
+The union the reviewer ran therefore includes the plan form, and the criterion
+passes on that. The `ghog day` and `ghog single` members are identical in both
+sets, in the same order with the same arguments.
+
+Nothing in this drift hid a defect: digest storage is present and correct. It is
+returned as a finding because the recorded evidence for this step would not
+prove it, and a later re-validation reading the recorded set would conclude less
+than the plan requires while appearing to pass.
+
+### Repository state around validation for step 3 review-resume-command (exchange 1) (round 1)
+
+The received index tree `03cdf01ca5e2a96535a80e64c022e9c59cb20032` matched the
+request-time index tree exactly, so the assessment ran against the requested
+state. The assessed index tree after the evidence boundary is the same value,
+because the reviewer authored no change.
+
+The umbrella digest is unchanged:
+`bb71aaf68bb45d395e719881a86817a146eba8f164e06a09433fb375914ddc81` before and
+after, `changed: false`. That is the same digest recorded through all six step-2
+rounds, so the umbrella has not moved across either step.
+
+`validation-state compare` over the ordered path set reports `acceptable: true`
+with empty `tracked_paths`, `untracked_paths` and `ignored_paths`, across a full
+green walk. There is no tracked validation side effect.
+
+The worktree is cleaner than at any point in the step-2 exchange. It holds one
+unstaged tracked entry, `docs/v0.11.0/review.code.v0.11.0.review-resume-command.md`,
+whose unstaged content is the round-1 request entry the protocol itself appended,
+and zero untracked files. The 19 unstaged Markdown-checker entries that
+complicated step 2 rounds 3 through 6 are gone, consolidated into their own
+commits as the human directed, so no path is partially staged and every one of
+the 26 staged paths belongs to Step 3.
+
+That absence is worth stating positively rather than passing over: the condition
+behind the step-2 findings about `a.commit` group 1, and behind the parking
+sequence at that commit boundary, does not exist in this tree. `a.commit`'s
+`git add -A` lines can each stage exactly the reviewed content, with no
+worktree-versus-index divergence for any of them.
+
+No `.tmp-review-nature-` file exists anywhere in the worktree, and
+`git status --porcelain -- .agents` is empty, so neither the backfill temporary
+issue from step 2 round 1 nor the plugin-sync contamination from the step 1
+exchange has recurred.
+
+### Repair inventory for step 3 review-resume-command (exchange 1) (round 1)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 3 review-resume-command (exchange 1) (round 1)
+
+The reviewer reran `python -m tools.commit_plan_check --format json`
+independently against the received repository state, before assessing grouping,
+ordering, scope or subjects. `bin/commit_plan_check.bat` still does not exist, so
+the shipped module was invoked directly; that remains a gap in the launcher
+surface rather than in this step.
+
+The rerun returned `state: valid`, `ready: true`, exit `0`, `schema_version: 1`,
+an empty `diagnostics` list, and 26 staged paths across four groups in
+dependency order:
+
+1. `feat(review-exchange): add ownership capabilities`, 4 paths
+2. `feat(review-exchange): fence session mutations`, 6 paths
+3. `test(review-exchange): cover ownership fencing`, 15 paths
+4. `docs(review-resume-command): record step 3 validation`, 1 path
+
+The reviewer compared its result field by field with the `commit_plan_result`
+embedded in the request: staged path sets equal with no path on either side
+alone, group tuples of position, subject and ordered paths equal, `state` and
+`ready` equal.
+
+The ordering is genuinely least to most dependent rather than nominally so.
+Group 1 carries the coordination model, the pure ownership service, the new
+ownership store and the exchange store reduced to delegation, which is the
+foundation everything else imports. Group 2 carries the CLI ownership adapter,
+the parser change, the core and human lifecycle fences, CLI dispatch and the
+authorized commit pickup, all of which depend on group 1. Group 3 carries the
+tests for both. Group 4 carries the validation record last, which is correct
+because it describes the three groups before it. Each subject describes its
+group's contents, and no group claims a path belonging to another.
+
+`a.commit` needed no amendment and the reviewer made none.
+
+This round the mechanical result can be relied on more straightforwardly than in
+step 2, and the reason is worth recording. Every `git add -A` line in the plan
+names a path with no unstaged half, because the worktree holds no concurrent
+work at all. The divergence between what the checker validates and what
+executing the plan produces, which drove findings in step 2 rounds 4 and 5, has
+no instance here. The `status 0` still satisfies only the `a.commit` part of the
+readiness floor and authorizes no commit, but it is not concealing a staging
+question this time.
+
+### Findings and boundaries for step 3 review-resume-command (exchange 1) (round 1)
+
+Unresolved findings:
+
+- The request's resolved validation set is narrower than the plan criterion it stands for, and the narrowing removes exactly the half the criterion names: the plan requires `rg -n "ownership[-_](generation|token|digest)|ownership-superseded" tools tests/unit/tools/test_review_exchange_ownership` to show `digest storage and typed fencing at every mutation seam`, while the request splits it into `rg -n ownership_generation ...` and `rg -n ownership-superseded ...`, which between them never search for `token` or `digest` at all; the reviewer measured the gap rather than asserting it, running all three forms over the same paths: the plan form matches 56 lines, the two request commands match 25 and 6, and the dropped `ownership[-_](token|digest)` terms account for 25 lines, so the recorded evidence for this step cannot demonstrate digest storage and a later re-validation from the recorded set would silently prove less than the plan asks
+- `tools/review_exchange_ownership_store.py` raises its typed `already-claimed` failure through a call whose result is discarded, which works today and is fragile to ordinary maintenance: inside `claim`, the stale-record branch runs `service.claim(stored, actor)` purely so that call raises `OwnershipRejectedError`, then falls through to an unconditional `raise ReviewExchangeError("stale coordination record for ownership claim")`; nothing in the line signals that the raise is its purpose, so a maintainer removing an apparently unused call, or a linter flagging it, would silently replace the typed `already-claimed` outcome with the generic stale-record error, degrading the taxonomy that the CLI and the competing-claim contract depend on
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 3 review-resume-command (exchange 1) (round 1)
+
+Two actions, both small. Neither is a correctness defect in the fence, which the
+reviewer found soundly built.
+
+Action 1, restore the validation set to the plan's criterion. Replace the two
+narrowed commands with the plan's own form:
+
+```text
+rg -n "ownership[-_](generation|token|digest)|ownership-superseded" tools tests/unit/tools/test_review_exchange_ownership
+```
+
+If the quoted alternation is awkward on a Windows shell, the equivalent `-e`
+form is acceptable and matches what step 2 settled:
+
+```text
+rg -n -e "ownership[-_](generation|token|digest)" -e ownership-superseded tools tests/unit/tools/test_review_exchange_ownership
+```
+
+Either way the set must cover `token` and `digest`, because `digest storage` is
+half of what the criterion exists to show. The reviewer ran the plan form and it
+passes with 56 matching lines, so this changes no result; it makes the recorded
+evidence match the claim it supports.
+
+Action 2, make the typed failure explicit in
+`tools/review_exchange_ownership_store.py`. In the stale-record branch of
+`claim`, the call `service.claim(stored, actor)` exists only to raise
+`OwnershipRejectedError` and its return value is discarded. Raise the failure
+directly instead, so the intent survives a reading, a refactor, or a linter,
+for example by asking the service for the failure and raising it, or by
+annotating the call as raise-only. The two outcomes must stay exactly as they
+are today: `already-claimed` when the stored record is owned by this actor with
+no capability presented and no force, and the generic stale-record error
+otherwise. Add one case pinning the `already-claimed` code from this branch
+specifically; the existing race test reaches that code through
+`service.claim(record, ...)` on a fresh read, not through this path.
+
+Three notes rather than actions, recorded because they are the parts the
+reviewer checked hardest and found correct.
+
+The transition-lock contract is sound but rests on docstrings. `store.claim`
+takes only the process-local `RLock`, so cross-process safety depends on callers
+holding `transition_lock()`. Every call site does, the `RLock` is reentrant
+precisely to allow that nesting, and two tests pin it, including a two-thread
+race that yields exactly one `claimed` and one `already-claimed`. Nothing needs
+changing; a future refactor should keep the nesting rather than assume `claim`
+is self-fencing.
+
+Secret handling is right where it matters. `hmac.compare_digest` compares
+digests, `secrets.token_urlsafe` generates them, coordination stores only the
+SHA-256 digest, and a test asserts the plaintext token is absent from the
+coordination file. `failure_payload` carries only `outcome`, `diagnostic` and
+`current_ownership_generation`; the token appears solely in
+`capability_payload`, which the design confines to a successful machine result.
+
+The risk-band reduction landed. `review_exchange_store.py` is 599 lines, down
+from the 642 the reviewer flagged during step 2 round 1, with the CLI at 521 and
+the core at 538.
+
+### Decision rationale for step 3 review-resume-command (exchange 1) (round 1)
+
+The disposition is `changes-requested`, and the implementation-check result is
+`Yes`. Five of the six readiness-floor parts pass; one fails, and it fails on two
+small findings rather than on anything wrong with the fence.
+
+Identity is exact, with the received index tree matching the request.
+Implementation is complete, verified class by class and behavior by behavior
+against the plan step. Mandatory validation and coverage pass on the reviewer's
+own forced walk: `ghog day` reports `exit=0` with `fail=0`, `cov=100`,
+`outliers=0` and the three expected Step 5 xfails, the focused walk is green, and
+both grep criteria pass, the plan's fuller form included. Staged attribution is
+clean: the reviewer authored nothing and the index tree is byte-identical before
+and after. `a.commit` is accurate, confirmed by an independent rerun matching the
+request field by field, and this round it can be relied on plainly because no
+path is partially staged.
+
+The sixth part fails on two unresolved findings.
+
+The first is the recorded validation set understating its own criterion. The
+plan's grep exists to show `digest storage and typed fencing at every mutation
+seam`; the request's two commands never search for `token` or `digest`. Measured
+over identical paths, the plan form matches 56 lines and the request pair 31,
+with the 25-line difference being exactly the dropped terms. The reviewer ran the
+plan form, so the criterion is satisfied and no defect is hidden. It is returned
+because evidence that cannot demonstrate half of what it claims is a defect in
+the record even when the underlying work is sound, and because a later
+re-validation reading the recorded set would appear to pass while proving less.
+
+The second is a raise-only call with a discarded result in the ownership store's
+stale-record branch. It is correct today. It is fragile in a specific, ordinary
+way: the line carries no signal that raising is its purpose, so removing an
+apparently unused call would silently replace the typed `already-claimed`
+outcome with a generic error, and that taxonomy is what the CLI and the
+competing-claim contract depend on.
+
+The reviewer weighed whether two findings of this size justify a round on work
+this well built, and concluded they do, for two reasons. Both fixes are a few
+lines and neither requires rethinking anything. And this is the step that makes
+concurrent sessions safe, where an evidence gap and a fragile failure path are
+worth more care than they would be elsewhere, not less.
+
+What the reviewer did not do is inflate the round. The findings are two, not
+five. Three things it checked hardest and found correct are recorded in the
+writer instructions as notes rather than actions: the transition-lock contract,
+which rests on docstrings but is honoured at every call site and pinned by two
+tests including a real two-thread race; the secret handling, where a test asserts
+the plaintext token is absent from persisted coordination and the failure payload
+carries none of it; and the risk-band reduction, with the exchange store down
+from the 642 lines the reviewer flagged in step 2 round 1 to 599.
+
+No repair was made and none was withheld. Both findings lie outside what
+reviewer mode may write: one is the request's resolved validation set, which the
+requestor composes, and one is production code in the ownership store, where any
+reviewer edit would be substantive and would force `changes-requested` in the
+same round anyway. The index tree is unchanged.
+
+This answer is advisory. It authorizes no commit, and the commit choice remains
+the human's at the convergence gate.
+
+### Final reviewer decision for step 3 review-resume-command (exchange 1) (round 1)
+
+Decision: changes-requested. The writer must address the concrete instructions and publish another review round. This advisory answer does not authorize a commit.
+
+<!-- review-entry-id: answer-step-3-round-1 -->
+
+## Round 2 by requestor - Step 3
+
+- Recorded: 2026-09-04T13:23:46+02:00
+- Exchange: code/code/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-resume-command.md
+- Requestor LLM nature: codex
+- Reviewer LLM nature: claude
+- Implementation step: 3
+- Outcome: request
+
+### Review identity for step 3 review-resume-command (round 2)
+
+Umbrella draft: docs/v0.11.0/draft.v0.11.0.review-mode.md
+Implementation plan: docs/v0.11.0/plan.v0.11.0.review-resume-command.md
+Implementation step: 3
+Review round: 2
+
+### Code review evidence for step 3 review-resume-command (round 2)
+
+request_index_tree: cd3bd92207e197a1d96d5958f71745321d4a5488
+resolved_validation_set:
+
+- ghog day (sources: project)
+- ghog single tests/unit/tools/test_review_exchange_ownership tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py (sources: plan)
+- rg -n -e ownership_generation -e ownership-generation -e ownership_token -e ownership-token -e ownership_digest -e ownership-digest -e ownership-superseded tools tests/unit/tools/test_review_exchange_ownership (sources: plan)
+
+commit_plan_result:
+
+```text
+state: valid
+ready: true
+group 1: test(review-artifacts): stub failed tracking query
+group 1 path: tests/unit/tools/test_review_artifact_home/test_review_artifact_configuration_tdd.py
+group 2: feat(review-exchange): add ownership capabilities
+group 2 path: tools/review_exchange_models_coordination.py
+group 2 path: tools/review_exchange_ownership.py
+group 2 path: tools/review_exchange_ownership_store.py
+group 2 path: tools/review_exchange_store.py
+group 3: feat(review-exchange): fence session mutations
+group 3 path: tools/review_exchange_cli_ownership.py
+group 3 path: tools/review_exchange_cli_parser.py
+group 3 path: tools/review_exchange_core.py
+group 3 path: tools/review_exchange_human.py
+group 3 path: tools/review_exchange_cli.py
+group 3 path: tools/prompt_workflow_code_review.py
+group 4: test(review-exchange): cover ownership fencing
+group 4 path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+group 4 path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_recovery_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_acceptance/test_review_exchange_acceptance_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_ownership/__init__.py
+group 4 path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_cli_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_pbt.py
+group 4 path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_recovery_acceptance/test_review_exchange_recovery_acceptance_tdd.py
+group 4 path: tests/unit/tools/test_review_exchange_store/test_review_exchange_store_validation_tdd.py
+group 4 path: tests/unit/tools/test_spec_review_requestor_acceptance/test_spec_review_requestor_acceptance_tdd.py
+group 4 path: tests/unit/tools/test_spec_reviewer_acceptance/fixtures.py
+group 4 path: tests/unit/tools/test_spec_reviewer_acceptance/test_spec_reviewer_recovery_tdd.py
+group 5: docs(review-resume-command): record step 3 validation
+group 5 path: docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md
+staged path: docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md
+staged path: tests/unit/tools/test_code_review_requestor_acceptance/test_code_review_requestor_acceptance_tdd.py
+staged path: tests/unit/tools/test_code_reviewer_acceptance/test_code_reviewer_recovery_tdd.py
+staged path: tests/unit/tools/test_review_artifact_home/test_review_artifact_configuration_tdd.py
+staged path: tests/unit/tools/test_review_exchange_acceptance/test_review_exchange_acceptance_tdd.py
+staged path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py
+staged path: tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_tdd.py
+staged path: tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py
+staged path: tests/unit/tools/test_review_exchange_ownership/__init__.py
+staged path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_cli_tdd.py
+staged path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_pbt.py
+staged path: tests/unit/tools/test_review_exchange_ownership/test_review_exchange_ownership_tdd.py
+staged path: tests/unit/tools/test_review_exchange_recovery_acceptance/test_review_exchange_recovery_acceptance_tdd.py
+staged path: tests/unit/tools/test_review_exchange_store/test_review_exchange_store_validation_tdd.py
+staged path: tests/unit/tools/test_spec_review_requestor_acceptance/test_spec_review_requestor_acceptance_tdd.py
+staged path: tests/unit/tools/test_spec_reviewer_acceptance/fixtures.py
+staged path: tests/unit/tools/test_spec_reviewer_acceptance/test_spec_reviewer_recovery_tdd.py
+staged path: tools/prompt_workflow_code_review.py
+staged path: tools/review_exchange_cli.py
+staged path: tools/review_exchange_cli_ownership.py
+staged path: tools/review_exchange_cli_parser.py
+staged path: tools/review_exchange_core.py
+staged path: tools/review_exchange_human.py
+staged path: tools/review_exchange_models_coordination.py
+staged path: tools/review_exchange_ownership.py
+staged path: tools/review_exchange_ownership_store.py
+staged path: tools/review_exchange_store.py
+```
+
+### Requestor assessment for step 3 review-resume-command (round 2)
+
+#### Step 3 round 2 implementation assessment for step 3 review-resume-command (round 2)
+
+Step 3 remains fully implemented. Round 1 confirmed the ownership fence itself
+is sound and requested two small corrections to its recorded evidence and one
+failure-path expression; both are addressed in this replacement round.
+
+The stale stored-record branch now raises `OwnershipRejectedError` explicitly
+from an `OwnershipService.already_claimed_failure` result. A focused regression
+starts from a stale caller record and pins both the `already-claimed` code and
+the durable current generation.
+
+The replacement validation set uses one multi-pattern `rg -e` command covering
+underscore and hyphen spellings for generation, token, and digest plus
+`ownership-superseded`. This is equivalent to the plan's alternation without a
+Windows batch pipe character.
+
+The post-repair `ghog day` passed 2,438 tests with 100 percent production
+coverage, no failures, no warnings, three expected Step 5 xfails, and zero
+duration outliers. `check.bat` passed every project check.
+
+### Implementation report for step 3 review-resume-command (round 2)
+
+#### Step 3 round 2 implementation report for step 3 review-resume-command (round 2)
+
+- Added `OwnershipService.already_claimed_failure` so the service remains the
+  owner of duplicate-claim failure taxonomy.
+- Replaced the raise-only discarded `service.claim` call in the ownership
+  store's stale-record branch with an explicit `OwnershipRejectedError`.
+- Added a focused stale-record regression that distinguishes the branch from a
+  fresh-read competing claim.
+- Refreshed the validation document theme to state that Steps 0 through 3 are
+  implemented and Steps 4 through 6 remain pending.
+- Replaced one real failed-Git subprocess in an artifact-home test with a
+  deterministic failed process result and an exact invocation assertion after
+  Groundhog reported a 0.66-second outlier.
+- Capped the ownership generation property at 40 representative examples and
+  injected a deterministic valid token after a later walk reported 0.84
+  seconds; every generation and stale-capability assertion remains unchanged.
+
+### Change summary for step 3 review-resume-command (round 2)
+
+#### Step 3 round 2 staged change summary for step 3 review-resume-command (round 2)
+
+The staged index contains 27 paths across five dependency-ordered groups.
+
+- Group 1, `test(review-artifacts): stub failed tracking query`: deterministic
+  coverage for the artifact-home Git failure branch.
+- Group 2, `feat(review-exchange): add ownership capabilities`: coordination
+  model, ownership service, ownership store, and delegated exchange store,
+  including the explicit stale-record failure.
+- Group 3, `feat(review-exchange): fence session mutations`: CLI ownership
+  adapter and parser, core and human lifecycle fences, CLI dispatch, and
+  authorized code-review commit pickup.
+- Group 4, `test(review-exchange): cover ownership fencing`: ownership,
+  lifecycle, CLI, persistence, recovery, workflow, explicit stale-record, and
+  bounded property coverage.
+- Group 5, `docs(review-resume-command): record step 3 validation`: the exact
+  terminal validation marker and refreshed document theme.
+
+The formatted root `a.commit` covers every staged path exactly once and the
+read-only commit-plan checker reports `state=valid`.
+
+### Writer response for step 3 review-resume-command (round 2)
+
+Writer response:
+
+#### Step 3 round 2 writer response for step 3 review-resume-command (round 2)
+
+Both round-1 findings are accepted.
+
+- The validation command set is restored to the plan's full semantic pattern.
+  The round-2 renderer receives one multi-`-e` command covering
+  `ownership_generation`, `ownership-generation`, `ownership_token`,
+  `ownership-token`, `ownership_digest`, `ownership-digest`, and
+  `ownership-superseded`.
+- The stale-record duplicate-claim branch now raises the typed error explicitly
+  from a service-owned failure record. The return value is no longer discarded
+  as an implicit raise-only expression, and a dedicated regression pins this
+  exact branch.
+
+There is no disagreement with the reviewer. The validation theme sentence was
+also refreshed as requested.
+
+During the mandatory post-repair walk, Groundhog reported two sequential
+duration outliers. Each was shortened without removing an assertion: the
+artifact-home test now stubs only its failed Git process and checks the exact
+call, while the ownership property retains its full per-example assertions
+under the project's established 40-example bound. The final fresh walk reports
+zero outliers.
+
+### Reviewer focus for step 3 review-resume-command (round 2)
+
+Check the exact plan step, staged implementation, test evidence, repaired path inventory, and a.commit accuracy.
+
+<!-- review-entry-id: request-step-3-round-2 -->
+
+## Round 2 by reviewer - Step 3
+
+- Recorded: 2026-09-04T13:36:58+02:00
+- Exchange: code/code/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-resume-command.md
+- Requestor LLM nature: codex
+- Reviewer LLM nature: claude
+- Implementation step: 3
+- Outcome: answer
+
+### Assessed index identity for step 3 review-resume-command (exchange 1) (round 2)
+
+Baseline index tree: cd3bd92207e197a1d96d5958f71745321d4a5488
+
+Assessed index tree: cd3bd92207e197a1d96d5958f71745321d4a5488
+
+### Implementation check for step 3 review-resume-command (exchange 1) (round 2)
+
+Result:
+
+Yes. Step 3 has been fully implemented.
+
+Round 1 established that class by class and behavior by behavior against the
+plan step. Round 2 changed no ownership production code beyond the one repair
+the reviewer asked for, and the reviewer verified both round-1 findings closed
+rather than accepting the writer response for them.
+
+The validation set is restored to the plan's semantics. The request now carries
+one command with seven `-e` patterns covering `ownership_generation`,
+`ownership-generation`, `ownership_token`, `ownership-token`,
+`ownership_digest`, `ownership-digest` and `ownership-superseded`. The reviewer
+ran it and the plan's own alternation over identical paths: both match 56 lines.
+That is equality rather than mere improvement, so the recorded evidence now
+proves exactly what the criterion claims, digest storage included.
+
+The raise-only call is gone. The stale-record branch of
+`ReviewExchangeOwnershipStore.claim` now reads
+`raise OwnershipRejectedError(service.already_claimed_failure(stored))`, with
+the generic stale-record error as the visible alternative. `OwnershipService`
+gained the public `already_claimed_failure` this needs, and `claim` uses it too,
+so no caller depends on a discarded return value any more. A dedicated
+regression, `test_stale_record_claim_reports_explicit_already_claimed_failure`,
+pins the branch and asserts `failure.code == "already-claimed"`, which the
+earlier race test never reached because it reads a fresh record inside the lock.
+
+The two duration-outlier repairs were checked rather than taken on trust, since
+shortening a test is exactly where an assertion quietly disappears. Neither lost
+one. The artifact-home test is strictly stronger: it replaces a real
+`git ls-files` subprocess with a mocked `CompletedProcess`, keeps the original
+`cannot validate.*tracking` expectation, and adds
+`runner.assert_called_once_with` pinning the exact argument vector, cwd and
+flags, which did not exist before. The ownership property adds
+`@settings(max_examples=40)`, the same convention-matching bound step 2 settled,
+and a fixed `_PROPERTY_TOKEN`. That constant is safe for this property because
+`failure_for` tests generation before the digest, so a capability from an
+earlier generation is rejected as `superseded` whatever its token, and deleting
+the generation check would still fail the test. The token also satisfies
+`_TOKEN_RE`.
+
+Architecture, performance and feature integrity are unchanged from the round-1
+assessment and are not restated. The ownership service remains pure, the store
+holds the filesystem work, and the risk-band files stay well under the ceiling.
+
+Unit test coverage is measured, not inferred: the full walk reports `cov=100`
+over the whole suite with `fail=0`, and the new regression joins the ownership
+leaf.
+
+The step's completion criteria are all met on the reviewer's own measurements:
+the focused walk passes, the completion grep shows digest storage and typed
+fencing at every mutation seam, and `ghog day` reports `exit=0`.
+
+One observation belongs in the record because it is evidence the reviewer could
+not have staged. During round 1 the reviewer's own `publish-answer` was refused
+by this step's code with `outcome: ownership-missing` and
+`current_ownership_generation: 2`, and succeeded only once it presented the
+capability its bounded wait had issued. Publication then advanced the generation
+to 3 on handoff, superseding that capability, and the round-2 wait issued
+generation 4. The reviewer also confirmed the plaintext token appears zero times
+in the published answer, the versioned transcript and the coordination record.
+The fence, the handoff invalidation and the digest-only guarantee were therefore
+exercised in production against a real session rather than only in tests.
+
+Validation plan effects:
+
+The reviewer made no edit to
+`docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md` this round, and
+no edit to any other tracked file. The index tree is unchanged across the
+assessment.
+
+The writer's Step 3 rows are accurate against the code the reviewer verified.
+The status sentence is the exact `Yes. Step 3 has been fully implemented.`, no
+`Missing work for Step 3` section exists, and the implemented-work, new-types,
+architecture, performance, coverage and feature-integrity rows describe what the
+staged code does.
+
+The round-1 answer predicted that the architecture row would need refreshing once
+the raise-only call was acknowledged, because the implementation-check rule
+counts any mentioned item as something that needed addressing. That has been
+handled, and the reviewer checked the outcome rather than the promise.
+
+The theme sentence was refreshed correctly, and the reviewer verified it rather
+than taking the writer response's word. The document now opens `Steps 0 through 3
+are fully implemented and validated; Steps 4 through 6 remain pending.`, which
+matches the per-step rows. The reviewer had drafted this answer asserting the
+sentence was still stale and corrected that before publishing, because the claim
+was false. The document-level status line correctly stays `No, it is not
+implemented.` while Steps 4 through 6 are not started.
+
+Nothing in the document needs a reviewer edit, and reviewer mode has written
+none of it in either round. No umbrella row was touched, and no umbrella row may
+be completed from reviewer mode.
+
+### Pre-repair mandatory checks and coverage for step 3 review-resume-command (exchange 1) (round 2)
+
+Baseline evidence was captured through `bin/code_review_evidence.bat` before any
+assessment work, and the manifest was written before anything could mutate state.
+Round 1 retired its manifest after publication, so this round ran as a fresh
+assessment with a new baseline.
+
+- `capture-index-tree` returned `cd3bd92207e197a1d96d5958f71745321d4a5488`,
+  equal to the `request_index_tree` in the round-2 request, so the received state
+  matched the requested state exactly and the early rejection path did not apply.
+  Round 1's tree was `03cdf01ca5e2a96535a80e64c022e9c59cb20032`; the difference
+  is eight files, the two findings and the two duration repairs.
+- `umbrella-digest capture docs/v0.11.0/draft.v0.11.0.review-mode.md` returned
+  `applicable: true` with digest
+  `bb71aaf68bb45d395e719881a86817a146eba8f164e06a09433fb375914ddc81`.
+- `record-pre-repair-blob
+  docs/v0.11.0/plan.v0.11.0.review-resume-command.validation.md` recorded the
+  blob before the reviewer could touch the only validation-plan path it may
+  write; in the event no edit was made.
+- `validation-state capture` over the ordered path set recorded the union of the
+  27 staged paths and the versioned transcript at that same index tree.
+- `write-manifest` stored the baseline at the step-3 manifest path.
+
+The ghog-artifact limitation recorded in every earlier round applies unchanged:
+the ordered path set does not name `a.ghog.log`, `.coverage`, `coverage.xml` and
+`a.ghog.senv.log`, and because the set must be identical before and after it was
+not widened afterwards. Differences confined to ignored validation artifacts are
+acceptable by contract, and `git status --porcelain` over the whole worktree
+answered the tracked question more broadly.
+
+One item of this round's evidence is the reviewer's own session state rather
+than a capture, and its provenance is recorded so nothing rests on an unstated
+assumption. The bounded `wait-request` for this round returned an ownership
+capability at generation 4, which the reviewer stored in the ignored artifact
+home rather than echoing, and which it presents on publication. Round 1's
+capability at generation 2 was superseded when publication handed the exchange
+back to the requestor and the generation advanced to 3. Those values come from
+the launcher's machine results, which is the only place the design permits a
+plaintext token to appear.
+
+### Resolved validation set and sources for step 3 review-resume-command (exchange 1) (round 2)
+
+The reviewer ran the union of the request validation set and the set resolved
+during this round, and ran every command itself. This round the two sets are
+equivalent, which was the point of the first round-1 finding.
+
+- `ghog single tests/unit/tools/test_review_exchange_ownership
+  tests/unit/tools/test_review_exchange_lifecycle/test_review_exchange_lifecycle_recovery_tdd.py
+  tests/unit/tools/test_review_exchange_cli/test_review_exchange_cli_boundaries_tdd.py`,
+  source plan. Result: `fail=0 warn=0 xfail=0 exit=0`.
+- `rg -n -e ownership_generation -e ownership-generation -e ownership_token -e
+  ownership-token -e ownership_digest -e ownership-digest -e
+  ownership-superseded tools tests/unit/tools/test_review_exchange_ownership`,
+  source plan and request. Result: exit 0, 56 matching lines.
+- `ghog day`, source project. Result: `exit=0`, forced, completing every phase:
+  `ghog check done fail=0 warn=0 xfail=0 exit=0`, `ghog affected --no-cov`
+  green, and `ghog full done fail=0 warn=0 xfail=3 cov=100 outliers=0
+  excluded=0 exit=0`. The plan's Step 3 criterion that `ghog day` reports
+  `exit=0` is satisfied.
+
+The three xfails remain the Step 5 `GlobalReviewerWait` gates that Step 5 owns.
+No mandatory evidence was unavailable, and none was inherited from round 1.
+
+The grep equivalence was measured rather than assumed. The reviewer ran the
+plan's quoted alternation and the request's seven-pattern `-e` form over the
+same two path arguments: both return 56 lines. In round 1 the request pair
+returned 31 and omitted every `token` and `digest` occurrence, so the recorded
+set could not evidence the digest storage the criterion names. It now does, and
+the matches span `review_exchange_ownership.py`,
+`review_exchange_models_coordination.py`, `review_exchange_ownership_store.py`
+and the ownership CLI, which is the seam coverage the criterion describes.
+
+The reviewer forced this walk as it has forced every walk in this effort. The
+tree changed by eight files and roughly 900 lines since round 1, including two
+test-duration repairs, and a walk that skips because no Python file changed
+would describe a different tree than the one under review.
+
+### Resolver drift and direction for step 3 review-resume-command (exchange 1) (round 2)
+
+No drift. The round-1 drift is resolved, and the reviewer confirmed the
+resolution by measurement rather than by reading the new command.
+
+Round 1 found the request resolving the plan's single alternation,
+`rg -n "ownership[-_](generation|token|digest)|ownership-superseded" tools
+tests/unit/tools/test_review_exchange_ownership`, as two narrower commands that
+searched only `ownership_generation` and `ownership-superseded`. That pair
+matched 31 lines against the plan form's 56, dropping every `token` and `digest`
+occurrence, which is precisely the digest storage the criterion exists to
+demonstrate.
+
+The request now carries one command with seven `-e` patterns covering both the
+underscore and hyphen spellings of generation, token and digest, plus
+`ownership-superseded`. Run over the same two path arguments, that form and the
+plan's alternation both return 56 lines. The sets are equivalent rather than
+merely closer, so nothing is left for the union to add.
+
+The `-e` form itself is not drift. Step 2 settled that ripgrep unions multiple
+`-e` patterns exactly as it unions alternation branches, and the separate-flag
+spelling is the more robust of the two on a Windows shell where a quoted pipe is
+fragile.
+
+The `ghog day` and `ghog single` members are identical in both sets, in the same
+order and with the same arguments, as they have been in every round of this
+effort.
+
+### Repository state around validation for step 3 review-resume-command (exchange 1) (round 2)
+
+The received index tree `cd3bd92207e197a1d96d5958f71745321d4a5488` matched the
+request-time index tree exactly, so the assessment ran against the requested
+state. The assessed index tree after the evidence boundary is the same value,
+because the reviewer authored no change.
+
+The umbrella digest is unchanged:
+`bb71aaf68bb45d395e719881a86817a146eba8f164e06a09433fb375914ddc81` before and
+after, `changed: false`. That digest has held across every round of steps 2 and
+3.
+
+`validation-state compare` over the ordered path set reports `acceptable: true`
+with empty `tracked_paths`, `untracked_paths` and `ignored_paths`, across a full
+green walk. There is no tracked validation side effect.
+
+The worktree holds the transcript, which the protocol appends, one unstaged
+entry described below, and zero untracked files. No path is partially staged,
+so every one of the 27 staged paths contributes exactly its reviewed content.
+
+The unstaged entry is `.agents/llm-shared/.codex-plugin/plugin.json`, and it is
+the plugin-sync churn this effort has been watching for since the step 1
+exchange rewrote 66 files under `.agents`. This instance is far milder and the
+reviewer characterised it precisely rather than by its diff size. Git reports
+every one of its 24 lines as changed, but `git diff --ignore-all-space` reduces
+that to a single line, the `version` field moving from
+`0.1.0+codex.20260831140034` to `0.1.0+codex.20260904105359`. The rest is a line
+ending flip: the committed blob begins `7b 0a`, a brace and a line feed, while
+the worktree file begins `7b 0d 0a`, a brace and a carriage return and a line
+feed. So an external sync rewrote the file as CRLF and stamped a new timestamp.
+
+It is not in the 27 staged paths and not named by any `a.commit` group, so the
+primary commit cannot carry it. The residual phase would stage it afterwards and
+return `RESIDUAL_GROUPING_REQUIRED`, which is the designed handling and forces a
+deliberate decision rather than a silent inclusion. It is recorded in the writer
+instructions as a carry-forward rather than as a finding, because it lies
+outside the reviewed commit and nothing in Step 3 produced it.
+
+No `.tmp-review-nature-` file exists anywhere in the worktree, so the step 2
+round 1 backfill temporary issue has not recurred.
+
+### Repair inventory for step 3 review-resume-command (exchange 1) (round 2)
+
+Repairs made: None.
+
+Paths staged: None.
+
+### Commit plan assessment for step 3 review-resume-command (exchange 1) (round 2)
+
+The reviewer reran `python -m tools.commit_plan_check --format json`
+independently against the received repository state, before assessing grouping,
+ordering, scope or subjects. It returned `state: valid`, `ready: true`, exit `0`,
+`schema_version: 1`, an empty `diagnostics` list, and 27 staged paths across five
+groups in dependency order. Comparing field by field with the
+`commit_plan_result` embedded in the request: staged path sets equal with no path
+on either side alone, group tuples of position, subject and ordered paths equal,
+`state` and `ready` equal.
+
+1. `test(review-artifacts): stub failed tracking query`, 1 path
+2. `feat(review-exchange): add ownership capabilities`, 4 paths
+3. `feat(review-exchange): fence session mutations`, 6 paths
+4. `test(review-exchange): cover ownership fencing`, 15 paths
+5. `docs(review-resume-command): record step 3 validation`, 1 path
+
+Groups 2 through 5 are round 1's four groups, unchanged in membership, order and
+subject. Group 1 is new and needs explaining rather than merely listing, because
+it is the one place this commit reaches outside Step 3.
+
+It carries the artifact-home test whose call time exceeded the suite floor
+during the post-repair walk. That test belongs to Step 1's configuration module,
+not to Step 3. The reviewer accepts it here for a specific reason: the outlier
+made `ghog day` return nonzero, and `ghog day` reporting `exit=0` is Step 3's
+own completion criterion, so leaving it would have left this step unable to
+satisfy a criterion it does not control. The repair is one file, strictly
+strengthening, disclosed in the writer response, and placed in its own
+dependency-ordered group with an accurate conventional subject at position 1,
+where a test-only change with no dependents belongs.
+
+The reviewer notes its own earlier words rather than passing over them. In step 2
+round 3 it wrote that a comparable pre-existing outlier `deserves its own small
+effort rather than being absorbed silently into this one`. The operative word
+was silently. This one is not silent: it is disclosed, separately grouped and
+separately subjected, which is the shape that makes concurrent work reviewable
+rather than smuggled. So it is recorded here and not returned as a finding.
+
+Ordering runs least to most dependent throughout: a standalone test, then the
+ownership foundation, then the wiring that imports it, then the tests for both,
+then the validation record that describes them. No group claims a path belonging
+to another, and every subject describes its group's contents.
+
+`a.commit` needed no amendment and the reviewer made none. Every `git add -A`
+line names a path with no unstaged half, because no path in this tree is
+partially staged, so executing the plan produces exactly the index the checker
+validated. The `status 0` still satisfies only the `a.commit` part of the
+readiness floor and authorizes no commit.
+
+### Findings and boundaries for step 3 review-resume-command (exchange 1) (round 2)
+
+Unresolved findings: None.
+
+Boundary-crossing work: None.
+
+### Writer instructions for step 3 review-resume-command (exchange 1) (round 2)
+
+No changes are requested. The recommendation is advisory and authorizes no
+commit; the human owns that decision at the convergence gate.
+
+Both round-1 findings are closed and the reviewer verified each rather than
+accepting the response. The validation set now matches the plan's criterion
+exactly, 56 lines against 56 over identical paths. The stale-record branch raises
+its typed failure explicitly through `service.already_claimed_failure(stored)`,
+with a dedicated regression pinning the `already-claimed` code on that path. Both
+duration repairs kept their assertions, and the artifact-home one added an
+exact-call assertion it did not have before.
+
+Three things to carry into the commit rather than act on now.
+
+Check `.agents` immediately before committing, as the step 1 exchange's guidance
+already says. `.agents/llm-shared/.codex-plugin/plugin.json` is unstaged with a
+new `version` timestamp and a line-ending flip from LF to CRLF, an external
+plugin sync rather than anything this step did. It is not in the 27 staged paths,
+so the primary commit cannot carry it, and the residual phase will stage it and
+return `RESIDUAL_GROUPING_REQUIRED`. Decide there whether a whole-file CRLF
+rewrite for a one-line version bump belongs in the history at all; the reviewer
+has no view on that beyond noting it is not Step 3's.
+
+Group 1 reaches outside Step 3 deliberately, and the next step should not inherit
+the pattern by accident. The artifact-home test was repaired here because its
+duration blocked `ghog day exit=0`, which is Step 3's own criterion. That
+justification is specific to a mandatory gate. A future step meeting an unrelated
+outlier should weigh returning it rather than absorbing it, and should keep doing
+what this round did if it absorbs one: disclose it and give it its own group and
+subject.
+
+The `bin/commit_plan_check.bat` launcher still does not exist, so both roles keep
+invoking `python -m tools.commit_plan_check` directly even though
+`instructions/code-reviewer.md` names the launcher. That remains umbrella row 8's
+work and belongs to its own effort, not to Step 3.
+
+The theme sentence was refreshed, and the reviewer confirms it. The validation
+plan now opens `Steps 0 through 3 are fully implemented and validated; Steps 4
+through 6 remain pending.`, which matches the step rows, and the document-level
+line correctly stays `No, it is not implemented.` while Steps 4 through 6 are
+not started. That sentence went stale unnoticed once before, in step 2 round 2,
+so it is worth confirming again when Step 4 completes rather than assuming.
+
+### Decision rationale for step 3 review-resume-command (exchange 1) (round 2)
+
+The disposition is `commit-ready`, and the implementation-check result is `Yes`.
+All six parts of the readiness floor pass, and this round made no reviewer repair.
+
+Identity is exact, with the received index tree
+`cd3bd92207e197a1d96d5958f71745321d4a5488` matching the request. Implementation
+is complete, verified class by class in round 1 and unchanged in round 2 beyond
+the one repair the reviewer asked for. Mandatory validation and coverage pass on
+the reviewer's own forced walk: `ghog day` reports `exit=0` with `fail=0`,
+`cov=100`, `outliers=0` and the three expected Step 5 xfails, the focused walk is
+green, and the completion grep matches 56 lines. Staged attribution is clean: the
+reviewer authored nothing in either round and the index tree is byte-identical
+before and after. There are no unresolved findings, and `a.commit` is accurate,
+confirmed by an independent rerun matching the request field by field, with no
+partially staged path anywhere in the tree.
+
+Both round-1 findings are closed, and each closure was measured rather than
+read. The validation set now matches the plan criterion exactly, 56 lines against
+56 over identical paths, where round 1's pair returned 31 and omitted every
+`token` and `digest` occurrence. The raise-only call is replaced by an explicit
+`raise OwnershipRejectedError(service.already_claimed_failure(stored))`, with a
+dedicated regression pinning `already-claimed` on precisely the branch the
+earlier race test could not reach.
+
+The reviewer checked the two duration repairs with more suspicion than the
+findings themselves, because shortening a test is where an assertion quietly
+disappears. Neither lost one, and the artifact-home repair gained an exact-call
+assertion it never had. The fixed `_PROPERTY_TOKEN` in the ownership property is
+safe because `failure_for` tests generation before the digest, so the property
+still fails if the generation check is removed.
+
+Two things temper this recommendation, and neither changes it.
+
+Group 1 reaches outside Step 3. The artifact-home test belongs to Step 1, and it
+is here because its duration blocked `ghog day exit=0`, which is Step 3's own
+criterion. The reviewer accepts that because the alternative is a step unable to
+satisfy a criterion it does not control, and because the work is disclosed,
+separately grouped and separately subjected rather than folded in silently. The
+reviewer said in step 2 round 3 that such an outlier deserves its own effort
+rather than being absorbed silently; the operative word was silently, and this
+one is not.
+
+`.agents/llm-shared/.codex-plugin/plugin.json` carries external plugin-sync
+churn, a version timestamp and an LF-to-CRLF rewrite. It is unstaged and in no
+`a.commit` group, so the primary commit cannot carry it, and the residual phase
+will force a deliberate decision about it. It is a carry-forward, not a finding,
+because nothing in Step 3 produced it and it lies outside the reviewed commit.
+
+This step also produced evidence the reviewer could not have arranged. Its own
+round-1 publication was refused by the code under review with
+`ownership-missing`, succeeded only when it presented the capability its bounded
+wait had issued, and the generation then advanced on handoff so that capability
+no longer validates. The plaintext token appears nowhere in the published answer,
+the transcript or the coordination record. A fence that stops the reviewer
+reviewing it is the strongest demonstration available that it fences anyone.
+
+One correction belongs on the record. The reviewer drafted this answer asserting
+that the validation plan's theme sentence was still stale, verified it before
+publishing, and found it correctly refreshed to `Steps 0 through 3 are fully
+implemented and validated`. The claim was removed rather than published and
+retracted later.
+
+This answer is advisory. It authorizes no commit, and the commit choice remains
+the human's at the convergence gate.
+
+### Final reviewer decision for step 3 review-resume-command (exchange 1) (round 2)
+
+Decision: commit-ready (advisory). The evidence floor is complete, but this recommendation does not authorize a commit; authority remains at the durable human gate.
+
+<!-- review-entry-id: answer-step-3-round-2 -->
+
+## Round 2 by human - Step 3 - human-confirmation
+
+- Recorded: 2026-09-04T18:33:06+02:00
+- Exchange: code/code/v0.11.0/review-resume-command
+- Umbrella: docs/v0.11.0/draft.v0.11.0.review-mode.md
+- Reviewed document: docs/v0.11.0/plan.v0.11.0.review-resume-command.md
+- Requestor LLM nature: codex
+- Reviewer LLM nature: claude
+- Implementation step: 3
+- Outcome: human-confirmation
+
+Human choice: Commit
+Outcome: continue-owning-workflow
+
+<!-- review-entry-id: human-confirmation-round-2 -->
