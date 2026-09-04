@@ -7,15 +7,22 @@ by a human. This instruction owns only the common coordination sequence.
 
 ## Command boundary for review requestors
 
-Run every protocol operation through `bin/review_exchange.bat`. That launcher
-is the non-interactive adapter over `ReviewExchangeCore`; do not reproduce its
-state transitions in an LLM instruction and do not mutate review artifacts by
-hand.
+Resolve `<LLM_SHARED_DIR>` as the absolute parent of the `instructions` folder
+that contains this canonical file. Do not resolve a launcher against the
+consuming repository, guess a sibling `llm-shared` folder, or rely on an
+`LLM_SHARED_DIR` environment variable. Every shared review launcher self-locates
+its llm-shared Python, so call it directly by the resolved full path from
+PowerShell; do not run either repository's `senv.bat` first.
+
+Run every protocol operation through
+`& "<LLM_SHARED_DIR>\bin\review_exchange.bat"`. That launcher is the
+non-interactive adapter over `ReviewExchangeCore`; do not reproduce its state
+transitions in an LLM instruction and do not mutate review artifacts by hand.
 
 Every command takes an operation followed by the exact context arguments:
 
-```text
-review_exchange.bat <operation> --family <specification-or-code> --document <exact-path> --umbrella <exact-path-when-present> --implementation-step <code-step-when-applicable> --convergence-signal <registered-token> --another-round-label <registered-label> --continue-owning-workflow-label <registered-label>
+```powershell
+& "<LLM_SHARED_DIR>\bin\review_exchange.bat" <operation> --family <specification-or-code> --document <exact-path> --umbrella <exact-path-when-present> --implementation-step <code-step-when-applicable> --convergence-signal <registered-token> --another-round-label <registered-label> --continue-owning-workflow-label <registered-label>
 ```
 
 Omit `--umbrella` when there is no umbrella. Omit `--implementation-step` for

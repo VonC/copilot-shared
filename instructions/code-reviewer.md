@@ -14,7 +14,8 @@ human-guidance response, and advisory publication decision.
 
 ## Exact code-review policy and context
 
-Pass this policy unchanged to every `bin/review_exchange.bat` operation:
+Pass this policy unchanged to every
+`& "<LLM_SHARED_DIR>\bin\review_exchange.bat"` operation:
 
 ```text
 --family code
@@ -40,7 +41,8 @@ effort has none and the flag is correctly omitted.
 
 ## Ordered reviewer sequence
 
-1. Run `status` through `bin/review_exchange.bat` with the exact context and
+1. Run `status` through
+   `& "<LLM_SHARED_DIR>\bin\review_exchange.bat"` with the exact context and
    fixed policy. Proceed only when its final JSON reports `request-pending` or
    an intact `abandoned-request`, the expected code identity, step, round, and
    positive `exchange_occurrence`. For `abandoned-request`, call `reclaim`
@@ -48,7 +50,7 @@ effort has none and the flag is correctly omitted.
    continue. This applies whether the expired request is first seen cold or
    the lease expires during the same reviewer session.
 2. Run one bounded `wait-request` per round through
-   `bin/review_exchange.bat` with that context. Read only the returned
+   `& "<LLM_SHARED_DIR>\bin\review_exchange.bat"` with that context. Read only the returned
    `paths.request` after access is granted. Never add a polling loop or
    reconstruct an artifact path.
 3. Validate the request envelope and its human-readable umbrella or `none`,
@@ -59,9 +61,11 @@ effort has none and the flag is correctly omitted.
 4. For invalid specialized request content or a changed request-time index
    tree, take the early rejection path below without implementation mutation.
 5. Otherwise capture the baseline, umbrella digest, validation state, and
-   pre-repair blobs through `bin/code_review_evidence.bat`; write the stable
+   pre-repair blobs through
+   `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat"`; write the stable
    retained manifest before assessment or repair.
-6. Run `commit-plan-check.bat --format json` independently against the received
+6. Run `& "<LLM_SHARED_DIR>\commit-plan-check.bat" --format json`
+   independently against the received
    repository state before assessing grouping, ordering, scope, or subjects.
    Record its state, ready value, ordered groups, staged paths, and every
    diagnostic in the reviewer evidence. A status `3` result is mechanical
@@ -80,7 +84,7 @@ effort has none and the flag is correctly omitted.
    results.
 10. Write every answer-model input to a distinct ignored `a.*` UTF-8 file
    inside the configured artifact home, `.reviews` by default.
-   Run `bin/code_review_answer.bat` once with the exact context, round,
+   Run `& "<LLM_SHARED_DIR>\bin\code_review_answer.bat"` once with the exact context, round,
    `--exchange-occurrence` from `status`, disposition, evidence inputs, and two
    distinct ignored outputs: complete answer content and transcript summary.
    Neither output may be a path returned in `paths`. `paths.answer` carries an
@@ -89,11 +93,12 @@ effort has none and the flag is correctly omitted.
    and an answer live at once — a shape the protocol rejects as `inconsistent`
    and cannot reclaim. See *Caller-owned paths are never protocol artifact
    paths* in [`review-requestor.md`](review-requestor.md).
-11. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
+11. Run `publish-answer` through
+    `& "<LLM_SHARED_DIR>\bin\review_exchange.bat"`, passing the complete
     output through `--content-file` and the paired summary through
     `--summary-file`. Never publish or append either output by hand.
 12. When the final JSON reports `outcome: published`, retire the manifest
-    through `bin/code_review_evidence.bat`. Publication exits `0` for
+    through `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat"`. Publication exits `0` for
     `changes-requested` and exit `3` for `commit-ready` at the convergence gate;
     both are successful publication outcomes.
 13. After a `changes-requested` publication returns `answer-pending`,
@@ -143,7 +148,7 @@ wait. The bounded protocol wait is the only sanctioned mechanism.
 
 ### While the artifact-home wait has no launcher operation
 
-`bin/review_exchange.bat wait-request` binds to one exact exchange context, so
+`& "<LLM_SHARED_DIR>\bin\review_exchange.bat" wait-request` binds to one exact exchange context, so
 it serves the round wait only. The cross-exchange wait is `GlobalReviewerWait`,
 Step 5 of the v0.11.0 `review-resume-command` plan, and it has not shipped: the
 Step 5 contracts in
@@ -159,33 +164,33 @@ the operation itself.
 
 ## Exact evidence delegation
 
-Use `bin/code_review_evidence.bat` for every Git-index and retained-evidence
+Use `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat"` for every Git-index and retained-evidence
 operation. Every path operand is repository-relative, and every JSON operand
 is the path of an ignored home-local file containing the retained JSON.
 
-- Capture the baseline index tree with `bin/code_review_evidence.bat
+- Capture the baseline index tree with `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat"
   --repository <root> capture-index-tree` and compare it once with the
   request-time index tree before a fresh assessment.
-- Record pre-repair blobs with `bin/code_review_evidence.bat --repository
+- Record pre-repair blobs with `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat" --repository
   <root> record-pre-repair-blob <path>` before the first permitted edit to each
   repair path.
-- Stage repair ownership only after `bin/code_review_evidence.bat --repository
+- Stage repair ownership only after `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat" --repository
   <root> attribute-reviewer-patch <baseline-json>` proves the patch cleanly
   attributable. A pre-existing unstaged overlap stays unstaged and is returned
   as a finding.
 - Capture and compare the ordered validation-state path set with
-  `bin/code_review_evidence.bat --repository <root> validation-state capture`
+  `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat" --repository <root> validation-state capture`
   and `validation-state compare`. A tracked validation side effect is a
   readiness-blocking finding; leave it unstaged and unreverted. Ignored
   validation artifacts are acceptable.
 - Protect the umbrella through the launcher's `umbrella-digest capture` and
   `umbrella-digest compare` operations around the reviewer implementation-check
   result. A changed applicable umbrella digest is a boundary violation.
-- Perform manifest write with `bin/code_review_evidence.bat --repository
+- Perform manifest write with `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat" --repository
   <root> write-manifest <evidence-json>` before assessment can mutate state.
-- Perform manifest read with `bin/code_review_evidence.bat --repository <root>
+- Perform manifest read with `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat" --repository <root>
   read-manifest <exact-identity-options>` before reusing retained evidence.
-- Perform manifest retire with `bin/code_review_evidence.bat --repository
+- Perform manifest retire with `& "<LLM_SHARED_DIR>\bin\code_review_evidence.bat" --repository
   <root> retire-manifest <exact-identity-options>` only after publication
   reports `outcome: published`.
 
@@ -228,7 +233,8 @@ direction; the union still runs. Do not revert or stage a tracked validation
 side effect. Recheck the umbrella digest after both a Yes and No result and
 never complete an umbrella row from reviewer mode.
 
-Treat the independent `commit-plan-check.bat --format json` rerun as the
+Treat the independent
+`& "<LLM_SHARED_DIR>\commit-plan-check.bat" --format json` rerun as the
 mechanical `a.commit` result in the six-part readiness floor. A status `0`
 satisfies only that result: it does not prove implementation completeness,
 test or coverage results, repair attribution, or accurate reviewer judgment,

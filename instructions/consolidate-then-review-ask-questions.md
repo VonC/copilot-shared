@@ -26,6 +26,10 @@ snapshot.
 
 Run this sequence from the project root:
 
+Resolve `<LLM_SHARED_DIR>` as the absolute parent of the `instructions` folder
+that contains this canonical file. Every shared launcher below uses that full
+path; do not rely on an environment variable or a guessed sibling checkout.
+
 1. Run plain `git reset` to clear the index without changing the working tree.
    Never use `--hard`, restore a file, or discard an unrelated change. Confirm
    that `git diff --cached --name-only` prints nothing.
@@ -56,7 +60,7 @@ one-file snapshot commit grants the next consolidation step.
 
 You need to remove `Qxx:` sections and integrate their answers within the
 document. Once every answer is integrated, remove the whole `## Open questions`
-section with `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"`
+section with `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --strip`
 (see "Consolidating and placing questions with oqm" below).
 
 Create a decision table in the document's decisions section, naming that section for the document type: "Design decisions" for a design, "Implementation decisions" for an implementation plan, or "Requirement clarifications" for a feature-request or an issue. Summarize all the choices that have been made, with their arguments and the alternatives that were rejected. Do reference the number of the question (Qxx) that led to each choice, as well as the section of the document where the choice is integrated. Keep the choices to the nature of the document: implementation decisions for a plan (file layout, step order, test and split strategy), design choices for a design, feature or issue clarifications for a requirement.
@@ -108,6 +112,11 @@ Always ask as many questions as possible on different parts of the document. The
 
 Before running `oqm`, read [`../rules/run_commands.md`](../rules/run_commands.md).
 
+Resolve `<LLM_SHARED_DIR>` as the absolute parent of the `instructions` folder
+that contains this canonical file. Invoke `oqm.bat` by that full path from
+PowerShell; do not guess a sibling `..\llm-shared` folder. The wrapper
+self-locates llm-shared and loads the consuming project environment itself.
+
 Do not edit the `## Open questions` section of the document by hand. Use the
 `oqm` wrapper ([`oqm.bat`](../bin/oqm.bat), which runs
 [`open_questions_md.py`](../tools/open_questions_md.py) through the consuming
@@ -120,17 +129,17 @@ The companion scratch file `a.<base>.open.questions.md` is the one file you auth
 
 The tool has three modes, each taking the exact repository-relative document path:
 
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
+- `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --create`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
+- `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --strip`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
+- `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --append`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
 
 Run these steps, in order:
 
-1. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"` once you have integrated every existing answer into the document body and the decision table, to remove the consolidated `## Open questions` section.
+1. `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --strip` once you have integrated every existing answer into the document body and the decision table, to remove the consolidated `## Open questions` section.
 2. Stop here when you have no new question to ask, and say you are ready for the next step.
-3. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"` to start an empty `a.<base>.open.questions.md` companion when you do have new questions.
+3. `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --create` to start an empty `a.<base>.open.questions.md` companion when you do have new questions.
 4. Write your new questions into `a.<base>.open.questions.md`, starting with the `## Open questions for the vX.Y.Z ...` line and following the template.
-5. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"` to move the questions from `a.<base>.open.questions.md` into the document.
+5. `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --append` to move the questions from `a.<base>.open.questions.md` into the document.
 6. Present the placed questions in your reply as the mandatory three-column table described in "Presenting any follow-up questions" below — never as a bulleted list.
 
 ## Review-mode delegation after placing follow-up questions

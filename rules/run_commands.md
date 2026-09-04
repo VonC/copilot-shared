@@ -54,7 +54,22 @@ Keep the chained part to one Python executable plus plain arguments. Do not add
 an inner shell, command substitution, or a multi-statement script inside the
 quoted `cmd /c` body.
 
-## llm-shared launchers run by full path, no environment setup
+## llm-shared launchers run by resolved full path, no environment setup
+
+In every llm-shared instruction, `<LLM_SHARED_DIR>` means the absolute
+directory that contains the canonical `instructions`, `rules`, `bin`, and
+`tools` folders. Resolve it from the absolute path of the canonical Markdown
+file you loaded: for example, an instruction loaded from
+`C:\src\llm-shared\instructions\spec-reviewer.md` gives
+`<LLM_SHARED_DIR> = C:\src\llm-shared`. Substitute that resolved directory in
+the command itself. The angle-bracket name is documentation notation, not a
+literal argument or a requirement for an environment variable.
+
+Never reinterpret a shared launcher relative to the consuming repository:
+do not shorten it to `.\bin\...`, guess `..\llm-shared\...`, or rely on
+`$env:LLM_SHARED_DIR` / `%LLM_SHARED_DIR%`. A consuming repository may have a
+different parent, and a non-interactive tool shell may have no inherited
+llm-shared variables.
 
 The `llm-shared` `bin\*.bat` launchers (`wac.bat`, `gcba.bat`, `ghog.bat`,
 `oqm.bat`, `prompt_workflow.bat`, ...) self-locate: each derives
@@ -74,6 +89,10 @@ shape is a plain full-path call, from PowerShell:
   `LLM_SHARED_DIR`. The one-off workaround is to set the variable in the same
   process, `$env:LLM_SHARED_DIR = "<path>"; & "$env:LLM_SHARED_DIR\bin\wac.bat"`,
   then update llm-shared so the next call self-locates.
+
+The root-level `commit-plan-check.bat` launcher follows the same rule but is
+not under `bin`: call it as
+`& "<LLM_SHARED_DIR>\commit-plan-check.bat" --format json`.
 
 ## Targeted reads instead of whole-document dumps
 

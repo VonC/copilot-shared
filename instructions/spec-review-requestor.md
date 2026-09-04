@@ -32,7 +32,8 @@ implementation step for specification review. Let the shared core map a source
 `design` document to the `design-specification` exchange type.
 
 Never create, overwrite, rename, or delete a protocol artifact by hand. Run
-all coordination through `bin/review_exchange.bat`, and use paths returned by
+all coordination through
+`& "<LLM_SHARED_DIR>\bin\review_exchange.bat"`, and use paths returned by
 that launcher instead of reconstructing nearby names.
 
 ## Ordered round sequence for specification requestors
@@ -44,7 +45,7 @@ that launcher instead of reconstructing nearby names.
    `idle`, run `start` once. Do not restart a live identity.
 3. Prepare separate ignored root `a.*` UTF-8 files for assessment, change
    summary, writer response, and optional guidance. Run
-   `bin/spec_review_request.bat` with exact context and round flags plus two
+   `& "<LLM_SHARED_DIR>\bin\spec_review_request.bat"` with exact context and round flags plus two
    distinct ignored root output paths.
 4. Pass the renderer's complete request output and substantive summary output
    to `publish-request`. Do not edit the published request or transcript.

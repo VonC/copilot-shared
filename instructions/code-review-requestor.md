@@ -27,12 +27,14 @@ when the effort declares one. The plan filename supplies the version and slug;
 the family always uses the fixed `code` type token.
 
 Never create, overwrite, rename, or delete a protocol artifact by hand. Run all
-coordination through `bin/review_exchange.bat` and use the exact paths it
+coordination through
+`& "<LLM_SHARED_DIR>\bin\review_exchange.bat"` and use the exact paths it
 returns.
 
 ## Immutable request evidence
 
-Before every fresh request publication, let `bin/code_review_request.bat` call
+Before every fresh request publication, let
+`& "<LLM_SHARED_DIR>\bin\code_review_request.bat"` call
 `capture_index_tree` at its publication boundary. The helper records the Git
 tree object of the index in `request_index_tree`; do not substitute a worktree
 digest or compose a separate Git command.
@@ -57,7 +59,7 @@ Only then pass the complete paired artifacts to `publish-request`.
    once and never restart a live identity.
 3. Prepare separate ignored root UTF-8 assessment, implementation report,
    change summary, writer response, and optional guidance files. Run
-   `bin/code_review_request.bat` with every applicable additive validation
+   `& "<LLM_SHARED_DIR>\bin\code_review_request.bat"` with every applicable additive validation
    command and two distinct ignored output paths.
 4. Pass the complete request and substantive summary to `publish-request`.
 5. Run `wait-answer` once using the complete marker timeout. Read only the exact

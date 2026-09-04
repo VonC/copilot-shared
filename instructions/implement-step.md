@@ -43,7 +43,20 @@ if (-not ((Test-Path a.ghog.log) -and (gi a.ghog.log).LastWriteTime -gt $t)) {
 ri a.ghog.started -Force; "exit=$code"
 ```
 
-`<llm-shared>` is the llm-shared folder of the workspace (`..\llm-shared` in a sibling layout). Branch on the exit code first, then read only the tail of `a.ghog.log` — the last 5 lines on exit 0, the last 100 otherwise; never load the whole log, never delete it. The walk is finished only when `a.ghog.status` reads `state=done` — a verdict to read through `ghog status`, never with a direct read of that file (only the command probes the pid); a growing log proves nothing. When the harness can kill long calls — or already killed one walk — run the walk detached instead, `cmd /d /c "<llm-shared>\bin\ghog.bat day --detach"` with no redirect, then poll `cmd /d /c "<llm-shared>\bin\ghog.bat status"` (never redirected) until its exit code is no longer 6: exit 7 means the run was lost (relaunch), any other code is the walk's own. The walk runs, in order, stopping at the first non-green step:
+`<llm-shared>` is the resolved absolute llm-shared directory that contains
+this canonical instruction, as described in
+[`run_commands.md`](../rules/run_commands.md). Do not substitute a guessed
+sibling path or environment variable. Branch on the exit code first, then read
+only the tail of `a.ghog.log` — the last 5 lines on exit 0, the last 100
+otherwise; never load the whole log, never delete it. The walk is finished only
+when `a.ghog.status` reads `state=done` — a verdict to read through `ghog
+status`, never with a direct read of that file (only the command probes the
+pid); a growing log proves nothing. When the harness can kill long calls — or
+already killed one walk — run the walk detached instead, `cmd /d /c
+"<llm-shared>\bin\ghog.bat day --detach"` with no redirect, then poll `cmd /d
+/c "<llm-shared>\bin\ghog.bat status"` (never redirected) until its exit code
+is no longer 6: exit 7 means the run was lost (relaunch), any other code is the
+walk's own. The walk runs, in order, stopping at the first non-green step:
 
 - check.bat: the compile and lint gate;
 - `ghog affected --no-cov` (the old ptanc): the focused tests — created, modified, or impacted by this step — selected by testmon, coverage off;
@@ -70,7 +83,17 @@ When the step is implemented and the `ghog day` walk reports the objective (`exi
 
 `<x>` is the plan step you just implemented — the "Step XXXX" of this conversation, a number such as `2` or a sub-step id such as `4A`. `pw` is run through its launcher (see [`run-pw.md`](run-pw.md) for the non-interactive invocation), the same tool the interactive cycle uses.
 
-Run `pw` from a PowerShell shell — the `pw` alias when the project environment is loaded, otherwise `& "$env:LLM_SHARED_DIR\bin\prompt_workflow.bat" handoff check <x>`. Do not wrap `bin\prompt_workflow.bat` in a `cmd /d /c "..."` call from a Git Bash or other POSIX shell: that nested `cmd` swallows the launcher's output and its rewrite of `a.prompt.txt` and `a.prompt_memory`, so the handoff does nothing while still returning `0` — a silent no-op. The launcher must print `Prompt for step <x> (check) ready`; if you do not see that line, the handoff did not run, so re-run it in PowerShell before going on.
+Run `pw` from a PowerShell shell — the `pw` alias when the project environment
+is loaded, otherwise
+`& "<LLM_SHARED_DIR>\bin\prompt_workflow.bat" handoff check <x>`. Resolve
+`<LLM_SHARED_DIR>` from this canonical instruction as described in
+[`run_commands.md`](../rules/run_commands.md); do not rely on an environment
+variable. Do not wrap the launcher in a `cmd /d /c "..."` call from a Git Bash
+or other POSIX shell: that nested `cmd` swallows the launcher's output and its
+rewrite of `a.prompt.txt` and `a.prompt_memory`, so the handoff does nothing
+while still returning `0` — a silent no-op. The launcher must print `Prompt for
+step <x> (check) ready`; if you do not see that line, the handoff did not run,
+so re-run it in PowerShell before going on.
 
 The call writes the `implementation-check.md` prompt for step `<x>` to `a.prompt.txt` at the project root, copies it to the clipboard, and records the step in `a.prompt_memory`. Confirm it took — the first line of `a.prompt.txt` now names `instructions/implementation-check.md` — then read `a.prompt.txt` and run the instructions of that returned prompt straight away to check what you just implemented. A handoff is the go-ahead to perform the next workflow step now: do not stop to ask the user whether to proceed, and do not compose the next prompt yourself. `pw` builds the prompt and the handoff authorises it, so every step the cycle reaches is executed without further confirmation — the commit-message step (`group-commits-msg.md`) included, where you write the commit messages rather than waiting to be told to.
 

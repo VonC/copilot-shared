@@ -30,6 +30,11 @@ Always ask as many questions as possible on different parts of the document. The
 
 Before running `oqm`, read [`../rules/run_commands.md`](../rules/run_commands.md).
 
+Resolve `<LLM_SHARED_DIR>` as the absolute parent of the `instructions` folder
+that contains this canonical file. Invoke `oqm.bat` by that full path from
+PowerShell; do not guess a sibling `..\llm-shared` folder. The wrapper
+self-locates llm-shared and loads the consuming project environment itself.
+
 Do not edit the `## Open questions` section of the document by hand. Use the
 `oqm` wrapper ([`oqm.bat`](../bin/oqm.bat), which runs
 [`open_questions_md.py`](../tools/open_questions_md.py) through the consuming
@@ -42,16 +47,16 @@ The companion scratch file `a.<base>.open.questions.md` is the one file you auth
 
 The tool has three modes, each taking the exact repository-relative document path:
 
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
-- `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
+- `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --create`: write an empty `a.<base>.open.questions.md` companion at the project root (truncating it when it already exists).
+- `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --strip`: drop the `## Open questions` line and every line after it from the document (a no-op when there is none).
+- `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --append`: add the `## Open questions` section of `a.<base>.open.questions.md` to the document, with one empty line before it.
 
 Run these steps for the document you are reviewing:
 
-1. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --strip"` to drop any prior `## Open questions` section from the document.
-2. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --create"` to start an empty `a.<base>.open.questions.md` companion.
+1. `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --strip` to drop any prior `## Open questions` section from the document.
+2. `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --create` to start an empty `a.<base>.open.questions.md` companion.
 3. Write your new questions into `a.<base>.open.questions.md`, starting with the `## Open questions for the vX.Y.Z ...` line and following the template.
-4. `cmd /d /v:on /c "..\llm-shared\bin\oqm.bat <document-path> --append"` to move the questions from `a.<base>.open.questions.md` into the document.
+4. `& "<LLM_SHARED_DIR>\bin\oqm.bat" <document-path> --append` to move the questions from `a.<base>.open.questions.md` into the document.
 5. Present the placed questions in your reply as the mandatory three-column table described in "Presenting the review questions" below — never as a bulleted list.
 
 ## Review-mode delegation after placing questions

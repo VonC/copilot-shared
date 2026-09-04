@@ -58,7 +58,8 @@ infer one from a document that merely sits in the same directory.
 
 Do not search documentation folders for nearby work or enumerate live
 artifacts. Use only the reviewed document and the umbrella established above,
-plus exact paths returned by `bin/review_exchange.bat`. Never create,
+plus exact paths returned by
+`& "<LLM_SHARED_DIR>\bin\review_exchange.bat"`. Never create,
 overwrite, rename, or delete protocol artifacts by hand.
 
 ## Ordered sequence for specification reviewer work
@@ -79,7 +80,7 @@ overwrite, rename, or delete protocol artifacts by hand.
    manifest described below. Write it before rendering so a stopped round keeps
    recovery evidence; pass it to the renderer only when republishing retained
    findings.
-5. Run `bin/spec_review_answer.bat` once with the exact context, round,
+5. Run `& "<LLM_SHARED_DIR>\bin\spec_review_answer.bat"` once with the exact context, round,
    disposition, expected document digest, caller-owned inputs, and two distinct
    ignored home-local outputs. One output is complete answer content and the
    other is the substantive transcript summary. Neither output may be a path the
@@ -90,7 +91,8 @@ overwrite, rename, or delete protocol artifacts by hand.
    Rendering onto `paths.answer` publishes nothing and strands the round — see
    *Caller-owned paths are never protocol artifact paths* in
    [`review-requestor.md`](review-requestor.md).
-6. Run `publish-answer` through `bin/review_exchange.bat`, passing the complete
+6. Run `publish-answer` through
+   `& "<LLM_SHARED_DIR>\bin\review_exchange.bat"`, passing the complete
    answer through `--content-file` and the paired substantive summary through
    `--summary-file`. Do not publish either output independently.
 7. When `publish-answer` reports `outcome: published`, remove the single-use
@@ -155,7 +157,7 @@ wait. The bounded protocol wait is the only sanctioned mechanism.
 
 ### While the artifact-home wait has no launcher operation
 
-`bin/review_exchange.bat wait-request` binds to one exact exchange context, so
+`& "<LLM_SHARED_DIR>\bin\review_exchange.bat" wait-request` binds to one exact exchange context, so
 it serves the round wait only. The cross-exchange wait is `GlobalReviewerWait`,
 Step 5 of the v0.11.0 `review-resume-command` plan, and it has not shipped: the
 Step 5 contracts in
