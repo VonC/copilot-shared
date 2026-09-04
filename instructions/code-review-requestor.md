@@ -100,6 +100,31 @@ Treat inconsistent, interrupted, and repair-required outcomes exactly as the
 shared requestor directs. An intact expired active round uses `reclaim`; an
 escalated exchange never does.
 
+## New-session ownership pickup
+
+A new agent session cannot recover the previous session's plaintext ownership
+token. When the human says `This is a new session` and directs you to
+`force requestor ownership pickup`, run `pickup` with the unchanged exact code
+review context before the first mutation. At `convergence-gate` and
+`owning-action-pending`, pickup advances the ownership generation for the
+requestor even though the convergence choice itself belongs to the human.
+
+Keep the returned `ownership_generation` and `ownership_token` only in the
+current process or session. Supply them as `--ownership-generation` and
+`--ownership-token` to `confirm` and every later fenced mutation. Never write
+the plaintext token into an artifact, environment file, transcript, or status
+message.
+
+Pickup is not a reset: it advances the generation monotonically and fences the
+old session. It is also distinct from `reclaim`, which renews an intact expired
+lease without replacing a missing session capability. Do not resolve, archive,
+or restart an otherwise valid exchange merely because the agent session
+changed.
+
+For a convergence handoff, the human can state: `Commit selected. This is a new
+session; force requestor ownership pickup, record Commit, then continue the
+authorized commit process.` The requestor must run `pickup` before `confirm`.
+
 ## Authored inputs for implementation review rounds
 
 The assessment states whether the exact step is fully implemented and names the

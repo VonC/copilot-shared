@@ -52,6 +52,25 @@ observes `answer-pending`, only the requestor may consume the answer or continue
 the round. When a reviewer recommends convergence, reciprocal waiting ends and
 the durable human gate takes over.
 
+## Why a new session takes a new generation
+
+An ownership capability belongs to one live agent session. Durable coordination
+stores its digest, not the plaintext token, so a later session cannot silently
+impersonate the former owner. When the human explicitly identifies a new
+session, pickup issues a new generation to the actor that must perform the next
+protocol mutation and makes the former capability stale.
+
+At convergence, these authorities remain separate. The human still chooses
+whether to commit or start another round; the requestor receives the capability
+needed to record that exact choice. The pickup is not a reset because the round,
+answer, transcript, and human gate remain intact. It is not `reclaim` either:
+reclaim renews an expired lease, while pickup replaces a capability that the
+new process never possessed.
+
+This generation advance makes session turnover recoverable without weakening
+the ownership fence. An old session that wakes later cannot mutate the exchange
+with its superseded generation and token.
+
 ## Why the evidence remains durable
 
 Each round publishes an answer and appends the request, answer, and human gate

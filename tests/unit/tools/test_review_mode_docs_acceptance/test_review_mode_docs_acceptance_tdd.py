@@ -43,7 +43,8 @@ _CANONICAL_INSTRUCTIONS = (
 )
 _BACKTICK = "`"
 _REVIEW_OUTCOMES = (
-    "disabled", "activated", "observed", "started", "continued", "reclaimed",
+    "disabled", "activated", "observed", "started", "continued",
+    "ownership-picked-up", "reclaimed",
     "force-reclaimed", "completed", "force-completed", "published", "repaired",
     "found", "timed-out", "abandoned", "escalated", "inconsistent",
     "repair-required", "consumed", "cancelled", "archived", "resolved",
@@ -275,6 +276,33 @@ def test_step_3_recovery_separates_reclaim_from_human_operations(
         "interrupted",
     ):
         assert state in recovery
+
+
+def test_step_3_new_session_pickup_is_discoverable_and_precise(
+    docs_root: Path,
+) -> None:
+    """A new requestor session can resume without an old plaintext token."""
+    readme = read_declared(docs_root, "README.md")
+    explanation = read_declared(docs_root, _EXPLANATION)
+    recovery = read_declared(docs_root, _RECOVERY_GUIDE)
+    reference = read_declared(docs_root, _REFERENCE)
+
+    assert "This is a new session" in readme
+    assert "force requestor ownership pickup" in readme
+    assert "Continue an active code review in a new session" in recovery
+    assert "force requestor ownership pickup" in recovery
+    assert "old ownership token" in recovery
+    assert "Step 4's status schema and migration work does not" in recovery
+    assert "Step 5's role-resolved resume interface" in recovery
+    for phrase in ("new generation", "not a reset", "`reclaim`"):
+        assert phrase in explanation
+    for token in (
+        "| `pickup` |",
+        "`ownership_generation`",
+        "`ownership_token`",
+        "`ownership-picked-up`",
+    ):
+        assert token in reference
 
 
 def test_step_3_coverage_records_task_and_recovery_evidence(

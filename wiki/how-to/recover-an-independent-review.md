@@ -14,6 +14,40 @@ operation.
 Do not reconstruct protocol filenames or edit protocol artifacts. Follow the
 returned `paths` and stop on exit `2`.
 
+## Continue an active code review in a new session
+
+Use ownership pickup when a valid code-review exchange is still active but the
+new requestor session does not hold the old ownership token. The durable record
+stores only a digest, so the old plaintext token cannot and should not be
+recovered.
+
+1. Start the new agent session at the reviewed repository root.
+2. Name the exact implementation plan, step, and umbrella when one exists.
+3. Give the human authorization in one prompt. At convergence, use:
+
+   ```text
+   Commit selected. This is a new session; force requestor ownership pickup,
+   record Commit, then continue the authorized commit process.
+   ```
+
+4. The requestor runs `status` with the exact context and then runs `pickup`
+   before its first mutation. The successful result returns a new ownership
+   generation and token for that session.
+
+   ```powershell
+   & "<LLM_SHARED_DIR>\bin\review_exchange.bat" pickup <exact-code-review-context-flags>
+   ```
+
+5. At `convergence-gate`, the requestor supplies that capability to `confirm`
+   with the exact `Commit` label. At `owning-action-pending`, it supplies the
+   capability to the remaining authorized mutations without asking again.
+
+Pickup advances the generation and fences the old session; it does not reset
+the review. Do not use `reclaim`, `resolve`, or `archive` just because the agent
+session changed. This exact-context pickup is the Step 3 corrective path. Step
+4's status schema and migration work does not restore session secrets. Step 5's
+role-resolved resume interface will generalize this journey.
+
 ## Reclaim an expired live exchange
 
 Use ordinary reclaim only for an intact live round whose lease expired while

@@ -51,6 +51,16 @@ publishing each change request, so replacement rounds continue in the same two
 sessions without another human prompt. Only convergence, recovery, or a bounded
 wait failure stops that exchange.
 
+To continue an implementation code review in another agent session, identify
+the exact plan and step and use this wording:
+`This is a new session; force requestor ownership pickup before any mutation,
+then resume from durable state.` At a commit gate, prefix that direction with
+`Commit selected.` A pickup advances
+the ownership generation and invalidates the old ownership token; it does not
+reset the review or reclaim an expired lease. See
+[Recover an independent review](wiki/how-to/recover-an-independent-review.md)
+for the complete procedure.
+
 ---
 
 ## 🎯 Goal: avoid vibe-coding

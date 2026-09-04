@@ -24,6 +24,13 @@ wait returns the next `request-pending` artifact and reviewer assessment resumes
 Convergence does not start another reviewer wait; it transfers the exchange to
 the human gate.
 
+A new agent process has no access to a prior process's plaintext ownership
+token. With explicit new-session authorization, `pickup` advances the durable
+ownership generation and returns a replacement capability. At
+`convergence-gate` and `owning-action-pending`, the pickup actor is the
+requestor; in other live states it is the expected LLM actor. Pickup does not
+change the round, artifacts, or human decision owner.
+
 The canonical [shared requestor instruction](../../instructions/review-requestor.md),
 [specification reviewer instruction](../../instructions/spec-reviewer.md), and
 [code reviewer instruction](../../instructions/code-reviewer.md) remain
@@ -150,6 +157,7 @@ same exact context on every invocation.
 | `publish-answer` | reviewer; request pending | Consume request, expose answer, and append transcript; `published` |
 | `wait-answer` | requestor; bounded wait | Return the same wait outcomes as `wait-request` |
 | `consume-answer` | requestor; non-converged answer | Record response assessment; `consumed` |
+| `pickup` | explicitly authorized new LLM session; valid live coordination | Advance ownership generation, fence the old capability, and return the new requestor or expected-actor capability; `ownership-picked-up` |
 | `reclaim` | expected actor; intact lease-expired round | Renew the same round; `reclaimed` |
 | `reclaim --force` | human-authorized caller; intact escalated artifacts | Resume the same round and append the decision; `force-reclaimed` |
 | `repair-request-transcript` | requestor; eligible final legacy request entry | Replace only that final entry; `repaired` |
@@ -177,6 +185,7 @@ AST drift tooling.
 | `observed` | Plain operation result |
 | `started` | Plain operation result |
 | `continued` | Plain operation result |
+| `ownership-picked-up` | Plain operation result with a newly issued capability |
 | `reclaimed` | Plain operation result |
 | `force-reclaimed` | Plain operation result |
 | `completed` | Conditional operation result |
@@ -227,8 +236,12 @@ The six success-path keys are:
 | `transition_lock` | Transition lock |
 
 Additional fields are conditional. `exchange_occurrence` appears for a pending
-request, `owning_action_authorized` appears after human confirmation, and some
-operations report removed or archived paths.
+request, `owning_action_authorized` appears after human confirmation,
+`ownership_generation` and `ownership_token` appear only when an operation
+issues a capability, and some operations report removed or archived paths.
+The token is returned once in that invocation and is never stored in plaintext
+coordination or transcript evidence. Both ownership fields must be supplied to
+later fenced mutations.
 
 - Exit `0` means the operation completed and the result grants its reported
   next action.
