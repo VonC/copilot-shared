@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
+from tools import review_artifact_configuration as configuration_module
 from tools.review_artifact_configuration import (
     ReviewArtifactConfiguration,
     caller_file_parents,
@@ -164,16 +167,34 @@ def test_home_creation_failure_rolls_back_and_cleanup_failure_is_bounded(
     assert configuration.home.exists()
 
 
-def test_git_tracking_query_failure_is_reported(tmp_path: Path) -> None:
+def test_git_tracking_query_failure_is_reported(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """An index-shaped but invalid repository cannot prove home safety."""
     home = tmp_path / ".reviews"
     home.mkdir()
     git = tmp_path / ".git"
     git.mkdir()
     (git / "index").write_bytes(b"not an index")
+    failed_query = subprocess.CompletedProcess(
+        ["git", "ls-files"],
+        128,
+        "",
+        "invalid index",
+    )
+    runner = Mock(return_value=failed_query)
+    monkeypatch.setattr(configuration_module.subprocess, "run", runner)
 
     with pytest.raises(ReviewExchangeError, match=r"cannot validate.*tracking"):
         ReviewArtifactConfiguration.load(tmp_path)
+    runner.assert_called_once_with(
+        ["git", "ls-files", "--", ".reviews"],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
 
 
 def test_caller_files_are_accepted_only_in_the_artifact_home(
