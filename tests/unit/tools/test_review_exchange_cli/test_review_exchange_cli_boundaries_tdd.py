@@ -1,8 +1,9 @@
-"""Boundary coverage for the Step 4 review-exchange command adapter.
+"""Boundary coverage for the Step 3 review-exchange command adapter.
 
 These tests cover construction, parser limits, Git ignore probing, unreadable
-caller inputs, disabled status, defensive dispatch, and the script entry point.
-The lifecycle behavior remains covered by the core and the primary CLI tests.
+caller inputs, ownership pickup, disabled status, defensive dispatch, and the
+script entry point. Lifecycle behavior remains covered by the core and the
+primary CLI tests.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ import json
 import runpy
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +28,7 @@ from tests.unit.tools.test_review_exchange_cli.test_review_exchange_cli_tdd impo
 from tools import review_exchange_cli as cli
 from tools import review_exchange_cli_parser as cli_parser
 from tools.review_exchange_core import ReviewExchangeCore
-from tools.review_exchange_models import ArtifactState, ReviewExchangeError
+from tools.review_exchange_models import Actor, ArtifactState, ReviewExchangeError
 from tools.review_exchange_observer import ExchangeObservation
 from tools.review_exchange_ownership import (
     OwnershipCapability,
@@ -40,6 +42,7 @@ _POSITIVE_FLOAT = 0.5
 _POSITIVE_INT = 2
 _WAIT_TIMEOUT = 15
 _OWNERSHIP_GENERATION = 4
+_PICKED_UP_GENERATION = 2
 _REJECTED_GENERATION = 3
 
 
@@ -145,6 +148,59 @@ def test_ownership_stop_never_echoes_presented_capability(
     assert payload["current_ownership_generation"] == _REJECTED_GENERATION
     assert "ownership_generation" not in payload
     assert "ownership_token" not in payload
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        ArtifactState.CONVERGENCE_GATE,
+        ArtifactState.OWNING_ACTION_PENDING,
+    ],
+)
+def test_new_session_pickup_claims_requestor_at_owning_workflow_gates(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+    state: ArtifactState,
+) -> None:
+    """A fresh requestor session can replace its missing capability at a gate."""
+    runtime, core = _runtime(tmp_path)
+    core.state = state
+    core.record = replace(core.record, expected_next_actor=Actor.HUMAN)
+
+    code, payload, _error = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["pickup", *_common(runtime)],
+    )
+
+    assert code == _EXIT_STOP
+    assert payload["outcome"] == "ownership-picked-up"
+    assert payload["ownership_generation"] == _PICKED_UP_GENERATION
+    assert isinstance(payload["ownership_token"], str)
+    assert core.calls[-1] == ("pickup_ownership", (Actor.REQUESTOR,), {})
+
+
+def test_new_session_pickup_uses_expected_llm_actor_during_a_round(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    """Pickup keeps normal round ownership aligned with the expected actor."""
+    runtime, core = _runtime(tmp_path)
+    core.state = ArtifactState.REQUEST_PENDING
+
+    code, payload, _error = _run(
+        monkeypatch,
+        capsys,
+        runtime,
+        ["pickup", *_common(runtime)],
+    )
+
+    assert code == 0
+    assert payload["outcome"] == "ownership-picked-up"
+    assert core.calls[-1] == ("pickup_ownership", (Actor.REVIEWER,), {})
 
 
 def test_pickup_without_coordination_reports_a_fatal_input(

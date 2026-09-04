@@ -3,7 +3,8 @@
 
 Step 3 delegates capability parsing, lifecycle typing, and token-safe ownership
 stops to a focused adapter. This hub retains caller-file validation, operation
-dispatch, and one stable JSON result while staying below its risk-band target.
+dispatch, gate-aware new-session pickup, and one stable JSON result while
+staying below its risk-band target.
 """
 
 # ruff: noqa: BLE001, EM101, EM102, TRY003
@@ -39,6 +40,7 @@ from tools.review_exchange_cli_parser import (
 )
 from tools.review_exchange_core import ReviewExchangeCore
 from tools.review_exchange_models import (
+    Actor,
     ArtifactPaths,
     ArtifactState,
     FamilyPolicy,
@@ -225,13 +227,21 @@ def _dispatch_pickup(
     digest. A session acting after that process has exited holds nothing to
     present, and every fenced transition then reports `ownership-missing`. This
     advances the generation and hands the caller a replacement, which is the
-    displacement the ownership service is built to answer.
+    displacement the ownership service is built to answer. Human convergence
+    remains a decision gate, but the requestor needs the replacement capability
+    to record that decision and continue its authorized owning workflow.
     """
     observation = runtime.core.classify()
     record = observation.record
     if record is None:
         raise ReviewExchangeError("ownership pickup requires durable coordination")
-    runtime.core.pickup_ownership(record.expected_next_actor)
+    pickup_actor = (
+        Actor.REQUESTOR
+        if observation.state
+        in {ArtifactState.CONVERGENCE_GATE, ArtifactState.OWNING_ACTION_PENDING}
+        else record.expected_next_actor
+    )
+    runtime.core.pickup_ownership(pickup_actor)
     return OperationResult("ownership-picked-up")
 
 
