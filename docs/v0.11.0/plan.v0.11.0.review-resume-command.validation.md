@@ -3,7 +3,7 @@
 No, it is not implemented.
 
 This validation tracks the seven ordered implementation steps. Steps 0 through
-2 are fully implemented and validated; Steps 3 through 6 remain pending.
+3 are fully implemented and validated; Steps 4 through 6 remain pending.
 
 ---
 
@@ -426,8 +426,11 @@ complete conflict-order assertion. The subsequent 2,403-test `ghog day` reports
 
 ### Analysis of Step 3 implementation state
 
-Not started. Step 3 is not implemented because ordinary and resumed sessions
-do not claim generations and session-held secrets before mutation.
+Yes. Step 3 has been fully implemented.
+
+Ordinary and resumed actors now claim one monotonic, digest-backed ownership
+capability under the transition lock, every later mutation validates the
+session-held pair, and the focused and repository-wide validation gates pass.
 
 ### Goal for Step 3
 
@@ -446,27 +449,104 @@ stale, missing, or invalid capabilities.
 
 ### What was implemented for Step 3
 
-_(empty — no check has taken place yet.)_.
+- Added immutable ownership capability, claim, and failure records plus a pure
+  ownership service that issues random secrets, stores only SHA-256 digests,
+  advances generations, and reports typed missing, invalid, superseded, and
+  duplicate-claim failures without retaining plaintext secrets.
+- Extracted transition locking, exact coordination parsing, atomic persistence,
+  and locked compare-and-swap claims into `ReviewExchangeOwnershipStore`; the
+  existing store delegates those responsibilities and remains at 599 lines.
+- Added a focused CLI ownership adapter for paired, single-use generation and
+  token flags, strict validation, token-safe failures, and successful
+  capability delivery. The command hub delegates to it and remains at 521
+  lines.
+- Wired claims into start, reclaim, exact wait wake, and direct pickup. Core and
+  human/publication mutations validate the currently presented capability
+  before changing artifacts, while a forced pickup advances the generation and
+  invalidates every earlier holder.
+- Updated the authorized code-review commit continuation to pick up requestor
+  ownership before its final owning mutation, and adapted specification and
+  code-review acceptance fixtures to carry session capabilities through normal
+  request, answer, convergence, recovery, and completion paths.
+- Added focused example, property, concurrency, persistence-crash, CLI pairing,
+  redaction, lost-secret, convergence, and stale-session coverage. The exact
+  Step 3 `ghog single` command passed, and `ghog day` passed all 2,437 tests with
+  100 percent production coverage and no duration outliers.
 
 ### New types or classes introduced for Step 3
 
-_(empty — no check has taken place yet.)_.
+- `OwnershipCapability` holds one positive generation and session-only token.
+- `OwnershipClaim` returns the durable record plus its capability and records
+  whether the capability was newly issued.
+- `OwnershipFailure` and `OwnershipRejectedError` carry stable, non-secret
+  rejection evidence.
+- `OwnershipService` owns token generation, digest comparison, ordinary claim,
+  actor handoff, forced pickup, and capability validation.
+- `ReviewExchangeOwnershipStore` owns the process-local and operating-system
+  transition locks, exact coordination persistence, and claim compare-and-swap.
+- `CorePort` and `_SingleValueAction` isolate the CLI lifecycle contract and
+  duplicate-sensitive-flag rejection from the command hub.
 
 ### Architecture check for Step 3
 
-_(empty — no check has taken place yet.)_.
+The ownership service contains only capability rules and cryptographic digest
+comparison, while the ownership store contains filesystem locking and atomic
+persistence. The CLI ownership adapter depends on a protocol-shaped core port,
+and `ReviewExchangeCore` remains the application orchestrator that sequences
+state observation, locked claims, and mutation. Publication and human mixins
+reuse the core's fenced `_require_record` boundary without importing storage or
+cryptographic details.
+
+The mandatory risk-band reductions are met: `review_exchange_store.py` is 599
+lines and `review_exchange_cli.py` is 521 lines. Core is 538 lines, and every
+new ownership module and test leaf remains below both its advisory target or
+the 650-line ceiling. Keeping the post-wake locked revalidation in the core
+avoids adding ownership policy to the generic wait observer.
+
+No architecture issue needs to be addressed.
 
 ### Performance check for Step 3
 
-_(empty — no check has taken place yet.)_.
+Generation comparison, SHA-256 digesting, constant-time digest comparison, and
+the coordination compare-and-swap perform constant work per transition. Claims
+read and atomically replace one exact coordination record under one exact lock;
+they add no repository scan or collection-sized loop. The defensive wait wake
+performs one locked state revalidation and one claim after the existing bounded
+wait returns.
+
+No new `O(n^2)` or `O(n log n)` path was introduced, and the implementation
+stays within the plan's `O(1)` ownership-transition bound.
+
+No performance issue needs to be addressed.
 
 ### Unit test coverage check for Step 3
 
-_(empty — no check has taken place yet.)_.
+- `review_exchange_ownership.py` is covered by focused example and property
+  tests for generation, validation, handoff, forced pickup, malformed values,
+  and rejection of every previous generation.
+- `review_exchange_ownership_store.py` is covered for locking, concurrent claim
+  convergence, stale records, strict parsing, context binding, atomic prepare
+  and replacement failures, cleanup, retries, and crash boundaries.
+- `review_exchange_cli_ownership.py` is covered for paired inputs, malformed,
+  empty, duplicated, and mismatched values, typed payloads, and secret
+  redaction.
+- Coordination, core, store, parser, CLI, human, and code-review continuation
+  branches changed by this step are exercised by their unit suites; the full
+  Groundhog report records 100 percent production coverage.
+
+No unit-tested class is below 100 percent or needs completing.
 
 ### Feature integrity for Step 3
 
-_(empty — no check has taken place yet.)_.
+Existing specification and code-review requestor/reviewer flows still complete
+through ordinary, recovery, convergence, and authorized-commit paths while now
+carrying the same ownership fence. Read-only status remains capability-free,
+typed ownership stops expose only the current generation and diagnostic, and
+human/transcript rendering does not expose the secret. `check.bat` passes for
+the shared worktree, including type, Ruff, complexity, file-size, Markdown,
+shell, and EOF checks.
+
+No existing feature or reporting capability appears impaired.
 
 ---
 
