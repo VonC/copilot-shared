@@ -112,12 +112,12 @@ def test_codex_plugin_redirects_every_instruction(
     for instruction_name, skill, packaged, source in rows:
         skill_redirect = (
             "Read and follow [the canonical instruction]"
-            f"(../../../../instructions/{instruction_name})"
+            f"(../../../../../../../../git/llm-shared/instructions/{instruction_name})"
         )
         packaged_redirect = (
             "Read and follow the canonical instruction at "
             f"[`instructions/{instruction_name}`]"
-            f"(../../../instructions/{instruction_name}).\n"
+            f"(../../../../../../../git/llm-shared/instructions/{instruction_name}).\n"
         )
         assert skill.rstrip().endswith(skill_redirect)
         assert packaged == packaged_redirect
@@ -134,7 +134,7 @@ def test_codex_plugin_redirects_to_the_docs_layout_rule() -> None:
 
     assert packaged == (
         "Read and follow the canonical rule at "
-        "[`rules/docs_layout.md`](../../../rules/docs_layout.md).\n"
+        "[`rules/docs_layout.md`](../../../../../../../git/llm-shared/rules/docs_layout.md).\n"
     )
     assert packaged != source
 
@@ -167,7 +167,10 @@ def test_llmup_alias_refreshes_the_personal_codex_plugin() -> None:
     assert "--isolated --no-project --with PyYAML" in launcher
     assert "validate_plugin.py" in launcher
     assert "update_plugin_cachebuster.py" in launcher
-    assert "plugin add llm-shared@personal" in launcher
-    assert 'findstr /I /C:"llm-shared@personal"' in launcher
+    assert "read_marketplace_name.py" in launcher
+    assert "codex_plugin_redirects.py" in launcher
+    assert "--installed" in launcher
+    assert "plugin add llm-shared@%MARKETPLACE_NAME%" in launcher
+    assert 'findstr /I /C:"llm-shared@%MARKETPLACE_NAME%"' in launcher
     assert all("llmup" in path.read_text(encoding="utf-8") for path in pages)
     assert "update_llm_shared_plugin" in layout

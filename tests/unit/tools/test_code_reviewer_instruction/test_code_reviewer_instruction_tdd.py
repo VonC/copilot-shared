@@ -26,7 +26,7 @@ def _assert_contains_all(content: str, fragments: tuple[str, ...]) -> None:
 def test_instruction_delegates_every_executable_boundary_to_launchers() -> None:
     """The instruction sequences launchers instead of cloning their behavior."""
     content = _content()
-    evidence = "bin/code_review_evidence.bat"
+    evidence = "<LLM_SHARED_DIR>\\bin\\code_review_evidence.bat"
     for responsibility in (
         "baseline",
         "pre-repair blobs",
@@ -38,8 +38,8 @@ def test_instruction_delegates_every_executable_boundary_to_launchers() -> None:
     ):
         assert responsibility in content
     assert content.count(evidence) >= _MINIMUM_EVIDENCE_REFERENCES
-    assert "bin/code_review_answer.bat" in content
-    assert "bin/review_exchange.bat" in content
+    assert "<LLM_SHARED_DIR>\\bin\\code_review_answer.bat" in content
+    assert "<LLM_SHARED_DIR>\\bin\\review_exchange.bat" in content
     for forbidden_clone in ("git write-tree", "git hash-object", "git diff", "os.remove"):
         assert forbidden_clone not in content
 
@@ -142,7 +142,7 @@ def test_instruction_requires_independent_commit_plan_readiness_evidence() -> No
     _assert_contains_all(
         content,
         (
-            "`commit-plan-check.bat --format json`",
+            '`& "<LLM_SHARED_DIR>\\commit-plan-check.bat" --format json`',
             "independent",
             "status `3`",
             "status `2`",
@@ -152,7 +152,9 @@ def test_instruction_requires_independent_commit_plan_readiness_evidence() -> No
             "six readiness-floor results",
         ),
     )
-    assert content.index("`commit-plan-check.bat --format json`") < content.index(
+    assert content.index(
+        '`& "<LLM_SHARED_DIR>\\commit-plan-check.bat" --format json`',
+    ) < content.index(
         "six readiness-floor results",
     )
 

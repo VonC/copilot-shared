@@ -47,8 +47,8 @@ def test_instruction_delegates_renderer_and_shared_lifecycle_in_order() -> None:
     content = _content()
 
     assert "instructions/review-requestor.md" in content
-    assert "bin/code_review_request.bat" in content
-    assert "bin/review_exchange.bat" in content
+    assert "<LLM_SHARED_DIR>\\bin\\code_review_request.bat" in content
+    assert "<LLM_SHARED_DIR>\\bin\\review_exchange.bat" in content
     _assert_in_order(
         content,
         (

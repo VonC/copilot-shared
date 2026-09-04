@@ -28,6 +28,9 @@ def test_canonical_requestor_delegates_every_mutation_to_launcher() -> None:
         content,
         (
             "review_exchange.bat",
+            "<LLM_SHARED_DIR>\\bin\\review_exchange.bat",
+            "absolute parent of the `instructions` folder",
+            "do not run either repository's `senv.bat` first",
             "ReviewExchangeCore",
             "--content-file",
             "--summary-file",
@@ -59,8 +62,8 @@ def test_provider_files_redirect_directly_to_canonical_instruction() -> None:
     )
 
     assert "instructions/review-requestor.md" in workflow
-    assert "../../../instructions/review-requestor.md" in packaged
-    assert "../../../../instructions/review-requestor.md" in skill
+    assert "../../../../../../../git/llm-shared/instructions/review-requestor.md" in packaged
+    assert "../../../../../../../../git/llm-shared/instructions/review-requestor.md" in skill
     assert canonical not in workflow
     assert canonical not in packaged
     assert canonical not in skill

@@ -47,8 +47,8 @@ def test_instruction_delegates_the_shared_requestor_sequence() -> None:
     content = _content()
 
     assert "instructions/review-requestor.md" in content
-    assert "bin/review_exchange.bat" in content
-    assert "bin/spec_review_request.bat" in content
+    assert "<LLM_SHARED_DIR>\\bin\\review_exchange.bat" in content
+    assert "<LLM_SHARED_DIR>\\bin\\spec_review_request.bat" in content
     _assert_in_order(
         content,
         (

@@ -55,11 +55,11 @@ def test_instruction_orders_reviewer_operations_and_exact_paths() -> None:
             "`status`",
             "`wait-request`",
             "paths.request",
-            "bin/spec_review_answer.bat",
+            "<LLM_SHARED_DIR>\\bin\\spec_review_answer.bat",
             "`publish-answer`",
         ),
     )
-    assert "bin/review_exchange.bat" in content
+    assert "<LLM_SHARED_DIR>\\bin\\review_exchange.bat" in content
     assert "one bounded `wait-request` per round" in content
     assert "full exact reviewed specification" in content
     assert "convergence recommendation is advisory" in content
