@@ -25,8 +25,9 @@ feature request without reopening the settled choices.
   or competing actors safely.
 - **Step 4 goal**: advance review status to schema 2 with migration and role
   nature in human and machine output.
-- **Step 5 goal**: add the LLM-only resume skill, role resolution, global
-  reviewer wait, and requestor continuation.
+- **Step 5 goal**: add the LLM-only resume skill, automatic ownership pickup,
+  role resolution, global reviewer wait, and requestor continuation from a
+  bare `resume` request.
 - **Step 6 goal**: prove the complete feature through real launchers, concurrent
   sessions, migration recovery, adapters, and documentation acceptance tests.
 
@@ -40,8 +41,9 @@ This plan implements these settled outcomes:
    home, defaulting to `.reviews`, and legacy layouts migrate all or none.
 2. Every new exchange preserves requestor and reviewer LLM nature while legacy
    evidence remains readable and can be completed by its owning role.
-3. Direct resume resolves the role and continues immediately, while reviewers
-   consume any future request and requestors progress only their owning task.
+3. A bare `resume` request resolves the role, automatically acquires or replaces
+   the session capability, and continues immediately, while reviewers consume
+   any future request and requestors progress only their owning task.
 4. Every acting session uses the same generation and secret-token capability,
    with only the digest stored in coordination.
 
@@ -882,6 +884,8 @@ Issues to address:
   waits, while the settled behavior is persistent across exchanges.
 - Requestor resume must stay bound to its task and follow `pw skill` only after
   exchange release.
+- A new process can be misrouted to `reclaim` or lease waiting when its durable
+  exchange is still live but its prior plaintext capability is unavailable.
 
 Fix intent:
 
@@ -890,12 +894,19 @@ Fix intent:
 - Add one canonical resume instruction and thin adapters.
 - Update all role instructions to carry nature, capability, global reviewer
   waiting, and exact requestor continuation.
+- Treat the bare user request `resume` as authorization for automatic
+  lease-independent pickup after role resolution and before role dispatch. Do
+  not require the user to mention a new session, pickup, generation, token,
+  reclaim, force, or lease expiry.
 - Remove Step 0 global-wait xfails.
 
 Expected outcome:
 
-- A simple resume detects or asks for role once, applies migration and identity
-  gates, then acts or waits without another confirmation.
+- A bare `resume` detects or asks for role once, applies migration and identity
+  gates, automatically picks up ownership, then acts or waits without an
+  ownership-recovery explanation or another confirmation. Only a genuine role
+  or request ambiguity, identity conflict, cancellation, or existing human
+  convergence decision may still require human input.
 - Reviewers answer one request or wait for any future request; requestors never
   consume arbitrary requests.
 
@@ -953,6 +964,14 @@ Step framing:
   role, forced mismatch confirmation, two matching roles, unknown host, selected
   role conflict, counterpart omission, migration-first ordering, and no second
   confirmation.
+- Cover the exact argument-free user request `resume` for an active reviewer
+  request, requestor answer, convergence gate, and authorized owning action.
+  Assert each path runs `resume-inspect` and automatic `claim` before its first
+  role-owned mutation without asking for ownership terminology.
+- Cover missing and stale session capabilities while the lease remains fresh.
+  Assert resume performs lease-independent pickup, never `reclaim --force`, and
+  never waits for lease expiry; an abandoned request may use ordinary `reclaim`
+  only after the automatic pickup returns the fresh capability.
 - Cover reviewer wait before any exchange, after conclusion, after intermediate
   answer, at convergence, and during requestor ownership; same and new exchange
   wakes; unrelated artifact ignore; human cancellation.
@@ -962,6 +981,9 @@ Step framing:
   including first claim, typed loser, and return to wait.
 - Cover requestor exact-answer wait, owned action, convergence pickup, lost
   secret pickup, exchange release, and immediate `pw skill` continuation.
+- Assert the resume instruction and every provider adapter accept bare `resume`
+  and never ask the user to supply an ownership generation, token, pickup
+  directive, new-session declaration, or reclaim choice.
 - Assert there is no `rvw_resume.bat` and every provider adapter remains a thin
   direct pointer with a schema-validated, non-secret `llm_nature` metadata field.
 - Cover the typed `migration-check`, `migrate-artifacts`, `resume-inspect`,
@@ -973,6 +995,14 @@ Step framing:
 - `ResumeContext`, `ResumeRoleResolution`, and `ReviewResumeService` implement
   preflight, role selection, evidence gate, ownership claim, and typed next
   action.
+- `ReviewResumeService` invokes the internal `claim` operation automatically
+  for every selected concrete live exchange. In direct-resume mode, `claim`
+  delegates to lease-independent pickup when the current process has no valid
+  capability, advances the generation, retains the returned secret only in the
+  running session, and supplies the pair to later fenced operations.
+- The canonical resume skill and thin provider adapters recognize the bare
+  prompt `resume`; ownership recovery is internal orchestration, not a user
+  prompt or public launcher argument.
 - `GlobalReviewerWait` uses notification hints, bounded polling, authoritative
   rescans, candidate selection, and first-claim-wins.
 - A narrow notification adapter uses the direct `watchdog` runtime dependency
@@ -988,7 +1018,7 @@ Step framing:
 
 - `ghog single tests/unit/tools/test_review_resume_perf/test_review_resume_perf_tdd.py tests/unit/tools/test_review_resume tests/unit/tools/test_review_resume_instruction tests/unit/tools/test_instruction_structure/test_spec_reviewer_adapters_tdd.py tests/unit/tools/test_instruction_structure/test_code_reviewer_adapters_tdd.py tests/unit/tools/test_review_requestor_instruction`
   passes.
-- `rg -n "rvw_resume|wait-request|wait globally|pw skill|already-claimed|review-resume" bin tools instructions .agent .agents .claude .github`
+- `rg -n "rvw_resume|bare.*resume|automatic.*(claim|pickup)|wait globally|pw skill|already-claimed|review-resume" bin tools instructions .agent .agents .claude .github`
   shows no public resume launcher and the settled role split.
 - `ghog day` reports `exit=0`.
 
@@ -1110,6 +1140,9 @@ Step framing:
   Stop, counterpart omission, fresh-lease displacement, lost capability,
   convergence pickup, same/new exchange reviewer wake, simultaneous requests,
   competing reviewers, and requestor workflow release.
+- Start the fresh-lease reviewer, convergence-gate requestor, and lost-capability
+  scenarios with only the user text `resume`; assert automatic pickup precedes
+  continuation and no ownership-recovery question is emitted.
 - Compare artifact bytes, transcript headings, Git ignore evidence, ownership
   generations, secret absence, schema-2 JSON, human reports, process statuses,
   and clean Git state.
@@ -1122,8 +1155,9 @@ Step framing:
 - `review_exchange_test_support.py` provides canonical configured-home,
   role-nature, ownership, and schema builders; scenario-specific fixtures remain
   local to their test package.
-- README documents `.review-artifacts.ini`, migration-aware `rvw_status`, the
-  resume skill, role detection, reviewer waiting, and requestor continuation.
+- README documents `.review-artifacts.ini`, migration-aware `rvw_status`, bare
+  `resume`, automatic pickup, role detection, reviewer waiting, and requestor
+  continuation.
 
 **Completion criteria**:
 
